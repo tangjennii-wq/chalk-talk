@@ -492,77 +492,82 @@ var SAMPLES = [
     "style": "lecture",
     "specialty": "Nephrology",
     "talk": {
-      "title": "Hyponatremia: SIADH Pathophysiology & Furst Ratio",
-      "subtitle": "Understanding ADH dysregulation and predicting treatment response",
+      "title": "Hyponatremia: SIADH Pathophysiology & the Furst Ratio",
+      "subtitle": "Why the urine tells you more than the serum — a mechanistic deep dive",
       "guideline_sources": [
-        "KDIGO 2024",
-        "Endocrine Society Clinical Practice Guidelines"
+        "KDIGO Clinical Practice Guideline on Hyponatremia (2014, reaffirmed in 2024 context)",
+        "European Clinical Practice Guideline on Hyponatremia (ERA-EDTA/ESE/ESI 2014)",
+        "Expert Panel Recommendations on Diagnosis and Management of SIADH (Verbalis et al., Am J Med 2013)"
       ],
       "sections": [
         {
-          "heading": "SIADH Pathophysiology: The ADH-Aquaporin Axis",
+          "heading": "Normal Water Homeostasis & ADH Physiology",
           "minutes": "3 min",
           "points": [
-            "Normal ADH physiology: Hypothalamic osmoreceptors detect >295 mOsm/kg → posterior pituitary ADH release → V2 receptors in collecting duct → cAMP → PKA → aquaporin-2 (AQP2) insertion → water reabsorption",
-            "SIADH mechanism: Inappropriate ADH secretion despite low serum osmolality (<280) → continued AQP2-mediated water retention → dilutional hyponatremia with concentrated urine",
-            "Volume regulation paradox: Initial water retention → mild volume expansion → natriuresis (UNa >30) → return to euvolemic state but with persistent hyponatremia",
-            "Cellular adaptation: Brain cells extrude organic osmolytes (taurine, glutamate, myoinositol) over 24-48h → explains why chronic hyponatremia is better tolerated than acute",
-            "Reset osmostat variant: ADH secretion threshold lowered but still responsive to osmotic changes → milder, stable hyponatremia"
+            "ADH (arginine vasopressin) is synthesized in supraoptic and paraventricular nuclei of the hypothalamus, stored in posterior pituitary, and released in response to increased plasma osmolality (threshold ~280 mOsm/kg) or decreased effective arterial blood volume (>7-10% volume depletion)",
+            "ADH binds V2 receptors on basolateral membrane of principal cells in the collecting duct, activating Gs-adenylyl cyclase-cAMP-PKA cascade, which phosphorylates aquaporin-2 (AQP2) water channels and traffics them to the apical membrane",
+            "Result: water reabsorption from tubular lumen into the hypertonic medullary interstitium, concentrating the urine (up to 1200 mOsm/kg) and diluting the plasma",
+            "Normal suppression: when plasma osmolality falls below ~280 mOsm/kg, ADH is suppressed to undetectable levels, AQP2 channels are internalized, collecting duct becomes water-impermeable, and urine dilutes maximally to ~50 mOsm/kg",
+            "Daily obligate solute load is ~600-900 mOsm. Maximum urine dilution = 50 mOsm/kg. Therefore max daily free water excretion = 600/50 = 12 L. This is why it takes enormous water intake (>12-15 L/day) to cause hyponatremia in a normal person — the kidney's diluting capacity is massive when ADH is appropriately suppressed"
           ],
-          "teaching_pearl": "The natriuresis in SIADH occurs because the body prioritizes volume homeostasis over osmotic homeostasis - it sacrifices sodium to get rid of excess water.",
-          "board_tip": "SIADH criteria: euvolemic + serum osm 100 + UNa >30 + normal thyroid/adrenal function"
+          "teaching_pearl": "The countercurrent multiplier (loop of Henle) creates the medullary gradient, but ADH is the gatekeeper that determines whether the collecting duct 'uses' that gradient to reabsorb water. Without ADH, water passes right through to the bladder.",
+          "board_tip": "A urine osmolality less than 100 mOsm/kg in hyponatremia indicates appropriately suppressed ADH — think primary polydipsia or low solute intake (beer potomania, tea-and-toast diet). If urine osm is greater than 100, ADH is active and inappropriately so given the low serum osm."
         },
         {
-          "heading": "Furst Ratio: Predicting Fluid Restriction Response",
-          "minutes": "2 min",
+          "heading": "SIADH Pathophysiology — What Goes Wrong",
+          "minutes": "3 min",
           "points": [
-            "Furst formula: (Urine [Na + K]) / Serum [Na] - predicts whether fluid restriction will be effective",
-            "Physiologic basis: Compares electrolyte-free water clearance to total body water distribution - if urine is more concentrated with electrolytes than serum, fluid restriction paradoxically worsens hyponatremia",
-            "Interpretation: Ratio >1.0 → fluid restriction will NOT work (urine osmolyte concentration exceeds serum) → need active treatment with tolvaptan or hypertonic saline",
-            "Ratio <1.0 → fluid restriction may be effective (net free water excretion possible)",
-            "Clinical application: Calculate before starting conservative management to avoid treatment failure and delay"
+            "SIADH = continued ADH secretion despite low plasma osmolality and euvolemia. ADH is 'inappropriate' because neither osmotic nor hemodynamic stimuli justify its release",
+            "Step 1 — Water retention: persistent AQP2 insertion causes free water reabsorption, expanding total body water by 2-3 L. This dilutes all solutes, producing hypotonic hyponatremia",
+            "Step 2 — Volume expansion triggers 'escape from antidiuresis': the mild ECF expansion activates natriuretic peptides (ANP/BNP), suppresses RAAS and aldosterone, and increases renal perfusion pressure. This causes brisk natriuresis (UNa typically >30-40 mEq/L) and maintains clinically euvolemic appearance (no edema, no JVD)",
+            "Step 3 — New steady state: the patient reaches a new lower set-point for serum Na. Ongoing water retention is balanced by natriuresis. But the kidney continues to concentrate urine inappropriately, limiting free water excretion",
+            "Key lab signature per KDIGO: serum osmolality 100 mOsm/kg (usually >300), urine sodium >30 mEq/L, clinically euvolemic, normal thyroid and adrenal function, no diuretic use",
+            "Common etiologies by category: CNS (stroke, SAH, meningitis, TBI), pulmonary (pneumonia, TB, small cell lung cancer), drugs (SSRIs, carbamazepine, cyclophosphamide, oxytocin, opioids, NSAIDs, MDMA), post-surgical pain/nausea (potent ADH stimuli)"
           ],
-          "teaching_pearl": "Think of Furst ratio as asking: 'Is the kidney able to excrete electrolyte-free water?' If not (>1.0), restriction won't help.",
-          "board_tip": "Furst ratio >1.0 predicts fluid restriction failure - proceed directly to tolvaptan or hypertonic saline per KDIGO 2024"
+          "teaching_pearl": "The natriuresis in SIADH is a COMPENSATION for mild volume expansion — it is NOT the primary problem. This is why UNa >30 is part of the diagnostic criteria and why giving normal saline to SIADH patients can paradoxically worsen hyponatremia (the kidney retains the water and excretes the salt).",
+          "board_tip": "Hypothyroidism and adrenal insufficiency both mimic SIADH. Cortisol deficiency causes ADH release via loss of cortisol's tonic inhibition on ADH AND via decreased cardiac output causing hypovolemic ADH stimulation. Always check TSH and morning cortisol (or cosyntropin stim test) before diagnosing SIADH."
         },
         {
-          "heading": "Treatment Approach: Correction Rate and DDAVP Clamp",
+          "heading": "The Furst (Electrolyte-Free Water Clearance) Ratio — Predicting Fluid Restriction Response",
           "minutes": "2-3 min",
           "points": [
-            "Correction rate per KDIGO 2024: ≤8 mEq/L in 24h to prevent osmotic demyelination syndrome (ODS) - particularly critical in chronic hyponatremia where brain has adapted",
-            "Mild symptoms (Na 125-135): Fluid restriction 800-1000 mL/day if Furst <1.0, otherwise tolvaptan 15mg daily",
-            "Severe symptoms (Na <125 or neurologic): 3% hypertonic saline 1-2 mL/kg/h targeting 4-6 mEq rise in first 6h, then slower correction",
-            "DDAVP clamp technique: If overcorrection occurs (>10 mEq rise), give DDAVP 2-4 mcg IV + D5W to prevent further rise - allows controlled re-lowering",
-            "Tolvaptan mechanism: V2 receptor antagonist → blocks ADH effect on AQP2 → aquaresis (electrolyte-free water loss) → gradual Na correction"
+            "The Furst formula: Ratio = (Urine [Na] + Urine [K]) / Serum [Na]. This estimates the tonicity of the urine relative to serum and predicts whether the kidney is generating or retaining electrolyte-free water",
+            "Ratio < 0.5: urine is very dilute relative to serum. The kidney is excreting substantial free water. Fluid restriction will work easily. Restrict to <1.5 L/day",
+            "Ratio 0.5–1.0: urine has intermediate tonicity. Fluid restriction may work but must be aggressive (<1 L/day). Clinical response should be monitored closely at 24-48 hours",
+            "Ratio > 1.0: urine is MORE concentrated than serum in terms of effective osmoles. Every liter of urine excreted actually returns NET free water to the body. Fluid restriction WILL NOT WORK — you are generating free water with every liter of urine produced. Must escalate therapy",
+            "Mechanistic explanation: if urine [Na+K] = 180 mEq/L and serum Na = 130 mEq/L, ratio = 1.38. For every 1L of urine excreted, the kidney removes 180 mEq of monovalent cations but only 130 mEq-worth of tonicity was 'dissolved' in 1L of plasma. The extra water is retained — net free water gain of ~280 mL per liter of urine",
+            "Per KDIGO hyponatremia guidance: calculate the Furst ratio at baseline to guide therapy selection. If ratio >1, proceed directly to salt tablets + loop diuretics, urea, or vaptans rather than wasting 48 hours on failed fluid restriction"
           ],
-          "teaching_pearl": "DDAVP clamp is like putting on the brakes - it stops overcorrection by temporarily restoring ADH effect while you titrate water replacement.",
-          "board_tip": "Chronic hyponatremia (>48h) has highest ODS risk with rapid correction - always correct ≤8 mEq/24h per KDIGO 2024"
+          "teaching_pearl": "Think of the Furst ratio as answering one question: 'Is the kidney working FOR you or AGAINST you?' If >1, the kidney is making things worse with every drop of urine. Normal saline (Na 154 mEq/L) in SIADH with high urine osmolality can worsen hyponatremia for the same reason — the kidney retains the water and excretes the sodium, generating net free water.",
+          "board_tip": "Classic board question: patient with SIADH is started on fluid restriction and Na does not improve after 48 hours. Urine Na is 90, urine K is 60, serum Na is 125. Furst ratio = (90+60)/125 = 1.2 — ratio >1 explains the failure. Next step: add oral salt tabs with furosemide (furosemide disrupts the medullary gradient, lowers urine osm, and increases free water excretion) OR oral urea 15-30g/day OR consider tolvaptan."
         },
         {
-          "heading": "Clinical Integration and Monitoring",
-          "minutes": "2 min",
+          "heading": "Treatment Algorithm & Safe Correction",
+          "minutes": "2-3 min",
           "points": [
-            "SIADH etiologies: CNS (stroke, infection, trauma), pulmonary (pneumonia, cancer), medications (SSRIs, carbamazepine, PPIs), malignancy (lung, pancreas)",
-            "Monitoring strategy: Check Na q6h during active correction, daily weights, neurologic exam for ODS signs (dysarthria, dysphagia, movement disorders)",
-            "Treatment endpoints: Target Na 130-135 mEq/L (not normal) - overly aggressive correction increases ODS risk without added benefit",
-            "Long-term management: Address underlying cause, consider chronic tolvaptan if recurrent, monitor for hepatotoxicity with V2 antagonists"
+            "SEVERITY TRIAGE: Severe symptoms (seizures, obtundation) = hypertonic saline 3% NaCl bolus 100-150 mL IV over 10-20 min, repeat up to 3 times if needed. Goal: raise Na by 4-6 mEq/L in first 6 hours to relieve brain herniation risk. This is an emergency regardless of the Furst ratio",
+            "SAFE CORRECTION LIMIT per KDIGO: no more than 8 mEq/L in any 24-hour period to avoid osmotic demyelination syndrome (ODS). High-risk for ODS: serum Na 48h, alcoholism, malnutrition, hypokalemia, liver disease",
+            "CHRONIC/MILD-MODERATE SIADH — stepwise per Furst ratio: Step 1: calculate ratio. If 1, skip to Step 2. Step 2: oral NaCl tabs 3-6g/day + furosemide 20-40mg (furosemide inhibits NKCC2 in thick ascending limb, washes out medullary gradient, reduces maximal urine concentration, thereby lowering urine osm and converting the Furst ratio to 30 days, avoid in liver disease (TEMPO 3:3 liver toxicity signal)",
+            "DDAVP CLAMP STRATEGY for overcorrection: if Na rises >8 in 24h, give DDAVP 1-2 mcg IV/SQ q8h to stop free water excretion, then infuse D5W to bring Na back down. This 'clamps' the kidney and gives you precise control. Modern proactive strategy: give DDAVP 1-2 mcg at the START of 3% NaCl treatment to prevent unpredictable aquaresis when the SIADH stimulus resolves",
+            "ADDRESSING THE UNDERLYING CAUSE is always paramount: discontinue offending drugs (SSRIs are the most common culprit in outpatients), treat infections, resect tumors. SIADH from drugs typically resolves within 2-4 weeks of discontinuation"
           ],
-          "teaching_pearl": "Don't chase normal sodium - getting to 130 mEq/L eliminates symptoms while minimizing ODS risk.",
-          "board_tip": "Classic board scenario: Patient with lung cancer + hyponatremia + high urine osmolality = paraneoplastic SIADH"
+          "teaching_pearl": "Furosemide in SIADH is counterintuitive — a diuretic for hyponatremia? But the mechanism is elegant: by blocking NKCC2, you destroy the medullary concentration gradient, so even though ADH is still present and AQP2 channels are inserted, there is no osmotic gradient to drive water reabsorption. Urine osmolality drops toward isotonic (~300 mOsm/kg), which lowers the Furst ratio.",
+          "board_tip": "ODS (osmotic demyelination syndrome, formerly central pontine myelinolysis) presents 2-6 DAYS after overcorrection with dysarthria, dysphagia, quadriparesis, locked-in syndrome. MRI shows T2 hyperintensity in central pons (but may be normal in first 48h). Prevention is everything — always calculate your correction rate q4-6h. If you overshoot, DDAVP clamp + D5W immediately."
         }
       ],
       "summary_points": [
-        "SIADH results from inappropriate ADH → AQP2-mediated water retention → dilutional hyponatremia with compensatory natriuresis",
-        "Furst ratio >1.0 predicts fluid restriction failure - proceed to active treatment per KDIGO 2024",
-        "Correct ≤8 mEq/24h to prevent osmotic demyelination syndrome, especially in chronic cases",
-        "DDAVP clamp prevents overcorrection by temporarily restoring ADH effect during hypertonic saline therapy"
+        "SIADH = inappropriate ADH → AQP2 insertion → water retention → dilutional hyponatremia. The kidney compensates with natriuresis (UNa >30), maintaining clinical euvolemia",
+        "Diagnose SIADH: low serum osm, urine osm >100, UNa >30, euvolemic, normal thyroid/adrenal. Rule out hypothyroidism and cortisol deficiency first",
+        "Furst ratio = (UNa + UK) / serum Na: if >1, fluid restriction alone will FAIL — the kidney generates net free water with each liter of urine. Escalate to salt tabs + furosemide, oral urea, or tolvaptan",
+        "Correct Na no more than 8 mEq/L per 24 hours (KDIGO). Use DDAVP clamp + D5W for overcorrection. High ODS risk: chronic hyponatremia, Na <105, alcoholism, hypokalemia, malnutrition, liver disease",
+        "Severe symptoms (seizures, coma) = 3% NaCl 100-150 mL IV bolus immediately, regardless of other considerations"
       ],
       "visual_memory_card": {
-        "top_left": "ADH → V2 receptor → cAMP → AQP2 insertion → H2O retention",
-        "top_right": "SIADH criteria: Euvolemic + Low serum osm + UNa >30",
-        "bottom_left": "Furst ratio = U(Na+K)/S(Na) >1.0 = fluid restriction fails",
-        "bottom_right": "Correct ≤8 mEq/24h DDAVP clamp if overcorrection",
-        "center": "SIADH: Inappropriate ADH despite low osmolality"
+        "top_left": "SIADH Labs: Serum osm 100, UNa >30, Euvolemic",
+        "top_right": "Furst Ratio = (UNa + UK) / Serum Na 1.0 = fluid restriction FAILS",
+        "bottom_left": "Stepwise Tx: 1) Fluid restrict (if ratio <1) → 2) NaCl tabs + furosemide → 3) Oral urea → 4) Tolvaptan",
+        "bottom_right": "Safe correction ≤8 mEq/24h Overcorrection rescue: DDAVP clamp + D5W ODS risk: chronic, Na<105, EtOH, low K, liver dz",
+        "center": "Furst >1 = kidney AGAINST you (every liter of urine = net free water GAIN)"
       }
     },
     "guideline_sources": [
@@ -578,75 +583,91 @@ var SAMPLES = [
     "style": "lecture",
     "specialty": "Cardiovascular",
     "talk": {
-      "title": "Heart Failure with Reduced Ejection Fraction",
-      "subtitle": "Four-Pillar Guideline-Directed Medical Therapy (GDMT)",
+      "title": "HFrEF: The 4-Pillar GDMT",
+      "subtitle": "Mechanistic Rationale, Clinical Implementation, and Rapid Initiation Strategy per 2022 AHA/ACC/HFSA Guidelines",
       "guideline_sources": [
-        "2022 AHA/ACC/HFSA Heart Failure Guidelines"
+        "2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure",
+        "PARADIGM-HF (2014)",
+        "DAPA-HF (2019)",
+        "EMPEROR-Reduced (2020)",
+        "RALES (1999)",
+        "EMPHASIS-HF (2011)",
+        "COPERNICUS (2001)",
+        "MERIT-HF (1999)"
       ],
       "sections": [
         {
-          "heading": "Pathophysiology & Neurohormonal Activation",
-          "minutes": "3 min",
+          "heading": "Pathophysiology: The Neurohormonal Storm That Kills the Failing Heart",
+          "minutes": "3-4 min",
           "points": [
-            "HFrEF (EF ≤40%) triggers compensatory mechanisms: RAAS activation releases angiotensin II → vasoconstriction, aldosterone secretion, sodium retention, myocardial fibrosis",
-            "Sympathetic nervous system activation releases norepinephrine → increased heart rate, contractility, but also myocyte apoptosis and arrhythmogenesis",
-            "Natriuretic peptide system (BNP/NT-proBNP) provides counter-regulation via vasodilation and diuresis, but becomes overwhelmed in advanced HF",
-            "Myocardial remodeling: progressive LV dilation, wall thinning, spherical geometry change reduces pump efficiency via Frank-Starling mechanism",
-            "Metabolic dysfunction: impaired glucose utilization, mitochondrial dysfunction, oxidative stress contribute to progressive contractile failure"
+            "Core lesion: reduced stroke volume triggers baroreceptor unloading and renal hypoperfusion, activating two lethal neurohormonal axes — the sympathetic nervous system (SNS) and the renin-angiotensin-aldosterone system (RAAS)",
+            "SNS activation: increased norepinephrine causes beta-1-mediated myocyte apoptosis, calcium overload, arrhythmogenesis, and alpha-1-mediated afterload elevation; chronic catecholamine exposure downregulates beta-1 receptors and uncouples signaling — the failing heart becomes catecholamine-toxic",
+            "RAAS activation: angiotensin II causes vasoconstriction, aldosterone secretion (sodium retention, potassium wasting, myocardial fibrosis via collagen deposition), and direct cardiac remodeling through AT1 receptor-mediated hypertrophy signaling (MAPK, TGF-beta pathways)",
+            "Aldosterone independently promotes endothelial dysfunction, vascular inflammation, and perivascular fibrosis — effects NOT fully blocked by ACE inhibitors due to aldosterone escape (non-ACE-dependent aldosterone production rises over weeks)",
+            "Natriuretic peptide (NP) system is the body's counterregulatory defense: BNP and ANP cause vasodilation, natriuresis, suppress RAAS and SNS, and have anti-fibrotic and anti-hypertrophic effects — BUT neprilysin degrades them, shortening their half-life and blunting their protective effects",
+            "SGLT2 context: the failing heart is energy-starved, relying on inefficient glucose oxidation; ketone bodies (beta-hydroxybutyrate) are a more efficient fuel (higher ATP per oxygen consumed); SGLT2 inhibitors shift metabolism toward ketogenesis, improve myocardial energetics, reduce preload via osmotic diuresis/natriuresis, and suppress inflammatory and fibrotic pathways (NLRP3 inflammasome inhibition, reduced interstitial fibrosis)",
+            "Net result without treatment: progressive ventricular dilation (eccentric remodeling), worsening mitral regurgitation, falling EF, congestion, arrhythmia, and death — each neurohormonal axis accelerates the others in a vicious cycle"
           ],
-          "teaching_pearl": "The four pillars target the three main pathways: RAAS blockade (ARNi/ACEi + MRA), sympathetic blockade (beta-blocker), and metabolic support (SGLT2i)",
-          "board_tip": "Remember that neurohormonal activation is initially compensatory but becomes maladaptive - this is why blocking these systems improves outcomes"
+          "teaching_pearl": "HFrEF mortality is driven by neurohormonal toxicity, not just pump failure. This is why inotropes (which increase cAMP and catecholamine signaling) increase mortality, while neurohormonal blockers save lives despite sometimes lowering blood pressure and heart rate.",
+          "board_tip": "If a question asks why digoxin reduces hospitalizations but NOT mortality in HFrEF (DIG trial), the answer is that it does not block the neurohormonal axis — it is an inotrope/vagotonic, not a disease-modifying agent. All four GDMT pillars modify the neurohormonal storm."
         },
         {
-          "heading": "Four-Pillar GDMT: Mechanisms & Evidence",
-          "minutes": "3 min",
+          "heading": "The 4 Pillars: Drug Classes, Mechanisms, and Landmark Evidence",
+          "minutes": "3-4 min",
           "points": [
-            "Pillar 1 - ARNi (sacubitril/valsartan) preferred over ACEi/ARB: neprilysin inhibition increases natriuretic peptides while AT1 blockade prevents angiotensin II effects. PARADIGM-HF showed 20% relative reduction in CV death/HF hospitalization vs enalapril",
-            "Pillar 2 - Beta-blockers (metoprolol succinate, carvedilol, bisoprolol): block sympathetic overstimulation, reduce heart rate allowing better diastolic filling, prevent arrhythmias, reverse remodeling",
-            "Pillar 3 - MRAs (spironolactone/eplerenone): aldosterone receptor antagonism reduces fibrosis, prevents potassium/magnesium wasting, improves endothelial function independent of RAAS blockade",
-            "Pillar 4 - SGLT2 inhibitors (dapagliflozin, empagliflozin): mechanisms include mild diuresis, improved myocardial energetics, reduced inflammation, direct cardioprotection. DAPA-HF and EMPEROR-Reduced showed benefit regardless of diabetes status"
+            "PILLAR 1 — ARNi (sacubitril/valsartan) or ACEi/ARB: Sacubitril inhibits neprilysin, increasing endogenous BNP/ANP levels (vasodilation, natriuresis, anti-fibrotic effects); valsartan blocks AT1 receptors. PARADIGM-HF (2014): sacubitril/valsartan vs enalapril reduced CV death or HF hospitalization by 20% (HR 0.80), with significant reduction in sudden death. Per 2022 AHA/ACC/HFSA: ARNi is preferred over ACEi/ARB (Class I). Requires 36-hour washout from ACEi before starting ARNi to prevent angioedema (overlapping bradykinin potentiation)",
+            "PILLAR 2 — Evidence-based beta-blocker (carvedilol, metoprolol succinate, bisoprolol ONLY): Block toxic beta-1-mediated effects — reduce myocyte apoptosis, suppress arrhythmia, allow beta-receptor re-sensitization, and lower myocardial oxygen demand. MERIT-HF (metoprolol succinate): 34% mortality reduction. COPERNICUS (carvedilol): 35% mortality reduction even in severe HF (NYHA IV). Carvedilol additionally blocks alpha-1 (afterload reduction) and has antioxidant properties. Start low, titrate slowly — must be euvolemic first. Do NOT use in acutely decompensated wet HF",
+            "PILLAR 3 — MRA (spironolactone or eplerenone): Blocks aldosterone at the mineralocorticoid receptor — prevents myocardial and vascular fibrosis, reduces potassium wasting, counters aldosterone escape. RALES (1999): spironolactone in severe HF (NYHA III-IV) reduced mortality 30%. EMPHASIS-HF (2011): eplerenone in mild HF (NYHA II) reduced CV death/HF hospitalization 37%. Eplerenone is selective (no anti-androgen effects — avoids gynecomastia). Monitor potassium and creatinine closely — contraindicated if K >5.0 or eGFR <30",
+            "PILLAR 4 — SGLT2 inhibitor (dapagliflozin or empagliflozin): Benefits independent of diabetes status. Mechanisms: osmotic diuresis/natriuresis (preload reduction), improved myocardial energetics via ketone body utilization, reduced cardiac fibrosis, NLRP3 inflammasome suppression, improved endothelial function. DAPA-HF (2019): dapagliflozin reduced CV death/worsening HF by 26% (HR 0.74) regardless of diabetes. EMPEROR-Reduced (2020): empagliflozin reduced CV death/HF hospitalization by 25%. Benefits additive to other 3 pillars. Fewest hemodynamic barriers — no significant effect on heart rate or BP; well-tolerated even without uptitration",
+            "Combined mortality reduction: all 4 pillars together estimated to reduce 2-year mortality by approximately 73% compared to placebo (extrapolated from trials) — no single drug achieves this; the benefit is synergistic because each targets a different node of the neurohormonal cascade"
           ],
-          "teaching_pearl": "Start all four pillars together at low doses rather than sequentially - the 2022 guidelines emphasize simultaneous initiation and rapid uptitration",
-          "board_tip": "SGLT2i benefit in HFrEF is independent of diabetes status - this was the paradigm shift from DAPA-HF and EMPEROR-Reduced trials"
+          "teaching_pearl": "Only 3 beta-blockers have HFrEF mortality data: carvedilol, metoprolol SUCCINATE (not tartrate), and bisoprolol. Boards love testing this — metoprolol tartrate is NOT interchangeable. Similarly, not all ACEi/ARBs are validated, but as a class they are accepted; however, ARNi is now preferred.",
+          "board_tip": "SGLT2i is the easiest pillar to initiate: no titration needed, minimal BP effect, works regardless of diabetes status. Boards may present a newly diagnosed HFrEF patient — per 2022 AHA/ACC/HFSA, the recommendation is to start all 4 pillars simultaneously or in rapid sequence (not sequentially over months). SGLT2i and low-dose beta-blocker can be started on day 1."
         },
         {
-          "heading": "Implementation Strategy & Monitoring",
+          "heading": "Implementation Strategy: Start Together, Titrate Fast, Add Adjuncts",
           "minutes": "2-3 min",
           "points": [
-            "Initiation: Start all four pillars at first visit if no contraindications. Begin with low doses: ARNi 24/26mg BID, metoprolol succinate 12.5-25mg daily (or carvedilol 3.125-6.25mg BID), spironolactone 12.5-25mg daily, SGLT2i full dose",
-            "Titration schedule: Increase doses every 1-2 weeks as tolerated to maximum evidence-based doses. Target ARNi 97/103mg BID, metoprolol succinate 190-200mg daily (or carvedilol 25mg BID), spironolactone 25-50mg daily",
-            "Monitoring parameters: Check BUN/creatinine, potassium within 1-2 weeks of initiation/dose changes. Hold ACEi/ARB/ARNi if creatinine increases >30% from baseline or K+ >5.5 mEq/L",
-            "Special considerations: ARNi requires 36-hour ACEi washout to prevent angioedema. SGLT2i may cause transient eGFR dip but continue if <30% decrease. Monitor for UTIs and euglycemic diabetic ketoacidosis"
+            "2022 AHA/ACC/HFSA paradigm shift: initiate all 4 pillars as quickly as possible, ideally within first 1-4 weeks of diagnosis, rather than sequential add-on over months. Rationale: mortality reduction begins within weeks of initiation; delaying any pillar costs lives",
+            "Practical initiation order if hemodynamics constrain simultaneous start: (1) SGLT2i — easiest, no titration; (2) low-dose beta-blocker — if not volume-overloaded; (3) low-dose ARNi (or ACEi if ARNi not available); (4) low-dose MRA. Titrate each to target dose every 1-2 weeks as tolerated",
+            "Target doses matter: PARADIGM-HF used sacubitril/valsartan 97/103 mg BID; MERIT-HF used metoprolol succinate 200 mg daily; EMPHASIS-HF used eplerenone 50 mg daily. Partial dosing provides partial benefit, but target doses are the goal",
+            "Blood pressure management: tolerate SBP down to 90 mmHg if asymptomatic. Reduce or eliminate non-GDMT vasodilators (amlodipine, hydralazine) before reducing GDMT doses. Stagger dosing times if symptomatic hypotension",
+            "Potassium and renal monitoring: check BMP within 1-2 weeks of starting ARNi and MRA. Mild creatinine rise (up to 30%) is expected and acceptable with RAAS blockade — do not reflexively discontinue. SGLT2i may cause initial eGFR dip (hemodynamic, not structural) that stabilizes",
+            "Key adjunctive therapies per 2022 guidelines: IV iron for iron deficiency (ferritin <100 or ferritin 100-300 with TSAT <20%) per AFFIRM-AHF — improves functional capacity and reduces HF hospitalization. Hydralazine/isosorbide dinitrate specifically for self-identified Black patients who remain symptomatic on standard GDMT (A-HeFT trial). Loop diuretics for congestion — NOT disease-modifying, used for symptom control only",
+            "Device therapy: ICD for primary prevention if EF remains =3 months of optimized GDMT (must re-assess EF — some patients improve). CRT if EF =150 ms, and NYHA II-IV on GDMT"
           ],
-          "teaching_pearl": "Don't let small increases in creatinine or potassium stop you from optimizing therapy - these are often transient and the mortality benefit outweighs risks",
-          "board_tip": "Maximum tolerated dose is more important than target dose - some benefit is better than none, and even partial doses provide mortality benefit"
+          "teaching_pearl": "Loop diuretics are the most commonly used HF drug but have ZERO mortality benefit. They are for symptom relief only. Never count furosemide as GDMT. A common board trap is a patient on high-dose furosemide and digoxin but not on any of the 4 pillars — the answer is always to add GDMT.",
+          "board_tip": "For boards: a patient with HFrEF EF 30% on all 4 pillars with persistent symptoms and EF =150 ms — the next best step is CRT-D, not further medication changes. Also, reassess EF at 3 months before ICD implantation — some patients with new-onset HFrEF recover EF with GDMT and no longer need a device."
         },
         {
-          "heading": "Additional Evidence-Based Therapies",
-          "minutes": "2 min",
+          "heading": "Special Scenarios and High-Yield Board Pearls",
+          "minutes": "1-2 min",
           "points": [
-            "IV iron therapy: For iron deficiency (ferritin <100 or ferritin 100-299 with TSAT <20%) improves symptoms and reduces hospitalizations per AFFIRM-AHF trial. Give ferric carboxymaltose IV",
-            "Device therapy: ICD for primary prevention if EF ≤35% on optimal medical therapy >3 months and life expectancy >1 year. CRT-D if EF ≤35%, LBBB ≥120ms, sinus rhythm",
-            "Diuretics for volume management: Loop diuretics (furosemide, torsemide) for symptom relief but no mortality benefit. Titrate to euvolemia, monitor electrolytes and kidney function",
-            "Additional considerations: Avoid NSAIDs, non-dihydropyridine CCBs (diltiazem, verapamil), thiazolidinediones. Annual influenza and pneumococcal vaccines. Cardiac rehabilitation referral"
+            "ACEi to ARNi switch: mandatory 36-hour washout to avoid angioedema. ARNi inhibits neprilysin (which degrades bradykinin), and ACEi also raises bradykinin — combined effect causes dangerous angioedema. Boards test this washout period repeatedly",
+            "Contraindication to ARNi/ACEi/ARB: bilateral renal artery stenosis (entire renal perfusion depends on efferent arteriolar constriction by angiotensin II), history of angioedema, pregnancy. Use hydralazine/isosorbide dinitrate as alternative",
+            "HFrEF with concurrent atrial fibrillation: beta-blocker primarily for rate control; CASTLE-AF and CABANA support catheter ablation for symptomatic AF in HFrEF (improved outcomes vs medical therapy). Anticoagulate with DOAC per CHA2DS2-VASc (per 2023 ACC/AHA AF guidelines)",
+            "HFrEF and diabetes: SGLT2i preferred diabetes agent given dual cardiorenal benefit. Avoid thiazolidinediones (fluid retention worsens HF). Metformin is safe in stable HF",
+            "Hyperkalemia limiting MRA or ARNi: use patiromer or sodium zirconium cyclosilicate as potassium binders to enable continued GDMT rather than discontinuing life-saving medications",
+            "HFrEF in Black patients: A-HeFT demonstrated mortality benefit of hydralazine/isosorbide dinitrate added to standard GDMT — this is a 5th agent ON TOP of the 4 pillars, not a substitute"
           ],
-          "teaching_pearl": "IV iron improves functional capacity even when hemoglobin is normal - it's about iron stores, not anemia correction",
-          "board_tip": "Remember that diuretics treat symptoms but don't improve survival - the four pillars are what provide the mortality benefit in HFrEF"
+          "teaching_pearl": "The reason ARNi cannot be given with ACEi simultaneously is molecular: both raise bradykinin through different mechanisms (neprilysin inhibition and ACE inhibition), and the combined effect causes catastrophic angioedema. The 36-hour washout allows ACEi-related bradykinin levels to normalize before adding the neprilysin inhibitor.",
+          "board_tip": "High-yield board question: a patient on enalapril with HFrEF — you want to switch to sacubitril/valsartan. The answer is STOP enalapril, wait 36 hours, THEN start ARNi. If the question offers valsartan as an intermediate step, that is incorrect — no washout is needed from ARB to ARNi (same AT1 receptor mechanism, no bradykinin overlap)."
         }
       ],
       "summary_points": [
-        "HFrEF four-pillar GDMT per 2022 AHA/ACC/HFSA: ARNi (preferred) or ACEi/ARB + beta-blocker + MRA + SGLT2i",
-        "Start all four pillars simultaneously at low doses, then rapidly uptitrate every 1-2 weeks to maximum evidence-based or maximum tolerated doses",
-        "Each pillar targets specific pathophysiology: ARNi blocks RAAS + enhances natriuretic peptides, beta-blockers block sympathetic activation, MRA prevents aldosterone effects, SGLT2i provides metabolic/cardioprotective benefits",
-        "Monitor renal function and electrolytes closely but don't stop therapy for small, transient changes - mortality benefit outweighs risks",
-        "Add IV iron for iron deficiency, consider devices (ICD/CRT) for appropriate candidates, use diuretics only for volume management"
+        "HFrEF is a neurohormonal disease: SNS, RAAS, and aldosterone drive remodeling and death; natriuretic peptide degradation removes the body's counterregulatory defense",
+        "4 pillars each target a different node: ARNi (RAAS block + NP augmentation), beta-blocker (SNS block), MRA (aldosterone/fibrosis block), SGLT2i (energetics, preload, inflammation)",
+        "Per 2022 AHA/ACC/HFSA: initiate all 4 simultaneously or in rapid sequence — do not delay any pillar; titrate to target doses",
+        "Key landmark trials: PARADIGM-HF (ARNi), DAPA-HF and EMPEROR-Reduced (SGLT2i), RALES and EMPHASIS-HF (MRA), MERIT-HF and COPERNICUS (beta-blockers)",
+        "Adjuncts: IV iron for iron deficiency (AFFIRM-AHF), hydralazine/ISDN for Black patients (A-HeFT), ICD if EF =150 ms",
+        "Loop diuretics relieve congestion but do NOT reduce mortality — never substitute for GDMT"
       ],
       "visual_memory_card": {
-        "top_left": "ARNi > ACEi/ARB (PARADIGM-HF) Neprilysin inhibition + AT1 blockade",
-        "top_right": "Beta-Blockers Metoprolol Succinate/Carvedilol Reverse remodeling Reduce arrhythmias",
-        "center": "4-PILLAR GDMT for HFrEF Start together Titrate fast",
-        "bottom_left": "SGLT2 Inhibitors (DAPA-HF, EMPEROR-R) Benefit regardless of diabetes status",
-        "bottom_right": "MRA Spironolactone Anti-fibrotic K+/Mg+ sparing"
+        "top_left": "ARNi (PARADIGM-HF): Block RAAS + Boost NP → 20% CV death/HHF reduction",
+        "top_right": "Beta-blocker (MERIT-HF, COPERNICUS): Block SNS toxicity → 34% mortality reduction",
+        "bottom_left": "MRA (RALES, EMPHASIS-HF): Block aldosterone/fibrosis → 30% mortality reduction",
+        "bottom_right": "SGLT2i (DAPA-HF, EMPEROR-Reduced): Ketone fuel + preload reduction → 26% CV death/HF reduction",
+        "center": "4 PILLARS TOGETHER: ~73% relative mortality reduction. Start all early, titrate to target. (2022 AHA/ACC/HFSA)"
       }
     },
     "guideline_sources": [
@@ -748,76 +769,74 @@ var SAMPLES = [
     "style": "lecture",
     "specialty": "GI/Hepatology",
     "talk": {
-      "title": "Cirrhosis Complications",
-      "subtitle": "Portal Hypertension & Hepatocellular Dysfunction Sequelae",
+      "title": "Complications of Cirrhosis",
+      "subtitle": "A Mechanistic Approach to Portal Hypertension and Hepatic Failure",
       "guideline_sources": [
-        "AASLD 2021 Cirrhosis Guidelines",
-        "AASLD 2024 Ascites/AKI Guidelines"
+        "AASLD 2021 Practice Guidance on Cirrhosis",
+        "AASLD 2024 Guidance on Ascites and AKI",
+        "EASL 2018 Clinical Practice Guidelines on Decompensated Cirrhosis",
+        "CONFIRM Trial (2021) – Terlipressin in HRS-AKI",
+        "Sort Trial (1999) – Albumin in SBP"
       ],
       "sections": [
         {
-          "heading": "Portal Hypertension Physiology & Ascites",
+          "heading": "Pathophysiology: The Portal Hypertension Cascade",
+          "minutes": "3-4 min",
+          "points": [
+            "STRUCTURAL COMPONENT: Hepatic fibrosis and regenerative nodules distort sinusoidal architecture, increasing intrahepatic vascular resistance; activated hepatic stellate cells (myofibroblasts) contract around sinusoids, further raising resistance",
+            "FUNCTIONAL COMPONENT: Intrahepatic endothelial dysfunction causes decreased nitric oxide (NO) production and increased endothelin-1/thromboxane A2 within the liver, creating a vasoconstricted intrahepatic bed — this is the OPPOSITE of what happens in the splanchnic circulation",
+            "SPLANCHNIC VASODILATION: Portal hypertension triggers upregulation of splanchnic eNOS and excess NO production in the mesenteric vasculature, leading to arteriolar vasodilation, decreased effective arterial blood volume (EABV), and activation of compensatory systems: RAAS, sympathetic nervous system, and non-osmotic ADH release",
+            "HYPERDYNAMIC CIRCULATION: To compensate for decreased EABV, cardiac output increases and SVR decreases — this is the 'peripheral arterial vasodilation hypothesis' (Schrier 1988) that unifies ascites, HRS, and dilutional hyponatremia",
+            "PORTAL PRESSURE GRADIENT: Normal HVPG is 1-5 mmHg; varices form at HVPG greater than or equal to 10 mmHg (clinically significant portal hypertension); variceal bleeding risk becomes significant at HVPG greater than or equal to 12 mmHg",
+            "BACTERIAL TRANSLOCATION: Intestinal mucosal edema from portal hypertension plus gut dysmotility and bacterial overgrowth facilitate translocation of gram-negative organisms into mesenteric lymph nodes and ascitic fluid — the pathogenic basis of SBP"
+          ],
+          "teaching_pearl": "The fundamental paradox of cirrhosis: the liver is VASOCONSTRICTED (low intrahepatic NO) while the splanchnic bed is VASODILATED (high splanchnic NO). This single concept explains why TIPS works (bypasses intrahepatic resistance) and why vasoconstrictors work in HRS (constrict the dilated splanchnic bed).",
+          "board_tip": "HVPG thresholds are high-yield: greater than or equal to 10 mmHg = clinically significant portal HTN and variceal formation; greater than or equal to 12 mmHg = variceal bleeding risk; reduction to less than 12 mmHg or greater than 20% decrease from baseline with NSBB = protective against first bleed."
+        },
+        {
+          "heading": "Major Complications: Presentation, Workup, and Mechanistic Links",
+          "minutes": "3-4 min",
+          "points": [
+            "ASCITES (most common decompensation): Splanchnic vasodilation reduces EABV leading to renal sodium retention via RAAS activation and ADH-mediated free water retention causing dilutional hyponatremia; diagnostic paracentesis is mandatory for new ascites — obtain cell count, albumin (calculate SAAG), total protein, culture in blood culture bottles at bedside",
+            "SAAG greater than or equal to 1.1 g/dL confirms portal hypertension (97% accuracy); ascitic fluid total protein less than 1.5 g/dL indicates high SBP risk (low opsonin activity) and qualifies for primary SBP prophylaxis with norfloxacin or TMP-SMX",
+            "SBP: PMN count greater than or equal to 250 cells/mm3 in ascitic fluid — treat empirically with ceftriaxone or cefotaxime; DO NOT wait for culture; IV albumin 1.5 g/kg day 1 and 1 g/kg day 3 reduces renal failure and mortality (Sort trial 1999 — NNT of 5 to prevent one death)",
+            "VARICEAL HEMORRHAGE: Portal pressure greater than or equal to 12 mmHg causes variceal rupture; wall tension increases with variceal radius (Laplace law); management triad per AASLD 2021: (1) IV octreotide (splanchnic vasoconstriction reduces portal inflow), (2) IV ceftriaxone 1g daily x7 days (SBP prophylaxis — 30% of cirrhotics with GI bleed develop SBP), (3) EVL within 12 hours; Primary prophylaxis: nonselective beta-blockers (carvedilol preferred per AASLD) for medium-large varices",
+            "HEPATIC ENCEPHALOPATHY: Impaired hepatic urea cycle fails to clear gut-derived ammonia; ammonia crosses BBB, is taken up by astrocytes, converted to glutamine by glutamine synthetase, causing osmotic swelling (Alzheimer type II astrocytosis); treatment per AASLD: lactulose (titrate to 2-3 BMs/day — creates acidic colonic pH trapping NH4+, and osmotic catharsis reduces contact time) plus rifaximin for prevention of recurrence (reduces ammonia-producing gut flora without systemic absorption)",
+            "HEPATORENAL SYNDROME-AKI (HRS-AKI): The extreme manifestation of splanchnic vasodilation — profound decrease in EABV causes maximal RAAS/SNS activation and renal vasoconstriction; kidneys are structurally normal but critically underperfused; diagnosis requires: AKI meeting ICA criteria, no response to 48h of diuretic withdrawal + albumin challenge (1 g/kg/day x2 days, max 100g/day), absence of shock/nephrotoxins, no proteinuria/hematuria suggesting intrinsic disease",
+            "HCC SCREENING: Cirrhosis of any etiology warrants surveillance with abdominal ultrasound with or without AFP every 6 months per AASLD; annual HCC incidence is 1-6% depending on etiology (highest in viral hepatitis); CT/MRI with contrast for characterization using LI-RADS if screening abnormal"
+          ],
+          "teaching_pearl": "The Sort trial showed albumin in SBP is specifically beneficial when creatinine is greater than 1 mg/dL or BUN greater than 30 mg/dL or bilirubin greater than 4 mg/dL — these are patients at highest risk for SBP-related renal failure due to worsened effective hypovolemia from the inflammatory cascade.",
+          "board_tip": "Board favorite: A patient with cirrhosis and GI bleed who is NOT given prophylactic antibiotics has a 30-50% risk of developing a bacterial infection within 7 days. Ceftriaxone 1g IV daily for 7 days is STANDARD OF CARE alongside octreotide and EVL — always pick the answer that includes all three."
+        },
+        {
+          "heading": "Treatment: Guideline-Based Management and Transplant Considerations",
           "minutes": "3 min",
           "points": [
-            "Portal hypertension: HVPG >5mmHg from increased resistance (fibrosis/regenerative nodules) + splanchnic vasodilation (NO, prostacyclin). Clinically significant at >10mmHg",
-            "Ascites mechanism: Portal HTN → splanchnic vasodilation → effective arterial underfilling → RAAS/ADH activation → sodium/water retention. Hypoalbuminemia reduces oncotic pressure",
-            "Refractory ascites (10% of cases): >2 large-volume paracenteses/month or diuretic-intractable. TIPS indicated per AASLD 2024 - creates portosystemic shunt, reduces portal pressure",
-            "Spontaneous bacterial peritonitis: Bacterial translocation from gut due to altered immunity + increased permeability. Neutrophil count >250/μL diagnostic"
+            "ASCITES MANAGEMENT (AASLD 2024): First-line is sodium restriction (less than 2g/day) + spironolactone 100mg (start) with furosemide 40mg (100:40 ratio maintains normokalemia); titrate every 3-5 days to max spironolactone 400mg and furosemide 160mg; goal weight loss 0.5 kg/day without edema, 1 kg/day with edema",
+            "REFRACTORY ASCITES: Defined as diuretic-resistant (no response to max doses) or diuretic-intractable (complications prevent adequate dosing); options per AASLD 2024: serial large-volume paracentesis with albumin replacement (6-8 g per liter removed when draining greater than 5L) or TIPS (superior to LVP for ascites control, but contraindicated if MELD greater than 18, age greater than 70, HE history, cardiac dysfunction, or portal vein thrombosis)",
+            "HRS-AKI TREATMENT (AASLD 2024): First-line is IV albumin (20-40 g/day) + terlipressin (vasopressin V1 agonist that constricts the dilated splanchnic bed, restoring EABV and renal perfusion); CONFIRM trial (2021, NEJM): terlipressin vs placebo — verified HRS reversal in 32% vs 17% (p=0.006); CRITICAL safety signal: respiratory failure in 11% — avoid if baseline SpO2 less than 90% or serum creatinine greater than 5 mg/dL; alternative regimen: midodrine (alpha-1 agonist) + octreotide + albumin when terlipressin unavailable",
+            "TRANSPLANT PRIORITIZATION: MELD-Na score (bilirubin, INR, creatinine, sodium) determines organ allocation; sodium added because dilutional hyponatremia reflects severity of splanchnic vasodilation and portal HTN; every decompensating event should prompt transplant referral — 5-year survival of decompensated cirrhosis is only 20-50% vs greater than 70% post-transplant",
+            "NSBB CAUTION: Carvedilol/nadolol reduce portal pressure and prevent first variceal bleed and rebleeding; HOWEVER, in refractory ascites with SBP less than 90, mean arterial pressure less than 65, hyponatremia less than 120, AKI, or HRS — STOP nonselective beta-blockers (AASLD 2021) as they may worsen hemodynamics by suppressing the compensatory cardiac output increase (the 'window hypothesis')"
           ],
-          "teaching_pearl": "Portal pressure gradient drives all complications - varices form at HVPG >10mmHg, bleeding risk at >12mmHg",
-          "board_tip": "SBP treatment per AASLD: cefotaxime PLUS albumin (Sort trial showed mortality benefit with albumin - prevents hepatorenal syndrome)"
-        },
-        {
-          "heading": "Variceal Bleeding & Hepatorenal Syndrome",
-          "minutes": "2-3 min",
-          "points": [
-            "Varices: Portosystemic collaterals form when portal pressure >10mmHg. High-risk features: red wale marks, cherry-red spots, size >5mm. Bleeding occurs when wall tension exceeds strength",
-            "Acute variceal bleeding management per AASLD 2021: Octreotide (splanchnic vasoconstriction) + ceftriaxone (SBP prophylaxis) + EVL within 12 hours",
-            "Hepatorenal syndrome-AKI: Functional renal failure from severe renal vasoconstriction. Triggered by infection, bleeding, or large-volume paracentesis without albumin",
-            "HRS-AKI treatment: Albumin (volume expansion) + terlipressin (V1a receptor agonist causing splanchnic vasoconstriction). CONFIRM trial established terlipressin efficacy"
-          ],
-          "teaching_pearl": "HRS-AKI is prerenal azotemia on steroids - extreme renal vasoconstriction from portal hypertension-induced circulatory dysfunction",
-          "board_tip": "Terlipressin contraindicated in coronary artery disease due to coronary vasoconstriction - use norepinephrine as alternative"
-        },
-        {
-          "heading": "Hepatic Encephalopathy & Hepatocellular Carcinoma",
-          "minutes": "2-3 min",
-          "points": [
-            "HE pathophysiology: Portosystemic shunting bypasses hepatic detoxification → ammonia accumulation → astrocyte swelling → altered neurotransmission (GABA-ergic)",
-            "HE triggers: GI bleeding (protein load), infection, constipation, diuretics, sedatives. West Haven criteria grades 1-4",
-            "HE treatment per AASLD: Lactulose (acidifies colon, traps ammonia as NH4+) ± rifaximin (reduces ammonia-producing bacteria). Target 2-3 soft stools daily",
-            "HCC surveillance: US ± AFP every 6 months. Risk 2-4%/year in cirrhosis. Barcelona Clinic Liver Cancer staging guides treatment"
-          ],
-          "teaching_pearl": "Lactulose works by acidifying colon pH - ammonia (NH3) becomes protonated to NH4+ which cannot cross colon wall",
-          "board_tip": "MELD-Na score predicts 90-day mortality and determines transplant priority. Exception points given for HCC within Milan criteria"
-        },
-        {
-          "heading": "Cirrhotic Cardiomyopathy & Transplant Evaluation",
-          "minutes": "2 min",
-          "points": [
-            "Cirrhotic cardiomyopathy: Hyperdynamic circulation → chronically increased preload → diastolic dysfunction, prolonged QT, chronotropic incompetence",
-            "Precipitants of decompensation: Infection (most common), GI bleeding, medication non-compliance, alcohol use, portal vein thrombosis",
-            "Transplant evaluation: MELD-Na >15 or complications (ascites, variceal bleeding, HE) warrant evaluation. Contraindications include active substance use, severe cardiopulmonary disease",
-            "Child-Pugh vs MELD-Na: Child-Pugh includes subjective variables, MELD-Na (bilirubin, INR, creatinine, sodium) more objective for transplant allocation"
-          ],
-          "teaching_pearl": "Hyperdynamic circulation paradox - high cardiac output with poor exercise tolerance due to inability to increase cardiac output with stress",
-          "board_tip": "Remember TIPS complications: HE (20-30%), heart failure from increased venous return, stenosis requiring surveillance"
+          "teaching_pearl": "Terlipressin works mechanistically by directly opposing the fundamental problem: it is a V1 agonist that constricts the pathologically dilated splanchnic vasculature, restoring effective arterial blood volume and renal perfusion. The CONFIRM trial established its efficacy but the respiratory adverse event rate means careful patient selection is essential — avoid in volume-overloaded patients.",
+          "board_tip": "Board trap: Do NOT give NSBBs to a patient with refractory ascites and SBP less than 90 mmHg — this is the window hypothesis. NSBBs are beneficial in compensated cirrhosis with varices but can become harmful in very advanced decompensated disease by blunting the cardiac output needed to maintain perfusion."
         }
       ],
       "summary_points": [
-        "Portal hypertension (HVPG >10mmHg) drives all major complications through hemodynamic and inflammatory mechanisms",
-        "Acute bleeding: octreotide + ceftriaxone + EVL per AASLD 2021",
-        "SBP treatment: cefotaxime + albumin (Sort trial mortality benefit)",
-        "HRS-AKI: albumin + terlipressin (CONFIRM trial) - functional renal failure",
-        "HE: lactulose ± rifaximin targets ammonia metabolism",
-        "HCC surveillance: US ± AFP q6mo, MELD-Na determines transplant priority"
+        "Cirrhosis creates a paradox: intrahepatic vasoconstriction (low NO) drives portal hypertension while splanchnic vasodilation (high NO) causes decreased EABV and RAAS/ADH activation — this single mechanism explains ascites, HRS, and hyponatremia",
+        "Variceal bleed management per AASLD 2021: ALWAYS give the triad of octreotide + ceftriaxone + EVL within 12 hours",
+        "SBP: PMN greater than or equal to 250, treat with cefotaxime/ceftriaxone + IV albumin (Sort trial); secondary prophylaxis with daily norfloxacin or TMP-SMX indefinitely",
+        "HRS-AKI per AASLD 2024: terlipressin + albumin is first-line (CONFIRM trial); watch for respiratory failure",
+        "HE: lactulose first-line (titrate to 2-3 BMs/day) plus rifaximin to prevent recurrence",
+        "HCC screening: ultrasound with or without AFP every 6 months in ALL cirrhotics regardless of etiology",
+        "MELD-Na determines transplant priority — refer at first decompensation"
       ],
       "visual_memory_card": {
-        "top_left": "Portal HTN >10mmHg → Varices, Ascites",
-        "top_right": "SBP: Cefotaxime + Albumin (Sort trial)",
-        "bottom_left": "HE: Lactulose (acidifies, traps NH4+)",
-        "bottom_right": "HRS-AKI: Albumin + Terlipressin (CONFIRM)",
-        "center": "CIRRHOSIS COMPLICATIONS MELD-Na Priority"
+        "top_left": "PORTAL HTN CASCADE: Fibrosis increases intrahepatic resistance then splanchnic vasodilation then decreased EABV then RAAS/ADH activation",
+        "top_right": "HVPG THRESHOLDS: greater than or equal to 10 = varices form; greater than or equal to 12 = bleeding risk",
+        "bottom_left": "VARICEAL BLEED TRIAD: Octreotide + Ceftriaxone + EVL; SBP Rx: Cefotaxime + Albumin (Sort); HRS Rx: Terlipressin + Albumin (CONFIRM)",
+        "bottom_right": "STOP NSBBs if: SBP less than 90, MAP less than 65, Na less than 120, AKI, or HRS (Window Hypothesis)",
+        "center": "THE PARADOX: Liver = vasoconstricted (low NO) vs Splanchnic = vasodilated (high NO) — this IS cirrhosis pathophysiology"
       }
     },
     "guideline_sources": [
@@ -832,82 +851,78 @@ var SAMPLES = [
     "style": "lecture",
     "specialty": "Endocrinology",
     "talk": {
-      "title": "T2DM Management & Cardiorenal Protection",
-      "subtitle": "Evidence-Based Approach to Glucose Control with CV/Renal Outcomes Focus",
+      "title": "T2DM Management: The Cardiorenal Paradigm",
+      "subtitle": "Beyond Glycemic Control — Organ-Protective Pharmacotherapy in Type 2 Diabetes",
       "guideline_sources": [
-        "ADA 2024 Standards of Care",
-        "KDIGO 2022 CKD Guidelines"
+        "ADA 2024 Standards of Care in Diabetes",
+        "2022 AHA/ACC/HFSA Heart Failure Guidelines",
+        "KDIGO 2024 CKD Management Guidelines"
       ],
       "sections": [
         {
-          "heading": "Pathophysiology: The Cardiorenal-Metabolic Axis",
+          "heading": "Pathophysiology: Why T2DM Is a Cardiorenal Disease",
           "minutes": "3 min",
           "points": [
-            "Insulin resistance → compensatory hyperinsulinemia → pancreatic β-cell dysfunction over time",
-            "Chronic hyperglycemia activates multiple pathways: AGE formation, PKC activation, polyol pathway, hexosamine pathway",
-            "Endothelial dysfunction: ↓NO bioavailability, ↑oxidative stress, ↑inflammatory cytokines (TNF-α, IL-6)",
-            "Renal: Hyperfiltration from afferent arteriolar dilation → glomerular hypertension → podocyte injury → albuminuria → progressive GFR decline",
-            "Cardiac: Myocardial insulin resistance → metabolic inflexibility → lipotoxicity → diastolic dysfunction → HFpEF predominance",
-            "Accelerated atherosclerosis: Hyperglycemia + dyslipidemia + inflammation → plaque formation and instability"
+            "HYPERGLYCEMIA DAMAGES VIA 4 MOLECULAR PATHWAYS: (1) Polyol pathway — excess glucose shunted to sorbitol via aldose reductase, depleting NADPH and generating oxidative stress; (2) Advanced glycation end-products (AGEs) — non-enzymatic glycation of proteins crosslinks collagen, activates RAGE receptors on endothelium triggering NF-kB and inflammatory cascades; (3) Protein kinase C (PKC) activation — diacylglycerol accumulates, PKC-beta isoform increases VEGF (retinal leak), TGF-beta (mesangial fibrosis), PAI-1 (prothrombotic state), and endothelin-1 (vasoconstriction); (4) Hexosamine pathway — fructose-6-phosphate diverted to UDP-GlcNAc, modifying transcription factors and increasing TGF-beta and PAI-1",
+            "KIDNEY MECHANISM: Hyperglycemia upregulates SGLT2 in proximal tubule, increasing sodium-glucose reabsorption. Less NaCl reaches macula densa, deactivating tubuloglomerular feedback (TGF), causing AFFERENT arteriolar DILATION. Combined with RAAS-mediated EFFERENT arteriolar constriction, this creates GLOMERULAR HYPERFILTRATION (intraglomerular HTN >60 mmHg). Over years this drives podocyte injury, mesangial expansion, GBM thickening, albuminuria, and progressive GFR decline",
+            "HEART MECHANISM: Insulin resistance causes myocardial metabolic inflexibility — the heart shifts to near-exclusive fatty acid oxidation, generating more ROS per ATP. AGEs stiffen the myocardial interstitium. Hyperinsulinemia activates cardiac mTOR driving pathological hypertrophy. Endothelial dysfunction from reduced NO bioavailability impairs coronary microvascular function. Result: HFpEF phenotype (diastolic dysfunction) is the most common cardiac manifestation of T2DM, even before overt CAD",
+            "CARDIORENAL SYNDROME LINK: CKD increases preload (volume retention), afterload (arterial stiffness, RAAS activation), and uremic cardiomyopathy. HF reduces renal perfusion and activates sympathetic/RAAS systems, worsening CKD. This bidirectional cycle is the cardiorenal axis — and T2DM accelerates BOTH directions simultaneously"
           ],
-          "teaching_pearl": "T2DM creates a 'perfect storm' - hyperglycemia directly damages vessels while insulin resistance promotes atherogenic lipid profiles and hypertension.",
-          "board_tip": "Remember the 4 key pathways of hyperglycemic damage: AGE, PKC, polyol, and hexosamine - all lead to oxidative stress and inflammation."
+          "teaching_pearl": "The key insight of modern diabetology: T2DM is not primarily a glucose disease. It is a cardiorenal-metabolic disease where hyperglycemia is one of several interconnected drivers. The paradigm shift is treating the ORGAN RISK, not just the A1c number.",
+          "board_tip": "Board question stem: T2DM patient with eGFR 45 and albuminuria — what do you add REGARDLESS of A1c? Answer: SGLT2 inhibitor. The indication is cardiorenal protection, NOT glycemic control. This is the highest-yield concept tested."
         },
         {
-          "heading": "Risk Stratification & Goals",
-          "minutes": "2 min",
-          "points": [
-            "ASCVD risk assessment: Age >40 with additional risk factors OR established ASCVD/PAD/CKD",
-            "A1c goals per ADA 2024: <7% for most adults, <6.5% if achieved safely without hypoglycemia, 7-8% for elderly/limited life expectancy/severe comorbidities",
-            "CV risk markers: Albuminuria (ACR >30 mg/g), eGFR <60, established ASCVD, multiple CV risk factors",
-            "Renal risk stratification: CKD stage (eGFR), albuminuria category (A1 <30, A2 30-299, A3 ≥300 mg/g)",
-            "Heart failure phenotype matters: HFrEF vs HFpEF - different medication benefits"
-          ],
-          "teaching_pearl": "Don't just treat the A1c - stratify by ASCVD/HF/CKD risk to guide medication selection for cardiorenal protection.",
-          "board_tip": "Key A1c targets: <7% standard, <6.5% if safe, 7-8% if elderly/comorbid - individualize based on hypoglycemia risk and life expectancy."
-        },
-        {
-          "heading": "Evidence-Based Medication Selection",
+          "heading": "SGLT2 Inhibitors: Mechanism of Cardiorenal Protection",
           "minutes": "3 min",
           "points": [
-            "Metformin first-line (unless contraindicated): ↓hepatic glucose production, ↑insulin sensitivity, CV neutral, weight neutral",
-            "SGLT2 inhibitors for ASCVD/HF/CKD per ADA 2024: Empagliflozin (EMPA-REG), canagliflozin (CANVAS), dapagliflozin (DAPA-CKD, EMPEROR-Reduced)",
-            "Mechanism: Block renal glucose reabsorption → glucosuria, natriuresis, ↓preload/afterload, direct cardioprotective effects",
-            "GLP-1 RAs for ASCVD/obesity: Liraglutide (LEADER), dulaglutide (REWIND), semaglutide (SUSTAIN-6, SELECT)",
-            "Mechanism: ↑glucose-dependent insulin secretion, ↓glucagon, gastric emptying delay, weight loss, potential direct CV effects",
-            "ACEi/ARB for albuminuria: Block RAAS activation, ↓intraglomerular pressure, antiproteinuric effects",
-            "Statins for ASCVD risk: Standard intensity for primary prevention, high intensity for secondary prevention"
+            "MECHANISM OF ACTION: SGLT2i block sodium-glucose cotransporter-2 in S1 segment of proximal tubule, preventing reabsorption of ~90g glucose/day (glycosuria) and ~5 mEq sodium per day. This is the LEAST important effect for organ protection. The CRITICAL effect: by increasing NaCl delivery to the macula densa, SGLT2i RESTORE tubuloglomerular feedback, causing AFFERENT arteriolar CONSTRICTION and REDUCING intraglomerular pressure. This is why GFR initially DIPS 3-5 mL/min then STABILIZES — identical to the ACEi hemodynamic dip, but on the opposite arteriole",
+            "CARDIAC PROTECTION MECHANISMS: (1) Osmotic diuresis and natriuresis reduce preload without neurohormonal activation (unlike loop diuretics); (2) Shift myocardial fuel from fatty acids toward ketone bodies (beta-hydroxybutyrate), which are a more oxygen-efficient fuel — the 'thrifty substrate' hypothesis; (3) Reduce epicardial fat and myocardial inflammation; (4) Inhibit cardiac Na+/H+ exchanger (NHE1), reducing intracellular sodium and calcium, improving mitochondrial function and reducing oxidative stress",
+            "LANDMARK TRIALS — RENAL: DAPA-CKD (dapagliflozin): 39% reduction in composite of sustained eGFR decline ≥50%, ESKD, or renal/CV death — benefit seen in patients WITH AND WITHOUT diabetes, trial stopped early. EMPA-KIDNEY (empagliflozin): 28% reduction in kidney disease progression, including patients with eGFR as low as 20. FLOW trial (semaglutide): first GLP-1 RA to show primary renal endpoint benefit — 24% reduction in kidney disease progression in T2DM with CKD",
+            "LANDMARK TRIALS — CARDIAC: EMPA-REG OUTCOME (empagliflozin): 38% reduction in CV death in T2DM with established ASCVD — benefit appeared within WEEKS, suggesting hemodynamic rather than atherosclerotic mechanism. CANVAS (canagliflozin): 14% reduction in MACE. EMPEROR-Reduced and DAPA-HF: SGLT2i reduced HF hospitalization and CV death in HFrEF regardless of diabetes status — now standard of care in HF",
+            "PRACTICAL PRESCRIBING: Empagliflozin 10mg or dapagliflozin 10mg daily. Can initiate down to eGFR 20 (per ADA 2024 and KDIGO 2024). Continue even if eGFR falls below 20 once started (stop only at dialysis). Hold perioperatively and during acute illness (sick day rules). Counsel on genital mycotic infections (10-15%, more in women), Fournier gangrene (rare but testable), euglycemic DKA (especially with insulin-dependent patients, fasting, or surgery)"
           ],
-          "teaching_pearl": "SGLT2i and GLP-1 RAs have proven CV/renal benefits independent of glucose lowering - use for organ protection, not just A1c.",
-          "board_tip": "Landmark trials to remember: EMPA-REG (empagliflozin), CANVAS (canagliflozin), LEADER (liraglutide), REWIND (dulaglutide) - all showed CV outcome benefits."
+          "teaching_pearl": "The initial eGFR dip with SGLT2i is PROTECTIVE, not harmful — it reflects reduced glomerular hyperfiltration. This is analogous to the ACEi dip. Tolerating up to a 30% creatinine rise is acceptable. Stopping the drug because of the dip removes the long-term protection.",
+          "board_tip": "If a question asks about a T2DM patient on empagliflozin who develops a 20% rise in creatinine after 2 weeks — the answer is CONTINUE the medication. This is the expected hemodynamic effect. Stopping would be the wrong answer."
         },
         {
-          "heading": "Integrated Management Approach",
+          "heading": "GLP-1 Receptor Agonists: Complementary Cardiometabolic Protection",
           "minutes": "2 min",
           "points": [
-            "Start metformin + lifestyle, then layer evidence-based agents based on phenotype",
-            "ASCVD established/high risk: Add SGLT2i AND/OR GLP-1 RA regardless of A1c per ADA 2024",
-            "Heart failure: SGLT2i preferred (proven benefit in HFrEF and HFpEF)",
-            "CKD (eGFR <60 or albuminuria): SGLT2i + ACEi/ARB, consider GLP-1 RA",
-            "Monitor: A1c q3-6mo, annual comprehensive diabetic exam, lipids, kidney function, albuminuria",
-            "Hypoglycemia avoidance: Reduce insulin/sulfonylureas when adding SGLT2i/GLP-1 RA"
+            "MECHANISM: GLP-1 RAs mimic incretin hormone GLP-1, binding to GLP-1 receptors on pancreatic beta cells (glucose-dependent insulin secretion), alpha cells (suppressed glucagon), hypothalamic appetite centers (satiety and reduced food intake), and vascular endothelium (anti-inflammatory, reduces oxidative stress and foam cell formation). They do NOT cause hypoglycemia as monotherapy because insulin release is glucose-dependent",
+            "CARDIOVASCULAR BENEFIT: LEADER trial (liraglutide): 13% reduction in MACE in T2DM with high CV risk. SUSTAIN-6 (semaglutide): 26% reduction in MACE. REWIND (dulaglutide): 12% MACE reduction in broader population including primary prevention. SELECT trial (semaglutide 2.4mg): 20% MACE reduction in overweight/obese patients WITHOUT diabetes — expanding the paradigm beyond glycemia entirely",
+            "Per ADA 2024: GLP-1 RAs are preferred over SGLT2i when the PRIMARY indication is established ASCVD or high ASCVD risk, OR when obesity/weight reduction is a priority. SGLT2i preferred when HF or CKD is present. BOTH can be combined when patient has overlapping indications (e.g., T2DM + ASCVD + CKD = metformin + SGLT2i + GLP-1 RA)",
+            "KEY SIDE EFFECTS: GI intolerance (nausea, vomiting — dose-titrate slowly), pancreatitis risk (small, monitor), contraindicated in personal/family history of medullary thyroid carcinoma or MEN2 (C-cell tumors in rodent studies — testable). Tirzepatide is a dual GIP/GLP-1 RA with superior A1c and weight reduction (SURPASS trials)"
           ],
-          "teaching_pearl": "Modern diabetes care is organ protection first - choose medications that prevent CV/renal events, not just lower glucose.",
-          "board_tip": "Key monitoring: eGFR and ACR annually, watch for DKA with SGLT2i (especially during illness/fasting), and reduce insulin doses to prevent hypoglycemia."
+          "teaching_pearl": "Think of SGLT2i as primarily cardiorenal-protective (HF + CKD focused) and GLP-1 RAs as primarily atherosclerotic CV-protective (MACE focused) with powerful weight loss. They work through completely different mechanisms and are additive when combined.",
+          "board_tip": "Board stem: T2DM with A1c 8.2%, BMI 34, and history of MI — what to add to metformin? Answer: GLP-1 RA (e.g., semaglutide) for ASCVD benefit AND weight loss. If the stem instead says HFrEF or CKD with albuminuria, the answer switches to SGLT2i."
+        },
+        {
+          "heading": "Integrated Treatment Algorithm per ADA 2024",
+          "minutes": "2 min",
+          "points": [
+            "STEP 1 — ALL PATIENTS: Lifestyle (Mediterranean or DASH diet, 150 min/week moderate exercise) + Metformin (unless eGFR <30, lactic acidosis risk, or intolerance). Metformin works via AMPK activation in hepatocytes reducing gluconeogenesis, improving peripheral insulin sensitivity, modest CV benefit (UKPDS legacy). Start 500mg BID, titrate to 2000mg. Check B12 levels annually with prolonged use",
+            "STEP 2 — CARDIORENAL RISK STRATIFICATION (independent of A1c): Has ASCVD or high ASCVD risk? → Add GLP-1 RA with proven CV benefit (liraglutide, semaglutide, dulaglutide). Has HF (HFrEF or HFpEF)? → Add SGLT2i (empagliflozin or dapagliflozin). Has CKD (eGFR 20-60 and/or UACR >200)? → Add SGLT2i. Has overlapping risk? → Use BOTH classes together",
+            "STEP 3 — ADDITIONAL GLYCEMIC CONTROL if A1c still above target: Add second-line agents per phenotype — DPP-4i (weight-neutral, modest efficacy, do NOT combine with GLP-1 RA), pioglitazone (insulin sensitizer, fluid retention in HF), sulfonylureas (hypoglycemia risk, weight gain — avoid in elderly), basal insulin (if A1c very high or catabolic features)",
+            "STEP 4 — COMPREHENSIVE CARDIORENAL PROTECTION STACK: ACEi or ARB for any albuminuria (UACR >30) — per ADA 2024 and KDIGO. Finerenone (non-steroidal MRA) for T2DM + CKD with persistent albuminuria on max ACEi/ARB — per FIDELIO-DKD and FIGARO-DKD trials showing reduced kidney and CV endpoints. Monitor potassium when combining ACEi/ARB + SGLT2i + finerenone. High-intensity statin for age 40-75 with T2DM (at minimum moderate intensity per ADA). BP target <130/80",
+            "A1c TARGETS per ADA 2024: <7% for most adults. <6.5% if newly diagnosed, long life expectancy, no hypoglycemia risk. <8% for elderly, limited life expectancy, hypoglycemia-prone, extensive comorbidities. ALWAYS individualize — the target is NEVER more important than avoiding hypoglycemia and medication harm"
+          ],
+          "teaching_pearl": "The modern T2DM algorithm is ORGAN-FIRST, GLUCOSE-SECOND. You choose SGLT2i or GLP-1 RA based on cardiorenal phenotype BEFORE considering A1c. A patient with A1c 6.8% but eGFR 35 with albuminuria STILL needs an SGLT2i — the indication is kidney protection, not glucose lowering.",
+          "board_tip": "The finerenone question is increasingly tested: T2DM patient on max-dose ACEi with persistent albuminuria (UACR >300) and eGFR 40 — what to add? Answer: finerenone. Key monitoring: serum potassium (must be <5.0 to initiate). Finerenone is non-steroidal, so less hyperkalemia and gynecomastia than spironolactone. Per FIDELIO-DKD: 18% reduction in kidney composite endpoint."
         }
       ],
       "summary_points": [
-        "T2DM pathophysiology involves insulin resistance, β-cell dysfunction, and multi-organ oxidative damage",
-        "Risk stratify by ASCVD/HF/CKD status to guide medication selection beyond glucose control",
-        "SGLT2 inhibitors and GLP-1 RAs provide proven cardiorenal protection per landmark trials",
-        "Integrated approach: metformin baseline, then layer organ-protective agents regardless of A1c goals"
+        "T2DM drives cardiorenal disease through glomerular hyperfiltration (afferent dilation + efferent constriction), AGE-mediated fibrosis, and myocardial metabolic inflexibility — these mechanisms are the targets of modern therapy",
+        "SGLT2i restore tubuloglomerular feedback, reduce intraglomerular pressure, provide natriuresis/osmotic diuresis, and shift cardiac metabolism — first-line for T2DM with HF or CKD regardless of A1c (EMPA-REG, DAPA-CKD, EMPEROR-Reduced)",
+        "GLP-1 RAs reduce MACE via anti-inflammatory and anti-atherosclerotic effects plus weight loss — first-line for T2DM with ASCVD or obesity (LEADER, SUSTAIN-6, SELECT). Combine with SGLT2i when indications overlap",
+        "Per ADA 2024: stratify by cardiorenal phenotype FIRST, then address residual glycemic gap. Full protection stack = metformin + SGLT2i + GLP-1 RA + ACEi/ARB + finerenone (for persistent albuminuria) + statin",
+        "Tolerate the initial SGLT2i eGFR dip (up to 30%), initiate down to eGFR 20, individualize A1c targets, and always check potassium when stacking RAAS blockers with finerenone"
       ],
       "visual_memory_card": {
-        "top_left": "Metformin First-Line (unless contraindicated)",
-        "top_right": "SGLT2i for ASCVD/HF/CKD (EMPA-REG, CANVAS, DAPA-CKD)",
-        "bottom_left": "GLP-1 RA for ASCVD/Obesity (LEADER, REWIND, SELECT)",
-        "bottom_right": "ACEi/ARB + Statin for CV protection",
-        "center": "Cardiorenal Protection NOT Just A1c"
+        "top_left": "SGLT2i → HF / CKD / Albuminuria (EMPA-REG, DAPA-CKD, EMPEROR)",
+        "top_right": "GLP-1 RA → ASCVD / Obesity (LEADER, SUSTAIN-6, SELECT)",
+        "bottom_left": "ACEi/ARB → Albuminuria; Finerenone → Persistent albuminuria on ACEi (FIDELIO-DKD)",
+        "bottom_right": "A1c glucose number",
+        "center": "ORGAN-FIRST, GLUCOSE-SECOND: Stratify by cardiorenal phenotype → then treat A1c"
       }
     },
     "guideline_sources": [
@@ -922,78 +937,94 @@ var SAMPLES = [
     "style": "lecture",
     "specialty": "ID",
     "talk": {
-      "title": "Sepsis Hour-1 Bundle",
-      "subtitle": "SSC 2021 Guidelines: Time-Critical Interventions for Septic Shock",
+      "title": "Sepsis Bundle: The Hour-1 Approach",
+      "subtitle": "Surviving Sepsis Campaign 2021 — Physiology-Driven Resuscitation",
       "guideline_sources": [
-        "Surviving Sepsis Campaign 2021 (SCCM/IDSA)",
-        "ARISE Trial",
-        "SMART Trial",
-        "BaSICS Trial",
-        "ANDROMEDA-SHOCK"
+        "Surviving Sepsis Campaign (SSC) 2021 International Guidelines — SCCM/ESICM",
+        "ARISE Trial (2014)",
+        "ProCESS Trial (2014)",
+        "ProMISe Trial (2015)",
+        "SMART Trial (2018)",
+        "BaSICS Trial (2021)",
+        "ANDROMEDA-SHOCK Trial (2019)"
       ],
       "sections": [
         {
-          "heading": "Pathophysiology: The Sepsis Cascade",
+          "heading": "Pathophysiology of Sepsis — Why Every Minute Counts",
           "minutes": "3 min",
           "points": [
-            "Pathogen-associated molecular patterns (PAMPs) bind Toll-like receptors on immune cells, triggering NF-κB activation and massive cytokine release (TNF-α, IL-1β, IL-6)",
-            "Systemic inflammatory response causes three key pathophysiologic changes: 1) Massive vasodilation via NO synthase upregulation and smooth muscle relaxation, 2) Increased capillary permeability from endothelial glycocalyx breakdown and tight junction disruption, 3) Myocardial depression from inflammatory mediators reducing contractility",
-            "This triad creates distributive shock: relative hypovolemia from vasodilation + absolute hypovolemia from capillary leak + reduced cardiac output = tissue hypoperfusion",
-            "Cellular dysfunction occurs via mitochondrial impairment - cytochrome oxidase inhibition leads to anaerobic metabolism, lactate production, and eventual cellular death despite adequate oxygen delivery"
+            "TRIGGER: Pathogen-associated molecular patterns (PAMPs — e.g., LPS, lipoteichoic acid, beta-glucan) bind pattern recognition receptors (TLR4, TLR2, dectin-1) on innate immune cells → NF-kB activation → massive cytokine release (TNF-alpha, IL-1, IL-6)",
+            "ENDOTHELIAL INJURY is the central pathologic event: (1) Glycocalyx degradation by heparanase and metalloproteinases → loss of the endothelial permeability barrier → capillary leak → interstitial edema and intravascular volume depletion; (2) Endothelial nitric oxide synthase (eNOS) upregulation + inducible NOS (iNOS) induction → excessive NO → profound vasodilation → distributive shock with low SVR",
+            "MICROCIRCULATORY DYSFUNCTION: Even with restored macro-hemodynamics, heterogeneous capillary flow persists — some capillary beds are shunted (high flow, no oxygen extraction) while others are stopped (no flow, ischemia). This explains why tissue hypoxia occurs DESPITE a normal or high cardiac output",
+            "MITOCHONDRIAL DYSFUNCTION: Reactive oxygen/nitrogen species (peroxynitrite) inhibit complex I and IV of the electron transport chain → cytopathic hypoxia → aerobic glycolysis → LACTATE production even when oxygen delivery is adequate",
+            "COAGULOPATHY: Tissue factor expression on monocytes/endothelium → extrinsic pathway activation; simultaneous downregulation of protein C, antithrombin, and TFPI → microthrombi → DIC → organ ischemia",
+            "IMMUNE PARALYSIS (late phase): After initial hyperinflammation, compensatory anti-inflammatory response (IL-10, TGF-beta) → monocyte deactivation (low HLA-DR), T-cell apoptosis and exhaustion → secondary infections",
+            "NET HEMODYNAMIC PICTURE: Low SVR (vasodilation) + low effective circulating volume (capillary leak) + myocardial depression (septic cardiomyopathy from TNF-alpha, IL-1 depressing contractility) = septic shock"
           ],
-          "teaching_pearl": "Septic shock is distributive shock with three components - think of a leaky bucket (capillary leak) that's too big (vasodilation) being filled by a weak pump (myocardial depression)",
-          "board_tip": "High-output cardiac failure with low SVR is classic for septic shock - distinguish from cardiogenic shock which has low output and high SVR"
+          "teaching_pearl": "Lactate elevation in sepsis is NOT purely from anaerobic metabolism. It also results from catecholamine-driven aerobic glycolysis (beta-2 stimulation of Na/K-ATPase in skeletal muscle) and impaired hepatic lactate clearance. This is why lactate clearance is a better resuscitation target than a single value.",
+          "board_tip": "Sepsis-3 definition: life-threatening organ dysfunction caused by a dysregulated host response to infection. Organ dysfunction = increase in SOFA score of 2 or more. qSOFA (GCS <15, RR ≥22, SBP ≤100) is a bedside SCREENING tool for patients OUTSIDE the ICU — it is NOT part of the formal definition of sepsis."
         },
         {
-          "heading": "Hour-1 Bundle: Evidence-Based Interventions",
-          "minutes": "3 min",
+          "heading": "The Hour-1 Bundle — SSC 2021 Elements",
+          "minutes": "3-4 min",
           "points": [
-            "Lactate measurement: Reflects tissue hypoperfusion and anaerobic metabolism - elevated lactate (≥4 mmol/L) indicates shock even without hypotension (cryptic shock)",
-            "Blood cultures BEFORE antibiotics: Each hour delay in appropriate antibiotics increases mortality by 7.6% - but cultures after antibiotics reduce yield by 50-70%",
-            "Broad-spectrum antibiotics within 1 hour: Target most likely pathogens based on source - covers gram-positive, gram-negative, and anaerobes until culture results available",
-            "Fluid resuscitation 30 mL/kg crystalloid for hypotension or lactate ≥4: Replaces capillary leak losses and improves preload - balanced crystalloids (lactated Ringer's) preferred over normal saline per SMART/BaSICS trials to reduce hyperchloremic acidosis",
-            "Vasopressors (norepinephrine first-line) for MAP <65 after fluids: Alpha-1 agonism counteracts NO-mediated vasodilation while beta-1 supports contractility"
+            "ELEMENT 1 — MEASURE LACTATE: Reflects global tissue perfusion and mitochondrial function; if initial lactate >2 mmol/L, remeasure within 2-4 hours to guide resuscitation. Target lactate CLEARANCE of ≥20% per 2 hours (per ANDROMEDA-SHOCK, lactate-guided and capillary refill-guided strategies showed similar 28-day mortality; peripheral perfusion is a valid alternative endpoint)",
+            "ELEMENT 2 — OBTAIN BLOOD CULTURES BEFORE ANTIBIOTICS: At least 2 sets (aerobic + anaerobic from 2 separate sites); each hour delay in appropriate antibiotics increases mortality ~4-7% in septic shock. Cultures before antibiotics maximizes yield to allow targeted de-escalation, but NEVER delay antibiotics if cultures cannot be drawn promptly",
+            "ELEMENT 3 — BROAD-SPECTRUM ANTIBIOTICS WITHIN 1 HOUR of recognition: Cover the most likely pathogens based on suspected source; use local antibiogram; consider MRSA/Pseudomonas/fungal coverage based on risk factors. Empiric regimen should have pharmacokinetic optimization (e.g., extended infusion beta-lactams for time-dependent killing)",
+            "ELEMENT 4 — RAPID FLUID RESUSCITATION: 30 mL/kg IV crystalloid for patients with hypotension OR lactate ≥4 mmol/L. Start within 1 hour, complete within 3 hours. This addresses the acute intravascular volume deficit from capillary leak and venodilation",
+            "ELEMENT 5 — VASOPRESSORS for MAP <65 mmHg: Norepinephrine is first-line (alpha-1 agonism → vasoconstriction to counteract pathologic vasodilation with preserved beta-1 inotropy). Do NOT delay pressors waiting to complete the full 30 mL/kg — early vasopressor use may reduce fluid overload",
+            "CRYSTALLOID CHOICE: SSC 2021 suggests balanced crystalloids (lactated Ringer's, Plasmalyte) over normal saline. SMART trial (2018) showed balanced crystalloids reduced the composite of death, new renal replacement therapy, or persistent renal dysfunction (MAKE30 endpoint) vs NS in critically ill patients. BaSICS trial (2021) showed no significant difference overall, but the preponderance of evidence favors balanced solutions, especially in large-volume resuscitation, to avoid hyperchloremic metabolic acidosis which causes renal afferent arteriole vasoconstriction and reduces GFR",
+            "SOURCE CONTROL: Identify and intervene on the infectious source as early as feasible (drain abscess, debride necrotic tissue, remove infected device). Delay in source control independently increases mortality"
           ],
-          "teaching_pearl": "The bundle addresses each pathophysiologic component: antibiotics target source, fluids replace losses, vasopressors counteract vasodilation",
-          "board_tip": "30 mL/kg can be 2+ liters in adults - reassess frequently and don't give all at once if patient has risk factors for volume overload"
+          "teaching_pearl": "The 30 mL/kg is a STARTING point, not a fixed endpoint. After initial bolus, REASSESS with dynamic measures: passive leg raise (increase in pulse pressure or CO >10% predicts fluid responsiveness), pulse pressure variation >13% on mechanical ventilation, or point-of-care echo (IVC variability, VTI at LVOT). STOP fluids when the patient is no longer fluid responsive — fluid overload is independently harmful.",
+          "board_tip": "Per SSC 2021, norepinephrine is first-line vasopressor. ADD vasopressin (up to 0.03 U/min) as second agent when NE doses are escalating (vasopressin-sparing strategy). Epinephrine is third-line for cardiac output augmentation. Dopamine is NOT recommended except in highly selected patients with bradycardia and low risk of tachyarrhythmia. Phenylephrine is a pure alpha agonist — avoid as first-line since it can reduce cardiac output."
         },
         {
-          "heading": "Fluid Management and Hemodynamic Optimization",
-          "minutes": "2 min",
+          "heading": "Reassessment, De-escalation, and Adjuncts — SSC 2021",
+          "minutes": "2-3 min",
           "points": [
-            "After initial 30 mL/kg, assess fluid responsiveness before additional boluses: passive leg raise (increase SV >10%) or dynamic indices (pulse pressure variation >13%)",
-            "Balanced crystalloids preferred: SMART trial showed reduced composite outcome of death, renal replacement, or persistent renal dysfunction compared to normal saline",
-            "Vasopressor choice: Norepinephrine first-line for pure alpha-1 vasoconstriction - add vasopressin (0.03 units/min) as second agent for refractory shock",
-            "Target MAP ≥65 mmHg initially - may need higher targets (75-85) in chronic hypertensives to maintain cerebral/renal perfusion"
+            "REASSESS VOLUME STATUS AND TISSUE PERFUSION within 6 hours: Clinical exam (capillary refill, skin mottling, mental status), serial lactate clearance, urine output ≥0.5 mL/kg/hr, dynamic measures of fluid responsiveness (passive leg raise, pulse pressure variation, stroke volume variation)",
+            "ANTIBIOTIC DE-ESCALATION by 48-72 hours: Once culture data and sensitivities return, narrow the spectrum. SSC 2021 recommends daily reassessment for de-escalation. Procalcitonin trends can guide antibiotic discontinuation (declining PCT supports stopping antibiotics, particularly in lower respiratory tract infections)",
+            "CORTICOSTEROIDS: SSC 2021 suggests IV hydrocortisone 200 mg/day (50 mg q6h or continuous infusion) in patients with septic shock requiring ongoing escalating vasopressors. Mechanism: reverses sepsis-induced relative adrenal insufficiency and restores vascular catecholamine sensitivity by upregulating alpha-1 receptor expression. Based on ADRENAL and APROCCHSS trials — APROCCHSS showed faster shock reversal and improved 90-day mortality; ADRENAL showed faster shock reversal but no mortality benefit",
+            "STRESS ULCER PROPHYLAXIS: PPI or H2-blocker in patients with risk factors for GI bleeding (mechanical ventilation >48h, coagulopathy, prior GI bleeding)",
+            "DVT PROPHYLAXIS: LMWH preferred over unfractionated heparin; pharmacologic unless contraindicated (active bleeding, severe thrombocytopenia)",
+            "GLYCEMIC CONTROL: Target glucose 144-180 mg/dL; avoid tight control (<110) which increased hypoglycemia and mortality in the NICE-SUGAR trial",
+            "VENTILATOR MANAGEMENT if ARDS: Low tidal volume (6 mL/kg predicted body weight), plateau pressure <30 cmH2O per ARDSNet protocol; prone positioning for P/F <150"
           ],
-          "teaching_pearl": "Think of fluid resuscitation as a two-phase process: initial 30 mL/kg for all patients, then individualized fluid responsiveness testing",
-          "board_tip": "ANDROMEDA-SHOCK showed lactate normalization may be better than ScvO2 >70% for resuscitation endpoints"
+          "teaching_pearl": "ProCESS (2014), ARISE (2014), and ProMISe (2015) collectively demonstrated that protocolized early goal-directed therapy (EGDT) with central venous catheter targeting CVP, ScvO2, and Hct was NOT superior to usual care — as long as the BASICS were done early and well (fluids, antibiotics, vasopressors). This is why SSC 2021 dropped ScvO2 and CVP targets and instead emphasizes dynamic assessments.",
+          "board_tip": "Classic board question: Patient with septic shock on norepinephrine 0.5 mcg/kg/min, MAP still 58. Next step? Add vasopressin 0.03 U/min (second-line vasopressor per SSC 2021). If still refractory, consider IV hydrocortisone. Do NOT reach for phenylephrine or dopamine first."
         },
         {
-          "heading": "Source Control and De-escalation",
-          "minutes": "2 min",
+          "heading": "Landmark Trials — Evidence Summary",
+          "minutes": "1-2 min",
           "points": [
-            "Source control within 6-12 hours when feasible: surgical drainage, catheter removal, or debridement - addresses ongoing bacterial seeding",
-            "Procalcitonin-guided antibiotic duration: Levels <0.25 ng/mL or 80% reduction from peak suggests bacterial clearance and allows earlier discontinuation",
-            "De-escalate antibiotics by 48-72 hours based on culture results: narrow spectrum to reduce resistance and C. difficile risk",
-            "Daily assessment of organ support: wean vasopressors as vascular tone recovers, trial spontaneous breathing as respiratory failure improves"
+            "ProCESS (2014, NEJM): EGDT vs protocol-based care vs usual care — no mortality difference at 60 days. Established that structured early resuscitation works, but invasive hemodynamic monitoring (CVP, ScvO2) is unnecessary",
+            "ARISE (2014, NEJM): Australian/NZ trial confirming ProCESS findings — EGDT did not improve 90-day mortality vs usual care",
+            "ProMISe (2015, NEJM): UK trial — same conclusion. Together with ProCESS and ARISE, dismantled the EGDT protocol of Rivers 2001 as the standard",
+            "SMART (2018, NEJM): Balanced crystalloids (LR) vs normal saline in 15,802 ICU patients — balanced crystalloids reduced MAKE30 composite (death, dialysis, persistent renal dysfunction). Absolute risk reduction ~1.1%, NNT ~94",
+            "BaSICS (2021, NEJM): Balanced vs saline in 11,000+ ICU patients — no significant overall difference in 90-day mortality, but also no harm; reinforces safety of balanced solutions",
+            "ANDROMEDA-SHOCK (2019, JAMA): Capillary refill time-guided resuscitation vs lactate-guided — no significant difference in 28-day mortality, but CRT group received less fluid and had lower 72-hour SOFA scores, suggesting CRT is a reasonable bedside perfusion target",
+            "ADRENAL (2018, NEJM): Hydrocortisone vs placebo in septic shock — faster shock reversal but no 90-day mortality benefit",
+            "APROCCHSS (2018, NEJM): Hydrocortisone + fludrocortisone vs placebo — reduced 90-day mortality in septic shock"
           ],
-          "teaching_pearl": "Source control is as important as antibiotics - you can't cure an abscess with IV antibiotics alone",
-          "board_tip": "Procalcitonin falls faster than other inflammatory markers in bacterial infections - useful for antibiotic duration decisions"
+          "teaching_pearl": "The shift from EGDT (Rivers 2001) to the current SSC 2021 bundle reflects a philosophical change: from rigid protocol-driven numbers (CVP 8-12, ScvO2 >70%) to dynamic, individualized resuscitation. The principle remains the same — early aggressive recognition and treatment saves lives — but the tools have evolved.",
+          "board_tip": "If a board question references ScvO2 targeting or CVP-based fluid management in sepsis, recognize this as the OLD Rivers-era EGDT approach. Current SSC 2021 does NOT recommend routine CVP or ScvO2 monitoring. The correct modern approach uses dynamic assessments (passive leg raise, pulse pressure variation, capillary refill, lactate clearance)."
         }
       ],
       "summary_points": [
-        "SSC 2021 Hour-1 Bundle targets sepsis pathophysiology: lactate measurement, blood cultures before antibiotics, antibiotics within 1 hour, 30 mL/kg crystalloids, vasopressors for MAP <65",
-        "Balanced crystalloids preferred over normal saline (SMART/BaSICS trials) - reduces hyperchloremic acidosis and improves outcomes",
-        "Fluid responsiveness testing after initial resuscitation prevents volume overload - use passive leg raise or dynamic indices",
-        "Source control within 6-12 hours and antibiotic de-escalation by 48-72 hours complete the sepsis management strategy"
+        "Hour-1 Bundle: Lactate → Blood cultures → Broad-spectrum antibiotics → 30 mL/kg crystalloid (if hypotension or lactate ≥4) → Vasopressors for MAP <65 (norepinephrine first-line)",
+        "Balanced crystalloids preferred over normal saline to avoid hyperchloremic acidosis and renal vasoconstriction (SMART trial)",
+        "Norepinephrine first-line → add vasopressin second → consider hydrocortisone for refractory shock",
+        "STOP fluids when no longer fluid responsive — use dynamic measures (passive leg raise, PPV, echo) not static CVP",
+        "De-escalate antibiotics at 48-72 hours based on culture data and procalcitonin trends",
+        "ProCESS/ARISE/ProMISe retired EGDT — early care matters, not invasive monitoring targets"
       ],
       "visual_memory_card": {
-        "top_left": "LACTATE Tissue hypoperfusion marker ≥4 = shock",
-        "top_right": "CULTURES → ABX Within 1 hour Broad spectrum initially",
-        "bottom_left": "FLUIDS 30 mL/kg crystalloid Balanced > Normal saline",
-        "bottom_right": "VASOPRESSORS Norepinephrine first MAP ≥65 mmHg",
-        "center": "SSC 2021 HOUR-1 BUNDLE Time = Lives"
+        "top_left": "HOUR-1 BUNDLE: Lactate / Cultures / Abx / Fluids / Pressors",
+        "top_right": "VASOPRESSOR LADDER: NE → Vasopressin → Epinephrine (± Hydrocortisone)",
+        "bottom_left": "BALANCED CRYSTALLOID (LR) preferred over NS (SMART trial, avoid Cl- toxicity)",
+        "bottom_right": "DYNAMIC reassess: PLR, PPV, CRT, Lactate clearance — NOT CVP/ScvO2",
+        "center": "SEPSIS = Endothelial Injury → Capillary Leak + Vasodilation + Microthrombi → Organ Failure"
       }
     },
     "guideline_sources": [
@@ -1008,72 +1039,88 @@ var SAMPLES = [
     "specialty": "Heme/Onc",
     "talk": {
       "title": "DVT/PE Anticoagulation",
-      "subtitle": "Mechanisms, Risk Stratification, and Evidence-Based Treatment",
+      "subtitle": "Mechanism-Based Approach to VTE Treatment — From Coagulation Cascade to Clinical Decision-Making",
       "guideline_sources": [
-        "ASH 2020 VTE Treatment Guidelines"
+        "ASH 2020 Guidelines on Management of Venous Thromboembolism",
+        "ACCP/CHEST 2021 Antithrombotic Guidelines",
+        "ESC 2019 Guidelines on Acute Pulmonary Embolism"
       ],
       "sections": [
         {
-          "heading": "Coagulation Cascade and VTE Pathophysiology",
-          "minutes": "2-3 min",
+          "heading": "Coagulation Physiology and Why Anticoagulants Work",
+          "minutes": "3 min",
           "points": [
-            "Virchow's triad: stasis (immobility, CHF) → sluggish flow allows accumulation of activated factors; hypercoagulability (malignancy releases tissue factor, hormonal contraceptives increase factors II/VII/VIII/X/fibrinogen) → shifts hemostatic balance; endothelial injury (trauma, inflammation) → exposes subendothelial collagen and releases tissue factor",
-            "Thrombus formation: tissue factor binds factor VIIa → activates factor X → factor Xa + Va convert prothrombin to thrombin → thrombin converts fibrinogen to fibrin mesh AND amplifies coagulation by activating factors V/VIII/XI",
-            "DVT pathophysiology: venous thrombus (high fibrin, low platelet) typically starts in valve cusps where stasis is maximal → can propagate proximally or embolize to pulmonary circulation",
-            "PE pathophysiology: embolic occlusion → increased pulmonary vascular resistance → RV strain → potential RV failure. Massive PE (>50% pulmonary bed) → cardiogenic shock. Submassive PE → RV dysfunction without hypotension"
+            "Virchow's triad revisited at the molecular level: (1) Endothelial injury exposes subendothelial collagen and tissue factor (TF), (2) Stasis reduces local clearance of activated clotting factors by thrombomodulin-protein C pathway and dilution, (3) Hypercoagulability shifts the procoagulant-anticoagulant balance (e.g., Factor V Leiden resists APC cleavage, antithrombin deficiency reduces thrombin neutralization)",
+            "Initiation phase: TF-bearing cells bind Factor VIIa → TF-VIIa complex activates Factor X → small amounts of thrombin generated; this thrombin is insufficient alone to form a stable clot but is critical for AMPLIFICATION",
+            "Amplification phase: Trace thrombin activates platelets and Factors V, VIII, and XI on the platelet surface, creating a massive burst of tenase (VIIIa-IXa) and prothrombinase (Va-Xa) complexes",
+            "Propagation phase: Factor Xa on the platelet surface converts prothrombin to a THROMBIN BURST → fibrinogen cleaved to fibrin → Factor XIIIa cross-links fibrin → stable clot",
+            "Key therapeutic insight: Factor Xa is the convergence point of intrinsic and extrinsic pathways, and thrombin is the final effector — this is why direct Xa inhibitors (apixaban, rivaroxaban, edoxaban) and direct thrombin inhibitors (dabigatran) are so effective; they target the two most critical amplification nodes",
+            "Heparin/LMWH mechanism: Binds antithrombin III, inducing a conformational change that accelerates AT-III's neutralization of thrombin (UFH) and Factor Xa (both UFH and LMWH) by ~1000-fold. LMWH preferentially inhibits Xa because its shorter chain length cannot simultaneously bridge AT-III and thrombin",
+            "Warfarin mechanism: Inhibits vitamin K epoxide reductase (VKORC1) → prevents gamma-carboxylation of Factors II, VII, IX, X and Proteins C and S → these factors cannot bind calcium or phospholipid surfaces → no functional tenase or prothrombinase assembly"
           ],
-          "teaching_pearl": "Venous thrombi are fibrin-rich (red clots) vs arterial thrombi are platelet-rich (white clots) - this is why anticoagulants work better for VTE than antiplatelets",
-          "board_tip": "Factor Xa inhibitors (rivaroxaban, apixaban) directly inhibit factor Xa, blocking the final common pathway where factor Xa converts prothrombin to thrombin"
+          "teaching_pearl": "The reason warfarin is initially prothrombotic: Protein C (half-life ~8 hours) is depleted before Factor II (half-life ~60 hours). This creates a transient hypercoagulable window in the first 24-72 hours — hence the absolute requirement for heparin bridging during warfarin initiation.",
+          "board_tip": "Board question classic: Patient on warfarin develops skin necrosis on day 3 — think Protein C deficiency (hereditary or functional). The mechanism is exactly the differential half-life depletion described above. Treat with heparin and Protein C concentrate."
         },
         {
-          "heading": "Risk Stratification and Clinical Assessment",
-          "minutes": "2-3 min",
-          "points": [
-            "Wells Score for DVT: active cancer (+1), paralysis/immobilization (+1), bedridden >3 days/surgery within 4 weeks (+1), localized tenderness (+1), entire leg swollen (+1), calf >3cm larger (+1), pitting edema (+1), collateral veins (+1), alternative diagnosis likely (-2). Score ≥2 = DVT likely",
-            "Wells Score for PE: clinical signs DVT (+3), alternative diagnosis less likely (+3), HR >100 (+1.5), immobilization/surgery (+1.5), previous DVT/PE (+1.5), hemoptysis (+1), malignancy (+1). Score >4 = PE likely",
-            "Massive PE: systolic BP 0.9 on CT)",
-            "D-dimer physiology: fibrin degradation product from plasmin cleaving cross-linked fibrin → elevated in VTE but also inflammation, malignancy, pregnancy, elderly. Age-adjusted cutoff: age × 10 mcg/L for patients >50 years"
-          ],
-          "teaching_pearl": "D-dimer has high sensitivity but low specificity - a normal D-dimer in low/intermediate pretest probability rules out VTE, but elevated D-dimer needs imaging confirmation",
-          "board_tip": "Age-adjusted D-dimer increases specificity in elderly patients while maintaining sensitivity for VTE exclusion"
-        },
-        {
-          "heading": "First-Line DOAC Therapy per ASH 2020",
+          "heading": "Acute VTE Treatment: Drug Selection Algorithm",
           "minutes": "3-4 min",
           "points": [
-            "DOACs first-line for most acute DVT/PE per ASH 2020: apixaban 10mg BID × 7 days, then 5mg BID (AMPLIFY trial) or rivaroxaban 15mg BID × 21 days, then 20mg daily (EINSTEIN-DVT/PE trials) - no parenteral lead-in needed",
-            "Lead-in required DOACs: dabigatran 150mg BID after ≥5 days parenteral anticoagulation (RE-COVER trials), edoxaban 60mg daily after ≥5 days parenteral (HOKUSAI-VTE trial)",
-            "Cancer-associated VTE: LMWH historically preferred, but CARAVAGGIO and HOKUSAI-CANCER trials showed rivaroxaban and edoxaban noninferior to LMWH with similar bleeding rates → DOACs now acceptable first-line per ASH 2020",
-            "Warfarin indications: severe CKD (CrCl <30), mechanical heart valves, antiphospholipid syndrome. Target INR 2-3. Requires parenteral bridge until therapeutic INR × 2 consecutive days due to initial depletion of vitamin K-dependent anticoagulants (proteins C and S) relative to procoagulants (factors II, VII, IX, X), creating a transient hypercoagulable state"
+            "FIRST-LINE for most DVT/PE per ASH 2020: DOACs over warfarin — preferred for superior safety profile (less major bleeding) with noninferior efficacy",
+            "Two DOAC strategies — understand the difference: (A) SINGLE-DRUG approach: Apixaban (AMPLIFY trial) or Rivaroxaban (EINSTEIN trials) — NO lead-in heparin required; higher initial dose for 7-21 days provides early anticoagulation intensity. Apixaban: 10 mg BID x 7 days then 5 mg BID. Rivaroxaban: 15 mg BID x 21 days then 20 mg daily. (B) DUAL-DRUG approach: Dabigatran (RE-COVER) or Edoxaban (HOKUSAI-VTE) — REQUIRE at least 5 days of parenteral lead-in heparin before switching",
+            "AMPLIFY trial: Apixaban vs warfarin for acute VTE — noninferior for recurrent VTE, SIGNIFICANTLY less major bleeding (0.6% vs 1.8%). This is why apixaban is often first choice",
+            "EINSTEIN-DVT/PE: Rivaroxaban vs enoxaparin/warfarin — noninferior efficacy, similar major bleeding, significant reduction in clinically relevant non-major bleeding",
+            "RE-COVER: Dabigatran (after heparin lead-in) vs warfarin — noninferior efficacy, less total bleeding",
+            "HOKUSAI-VTE: Edoxaban (after heparin lead-in) vs warfarin — noninferior, less clinically relevant bleeding; notably included severe PE patients with RV dysfunction",
+            "Warfarin still indicated in: (1) Severe renal impairment with CrCl less than 15-30 mL/min depending on the DOAC, (2) Antiphospholipid syndrome — per TRAPS trial, rivaroxaban was INFERIOR to warfarin with more thrombotic events in triple-positive APS, (3) Mechanical heart valves — per RE-ALIGN trial, dabigatran caused excess thromboembolic events vs warfarin in mechanical valves",
+            "Parenteral anticoagulation with UFH preferred over LMWH when: massive PE requiring thrombolysis (short half-life, reversible with protamine), high bleeding risk, severe renal failure (CrCl less than 30), or potential need for urgent procedure"
           ],
-          "teaching_pearl": "Apixaban and rivaroxaban can start immediately because they have rapid onset and achieve therapeutic levels quickly, while dabigatran/edoxaban need heparin bridge due to slower anticoagulant effect requiring several days to reach steady state",
-          "board_tip": "DOAC contraindications: mechanical valves (increased thrombosis risk in trials), severe CKD (accumulation and increased bleeding), APS (warfarin superior in trials), active bleeding"
+          "teaching_pearl": "Why no heparin lead-in for apixaban and rivaroxaban? Their loading dose strategy achieves therapeutic Xa inhibition within 1-4 hours. Dabigatran and edoxaban were studied only with lead-in, so we replicate trial design. Never extrapolate — always match the protocol.",
+          "board_tip": "Triple-positive antiphospholipid syndrome is a HARD contraindication to DOACs — warfarin with target INR 2-3 is standard. If a board question describes recurrent thrombosis on a DOAC in a patient with lupus anticoagulant, the answer is switch to warfarin. Cite the TRAPS trial."
         },
         {
-          "heading": "Duration and Special Populations",
+          "heading": "Special Populations: Cancer-Associated VTE, Massive PE, and Pregnancy",
           "minutes": "2-3 min",
           "points": [
-            "Provoked VTE (surgery, trauma, estrogen, immobilization): 3 months anticoagulation per ASH 2020 - risk factor removal eliminates recurrence risk",
-            "Unprovoked VTE: indefinite anticoagulation if low bleeding risk (assess using HAS-BLED score, prior bleeding history, fall risk). Recurrence risk ~10%/year off anticoagulation vs 1-2%/year on treatment",
-            "Massive PE management: systemic thrombolysis (alteplase 100mg over 2 hours) if no contraindications, OR catheter-directed therapy if contraindication to systemic thrombolysis. PEITHO trial showed thrombolysis benefit for massive PE; submassive PE thrombolysis remains controversial per ASH 2020",
-            "Extended treatment: apixaban 2.5mg BID or rivaroxaban 10mg daily after initial 6 months reduces recurrence vs placebo while minimizing bleeding risk (AMPLIFY-EXT, EINSTEIN-CHOICE trials)"
+            "Cancer-associated thrombosis (CAT): Historically LMWH was standard (CLOT trial showed dalteparin superior to warfarin). Now DOACs are an option per ASH 2020",
+            "HOKUSAI-CANCER: Edoxaban noninferior to dalteparin for recurrent VTE, but HIGHER GI bleeding — particularly with luminal GI cancers (gastric, colorectal, GI-GU mucosal tumors)",
+            "CARAVAGGIO trial: Apixaban vs dalteparin in cancer-associated VTE — noninferior for recurrent VTE and NO significant increase in major bleeding including GI bleeding. This made apixaban the preferred DOAC for CAT",
+            "Clinical algorithm for CAT: Use apixaban or rivaroxaban UNLESS active GI or GU luminal malignancy (use LMWH), significant drug interactions with cancer therapy (CYP3A4/P-gp), extremes of body weight, or severe thrombocytopenia (platelets less than 50K — dose-reduce or hold)",
+            "Massive PE (hemodynamic instability — SBP less than 90 or requiring vasopressors): Systemic thrombolysis with alteplase 100 mg IV over 2 hours is first-line per ASH 2020 and ESC 2019. Half-dose alteplase (50 mg) used in some protocols. PEITHO trial showed tenecteplase reduced hemodynamic decompensation in submassive PE but at cost of increased ICH — thrombolytics NOT recommended for submassive PE routinely",
+            "Submassive PE (RV strain on imaging/biomarkers but hemodynamically stable): Close monitoring, anticoagulation, escalate to thrombolysis only if clinical deterioration. Catheter-directed therapy (CDT) increasingly used as a middle ground — lower systemic lytic doses",
+            "Pregnancy: LMWH is the ONLY appropriate anticoagulant — DOACs cross the placenta (teratogenic), warfarin is teratogenic (nasal hypoplasia, stippled epiphyses — especially weeks 6-12). Fondaparinux is a second-line option. Switch to UFH near delivery for epidural safety"
           ],
-          "teaching_pearl": "The decision for indefinite anticoagulation in unprovoked VTE balances ~10% annual recurrence risk off therapy vs ~2% annual major bleeding risk on therapy",
-          "board_tip": "Reduced-dose DOACs for extended treatment (apixaban 2.5mg BID, rivaroxaban 10mg daily) maintain efficacy while reducing bleeding compared to full therapeutic doses"
+          "teaching_pearl": "The PEITHO paradox: Thrombolysis in submassive PE reduced hemodynamic collapse (2.6% vs 5.6%) but increased major hemorrhage (6.3%) and stroke (2.4% vs 0.2%). Net clinical benefit was NOT demonstrated — hence the guideline recommendation against routine use. Reserve for deterioration.",
+          "board_tip": "Board favorite: Pregnant woman with DVT — answer is ALWAYS LMWH (enoxaparin weight-based, often 1 mg/kg BID). Warfarin is teratogenic. DOACs are contraindicated. Monitor anti-Xa levels (target 0.6-1.0 IU/mL peak, 4 hours post-dose) because pregnancy increases renal clearance and volume of distribution."
+        },
+        {
+          "heading": "Duration of Anticoagulation and Extended Therapy",
+          "minutes": "2 min",
+          "points": [
+            "Provoked VTE (major transient risk factor — surgery, immobilization, trauma, OCP/HRT, long travel): 3 months of anticoagulation then STOP, per ASH 2020. Recurrence risk after stopping is low (approximately 3% per year)",
+            "Unprovoked VTE (no identifiable risk factor): Minimum 3 months, then REASSESS. ASH 2020 recommends indefinite anticoagulation if bleeding risk is low-to-moderate. Annual recurrence after stopping is approximately 10% in the first year, 5% per year thereafter",
+            "Risk stratification for extended therapy: Consider D-dimer after stopping (if elevated, strong predictor of recurrence), sex (men have higher recurrence than women), residual DVT on ultrasound, thrombophilia status, HERDOO2 score for women (Hyperpigmentation, Edema, Redness, D-dimer greater than 250, Obesity, Older age — score 0-1 suggests safe to stop in women)",
+            "Extended-phase dosing: After completing initial 6 months, can reduce dose — Apixaban 2.5 mg BID (AMPLIFY-EXT trial) or Rivaroxaban 10 mg daily (EINSTEIN-CHOICE trial) — both showed significantly reduced recurrence vs placebo with minimal excess bleeding. These reduced doses are NOT for the acute treatment phase",
+            "Cancer-associated VTE: Continue anticoagulation as long as cancer is active or being treated — no arbitrary stop date. Reassess periodically for bleeding risk",
+            "Second unprovoked VTE: Essentially INDEFINITE anticoagulation unless prohibitive bleeding risk — recurrence rate without treatment is extremely high"
+          ],
+          "teaching_pearl": "The AMPLIFY-EXT and EINSTEIN-CHOICE trials are practice-changing: After completing initial treatment, reduced-dose apixaban 2.5 mg BID or rivaroxaban 10 mg daily provides approximately 80% reduction in recurrent VTE with bleeding rates similar to aspirin. This is the ideal extended therapy strategy for unprovoked VTE.",
+          "board_tip": "Duration question framework: (1) Provoked by major transient factor → 3 months and stop. (2) Unprovoked first event → at least 3 months, likely indefinite with reduced-dose DOAC if low bleeding risk. (3) Cancer → continue while cancer active. (4) Recurrent unprovoked → indefinite. Always weigh bleeding risk using HAS-BLED or similar tools."
         }
       ],
       "summary_points": [
-        "DOACs (apixaban, rivaroxaban) are first-line for most DVT/PE per ASH 2020 - no heparin bridge needed",
-        "Provoked VTE gets 3 months; unprovoked VTE gets indefinite if low bleeding risk",
-        "Cancer VTE can use DOACs (CARAVAGGIO/HOKUSAI-CANCER) or LMWH",
-        "Massive PE needs immediate reperfusion therapy - thrombolysis or catheter-directed intervention"
+        "DOACs are first-line over warfarin for most VTE per ASH 2020 — apixaban and rivaroxaban need no heparin lead-in; dabigatran and edoxaban require 5+ days of parenteral lead-in",
+        "Warfarin remains standard for antiphospholipid syndrome (TRAPS trial), mechanical valves (RE-ALIGN trial), and severe CKD with CrCl less than 15-30 mL/min",
+        "Cancer-associated VTE: Apixaban preferred DOAC (CARAVAGGIO — no excess GI bleeding); avoid DOACs with active GI/GU mucosal tumors (use LMWH)",
+        "Massive PE with hemodynamic instability: Systemic thrombolysis first-line; submassive PE: anticoagulation and monitoring, NOT routine thrombolysis (PEITHO)",
+        "Provoked VTE → 3 months; Unprovoked → indefinite with low bleeding risk, using reduced-dose DOAC for extended phase (AMPLIFY-EXT, EINSTEIN-CHOICE)",
+        "Pregnancy: LMWH exclusively — DOACs and warfarin both contraindicated"
       ],
       "visual_memory_card": {
-        "top_left": "Apixaban 10→5mg BID Rivaroxaban 15→20mg daily (No heparin bridge)",
-        "top_right": "Provoked = 3 months Unprovoked = indefinite (if low bleed risk)",
-        "bottom_left": "Cancer VTE: DOAC or LMWH equally effective",
-        "bottom_right": "Massive PE: SBP <90 = Thrombolytics",
-        "center": "VTE Anticoagulation ASH 2020"
+        "top_left": "SINGLE-DRUG DOACs (no lead-in): Apixaban 10→5, Rivaroxaban 15→20",
+        "top_right": "DUAL-DRUG DOACs (heparin lead-in): Dabigatran 150 BID, Edoxaban 60 daily",
+        "bottom_left": "WARFARIN ONLY: APS (TRAPS), Mechanical Valves (RE-ALIGN), CrCl <15-30",
+        "bottom_right": "DURATION: Provoked=3mo | Unprovoked=Indefinite | Cancer=While active",
+        "center": "Factor Xa & Thrombin = Two Master Targets of the Coagulation Cascade"
       }
     },
     "guideline_sources": [
@@ -1088,78 +1135,74 @@ var SAMPLES = [
     "style": "lecture",
     "specialty": "Rheumatology",
     "talk": {
-      "title": "Gout: Acute & Chronic Management",
-      "subtitle": "Pathophysiology, Clinical Presentation, and Evidence-Based Treatment",
+      "title": "Gout: Acute and Chronic Management",
+      "subtitle": "From Crystal Deposition to Treat-to-Target Urate Lowering",
       "guideline_sources": [
-        "ACR 2020 Gout Guidelines"
+        "ACR 2020 Guidelines for Management of Gout",
+        "CARES Trial (2018)",
+        "CONFIRMS Trial (2010)"
       ],
       "sections": [
         {
-          "heading": "Pathophysiology & Mechanism",
-          "minutes": "3 min",
+          "heading": "Pathophysiology: Why Crystals Form and Why They Cause Inflammation",
+          "minutes": "3-4 min",
           "points": [
-            "Hyperuricemia occurs via overproduction (increased purine metabolism, PRPP synthetase defects) or underexcretion (90% of cases - reduced renal clearance via URAT1, GLUT9, OAT transporters)",
-            "Monosodium urate crystal deposition occurs when serum uric acid >6.8 mg/dL (saturation point) - crystals form in synovial fluid, cartilage, and soft tissues due to lower temperature and pH",
-            "Acute flare mechanism: MSU crystals activate NLRP3 inflammasome in macrophages → IL-1β, IL-18 release → neutrophil chemotaxis and degranulation → tissue damage and pain",
-            "Chronic tophaceous gout: persistent crystal deposition → foreign body giant cell reaction → cartilage destruction, bone erosion, and tophi formation",
-            "Resolution phase: neutrophil apoptosis → macrophage efferocytosis → TGF-β release → anti-inflammatory resolution"
+            "Uric acid is the end product of purine metabolism: hypoxanthine → xanthine → uric acid via xanthine oxidase; humans lack uricase (lost evolutionary mutation), so uric acid cannot be further degraded",
+            "Serum urate solubility threshold is approximately 6.8 mg/dL at physiologic temperature and pH; above this, supersaturation occurs and monosodium urate (MSU) crystals precipitate in avascular, cooler, and acidic microenvironments (peripheral joints, tendons, pinnae)",
+            "ACUTE FLARE MECHANISM: MSU crystals are phagocytosed by resident macrophages → crystals destabilize lysosomal membranes → activate the NLRP3 inflammasome → caspase-1 cleaves pro-IL-1β to active IL-1β → massive neutrophil recruitment, NETosis, vascular leak, and the classic red-hot-swollen joint",
+            "SELF-RESOLUTION: Flares self-limit because anti-inflammatory macrophages release TGF-β, and neutrophil apoptosis with efferocytosis dampens the cascade; crystal coating with lipoproteins also reduces immunogenicity",
+            "CHRONIC TOPHACEOUS GOUT: Persistent hyperuricemia → ongoing crystal deposition → granulomatous foreign-body response → tophi formation (organized aggregates of MSU surrounded by macrophages, giant cells, fibrous tissue) → bone erosion and joint destruction",
+            "Renal handling: 90% of urate homeostasis is renal; URAT1 transporter on proximal tubule reabsorbs urate, ABCG2 handles intestinal and renal secretion; genetic variants in SLC22A12 (URAT1) and ABCG2 explain much of hyperuricemia risk",
+            "Two-thirds of gout patients are uric acid under-excretors, one-third are over-producers; this distinction can guide therapy but all patients benefit from treat-to-target approach"
           ],
-          "teaching_pearl": "Gout is fundamentally an autoinflammatory crystal arthropathy - the crystals themselves are the DAMP that triggers innate immune activation",
-          "board_tip": "Remember MSU crystals are negatively birefringent (yellow when parallel to axis) vs CPPD which are positively birefringent (blue when parallel)"
+          "teaching_pearl": "The NLRP3 inflammasome is the molecular bridge between crystal deposition and acute inflammation — this is why colchicine (which inhibits NLRP3 assembly and microtubule-dependent inflammasome activation) and IL-1 inhibitors both work in acute gout.",
+          "board_tip": "Negatively birefringent, needle-shaped crystals under polarized microscopy = MSU = gout. Yellow when parallel to the compensator axis (remember: Yellow = Parallel = Gout, 'YP' like 'Yellow Pages'). Positively birefringent rhomboid crystals = calcium pyrophosphate = pseudogout."
         },
         {
-          "heading": "Clinical Presentation & Diagnosis",
-          "minutes": "2 min",
-          "points": [
-            "Acute gout: sudden onset severe monoarticular pain (often nocturnal), erythema, warmth, exquisite tenderness - classically 1st MTP joint (podagra) but can affect any joint",
-            "Precipitants: dietary purines, alcohol (blocks uric acid excretion), diuretics, dehydration, trauma, surgery, acute illness",
-            "Chronic gout: recurrent flares, intercritical periods, tophi (ears, olecranon, fingers), chronic arthropathy with joint deformity",
-            "Diagnosis: synovial fluid analysis showing MSU crystals (gold standard) - negatively birefringent needle-shaped crystals with polarized microscopy",
-            "Serum uric acid may be normal during acute flare (25% of cases) due to stress-induced uricosuric effect - recheck 2-4 weeks later"
-          ],
-          "teaching_pearl": "Colchicine response test is historically used but not diagnostic - many inflammatory arthropathies respond to colchicine",
-          "board_tip": "Joint aspiration during acute flare may show MSU crystals even if serum uric acid is normal - always aspirate if diagnosis uncertain"
-        },
-        {
-          "heading": "Acute Gout Treatment",
+          "heading": "Acute Gout Flare: Diagnosis and Management",
           "minutes": "2-3 min",
           "points": [
-            "Per ACR 2020: First-line options include NSAID, colchicine, or corticosteroid - any single agent appropriate, combine for severe attacks",
-            "Colchicine: 1.2 mg immediately, then 0.6 mg 1 hour later, then 0.6 mg daily - works by inhibiting neutrophil migration via tubulin binding",
-            "NSAIDs: indomethacin 50 mg TID, ibuprofen 800 mg TID, or naproxen 500 mg BID - avoid aspirin (paradoxical uricosuric effect at low doses)",
-            "Corticosteroids: prednisone 30-40 mg daily x 3-5 days for patients who cannot take NSAIDs/colchicine - intra-articular injection for monoarticular disease",
-            "Start treatment within 24 hours of symptom onset for maximum efficacy - delayed treatment reduces response rates significantly"
+            "Classic presentation: explosive monoarthritis of the 1st MTP (podagra) peaking in 12-24 hours with erythema, swelling, and exquisite tenderness; can be polyarticular in advanced disease",
+            "Gold standard diagnosis: arthrocentesis with synovial fluid analysis showing negatively birefringent MSU crystals; WBC count typically 10,000-70,000/μL (inflammatory range); ALWAYS rule out septic arthritis when monoarticular — gout and infection can coexist",
+            "Per ACR 2020: First-line acute therapy is any ONE of the following — NSAIDs (indomethacin 50 mg TID or naproxen 500 mg BID), colchicine (1.2 mg then 0.6 mg one hour later, then 0.6 mg BID — low-dose per AGREE trial), or glucocorticoids (prednisone 0.5 mg/kg/day for 5-7 days, or intra-articular if monoarticular)",
+            "For SEVERE or polyarticular flares: ACR 2020 conditionally recommends COMBINATION therapy (e.g., colchicine + NSAID, or colchicine + steroid)",
+            "IL-1 inhibitors (anakinra off-label, canakinumab) reserved for refractory cases when NSAIDs, colchicine, and steroids are all contraindicated — mechanistically targets the inflammasome product directly",
+            "CRITICAL: Do NOT stop urate-lowering therapy (ULT) during an acute flare; stopping ULT shifts urate equilibrium and can paradoxically prolong or worsen the flare"
           ],
-          "teaching_pearl": "Never start or stop urate-lowering therapy during an acute flare unless already on stable ULT - can precipitate prolonged flare",
-          "board_tip": "Colchicine dose must be reduced in renal insufficiency (CrCl <30) and with CYP3A4/P-gp inhibitors to avoid toxicity"
+          "teaching_pearl": "Colchicine works by disrupting microtubule polymerization, which inhibits NLRP3 inflammasome assembly, blocks neutrophil chemotaxis, and reduces NET formation. Its narrow therapeutic window means the low-dose regimen (AGREE trial) is as effective as high-dose but with dramatically fewer GI side effects.",
+          "board_tip": "In CKD patients who cannot take NSAIDs and have contraindications to colchicine (drug interactions with CYP3A4 or P-glycoprotein inhibitors like clarithromycin or cyclosporine), glucocorticoids are the go-to. Colchicine dose MUST be reduced or avoided with strong CYP3A4 inhibitors — colchicine toxicity is potentially fatal (pancytopenia, multiorgan failure)."
         },
         {
-          "heading": "Chronic Urate-Lowering Therapy",
-          "minutes": "2-3 min",
+          "heading": "Chronic Gout: Urate-Lowering Therapy and Treat-to-Target",
+          "minutes": "3-4 min",
           "points": [
-            "Per ACR 2020: Indications include recurrent flares, tophi, radiographic damage, or CKD stage 3+ - treat-to-target approach with uric acid <6 mg/dL (or <5 mg/dL if tophi present)",
-            "Allopurinol first-line: start 100 mg daily, titrate by 100 mg every 2-4 weeks to maximum 800 mg daily - xanthine oxidase inhibitor reducing uric acid production",
-            "HLA-B*5801 screening recommended in high-risk populations (Korean, Han Chinese, Thai) before starting allopurinol due to severe cutaneous adverse reactions",
-            "Febuxostat alternative: non-purine xanthine oxidase inhibitor, start 40 mg daily - CARES trial showed increased CV mortality vs allopurinol in high-risk patients",
-            "Prophylaxis mandatory: colchicine 0.6 mg daily or low-dose NSAID for 3-6 months when starting ULT - prevents mobilization flares from crystal dissolution",
-            "ACR 2020 supports starting ULT during acute flare with appropriate anti-inflammatory prophylaxis - previous dogma of waiting for flare resolution is outdated"
+            "INDICATIONS for ULT per ACR 2020: 2 or more flares per year, any tophus, or radiographic damage from gout; conditionally recommended for patients with CKD stage 3 or greater, uric acid >9, or urolithiasis",
+            "ALLOPURINOL is first-line ULT per ACR 2020 — a xanthine oxidase inhibitor; start LOW (100 mg/day, or 50 mg/day if CKD stage 3+) and titrate every 2-4 weeks to target serum urate <6 mg/dL (or <5 mg/dL if tophi present) — this is the TREAT-TO-TARGET strategy",
+            "HLA-B*5801 screening is STRONGLY recommended before starting allopurinol in Southeast Asian descent (Thai, Han Chinese, Korean) and African American patients — HLA-B*5801 positivity confers 50-80x increased risk of severe allopurinol hypersensitivity syndrome (DRESS/SJS/TEN), which carries 20-25% mortality",
+            "FEBUXOSTAT (selective xanthine oxidase inhibitor) is second-line per ACR 2020 if allopurinol intolerant or fails to reach target; CONFIRMS trial showed febuxostat 80 mg superior to allopurinol 300 mg at achieving target urate, but CARES trial showed a signal for increased cardiovascular and all-cause mortality vs allopurinol in patients with established CV disease — febuxostat carries an FDA black box warning",
+            "URICOSURICS: Probenecid (blocks URAT1 reabsorption) is an alternative for under-excretors, but avoid if CrCl <50 or history of nephrolithiasis; lesinurad (URAT1 inhibitor) was used in combination with XOI but has been withdrawn from US market",
+            "PEGLOTICASE (pegylated recombinant uricase): reserved for refractory tophaceous gout unresponsive to oral ULT; converts uric acid → allantoin (soluble); risk of infusion reactions and anti-drug antibodies; immunomodulatory co-therapy (methotrexate, azathioprine, mycophenolate) improves efficacy by reducing antibody formation (MIRROR and PROTECT trials)",
+            "FLARE PROPHYLAXIS: When starting or titrating ULT, concomitant anti-inflammatory prophylaxis with low-dose colchicine (0.6 mg daily or BID) or low-dose NSAID for at least 3-6 months per ACR 2020; ULT CAN be initiated during an acute flare as long as prophylaxis is on board",
+            "LIFESTYLE: Limit high-purine foods (organ meats, shellfish), limit alcohol (especially beer — contains guanosine), limit fructose-sweetened beverages; address metabolic syndrome comorbidities"
           ],
-          "teaching_pearl": "Urate-lowering therapy is curative - achieving target uric acid levels leads to crystal dissolution and prevents future flares completely",
-          "board_tip": "CONFIRMS trial established febuxostat non-inferiority to allopurinol, but CARES trial CV safety concerns limit its use to allopurinol-intolerant patients"
+          "teaching_pearl": "The paradox of early ULT flares: when serum urate drops rapidly, partially dissolved crystal surfaces become re-exposed to the immune system, triggering the NLRP3 inflammasome. This is why prophylaxis is essential during ULT initiation — you are mobilizing the crystal burden, not creating new disease.",
+          "board_tip": "Per ACR 2020, allopurinol should be started at 100 mg (NOT weight-based dosing) and titrated to target. The most commonly tested board concept: you CAN start ULT during an acute flare. The old teaching of waiting 2-4 weeks is outdated. Also: CARES trial — febuxostat had higher CV mortality than allopurinol in patients with pre-existing CV disease, leading to the FDA black box warning. Choose allopurinol first-line, especially in CV patients."
         }
       ],
       "summary_points": [
-        "Gout is caused by MSU crystal deposition when uric acid exceeds 6.8 mg/dL saturation point, triggering NLRP3 inflammasome activation",
-        "Acute treatment per ACR 2020: NSAID, colchicine, or steroid as monotherapy; combine for severe attacks within 24 hours of onset",
-        "Chronic management: treat-to-target with allopurinol first-line, uric acid goal <6 mg/dL, with 3-6 month anti-inflammatory prophylaxis",
-        "ULT can be started during acute flare with appropriate prophylaxis - achieving target uric acid levels prevents future attacks"
+        "Gout results from MSU crystal deposition when serum urate exceeds the solubility threshold of 6.8 mg/dL; crystals activate the NLRP3 inflammasome → IL-1β → neutrophilic inflammation",
+        "Acute flare: NSAID, colchicine (low-dose per AGREE trial), or glucocorticoids; combine agents for severe flares per ACR 2020",
+        "Allopurinol is first-line ULT; start low, go slow, treat-to-target (urate <6 mg/dL, <5 if tophi); HLA-B*5801 testing mandatory in Southeast Asian and African American patients before starting",
+        "Febuxostat is second-line; CARES trial demonstrated CV mortality signal — carries FDA black box warning in patients with established CV disease",
+        "ULT can be started during an acute flare with concomitant anti-inflammatory prophylaxis for 3-6 months per ACR 2020",
+        "Pegloticase is reserved for refractory tophaceous gout; immunomodulatory co-therapy reduces anti-drug antibody formation"
       ],
       "visual_memory_card": {
-        "top_left": "MSU crystals: Negatively birefringent, Needle-shaped",
-        "top_right": "Acute Rx: NSAID/Colchicine/Steroid (ACR 2020)",
-        "bottom_left": "Target UA <6 mg/dL (<5 if tophi)",
-        "bottom_right": "Allopurinol 1st line + prophylaxis 3-6 mo",
-        "center": "NLRP3 → IL-1β → Neutrophils"
+        "top_left": "ACUTE: NSAIDs / Colchicine / Steroids (combine if severe)",
+        "top_right": "CHRONIC: Allopurinol 1st-line → Treat-to-Target <6 mg/dL",
+        "bottom_left": "HLA-B*5801: Screen SE Asian + African American BEFORE allopurinol",
+        "bottom_right": "CARES: Febuxostat ↑CV mortality → Black box → 2nd-line only",
+        "center": "MSU Crystal → NLRP3 → IL-1β → Neutrophilic Storm"
       }
     },
     "guideline_sources": [
@@ -1174,78 +1217,86 @@ var SAMPLES = [
     "specialty": "Neurology",
     "talk": {
       "title": "Acute Ischemic Stroke & tPA",
-      "subtitle": "Cellular Mechanisms to Clinical Management",
+      "subtitle": "Physiology of cerebral ischemia, thrombolysis, and time-critical management",
       "guideline_sources": [
-        "AHA/ASA 2019/2021 Acute Ischemic Stroke Guidelines"
+        "AHA/ASA 2019 Guidelines for the Early Management of Acute Ischemic Stroke",
+        "AHA/ASA 2021 Update on Endovascular Therapy",
+        "AHA/ASA 2024 Tenecteplase Considerations"
       ],
       "sections": [
         {
-          "heading": "Cellular Pathophysiology of Ischemic Stroke",
+          "heading": "Physiology of Cerebral Ischemia: The Ischemic Core and Penumbra",
           "minutes": "3 min",
           "points": [
-            "Arterial occlusion creates three zones: Core infarct (irreversible), penumbra (salvageable), and oligemic tissue",
-            "Core: ATP depletion within minutes → Na+/K+-ATPase failure → cellular depolarization → Ca2+ influx → excitotoxic cell death via glutamate release and NMDA receptor activation",
-            "Penumbra: Critically hypoperfused tissue with collateral flow maintaining minimal ATP to preserve membrane potential but insufficient for normal function",
-            "Ischemic cascade: Energy failure → ionic pump failure → membrane depolarization → Ca2+ overload → mitochondrial dysfunction → free radical generation → apoptosis",
-            "Time dependency: Core expands into penumbra at ~2mm/hour, but rate varies with collateral circulation and metabolic demand"
+            "Normal cerebral blood flow (CBF) is approximately 50 mL/100g/min; the brain consumes 20% of cardiac output despite being only 2% of body weight, reflecting extreme metabolic demand and near-zero anaerobic reserve",
+            "Ischemic core: CBF falls below 10-12 mL/100g/min — within minutes, ATP-dependent Na+/K+-ATPase fails, causing cytotoxic edema (intracellular Na+ and water influx), irreversible neuronal death, and restricted diffusion on DWI",
+            "Ischemic penumbra: CBF 12-22 mL/100g/min — neurons are electrically silent (loss of function) but structurally intact; this tissue survives on collateral flow and is the THERAPEUTIC TARGET of reperfusion",
+            "Excitotoxicity cascade: ischemia leads to glutamate release, NMDA receptor activation, massive Ca2+ influx triggering mitochondrial dysfunction, free radical generation, and activation of caspase-mediated apoptosis",
+            "The penumbra progressively converts to core over time — this is the biological basis of 'time is brain'; approximately 1.9 million neurons are lost per minute of untreated large vessel occlusion (Saver, Stroke 2006)",
+            "Collateral circulation via the Circle of Willis and leptomeningeal anastomoses determines penumbra survival — patients with robust collaterals have larger penumbra-to-core ratios and benefit more from late reperfusion (basis of DAWN/DEFUSE 3 imaging selection)"
           ],
-          "teaching_pearl": "The penumbra is metabolically active but functionally silent - this is why patients can have large areas of brain tissue at risk with relatively mild symptoms",
-          "board_tip": "Remember the ischemic cascade timeline: ATP depletion in minutes, ionic failure in 10-15 minutes, but penumbral tissue remains salvageable for hours if reperfused"
+          "teaching_pearl": "DWI-MRI detects the ischemic core within minutes (restricted diffusion from cytotoxic edema); perfusion-weighted imaging (PWI) or CTP shows the hypoperfused penumbra. The DWI-PWI MISMATCH = salvageable tissue. This mismatch concept is the physiologic foundation for the extended thrombectomy window.",
+          "board_tip": "On boards, a question showing a patient with a small DWI lesion but a large perfusion defect at 12 hours from last known well is pointing you toward thrombectomy eligibility per DAWN/DEFUSE 3 criteria — answer mechanical thrombectomy, NOT 'too late for intervention.'"
         },
         {
-          "heading": "Fibrinolytic Mechanism & tPA Pharmacology",
+          "heading": "tPA Mechanism, Eligibility, and Evidence",
+          "minutes": "3-4 min",
+          "points": [
+            "Alteplase (tPA) is a serine protease that binds fibrin on thrombus surface and converts plasminogen to plasmin, which cleaves fibrin cross-links — this fibrin specificity distinguishes it from older agents like streptokinase, though at therapeutic doses it still causes systemic fibrinolysis",
+            "Standard dose: 0.9 mg/kg (max 90 mg), 10% as IV bolus over 1 minute, remainder infused over 60 minutes — per AHA/ASA 2019 guidelines",
+            "NINDS trial (1995): IV tPA within 3 hours showed 30% relative increase in excellent outcomes (mRS 0-1 at 90 days); NNT = 8; established the 3-hour window; 6.4% symptomatic ICH vs 0.6% placebo",
+            "ECASS III (2008): extended the window to 4.5 hours with additional exclusions (age >80, NIHSS >25, oral anticoagulant use, history of both DM and prior stroke); NNT = 14; sICH 2.4% vs 0.2%",
+            "EXTEND trial (2019): further supported alteplase benefit in the 4.5-9 hour window when perfusion imaging shows salvageable tissue (mismatch), reinforcing physiology-guided selection",
+            "Tenecteplase: modified tPA with longer half-life (single IV bolus), greater fibrin specificity, and less systemic fibrinolysis; AHA/ASA now recognizes tenecteplase 0.25 mg/kg as reasonable alternative, especially as a bridging agent before thrombectomy",
+            "Key absolute contraindications: active internal bleeding, platelet count 1.7, aPTT elevated, recent intracranial surgery/trauma (3 months), prior ICH, BP unable to be lowered below 185/110 mmHg"
+          ],
+          "teaching_pearl": "tPA works best on partially organized fibrin-rich thrombi. Large vessel occlusions (ICA terminus, proximal MCA) have platelet-rich, organized clots that are relatively tPA-resistant — this is why LVO patients need mechanical thrombectomy even after tPA (bridging therapy).",
+          "board_tip": "Board favorite: patient presents at 3.5 hours with NIHSS 8, age 72 — eligible for tPA under ECASS III extended window. If the stem adds 'age 82 with diabetes and prior stroke' — these are ECASS III relative exclusions. Per AHA/ASA 2019, treatment is still generally recommended in this scenario, but know the original ECASS III exclusion criteria for exam questions."
+        },
+        {
+          "heading": "Thrombectomy, BP Management, and Acute Protocols",
+          "minutes": "2-3 min",
+          "points": [
+            "Mechanical thrombectomy (stent retriever or aspiration): indicated for LVO (ICA, M1, sometimes M2 MCA, basilar) with NIHSS generally ≥6 and small ischemic core",
+            "Within 6 hours: SWIFT-PRIME, ESCAPE, MR CLEAN, EXTEND-IA, REVASCAT all showed dramatic benefit — NNT approximately 2.6 for reduced disability",
+            "Extended window 6-24 hours: DAWN (clinical-core mismatch using age/NIHSS/core volume) and DEFUSE 3 (perfusion imaging mismatch) showed thrombectomy benefit; this is purely physiology-driven — selecting patients with viable penumbra regardless of clock time",
+            "BP management per AHA/ASA 2019: must achieve BP <185/110 BEFORE tPA administration; maintain <180/105 for 24 hours POST-tPA to reduce hemorrhagic transformation risk; use IV labetalol, nicardipine, or clevidipine",
+            "Physiologic rationale for BP control: reperfusion into ischemia-damaged microvasculature with disrupted blood-brain barrier makes hemorrhagic conversion directly proportional to perfusion pressure",
+            "In patients NOT receiving tPA or thrombectomy, permissive hypertension up to 220/120 is generally allowed for the first 24-48 hours to maintain penumbral perfusion through collaterals",
+            "Post-tPA monitoring: neuro checks every 15 minutes for 2 hours, then every 30 minutes for 6 hours, then hourly for 16 hours; any decline — stop infusion, emergent CT, check fibrinogen"
+          ],
+          "teaching_pearl": "If a patient deteriorates during or after tPA infusion: STOP the infusion immediately, obtain STAT non-contrast CT, send fibrinogen/CBC/PT. If ICH confirmed, give cryoprecipitate (target fibrinogen >200), tranexamic acid, and platelets. Reverse the lytic state first, then neurosurgical consultation.",
+          "board_tip": "Board trap: patient with LVO at 18 hours from LKW, NIHSS 14, small DWI core — the answer is thrombectomy evaluation with advanced imaging (CTP or MRI), NOT 'window has closed.' DAWN and DEFUSE 3 extended the window to 24 hours for imaging-selected patients."
+        },
+        {
+          "heading": "Secondary Prevention After Acute Ischemic Stroke",
           "minutes": "2 min",
           "points": [
-            "Alteplase (recombinant tissue plasminogen activator) binds to fibrin with high affinity, converting plasminogen to plasmin specifically at clot sites",
-            "Plasmin cleaves fibrin into soluble degradation products, dissolving the thrombus and restoring blood flow to penumbral tissue",
-            "Half-life of 4-6 minutes requires continuous infusion: 10% bolus, 90% over 60 minutes to maintain therapeutic levels",
-            "Fibrin selectivity reduces systemic fibrinolysis risk compared to streptokinase, but still causes transient hypofibrinogenemia",
-            "Reperfusion restores ATP synthesis, reactivates Na+/K+-ATPase, and halts the ischemic cascade in penumbral tissue"
+            "Dual antiplatelet therapy (DAPT): for minor stroke (NIHSS ≤3) or high-risk TIA (ABCD2 ≥4), start aspirin + clopidogrel within 24 hours, continue for 21 days, then transition to single antiplatelet — per CHANCE and POINT trials",
+            "CHANCE (2013): aspirin + clopidogrel vs aspirin alone within 24h of minor stroke/TIA; 32% relative risk reduction in recurrent stroke at 90 days in Chinese population",
+            "POINT (2018): confirmed benefit of early DAPT but showed increased bleeding after 21 days — establishing the 21-day DAPT duration sweet spot",
+            "Do NOT give antiplatelets within 24 hours of IV tPA — the risk of hemorrhagic transformation is unacceptably high",
+            "High-intensity statin (atorvastatin 80 mg or rosuvastatin 20 mg): begin immediately; pleiotropic effects include endothelial stabilization, anti-inflammatory action, and plaque stabilization beyond LDL lowering; per SPARCL trial target LDL <70 mg/dL",
+            "Atrial fibrillation detected: anticoagulation (DOACs preferred over warfarin per AHA) typically started at 4-14 days depending on stroke size (small stroke earlier, large stroke later to avoid hemorrhagic transformation)",
+            "ACE inhibitor/ARB + thiazide for long-term BP control: target <130/80 per AHA/ASA; PROGRESS trial showed 28% reduction in recurrent stroke with perindopril + indapamide"
           ],
-          "teaching_pearl": "tPA's fibrin selectivity is key - it preferentially activates plasminogen bound to fibrin, minimizing systemic bleeding risk while targeting the clot",
-          "board_tip": "The 4.5-hour window from ECASS III reflects when penumbral tissue begins transitioning to irreversible core infarct in most patients"
-        },
-        {
-          "heading": "Clinical Assessment & tPA Eligibility",
-          "minutes": "2-3 min",
-          "points": [
-            "Time criteria: Within 4.5 hours of last known well (LKW) per NINDS and ECASS III trials, not symptom discovery",
-            "Absolute contraindications: Active bleeding, recent surgery/trauma, previous ICH, aortic dissection, acute pancreatitis",
-            "Blood pressure: Must be <185/110 for tPA eligibility, maintain <180/105 post-tPA to prevent hemorrhagic transformation",
-            "Laboratory requirements: INR 100k, glucose >50 mg/dL (hypoglycemia mimics stroke)",
-            "Clinical assessment: NIHSS scoring, exclude stroke mimics (hypoglycemia, seizure, conversion disorder)",
-            "Relative contraindications in 3-4.5h window: Age >80, NIHSS >25, diabetes + prior stroke, anticoagulant use"
-          ],
-          "teaching_pearl": "Blood pressure elevation in acute stroke is often reactive and protective - only treat if >185/110 for tPA or >220/120 otherwise",
-          "board_tip": "Door-to-needle time goal is 60 minutes per AHA/ASA guidelines - parallel processing of imaging and labs speeds treatment"
-        },
-        {
-          "heading": "Modern Stroke Treatment & Outcomes",
-          "minutes": "2-3 min",
-          "points": [
-            "Mechanical thrombectomy: First-line for large vessel occlusion within 24 hours with favorable imaging per DAWN/DEFUSE 3 trials",
-            "Extended window treatment: CT/MRI perfusion or DWI-FLAIR mismatch identifies salvageable penumbra beyond traditional time windows",
-            "Tenecteplase emerging as alternative: Single bolus administration, potentially superior recanalization for LVO per recent updates",
-            "Secondary prevention: DAPT (aspirin + clopidogrel) for 21 days maximum for minor stroke/TIA per CHANCE/POINT trials",
-            "Risk factor modification: High-intensity statin, ACE inhibitor, diabetes control, anticoagulation for atrial fibrillation",
-            "Outcomes: 30% more patients achieve excellent outcome with tPA (mRS 0-1) per NINDS; NNT=8 for good outcome"
-          ],
-          "teaching_pearl": "The mantra 'time is brain' reflects that 1.9 million neurons die per minute during stroke - every minute of delay reduces treatment benefit",
-          "board_tip": "SWIFT-PRIME and similar trials established that thrombectomy plus tPA is superior to either alone for large vessel occlusions"
+          "teaching_pearl": "The timing of anticoagulation for AF-related stroke follows the '1-3-6-12 day rule' (informal guide): TIA = day 1, small stroke = day 3, moderate stroke = day 6, large stroke with hemorrhagic transformation risk = day 12-14. Always image before starting.",
+          "board_tip": "Classic board question: minor stroke NIHSS 2, within 12 hours, no tPA given — best next step is aspirin 325 mg loading + clopidogrel 300 mg loading, then DAPT for 21 days per CHANCE/POINT. If tPA was given, wait 24 hours before any antiplatelet."
         }
       ],
       "summary_points": [
-        "Stroke creates core infarct and salvageable penumbra through ischemic cascade: ATP depletion → ionic pump failure → excitotoxicity → cell death",
-        "tPA works by fibrin-selective plasminogen activation, dissolving clots and reperfusing penumbral tissue within 4.5-hour window",
-        "Key eligibility: INR 100k, BP <185/110, no active bleeding or ICH history",
-        "Modern approach combines IV thrombolysis with mechanical thrombectomy for LVO, extended windows with perfusion imaging per DAWN/DEFUSE 3"
+        "Ischemic penumbra is the therapeutic target — electrically silent but structurally viable tissue that can be rescued with timely reperfusion",
+        "IV alteplase within 4.5h (NINDS, ECASS III) and mechanical thrombectomy for LVO up to 24h with imaging selection (DAWN, DEFUSE 3) are standard of care per AHA/ASA 2019",
+        "BP must be <185/110 pre-tPA and <180/105 post-tPA to minimize hemorrhagic transformation through disrupted BBB",
+        "DAPT (aspirin + clopidogrel) for 21 days for minor stroke/TIA started within 24h (but NOT within 24h of tPA) per CHANCE/POINT",
+        "Secondary prevention triad: antiplatelet or anticoagulation (if AF), high-intensity statin, and BP control <130/80"
       ],
       "visual_memory_card": {
-        "top_left": "PENUMBRA: Metabolically active, functionally silent, salvageable tissue",
-        "top_right": "tPA: Fibrin-selective plasminogen activation → clot dissolution",
-        "bottom_left": "4.5h window from LKW, BP 100k",
-        "bottom_right": "NNT=8 for good outcome, 30% more mRS 0-1 with treatment",
-        "center": "TIME IS BRAIN: 1.9M neurons/minute"
+        "top_left": "NINDS: tPA ≤3h, NNT=8 | ECASS III: tPA 3-4.5h, NNT=14",
+        "top_right": "DAWN/DEFUSE 3: Thrombectomy 6-24h (imaging mismatch) | SWIFT-PRIME: ≤6h",
+        "bottom_left": "Pre-tPA: BP <185/110 | Post-tPA: BP <180/105 | Dose: 0.9 mg/kg (max 90), 10% bolus",
+        "bottom_right": "CHANCE/POINT: DAPT 21d for minor stroke/TIA | No antiplatelets within 24h of tPA",
+        "center": "TIME IS BRAIN: 1.9 million neurons/min lost → Core expands, Penumbra shrinks → REPERFUSE"
       }
     },
     "guideline_sources": [
@@ -1260,85 +1311,87 @@ var SAMPLES = [
     "style": "boards",
     "specialty": "Cardiovascular",
     "talk": {
-      "title": "Atrial Fibrillation Management Strategy",
-      "subtitle": "Rate Control vs Rhythm Control Decision Making",
+      "title": "Atrial Fibrillation: Rate vs Rhythm Control",
+      "subtitle": "Early Rhythm Control in Recently Diagnosed AF",
       "guideline_sources": [
-        "2023 ACC/AHA AFib Guidelines",
-        "EAST-AFNET 4 Trial"
+        "2023 ACC/AHA Atrial Fibrillation Guidelines",
+        "EAST-AFNET 4 Trial (2020)",
+        "CASTLE-AF Trial (2018)",
+        "CABANA Trial (2019)",
+        "AFFIRM Trial (2002)",
+        "RACE Trial (2002)"
       ],
       "question": {
-        "stem": "A 68-year-old woman with hypertension and diabetes presents with new-onset atrial fibrillation discovered 3 weeks ago during routine ECG. She reports mild palpitations and fatigue but can perform all activities of daily living without limitation. Her heart rate is 88 bpm, blood pressure is 142/84 mmHg, and echocardiogram shows normal left ventricular function (EF 60%) with mild left atrial enlargement. She is currently on metoprolol 50 mg twice daily and was started on apixaban. Which of the following is the most appropriate next management strategy?",
+        "stem": "A 58-year-old man presents to his cardiologist for follow-up after being diagnosed with atrial fibrillation 6 weeks ago during an emergency department visit for palpitations and dyspnea on exertion. His medical history includes hypertension, type 2 diabetes mellitus, and a prior ischemic stroke 2 years ago. He was started on apixaban and metoprolol at the initial visit. His current medications include apixaban 5 mg twice daily, metoprolol succinate 100 mg daily, lisinopril 20 mg daily, amlodipine 5 mg daily, and metformin 1000 mg twice daily. His heart rate is 82 bpm and irregular, blood pressure is 128/76 mmHg. An echocardiogram shows a left ventricular ejection fraction of 50%, left atrial diameter of 4.2 cm, and mild left ventricular hypertrophy. He reports ongoing fatigue and reduced exercise tolerance despite adequate rate control. His CHA2DS2-VASc score is 5. Which of the following is the most appropriate next step in management?",
         "choices": [
           {
             "letter": "A",
-            "text": "Continue rate control with metoprolol and monitor symptoms",
+            "text": "Continue current rate control strategy with metoprolol and reassess symptoms in 3 months",
             "correct": false
           },
           {
             "letter": "B",
-            "text": "Initiate rhythm control with cardioversion and antiarrhythmic therapy",
+            "text": "Initiate early rhythm control with antiarrhythmic drug therapy or catheter ablation",
             "correct": true
           },
           {
             "letter": "C",
-            "text": "Increase metoprolol dose to achieve heart rate <60 bpm",
+            "text": "Add digoxin to the current rate control regimen for better heart rate management",
             "correct": false
           },
           {
             "letter": "D",
-            "text": "Add diltiazem to current beta-blocker therapy",
+            "text": "Switch metoprolol to diltiazem for superior rate control",
             "correct": false
           },
           {
             "letter": "E",
-            "text": "Refer for immediate catheter ablation",
+            "text": "Refer for AV node ablation with permanent pacemaker implantation",
             "correct": false
           }
         ],
         "correct_letter": "B",
-        "explanation": "Per the 2023 ACC/AHA AFib Guidelines and supported by the EAST-AFNET 4 trial, early rhythm control is recommended for patients with recent-onset atrial fibrillation (within 1 year) who are candidates for rhythm control therapy. This patient has new-onset AF (3 weeks), is relatively young (68 years), symptomatic, and has preserved cardiac function, making her an ideal candidate for early rhythm control. The EAST-AFNET 4 trial demonstrated that early rhythm control within 1 year of AF diagnosis reduces cardiovascular outcomes compared to initial rate control strategy.",
+        "explanation": "This patient has recently diagnosed atrial fibrillation (within the past year), ongoing symptoms despite adequate rate control, and multiple cardiovascular risk factors (hypertension, diabetes, prior stroke, CHA2DS2-VASc of 5). Per the 2023 ACC/AHA Atrial Fibrillation Guidelines, early rhythm control is recommended in patients with AF diagnosed within the past 12 months, particularly in those with cardiovascular comorbidities and persistent symptoms. The EAST-AFNET 4 trial (2020) demonstrated that early rhythm control (initiated within 12 months of AF diagnosis) significantly reduced the composite endpoint of cardiovascular death, stroke, and hospitalization for heart failure or acute coronary syndrome compared to usual care (rate control), with a 21% relative risk reduction (HR 0.79; 96% CI 0.66-0.94). This benefit was observed regardless of whether rhythm control was achieved with antiarrhythmic drugs or catheter ablation. Importantly, the earlier AFFIRM (2002) and RACE (2002) trials, which showed no benefit of rhythm over rate control, enrolled patients with longer-standing AF and did not mandate early intervention. The paradigm shift introduced by EAST-AFNET 4 emphasizes that timing matters — early rhythm control within the first year of diagnosis confers cardiovascular benefit. Anticoagulation with apixaban must be continued regardless of rhythm control strategy given his CHA2DS2-VASc score of 5. The rhythm control approach (either antiarrhythmic medication such as flecainide, dronedarone, sotalol, or amiodarone — or catheter ablation) should be individualized based on patient preference, comorbidities, and structural heart disease.",
         "wrong_explanations": [
           {
             "letter": "A",
-            "why": "While rate control is appropriate for some AF patients, the 2023 guidelines favor early rhythm control in patients like this with recent-onset AF who are good candidates, based on EAST-AFNET 4 evidence."
+            "why": "Simply continuing rate control and reassessing later misses the opportunity for early rhythm control within the critical 12-month window from AF diagnosis. The EAST-AFNET 4 trial demonstrated that delaying rhythm control beyond 12 months from diagnosis loses the cardiovascular benefit. Additionally, this patient remains symptomatic despite adequate rate control, which further supports pursuing rhythm control rather than a watchful waiting approach."
           },
           {
             "letter": "C",
-            "why": "Over-aggressive rate control targeting <60 bpm is not recommended and may cause symptoms. The current rate of 88 bpm is acceptable if rhythm control is pursued."
+            "why": "Adding digoxin would intensify rate control but does not address the patient's ongoing symptoms attributable to AF itself (loss of atrial contribution to cardiac output, irregular ventricular response). Digoxin has a narrow therapeutic window, potential toxicity, and some observational data suggest possible increased mortality. More importantly, it does not offer the cardiovascular outcome benefits demonstrated with early rhythm control in EAST-AFNET 4."
           },
           {
             "letter": "D",
-            "why": "Combining beta-blockers and non-dihydropyridine calcium channel blockers increases risk of bradycardia and AV block, and doesn't address the underlying rhythm management decision."
+            "why": "Switching to diltiazem is another rate control strategy and would not address the underlying AF or his ongoing symptoms. While diltiazem is an effective rate control agent, the patient already has adequate rate control (heart rate 82 bpm), indicating that his symptoms are related to AF itself (irregularity, loss of atrial kick) rather than inadequate rate control. Furthermore, this approach misses the window for early rhythm control."
           },
           {
             "letter": "E",
-            "why": "While catheter ablation is effective, it's typically reserved for patients who have failed or are intolerant of antiarrhythmic medications, not as first-line rhythm control."
+            "why": "AV node ablation with permanent pacemaker implantation is a last-resort strategy reserved for patients with refractory AF who have failed both pharmacologic rate control and rhythm control strategies, or who are not candidates for catheter ablation of AF. This patient has not yet attempted any rhythm control strategy, making this premature and overly aggressive. AV node ablation also creates pacemaker dependency and does not restore sinus rhythm."
           }
         ]
       },
       "board_pearls": [
-        "EAST-AFNET 4 trial supports early rhythm control (within 1 year) over initial rate control in eligible AF patients",
-        "Rate control targets: resting HR <110 bpm (lenient) or <80 bpm (strict) - no mortality difference between strategies",
-        "Rhythm control candidates: younger patients, symptomatic AF, preserved LV function, recent-onset AF",
-        "Rate control preferred in: elderly, asymptomatic, significant comorbidities, longstanding persistent AF",
-        "Both strategies require anticoagulation based on CHA₂DS₂-VASc score regardless of rhythm control success"
+        "EAST-AFNET 4 showed that early rhythm control (within 12 months of AF diagnosis) reduces cardiovascular death, stroke, and hospitalization for HF/ACS — a paradigm shift from the earlier AFFIRM and RACE trials which showed no benefit but enrolled patients with longer-standing AF.",
+        "Anticoagulation decisions should be based on CHA2DS2-VASc score and must be continued regardless of whether rate or rhythm control is chosen; restoration of sinus rhythm does NOT eliminate stroke risk or the need for anticoagulation.",
+        "CASTLE-AF demonstrated that catheter ablation of AF in patients with HFrEF (EF ≤35%) reduces all-cause mortality and HF hospitalization compared to medical rate/rhythm control, supporting ablation as first-line in this population.",
+        "CABANA showed that catheter ablation reduced a composite of death, disabling stroke, serious bleeding, or cardiac arrest compared with drug therapy in the intention-to-treat population (borderline significance), with stronger benefit in the as-treated analysis — supporting ablation as a reasonable first-line strategy.",
+        "DOACs are preferred over warfarin for stroke prevention in nonvalvular AF per 2023 ACC/AHA guidelines; warfarin remains indicated for mechanical heart valves and moderate-to-severe mitral stenosis."
       ],
       "teaching_points": [
-        "The 2023 ACC/AHA guidelines emphasize early rhythm control based on EAST-AFNET 4 trial results showing cardiovascular benefit",
-        "Rate vs rhythm control is not mutually exclusive - patients may transition between strategies based on clinical response",
-        "Anticoagulation decisions are based on stroke risk (CHA₂DS₂-VASc), not whether rate or rhythm control is chosen"
+        "The key distinction between EAST-AFNET 4 and AFFIRM/RACE is timing: early rhythm control within 12 months of AF diagnosis confers cardiovascular benefit, whereas late rhythm control in established AF does not show clear superiority over rate control.",
+        "Rate control targets: lenient (<110 bpm at rest per RACE II) vs strict (<80 bpm at rest); lenient is acceptable in most patients, but symptomatic patients may benefit from stricter control or rhythm control.",
+        "For rhythm control, drug selection depends on structural heart disease: flecainide/propafenone for no structural disease; dronedarone for mild LVH; sotalol for CAD without HF; amiodarone for HFrEF or significant structural disease."
       ],
       "summary_points": [
-        "Early rhythm control is favored for recent-onset AF in appropriate candidates per 2023 guidelines and EAST-AFNET 4",
-        "Rate control remains appropriate for elderly, asymptomatic, or high-risk patients",
-        "Both strategies require appropriate anticoagulation based on stroke risk assessment"
+        "Early rhythm control (within 12 months of AF diagnosis) is superior to rate control for reducing cardiovascular events per EAST-AFNET 4; catheter ablation is particularly beneficial in AF with HFrEF per CASTLE-AF; anticoagulation must continue based on CHA2DS2-VASc regardless of rhythm strategy."
       ],
       "visual_memory_card": {
-        "top_left": "EAST-AFNET 4 Early rhythm control (within 1 year)",
-        "top_right": "Rate Control Targets: Lenient: <110 bpm Strict: <80 bpm",
-        "bottom_left": "Rhythm Control: • Young patients • Symptomatic • Recent onset • Preserved EF",
-        "bottom_right": "Rate Control: • Elderly • Asymptomatic • Multiple comorbidities • Longstanding AF",
-        "center": "Both require Anticoagulation per CHA₂DS₂-VASc"
+        "top_left": "EAST-AFNET 4: Early rhythm control within 12 months",
+        "top_right": "21% reduction in CV death, stroke, HF hospitalization",
+        "bottom_left": "AFFIRM/RACE: No benefit for late rhythm control",
+        "bottom_right": "CASTLE-AF: Ablation reduces mortality in AF + HFrEF",
+        "center": "EARLY = BETTER: Rhythm control wins when started within 1 year of AF diagnosis"
       }
     },
     "guideline_sources": [
