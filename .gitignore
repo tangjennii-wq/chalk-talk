@@ -1,0 +1,29 @@
+# Secrets — never commit
+.env
+.env.*
+*.key
+*api_key*
+*secrets*
+
+# Dependencies (the generator script is dependency-free; this is just safety)
+node_modules/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editor noise
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build / temp
+dist/
+tmp/
+*.log
+
+# Cloudflare Workers (Step 2) — auto-generated
+.wrangler/
+.dev.vars

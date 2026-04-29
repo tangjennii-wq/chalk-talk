@@ -1,0 +1,303 @@
+#!/usr/bin/env node
+/**
+ * generate_samples.js — Chalk Talk demo-mode sample generator
+ *
+ * Generates ~10 pre-baked chalk talks using the same two-step flow the live
+ * app uses (Sonnet drafts → Haiku peer-reviews & corrects), then embeds them
+ * into index.html so users can browse samples without an API key.
+ *
+ * Usage:
+ *   ANTHROPIC_API_KEY=sk-ant-... node generate_samples.js
+ *
+ * Optional flags:
+ *   --only=hyponatremia,hfref     Regenerate just specific topic slugs
+ *   --no-embed                    Write samples.json but don't touch index.html
+ *   --dry                         Print what would be generated, no API calls
+ *
+ * Notes:
+ *  • Requires Node 18+ (for built-in fetch)
+ *  • LECTURE_PROMPT and BOARDS_PROMPT below are kept verbatim in sync with
+ *    index.html — if you edit prompts in the app, mirror them here too.
+ *  • SAMPLES is replaced inside index.html via a marker comment. Don't
+ *    remove the `// __SAMPLES_MARKER__` comment in the HTML.
+ */
+
+const fs = require("fs");
+const path = require("path");
+
+// ─── CONFIG ────────────────────────────────────────────────────────────────
+const MODEL_MAIN = "claude-opus-4-6";
+const MODEL_CRITIC = "claude-haiku-4-5-20251001";
+const HTML_PATH = path.join(__dirname, "index.html");
+const JSON_PATH = path.join(__dirname, "samples.json");
+
+// ─── TOPIC SEED LIST ───────────────────────────────────────────────────────
+const SEEDS = [
+  { slug: "hyponatremia",  topic: "Hyponatremia: SIADH pathophysiology & Furst ratio", style: "lecture", specialty: "Nephrology" },
+  { slug: "hfref",         topic: "HFrEF: 4-pillar GDMT",                                style: "lecture", specialty: "Cardiovascular" },
+  { slug: "copd",          topic: "COPD exacerbation & GOLD",                            style: "lecture", specialty: "Pulmonary" },
+  { slug: "cirrhosis",     topic: "Cirrhosis complications",                             style: "lecture", specialty: "GI/Hepatology" },
+  { slug: "t2dm",          topic: "T2DM management & cardiorenal",                      style: "lecture", specialty: "Endocrinology" },
+  { slug: "sepsis",        topic: "Sepsis bundle (SSC 2021)",                           style: "lecture", specialty: "ID" },
+  { slug: "vte",           topic: "DVT/PE anticoagulation",                              style: "lecture", specialty: "Heme/Onc" },
+  { slug: "gout",          topic: "Gout: acute & chronic",                              style: "lecture", specialty: "Rheumatology" },
+  { slug: "stroke",        topic: "Acute ischemic stroke & tPA",                        style: "lecture", specialty: "Neurology" },
+  { slug: "afib_boards",   topic: "Atrial fibrillation: rate vs rhythm",                style: "boards",  specialty: "Cardiovascular" },
+];
+
+// ─── PROMPTS (mirror of LECTURE_PROMPT / BOARDS_PROMPT in index.html) ──────
+const LECTURE_PROMPT = 'You are a senior Internal Medicine educator (general IM across all subspecialties: cardiology, pulmonary, GI/hepatology, endocrine, ID, heme/onc, rheum, neuro, nephrology, critical care, allergy, derm, psych, geriatrics, palliative). Identify the relevant specialty from the topic and teach from that field. Default to general IM reasoning unless a specialty is explicitly stated; do NOT default to nephrology.\n\nINTERNAL REASONING PROCESS (think through this BEFORE writing the JSON, do not include in output):\n1. What is the precise mechanism at the cellular/molecular level?\n2. What is the organ-level physiology that follows from that mechanism?\n3. What is the pathophysiology — how does the disease disrupt normal physiology?\n4. What clinical findings logically follow from the pathophysiology?\n5. What is the workup strategy and why does each test answer a specific question?\n6. What is the current first-line treatment per the relevant society guideline, AND what is the mechanism by which it works?\n7. What landmark trials established this approach?\n8. Verify each step is internally consistent — does the treatment section logically follow from the mechanism section? Are there any contradictions?\n\nOnly after completing this reasoning, write the chalk talk. The physiology section MUST be deep and mechanistic, not superficial. Every clinical recommendation MUST trace back to a mechanistic rationale.\n\n10-min chalk talk. Physiology FIRST and DEEP. CRITICAL: When GUIDELINE REFERENCE CONTEXT is provided below, you MUST anchor your treatment recommendations and board tips to those specific guideline recommendations and cite the specific guideline name and year (e.g., "per KDIGO 2024" or "per 2022 AHA/ACC/HFSA"). Also cite the landmark trials listed. If the user has uploaded reference documents, use those as PRIMARY sources. If web search is available and the topic involves recent treatment standards, search for the most current guideline recommendations before writing.\n\nInclude treatment per the guideline society appropriate to the topic (AHA/ACC cardio, ATS/ERS pulm, ACG/AASLD GI/liver, ADA endo, IDSA ID, ASH heme, ASCO/NCCN onc, ACR rheum, AAN neuro, KDIGO nephro, SCCM ICU, AAAAI allergy, AAD derm, APA psych, AGS geriatrics, ACOG/NAMS women\'s health, USPSTF prevention, AAHPM palliative). 3-4 sections.\n\nONLY JSON:\n{"title":"","subtitle":"","guideline_sources":[""],"sections":[{"heading":"","minutes":"2-3 min","points":[""],"teaching_pearl":"","board_tip":""}],"summary_points":[""],"visual_memory_card":{"top_left":"","top_right":"","bottom_left":"","bottom_right":"","center":""}}';
+
+const BOARDS_PROMPT = 'You are an ABIM board-question writer for general Internal Medicine (all subspecialties). Match the question to whatever specialty the topic belongs to; do NOT default to nephrology unless the topic is clearly renal.\n\nINTERNAL REASONING PROCESS (think through this BEFORE writing the JSON, do not include in output):\n1. What is the highest-yield, board-relevant teaching point on this topic?\n2. What clinical scenario would discriminate someone who knows the concept from someone who doesn\'t?\n3. What are the classic distractors that test common misconceptions or competing diagnoses?\n4. What is the unambiguously correct answer per current guidelines, and why is it correct?\n5. For each wrong answer, what specific reasoning error or knowledge gap would lead to picking it?\n6. Is there ANY ambiguity in the answer? If yes, revise so the correct answer is unambiguously best.\n\nOnly after completing this reasoning, write the question. The vignette MUST be clinically realistic. The correct answer MUST be clearly best per current guidelines, not just defensible.\n\nCRITICAL: When GUIDELINE REFERENCE CONTEXT is provided below, anchor the correct answer, explanation, and board pearls to those specific guideline recommendations. Cite guideline name and year in the explanation. UWorld/AMBOSS-style vignette with stem, 5 choices A-E (one correct), explanation, why wrong answers wrong, 5 board pearls, teaching points.\n\nONLY JSON:\n{"title":"","subtitle":"","guideline_sources":[""],"question":{"stem":"","choices":[{"letter":"A","text":"","correct":false},{"letter":"B","text":"","correct":true},{"letter":"C","text":"","correct":false},{"letter":"D","text":"","correct":false},{"letter":"E","text":"","correct":false}],"correct_letter":"B","explanation":"","wrong_explanations":[{"letter":"A","why":""},{"letter":"C","why":""},{"letter":"D","why":""},{"letter":"E","why":""}]},"board_pearls":["","","","",""],"teaching_points":["","",""],"summary_points":[""],"visual_memory_card":{"top_left":"","top_right":"","bottom_left":"","bottom_right":"","center":""}}';
+
+const CRITIQUE_SYSTEM = "You are a senior board-certified Internal Medicine attending acting as a peer reviewer for a chalk talk. Review for: (1) factual errors in physiology or pharmacology, (2) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/AAAAI/AAD/APA/AGS/ACOG/USPSTF/AAHPM), (3) internal contradictions, (4) wrong landmark trial attributions, (5) shallow physiology. Do NOT flag stylistic preferences.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk is accurate and needs no changes:\n{\"verdict\":\"clean\"}\n\nIF you find substantive accuracy issues, return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all your fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
+
+// ─── GUIDELINE CONTEXT (lightweight, per specialty) ────────────────────────
+const GUIDELINE_CONTEXT = {
+  "Nephrology": {
+    text: "[KDIGO Guidelines]\n• KDIGO 2024 CKD Evaluation & Management: Risk-stratification with eGFRcr-cys and ACR. RASi + SGLT2i + finerenone backbone for proteinuric CKD (DAPA-CKD, EMPA-KIDNEY, FIDELIO/FIGARO). GLP-1 RA per FLOW. Statins per SHARP. KFRE for individualized risk.\n• Hyponatremia: SIADH is euvolemic with low serum osm + inappropriately concentrated urine + UNa>30. Furst formula (urine [Na+K] / serum Na) predicts response to fluid restriction; >1 won't respond. Correct ≤8 mEq/24h to avoid ODS. DDAVP clamp for overcorrection.",
+    sources: ["KDIGO 2024 CKD Evaluation & Management","KDIGO 2024 Blood Pressure in CKD","KDIGO 2022 Diabetes in CKD"],
+    trials: ["DAPA-CKD","EMPA-KIDNEY","FIDELIO-DKD","FIGARO-DKD","FLOW","SPRINT","SHARP"]
+  },
+  "Cardiovascular": {
+    text: "[AHA/ACC Guidelines]\n• 2022 AHA/ACC/HFSA HF: HFrEF four-pillar GDMT — ARNi (or ACEi/ARB), beta-blocker, MRA, SGLT2i — start together, titrate fast. HFpEF benefits from SGLT2i (EMPEROR-Preserved, DELIVER). IV iron (AFFIRM-AHF). ICD/CRT per EF + QRS.\n• 2023 ACC/AHA AFib: CHA₂DS₂-VASc → DOAC > warfarin. EAST-AFNET 4 supports early rhythm control; CASTLE-AF / CABANA support ablation in symptomatic AF + HFrEF.\n• 2025 AHA/ACC HTN: target <130/80; resistant HTN → spironolactone (PATHWAY-2).\n• 2025 ACC/AHA ACS: unified STEMI/NSTEMI; early invasive for high-risk NSTEMI; DAPT individualized; colchicine (COLCOT, LoDoCo2) as anti-inflammatory secondary prevention.",
+    sources: ["2022 AHA/ACC/HFSA Heart Failure","2023 ACC/AHA Atrial Fibrillation","2025 AHA/ACC Hypertension","2025 ACC/AHA ACS"],
+    trials: ["PARADIGM-HF","DAPA-HF","EMPEROR-Reduced","EMPEROR-Preserved","DELIVER","AFFIRM-AHF","EAST-AFNET 4","CASTLE-AF","CABANA","PATHWAY-2","COLCOT","LoDoCo2"]
+  },
+  "Pulmonary": {
+    text: "[ATS / GOLD Guidelines]\n• GOLD 2024 COPD: ABE assessment groups (replaces ABCD). Exacerbation management: bronchodilators + systemic steroids (5d prednisone 40mg per REDUCE), antibiotics if 2 of 3 cardinal sx (Anthonisen criteria) or mechanical ventilation. NIV first-line for hypercapnic respiratory failure (per Brochard et al). Long-term: LAMA + LABA, add ICS if blood eos ≥300 or freq exacerbations. Pulm rehab. Long-term O2 if SpO2≤88% (NOTT/MRC).",
+    sources: ["GOLD 2024 COPD"],
+    trials: ["NOTT","MRC","REDUCE","IMPACT","ETHOS"]
+  },
+  "GI/Hepatology": {
+    text: "[AASLD Guidelines]\n• AASLD 2021 Cirrhosis & 2024 Ascites/AKI: Variceal bleed → octreotide + ceftriaxone (SBP prophylaxis) + EVL. Refractory ascites → TIPS (per recent EASL/AASLD). Hepatorenal syndrome-AKI: albumin + terlipressin (CONFIRM trial). HE: lactulose ± rifaximin. SBP: cefotaxime + albumin (Sort trial). HCC screening with US ± AFP q6mo. MELD-Na for transplant priority.",
+    sources: ["AASLD 2021 Cirrhosis","AASLD 2024 Ascites & HRS"],
+    trials: ["CONFIRM","Sort"]
+  },
+  "Endocrinology": {
+    text: "[ADA Guidelines]\n• ADA 2024 Standards of Care: Metformin baseline (unless contraindicated). Layer SGLT2i for ASCVD/HF/CKD regardless of A1c (EMPA-REG, CANVAS, DAPA-CKD, EMPEROR-Reduced). GLP-1 RA for ASCVD/obesity (LEADER, REWIND, SUSTAIN-6, SELECT). Statins for ASCVD risk. ACEi/ARB for albuminuria. A1c <7% individualized; less stringent for elderly/comorbid.",
+    sources: ["ADA 2024 Standards of Care","KDIGO 2022 Diabetes in CKD"],
+    trials: ["EMPA-REG","CANVAS","LEADER","REWIND","SUSTAIN-6","SELECT","FLOW"]
+  },
+  "ID": {
+    text: "[SCCM / IDSA Guidelines]\n• Surviving Sepsis Campaign 2021: Hour-1 bundle — lactate, blood cultures BEFORE antibiotics, broad-spectrum antibiotics within 1h, 30 mL/kg crystalloid for hypotension/lactate≥4, vasopressors (norepinephrine first-line) for MAP<65 after fluids. Source control. Reassess fluid status (passive leg raise, dynamic indices). Balanced crystalloids preferred (SMART, BaSICS). De-escalate antibiotics by 48-72h.",
+    sources: ["Surviving Sepsis Campaign 2021"],
+    trials: ["ARISE","ProCESS","ProMISe","SMART","BaSICS","ANDROMEDA-SHOCK"]
+  },
+  "Heme/Onc": {
+    text: "[ASH Guidelines]\n• ASH 2020 VTE Treatment: DOAC first-line for most acute DVT/PE (apixaban, rivaroxaban — no lead-in heparin needed; dabigatran/edoxaban require lead-in). LMWH if cancer-associated (CARAVAGGIO, HOKUSAI-CANCER show DOACs noninferior). Warfarin still for severe renal disease, mechanical valves, APS. Provoked VTE → 3 months. Unprovoked → indefinite if low bleed risk. Massive PE → systemic thrombolysis or catheter-directed.",
+    sources: ["ASH 2020 VTE Treatment","ESC 2019 PE"],
+    trials: ["AMPLIFY","EINSTEIN","RE-COVER","HOKUSAI-VTE","CARAVAGGIO","HOKUSAI-CANCER","PEITHO"]
+  },
+  "Rheumatology": {
+    text: "[ACR Guidelines]\n• ACR 2020 Gout: Acute → NSAID, colchicine, or steroid (any of these; combine for severe). Chronic urate-lowering with allopurinol first-line, target uric acid <6 (or <5 if tophi). Treat-to-target. Start ULT during acute flare with anti-inflammatory prophylaxis (3-6 mo). HLA-B*5801 screening in high-risk populations (Asian) before allopurinol. Febuxostat alternative if allopurinol fails (CARES caution re CV mortality).",
+    sources: ["ACR 2020 Gout"],
+    trials: ["CARES","CONFIRMS"]
+  },
+  "Neurology": {
+    text: "[AHA/ASA Guidelines]\n• AHA/ASA 2019/2021 Acute Ischemic Stroke: IV alteplase (or tenecteplase per recent updates) within 4.5h of LKW for eligible patients. Mechanical thrombectomy within 24h for LVO with favorable imaging (DAWN, DEFUSE 3 extended window). BP <185/110 for tPA eligibility, <180/105 post-tPA. Dual antiplatelet (DAPT) ≤21d for minor stroke/TIA per CHANCE/POINT (≤24h start). Statin, ACEi for secondary prevention.",
+    sources: ["AHA/ASA 2019 AIS","AHA/ASA 2021 Stroke Prevention"],
+    trials: ["NINDS","ECASS III","DAWN","DEFUSE 3","CHANCE","POINT","EXTEND","SWIFT-PRIME"]
+  }
+};
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function stripCitations(s) {
+  if (!s) return s;
+  return String(s)
+    .replace(/<cite[^>]*>.*?<\/cite>/gs, "")
+    .replace(/<\/?cite[^>]*>/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function deepClean(obj) {
+  if (obj == null) return obj;
+  if (typeof obj === "string") return stripCitations(obj);
+  if (Array.isArray(obj)) return obj.map(deepClean);
+  if (typeof obj === "object") {
+    const out = {};
+    for (const k of Object.keys(obj)) out[k] = deepClean(obj[k]);
+    return out;
+  }
+  return obj;
+}
+function fixJSON(raw) {
+  let s = (raw || "").trim();
+  s = s.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
+  const i = s.indexOf("{");
+  const j = s.lastIndexOf("}");
+  if (i >= 0 && j > i) s = s.slice(i, j + 1);
+  return s;
+}
+
+async function callAPI({ system, content, maxTokens, model }) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY env var required");
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: model || MODEL_MAIN,
+      max_tokens: maxTokens,
+      system,
+      messages: [{ role: "user", content }]
+    })
+  });
+  if (!r.ok) {
+    const errTxt = await r.text();
+    throw new Error(`API ${r.status}: ${errTxt.slice(0, 400)}`);
+  }
+  const data = await r.json();
+  let txt = "";
+  for (const block of data.content || []) {
+    if (block.type === "text") txt += block.text;
+  }
+  return txt;
+}
+
+async function generateOne(seed) {
+  const ctx = GUIDELINE_CONTEXT[seed.specialty];
+  let guidelineContext = "";
+  if (ctx) {
+    guidelineContext = "\n\n═══ GUIDELINE REFERENCE CONTEXT (use this to anchor your recommendations) ═══\n" + ctx.text;
+    if (ctx.trials && ctx.trials.length > 0) {
+      guidelineContext += "\nLandmark trials to cite when relevant: " + ctx.trials.join(", ");
+    }
+    guidelineContext += "\n═══ END GUIDELINE CONTEXT ═══";
+  }
+
+  const userContent =
+    `Create content on: "${seed.topic}"` +
+    guidelineContext +
+    "\nRely on your training and the GUIDELINE REFERENCE CONTEXT above. Do not search the web." +
+    "\nONLY JSON. Plain text values, no XML tags, no citation markup.";
+
+  const system = seed.style === "boards" ? BOARDS_PROMPT : LECTURE_PROMPT;
+
+  process.stdout.write(`  → drafting with ${MODEL_MAIN}... `);
+  const draftRaw = await callAPI({ system, content: userContent, maxTokens: 4096, model: MODEL_MAIN });
+  if (!draftRaw.trim()) throw new Error("Empty draft response");
+  let draftTalk = JSON.parse(fixJSON(draftRaw));
+  draftTalk = deepClean(draftTalk);
+  process.stdout.write("ok\n");
+
+  process.stdout.write(`  → peer review with ${MODEL_CRITIC}... `);
+  let finalTalk = draftTalk;
+  try {
+    const critRaw = await callAPI({
+      system: CRITIQUE_SYSTEM,
+      content: `Topic: ${seed.topic}\n\nDraft chalk talk to review:\n${JSON.stringify(draftTalk)}`,
+      maxTokens: 4096,
+      model: MODEL_CRITIC
+    });
+    if (critRaw && critRaw.trim()) {
+      let parsed = JSON.parse(fixJSON(critRaw));
+      parsed = deepClean(parsed);
+      if (parsed.verdict === "clean") {
+        process.stdout.write("clean\n");
+      } else if (parsed.title || parsed.question) {
+        finalTalk = parsed;
+        process.stdout.write("corrections applied\n");
+      } else {
+        process.stdout.write("(unparseable, keeping draft)\n");
+      }
+    }
+  } catch (e) {
+    process.stdout.write(`(failed: ${e.message.slice(0, 60)}, keeping draft)\n`);
+  }
+
+  return {
+    slug: seed.slug,
+    topic: seed.topic,
+    style: seed.style,
+    specialty: seed.specialty,
+    talk: finalTalk,
+    guideline_sources: ctx ? ctx.sources : [],
+    generated_at: new Date().toISOString().slice(0, 10)
+  };
+}
+
+function embedIntoHTML(samples) {
+  let html = fs.readFileSync(HTML_PATH, "utf8");
+  const marker = "// __SAMPLES_MARKER__";
+  if (!html.includes(marker)) {
+    console.error(`\n⚠ Could not find ${marker} in index.html — samples written to samples.json only.`);
+    return false;
+  }
+  const replacement = `var SAMPLES = ${JSON.stringify(samples, null, 2)}; ${marker}`;
+  const re = /var SAMPLES\s*=\s*[\s\S]*?;\s*\/\/ __SAMPLES_MARKER__/;
+  if (re.test(html)) {
+    html = html.replace(re, replacement);
+  } else {
+    html = html.replace(marker, replacement);
+  }
+  fs.writeFileSync(HTML_PATH, html, "utf8");
+  return true;
+}
+
+// ─── MAIN ─────────────────────────────────────────────────────────────────
+(async () => {
+  const args = process.argv.slice(2);
+  const argOnly = args.find(a => a.startsWith("--only="));
+  const onlySlugs = argOnly ? argOnly.slice(7).split(",").map(s => s.trim()) : null;
+  const noEmbed = args.includes("--no-embed");
+  const dry = args.includes("--dry");
+
+  const seeds = onlySlugs ? SEEDS.filter(s => onlySlugs.includes(s.slug)) : SEEDS;
+  if (seeds.length === 0) {
+    console.error("No matching seeds. Available slugs:", SEEDS.map(s => s.slug).join(", "));
+    process.exit(1);
+  }
+
+  console.log(`\nChalk Talk · sample generator`);
+  console.log(`Topics queued: ${seeds.length}`);
+  if (dry) {
+    console.log("Dry run — no API calls. Topics:");
+    for (const s of seeds) console.log(`  • [${s.style}] ${s.topic}`);
+    process.exit(0);
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("\n⚠ ANTHROPIC_API_KEY not set. Run:\n  ANTHROPIC_API_KEY=sk-ant-... node generate_samples.js\n");
+    process.exit(1);
+  }
+
+  let existing = [];
+  if (fs.existsSync(JSON_PATH)) {
+    try { existing = JSON.parse(fs.readFileSync(JSON_PATH, "utf8")); } catch {}
+  }
+  const bySlug = new Map(existing.map(s => [s.slug, s]));
+
+  for (let i = 0; i < seeds.length; i++) {
+    const seed = seeds[i];
+    console.log(`\n[${i + 1}/${seeds.length}] ${seed.topic} (${seed.style})`);
+    try {
+      const sample = await generateOne(seed);
+      bySlug.set(seed.slug, sample);
+      const allOrdered = SEEDS.map(s => bySlug.get(s.slug)).filter(Boolean);
+      fs.writeFileSync(JSON_PATH, JSON.stringify(allOrdered, null, 2), "utf8");
+      console.log(`  ✓ saved to samples.json (${allOrdered.length}/${SEEDS.length} total)`);
+    } catch (e) {
+      console.error(`  ✗ FAILED: ${e.message}`);
+    }
+  }
+
+  const finalSamples = SEEDS.map(s => bySlug.get(s.slug)).filter(Boolean);
+  console.log(`\n${finalSamples.length} sample(s) saved to ${JSON_PATH}`);
+
+  if (!noEmbed) {
+    const ok = embedIntoHTML(finalSamples);
+    if (ok) console.log(`✓ Embedded into ${HTML_PATH}`);
+  }
+
+  console.log("\nReview the samples in the app:");
+  console.log(`  open "${HTML_PATH}"`);
+  console.log("Click 📚 Examples in the header to browse.\n");
+})().catch(e => {
+  console.error("Fatal:", e);
+  process.exit(1);
+});
