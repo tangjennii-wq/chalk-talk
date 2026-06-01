@@ -125,6 +125,10 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 .tk-capsule .cap-actions button{background:none;border:none;color:var(--ink-muted);font-size:11.5px;font-weight:500;padding:5px 8px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all .12s ease}
 .tk-capsule .cap-actions button:hover{background:var(--lavender-bg);color:var(--plum)}
 .tk-capsule .cap-actions button.cap-primary{color:var(--plum);font-weight:600}
+/* Save is the primary action — filled, prominent like the Generate CTA */
+.tk-capsule .cap-actions button.cap-save{background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;color:#fff;font-weight:600;padding:7px 14px;border-radius:18px;font-size:12px;box-shadow:0 2px 8px rgba(75,17,111,0.25);transition:all .15s ease}
+.tk-capsule .cap-actions button.cap-save:hover{background:linear-gradient(135deg,var(--plum-deep),var(--plum-rich));color:#fff;box-shadow:0 3px 12px rgba(75,17,111,0.32);transform:translateY(-1px)}
+.tk-capsule .cap-actions button.cap-save:active{transform:translateY(0)}
 .tk-capsule .cap-actions .cap-more{width:28px;height:28px;padding:0;border-radius:50%;background:var(--cream);border:1px solid var(--line);color:var(--plum);font-size:18px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;line-height:1;margin-left:4px;box-shadow:var(--shadow-soft);transition:all .12s ease}
 .tk-capsule .cap-actions .cap-more:hover{background:var(--lavender-bg);color:var(--plum-deep);border-color:var(--plum)}
 /* Lesson title block */
@@ -3203,9 +3207,9 @@ function renderMain(){
       : '';
     h+='<div class="cap-meta"><b>'+esc(t.title||S.topic)+'</b><span class="sep">·</span>'+styleLbl+depthPill+(refsCount>0?' <span class="sep">·</span>'+refsCount+' ref'+(refsCount===1?'':'s'):'')+'</div>';
     h+='<div class="cap-actions">';
-    // Save button — top-level so users don't have to dig through ⋯. Hidden for samples (already saved).
+    // Save button — primary action in the capsule (filled CTA treatment). Hidden for samples (already saved).
     if(!S.isSampleTalk){
-      h+='<button id="saveTalkBtnTop" class="cap-primary" title="Save to library">★ <span class="hide-mobile-text">Save</span></button>';
+      h+='<button id="saveTalkBtnTop" class="cap-save" title="Save to library">★ <span class="hide-mobile-text">Save</span></button>';
     }
     h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit settings</span></button>';
     // Rebuild moved into the overflow menu (was redundant — the depth-toggle pill above already triggers a rebuild on tap).
@@ -3301,11 +3305,33 @@ function renderMain(){
         }
       }
 
-      // References inline (compact)
+      // Bottom Save CTA — surfaces Save after the user has read through the lesson, before references/supporting material.
+      if(!S.isSampleTalk){
+        h+='<div style="margin:18px 0 14px;text-align:center">';
+        h+='<button id="saveTalkBtnBottom" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:18px;padding:13px 26px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 3px 12px rgba(75,17,111,0.28);display:inline-flex;align-items:center;gap:8px;transition:all .15s ease"><span style="font-size:16px">★</span>Save to library</button>';
+        h+='</div>';
+      }
+
+      // References inline (compact, collapsible). Show first 3 by default; rest hidden behind <details> toggle.
       if(t.references&&t.references.length){
-        h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0 8px"><div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:8px">References</div><ol style="list-style:none;padding:0;margin:0">';
-        for(var rfi=0;rfi<t.references.length;rfi++){var rf=t.references[rfi];var meta=[];if(rf.year)meta.push(String(rf.year));if(rf.society)meta.push(esc(rf.society));h+='<li style="display:flex;gap:8px;font-size:11.5px;line-height:1.5;color:var(--ink);margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed var(--line-soft)"><span style="background:var(--lavender-bg);color:var(--plum);border-radius:4px;padding:0 6px;font-size:10px;font-weight:600;flex-shrink:0;height:fit-content;margin-top:1px">'+esc(String(rf.id))+'</span><span style="flex:1"><strong style="color:var(--plum-deep)">'+esc(rf.source||("Reference "+rf.id))+'</strong>'+(meta.length?' <span style="font-size:10.5px;color:var(--ink-muted)">· '+meta.join(" · ")+'</span>':'')+(rf.url?'<br><a href="'+esc(rf.url)+'" target="_blank" rel="noopener" style="color:var(--plum);text-decoration:none;font-size:10.5px;border-bottom:1px solid var(--lavender)">'+esc(rf.url.length>50?rf.url.slice(0,50)+"…":rf.url)+'</a>':'')+'</span></li>'}
-        h+='</ol></div>';
+        var REF_PREVIEW = 3;
+        function _renderRef(rf){
+          var meta=[];if(rf.year)meta.push(String(rf.year));if(rf.society)meta.push(esc(rf.society));
+          return '<li style="display:flex;gap:8px;font-size:11.5px;line-height:1.5;color:var(--ink);margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed var(--line-soft)"><span style="background:var(--lavender-bg);color:var(--plum);border-radius:4px;padding:0 6px;font-size:10px;font-weight:600;flex-shrink:0;height:fit-content;margin-top:1px">'+esc(String(rf.id))+'</span><span style="flex:1"><strong style="color:var(--plum-deep)">'+esc(rf.source||("Reference "+rf.id))+'</strong>'+(meta.length?' <span style="font-size:10.5px;color:var(--ink-muted)">· '+meta.join(" · ")+'</span>':'')+(rf.url?'<br><a href="'+esc(rf.url)+'" target="_blank" rel="noopener" style="color:var(--plum);text-decoration:none;font-size:10.5px;border-bottom:1px solid var(--lavender)">'+esc(rf.url.length>50?rf.url.slice(0,50)+"…":rf.url)+'</a>':'')+'</span></li>';
+        }
+        h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0 8px">';
+        h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:8px">References <span style="font-weight:500;color:var(--ink-soft);letter-spacing:0">('+t.references.length+')</span></div>';
+        h+='<ol style="list-style:none;padding:0;margin:0">';
+        var visibleCount = Math.min(REF_PREVIEW, t.references.length);
+        for(var rfi=0;rfi<visibleCount;rfi++) h += _renderRef(t.references[rfi]);
+        h+='</ol>';
+        if(t.references.length > REF_PREVIEW){
+          h+='<details style="margin-top:4px"><summary style="cursor:pointer;color:var(--plum);font-size:11.5px;font-weight:600;list-style:none;padding:6px 0;display:inline-flex;align-items:center;gap:5px">Show '+(t.references.length-REF_PREVIEW)+' more <span style="font-size:10px">⌄</span></summary>';
+          h+='<ol style="list-style:none;padding:0;margin:6px 0 0" start="'+(REF_PREVIEW+1)+'">';
+          for(var rfi2=REF_PREVIEW;rfi2<t.references.length;rfi2++) h += _renderRef(t.references[rfi2]);
+          h+='</ol></details>';
+        }
+        h+='</div>';
       }
 
       // Guidelines + RAG sources (moved here from above the lesson outline — supporting material at bottom)
@@ -3683,6 +3709,8 @@ function bindMain(){
   var stb=document.getElementById("saveTalkBtn");if(stb)stb.onclick=saveCurrentTalk;
   // Save button in capsule header (top of page) — same handler.
   var stbTop=document.getElementById("saveTalkBtnTop");if(stbTop)stbTop.onclick=saveCurrentTalk;
+  // Save button at the bottom (after the lesson outline) — same handler.
+  var stbBot=document.getElementById("saveTalkBtnBottom");if(stbBot)stbBot.onclick=saveCurrentTalk;
   var ptb=document.getElementById("pdfTalkBtn");if(ptb)ptb.onclick=exportTalkPDF;
   var jtb=document.getElementById("jsonTalkBtn");if(jtb)jtb.onclick=function(){exportTalkJSON(null)};
   var shr=document.getElementById("shareTalkBtn");if(shr)shr.onclick=function(){shareTalk()};
