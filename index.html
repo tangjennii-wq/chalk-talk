@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0222)file:///Users/jennitang/Library/Application%20Support/Claude/local-agent-mode-sessions/e81e9583-3c0c-422f-b111-95a8fcb4a0c4/6ac9476e-ca78-428c-88a7-55ba3b823391/local_6175cb78-1601-4c37-9be5-0c006d87c387/outputs/index.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Chalk Talk \u00b7 10-minute teaching generator for IM educators</title>
 <meta name="description" content="Type any internal medicine topic, get a structured 10-minute chalk talk grounded in current society guidelines, AI-checked by a second model. Free for educators.">
@@ -28,7 +28,7 @@
 <meta name="twitter:image:alt" content="Chalk Talk \u2014 10-minute teaching generator">
 
 <!-- Favicon -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23330662'/><text x='32' y='44' text-anchor='middle' fill='white' font-family='Georgia,serif' font-weight='700' font-size='38'>C</text></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; viewBox=&#39;0 0 64 64&#39;&gt;&lt;rect width=&#39;64&#39; height=&#39;64&#39; rx=&#39;14&#39; fill=&#39;%23330662&#39;/&gt;&lt;text x=&#39;32&#39; y=&#39;44&#39; text-anchor=&#39;middle&#39; fill=&#39;white&#39; font-family=&#39;Georgia,serif&#39; font-weight=&#39;700&#39; font-size=&#39;38&#39;&gt;C&lt;/text&gt;&lt;/svg&gt;">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -52,6 +52,26 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--paper);colo
 .toggle-sw input:checked + .slider{background:var(--plum)}
 .toggle-sw input:checked + .slider:before{transform:translateX(18px)}
 .toggle-sw input:disabled + .slider{opacity:.4;cursor:not-allowed}
+/* Inline help tooltip for STYLE / DEPTH labels (hover or focus) */
+.opt-hint{position:relative;display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--lavender-bg);color:var(--plum);font-size:9.5px;font-weight:700;cursor:help;margin-left:6px;vertical-align:middle;font-style:normal;text-transform:none;letter-spacing:0;font-family:Georgia,serif;line-height:1;border:none}
+.opt-hint:focus{outline:2px solid var(--plum);outline-offset:1px}
+.opt-hint-pop{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:11.5px;font-weight:400;padding:8px 11px;border-radius:8px;width:max-content;max-width:240px;line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,0.22);opacity:0;pointer-events:none;transition:opacity .12s ease;text-align:left;letter-spacing:0;text-transform:none;z-index:100;white-space:normal}
+.opt-hint:hover .opt-hint-pop, .opt-hint:focus .opt-hint-pop{opacity:1}
+.opt-hint-pop::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink)}
+/* "How this works" inline disclosure — quiet pill below the hero card */
+details.howit{margin:0 0 14px;text-align:center}
+details.howit > summary{list-style:none;display:inline-flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:7px 13px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-soft);transition:all .15s ease}
+details.howit > summary::-webkit-details-marker{display:none}
+details.howit > summary::marker{display:none}
+details.howit > summary:hover{border-color:var(--plum-rich)}
+details.howit .howit-caret{display:inline-block;color:var(--ink-soft);transition:transform .15s ease;font-size:11px}
+details.howit[open] .howit-caret{transform:rotate(180deg);color:var(--plum)}
+details.howit .howit-body{margin:10px auto 0;max-width:540px;background:var(--cream);border:1px solid var(--line-soft);border-radius:14px;padding:14px 16px;text-align:left;font-size:12.5px;line-height:1.55;color:var(--ink);box-shadow:var(--shadow-soft)}
+details.howit .howit-step{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px}
+details.howit .howit-step:last-child{margin-bottom:0}
+details.howit .howit-num{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--lavender-soft);color:var(--plum);font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-top:1px}
+details.howit .howit-step b{color:var(--plum-deep)}
+details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-muted);text-align:center}
 /* Talk-view: sticky header + tabs + accordion + modal */
 .tk-header{position:sticky;top:0;z-index:50;background:var(--paper);padding:8px 0 0;margin:0 -16px;border-bottom:1px solid var(--line)}
 .tk-header-inner{padding:0 16px 8px}
@@ -111,13 +131,14 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--paper);colo
 .tk-lessontitle .ttl-sub{font-size:13px;color:var(--ink-muted);margin:4px 0 0;line-height:1.35}
 .tk-lessontitle{margin:6px 0 12px;padding:0 2px}
 .tk-lessontitle .ttl-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
-/* 2x2 mode grid */
-.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.mode-card{background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:18px 14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:all .15s ease;color:var(--ink-muted);font-size:13px;font-weight:600;letter-spacing:-0.005em;box-shadow:var(--shadow-soft);min-height:78px}
-.mode-card .mc-ico{font-size:18px;color:var(--ink-soft);line-height:1}
-.mode-card.active{background:linear-gradient(135deg,var(--plum-deep) 0%,var(--plum-rich) 100%);border-color:var(--plum-deep);color:#fff;box-shadow:0 4px 14px rgba(75,17,111,0.22)}
-.mode-card.active .mc-ico{color:#fff}
-.mode-card:not(.active):hover{border-color:var(--plum-rich)}
+/* Mode tabs — single-row segmented control (matches Style/Depth on compose) */
+.mode-grid{display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft);margin-bottom:12px}
+.mode-card{flex:1 1 0;min-width:0;background:transparent;border:1px solid transparent;border-radius:10px;padding:9px 8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;color:var(--ink-muted);font-size:13px;font-weight:500;letter-spacing:-0.005em;transition:all .15s ease;box-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mode-card .mc-ico{font-size:14px;color:var(--ink-soft);line-height:1}
+.mode-card.active{background:#fff;border-color:var(--line);color:var(--plum-deep);font-weight:600;box-shadow:var(--shadow-soft)}
+.mode-card.active .mc-ico{color:var(--plum-deep)}
+.mode-card:not(.active):hover{color:var(--plum)}
+.mode-card:disabled,.mode-card[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
 /* Guideline row collapsed/expanded */
 .guideline-row{background:#f0f7f0;border:1px solid #b8d8b8;border-radius:14px;margin-bottom:10px;overflow:hidden}
 .guideline-row .gr-head{display:flex;align-items:center;gap:9px;padding:9px 13px;cursor:pointer;width:100%;background:none;border:none;text-align:left;font-size:12.5px;color:#2d6a2d;font-weight:600}
@@ -279,8 +300,8 @@ a.pmid-pill:hover { background:var(--lavender-soft); }
 </style>
 </head>
 <body>
-<div class="app" id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<div class="app" id="root"><div class="hero-card"><div style="display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap"><div style="flex:0 0 auto;min-width:0"><h1 class="hero-title">Chalk Talk</h1><p class="hero-byline" style="margin-top:3px">by <a href="https://www.linkedin.com/in/tangjennii/" target="_blank">Jennifer Tang, MD</a></p></div><div style="flex:1 1 auto;text-align:center;min-width:200px"><div style="font-size:13px;color:var(--ink);font-weight:500;display:inline-flex;align-items:center;gap:6px;line-height:1.3;justify-content:center"><span style="color:var(--plum);font-size:14px">⏱</span> 10-minute evidence-based teaching</div><div style="font-size:11px;color:var(--ink-muted);letter-spacing:0.005em;margin-top:3px;line-height:1.4">ABIM aligned · Peer-reviewed · Society guidelines</div></div><div style="flex:0 0 auto;align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end;gap:6px"><button id="signInBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--plum);text-decoration:underline;text-underline-offset:2px;font-size:13px;font-weight:600;padding:2px 0">Sign in</button><button id="myLibBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--ink);font-size:12px;font-weight:600;padding:2px 0;display:inline-flex;align-items:center;gap:5px"><span style="opacity:.7;font-size:13px">📖</span>Library <span style="color:var(--ink-muted);font-size:11px;font-weight:500">(11)</span></button></div></div></div><details class="howit"><summary><span>✦ How this works</span><span class="howit-caret">⌄</span></summary><div class="howit-body"><div class="howit-step"><span class="howit-num">1</span><div><b>You enter a topic.</b> We retrieve matching evidence from PubMed — landmark trials, meta-analyses, and recent reviews — using semantic search.</div></div><div class="howit-step"><span class="howit-num">2</span><div><b>Claude drafts the talk</b> grounded in those retrieved papers, with inline PMID citations next to every clinical fact. Optionally cross-checks against current literature on the open web (allowlisted medical domains only).</div></div><div class="howit-step"><span class="howit-num">3</span><div><b>A second model peer-reviews</b> the draft before you see it. You get back a 5–10 min teaching outline with the PMIDs that ground each fact.</div></div><div class="howit-note">You can refine after generating using <i>Ask to revise lesson</i>. Your topic is sent to Anthropic via a Cloudflare proxy — no logging beyond standard request metadata.</div></div></details><div style="margin-bottom:18px;animation:fadeIn .5s ease-out"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all 11 →</button></div><div data-msample-grid="" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px"><div style="background:var(--cream);border:1px solid var(--line);border-left:2px solid var(--plum);border-radius:10px;padding:8px 9px;display:flex;flex-direction:column;gap:5px;min-height:64px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer" data-slug="tma" class="landingSampleBtn"><button class="favBtn" data-slug="tma" title="Save favorite" style="position:absolute;top:5px;right:5px;background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;z-index:2">☆</button><div style="display:flex;align-items:flex-start;gap:6px;min-width:0;padding-right:18px"><span style="background:var(--lavender-soft);color:var(--plum);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">🩸</span><span style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">TMA</span></div><div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto"><span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">Hematology</span><span style="background:var(--lavender-bg);color:var(--ink-muted);padding:0 5px;border-radius:5px;font-weight:500;font-size:8.5px;line-height:1.55">Lecture</span></div></div><div style="background:var(--cream);border:1px solid var(--line);border-left:2px solid var(--plum);border-radius:10px;padding:8px 9px;display:flex;flex-direction:column;gap:5px;min-height:64px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer" data-slug="hfref" class="landingSampleBtn"><button class="favBtn" data-slug="hfref" title="Save favorite" style="position:absolute;top:5px;right:5px;background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;z-index:2">☆</button><div style="display:flex;align-items:flex-start;gap:6px;min-width:0;padding-right:18px"><span style="background:var(--lavender-soft);color:var(--plum);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">♥</span><span style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">HFrEF</span></div><div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto"><span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">Cardiovascular</span><span style="background:var(--lavender-bg);color:var(--ink-muted);padding:0 5px;border-radius:5px;font-weight:500;font-size:8.5px;line-height:1.55">Lecture</span></div></div><div style="background:var(--cream);border:1px solid var(--line);border-left:2px solid var(--plum);border-radius:10px;padding:8px 9px;display:flex;flex-direction:column;gap:5px;min-height:64px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer" data-slug="nephrotic" class="landingSampleBtn"><button class="favBtn" data-slug="nephrotic" title="Save favorite" style="position:absolute;top:5px;right:5px;background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;z-index:2">☆</button><div style="display:flex;align-items:flex-start;gap:6px;min-width:0;padding-right:18px"><span style="background:var(--lavender-soft);color:var(--plum);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">💧</span><span style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">Nephrotic Syndrome</span></div><div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto"><span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">Nephrology</span><span style="background:var(--lavender-bg);color:var(--ink-muted);padding:0 5px;border-radius:5px;font-weight:500;font-size:8.5px;line-height:1.55">Lecture</span></div></div><div style="background:var(--cream);border:1px solid var(--line);border-left:2px solid var(--plum);border-radius:10px;padding:8px 9px;display:flex;flex-direction:column;gap:5px;min-height:64px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer" data-slug="hrs" class="landingSampleBtn"><button class="favBtn" data-slug="hrs" title="Save favorite" style="position:absolute;top:5px;right:5px;background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;z-index:2">☆</button><div style="display:flex;align-items:flex-start;gap:6px;min-width:0;padding-right:18px"><span style="background:var(--lavender-soft);color:var(--plum);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">💧</span><span style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.22;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">Hepatorenal Syndrome</span></div><div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto"><span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">Nephrology</span><span style="background:var(--lavender-bg);color:var(--ink-muted);padding:0 5px;border-radius:5px;font-weight:500;font-size:8.5px;line-height:1.55">Lecture</span></div></div></div></div><div data-mtopic="" style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Topic</div><div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-soft)"><span style="color:var(--ink-soft);font-size:14px;flex-shrink:0">🔍</span><input id="topicTA" type="text" value="" placeholder="Enter a topic…" style="flex:1;min-width:0;background:transparent;border:none;padding:8px 0;font-size:14px;color:var(--ink);outline:none;font-family:inherit"><button id="browseBtn" style="background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:6px 12px;color:var(--plum);font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">Browse ABIM topics →</button></div><div style="font-size:11px;color:var(--ink-muted);margin:7px 4px 0;line-height:1.4;display:flex;align-items:center;gap:5px"><span style="font-size:11px">💬</span>You can add context or refine the lesson after generating.</div></div><div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap"><div style="flex:1 1 220px;min-width:0"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Style<span tabindex="0" class="opt-hint" aria-label="What is Style?">i<span class="opt-hint-pop"><b>Lecture:</b> structured 10-min teaching — sections, mechanism, evidence, clinical pearls.<br><b>Boards:</b> a single ABIM-style practice question with answer rationales.</span></span></div><div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)"><button class="styleBtn" data-s="lecture" style="flex:1 1 0;min-width:0;background:#fff;color:var(--plum-deep);border:1px solid var(--line);border-radius:10px;padding:9px 8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-soft);transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:13px">🎓</span>Lecture</button><button class="styleBtn" data-s="boards" style="flex:1 1 0;min-width:0;background:transparent;color:var(--ink-muted);border:1px solid transparent;border-radius:10px;padding:9px 8px;font-size:13px;font-weight:500;cursor:pointer;box-shadow:none;transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:13px">📋</span>Boards</button></div></div><div style="flex:1 1 220px;min-width:0;opacity:1;pointer-events:auto" title="5 min vs 10 min"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span></div><div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)"><button class="depthBtn" data-d="concise" title="~5 min" style="flex:1 1 0;min-width:0;background:#fff;color:var(--plum-deep);border:1px solid var(--line);border-radius:10px;padding:9px 8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-soft);transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:13px">⊜</span>Concise</button><button class="depthBtn" data-d="detailed" title="~10 min" style="flex:1 1 0;min-width:0;background:transparent;color:var(--ink-muted);border:1px solid transparent;border-radius:10px;padding:9px 8px;font-size:13px;font-weight:500;cursor:pointer;box-shadow:none;transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:13px">≣</span>Detailed</button></div></div></div><div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .15s ease"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:400;flex-shrink:0">+</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Add references <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span></div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Upload PDFs, paste links, or add notes</div></div><span style="color:var(--ink-soft);font-size:14px;flex-shrink:0">⌄</span><input type="file" id="fileInput" multiple="" accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none"></div><div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-soft)"><label style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;opacity:1" title=""><span style="background:var(--lavender-soft);color:var(--plum);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Verify with current literature</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Use up-to-date, peer-reviewed sources</div></div><span class="toggle-sw"><input type="checkbox" id="webCheck"><span class="slider"></span></span></label><div style="height:1px;background:var(--line-soft)"></div><label style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer"><span style="background:var(--lavender-soft);color:var(--plum);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🎧</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Generate audio podcast</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Create a narrated audio version</div></div><span class="toggle-sw"><input type="checkbox" id="podCheck"><span class="slider"></span></span></label></div><div class="compose-cta"><div class="compose-cta-inner"><button id="genBtn" disabled="" style="width:100%;background:linear-gradient(135deg,var(--plum-rich) 0%,var(--plum-deep) 100%);border:none;border-radius:18px;padding:16px 20px;color:#fff;font-size:15px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(75,17,111,0.28);opacity:0.45;cursor:not-allowed;transition:all .15s ease"><span style="font-size:14px">✨</span>Generate Chalk Talk<span style="font-size:14px">→</span></button><p class="compose-cta-note"><span style="opacity:.7">🔒</span> Your content is private and never shared.</p></div></div><div style="margin-top:48px;padding:24px 8px 8px;border-top:1px solid #e8e6f0;text-align:center;font-size:11px;color:#9490a6;line-height:1.7;letter-spacing:0.01em"><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:#b0aac0;margin-bottom:8px;font-weight:600">A teaching tool · Free for educational use</div><div style="font-size:11.5px;color:#6b6780">© 2026 <a href="https://www.linkedin.com/in/tangjennii/" target="_blank" style="color:#702b9d;text-decoration:none;font-weight:600;border-bottom:1px solid rgba(112,43,157,0.25);padding-bottom:1px">Jennifer Tang, MD</a> · Internal Medicine · Nephrology</div><div style="margin-top:4px;font-size:10.5px;color:#a8a3b8">Licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" style="color:#9490a6;text-decoration:none;border-bottom:1px dotted #c4c0d0">CC BY-NC-SA 4.0</a></div></div></div>
+<script src="./index_files/html2canvas.min.js"></script>
 <script type="module">
   // Supabase SDK — initializes the client and exposes window.sb for the legacy script
   import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -351,7 +372,38 @@ a.pmid-pill:hover { background:var(--lavender-soft); }
 // ═══════════ CONFIG ═══════════
 var MODEL_MAIN = "claude-opus-4-6";
 var MODEL_CRITIC = "claude-haiku-4-5-20251001";
+var MODEL_SONNET_FALLBACK = "claude-sonnet-4-20250514"; // middle-tier fallback when Opus is overloaded
 var MODEL = MODEL_CRITIC; // legacy fallback for non-critical calls (diagrams, podcast, chat)
+
+// Segmented-control button helper. Used by Style/Depth on the compose form AND in the
+// edit-settings drawer. Keeps the look consistent and lets us tune the segmented style
+// in one place. Pass {compact:true} for the drawer (no box-shadow / transition).
+function segBtn(cls, dataAttr, val, current, icon, label, opts){
+  opts = opts || {};
+  var active = (current === val);
+  var compact = !!opts.compact;
+  return '<button class="'+cls+'" data-'+dataAttr+'="'+val+'"'+
+    (opts.title?' title="'+opts.title+'"':'')+
+    ' style="flex:1 1 0;min-width:0;background:'+(active?"#fff":"transparent")+
+    ';color:'+(active?"var(--plum-deep)":"var(--ink-muted)")+
+    ';border:'+(active?"1px solid var(--line)":"1px solid transparent")+
+    ';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(active?"600":"500")+
+    ';cursor:pointer;'+
+    (compact ? '' : 'box-shadow:'+(active?"var(--shadow-soft)":"none")+';transition:all .15s ease;')+
+    'display:inline-flex;align-items:center;justify-content:center;gap:6px">'+
+    '<span'+(compact?'':' style="font-size:13px"')+'>'+icon+'</span>'+label+'</button>';
+}
+
+// Image-generation prompt shared by both OpenAI gpt-image-1 and Gemini image branches in genDiagram().
+// Edit visual style here ONCE; both providers pick it up.
+function buildImagePrompt(topicSummary){
+  return "Generate a polished, didactic medical teaching illustration in the style of a high-quality USMLE board review figure (think Pathoma, First Aid, or a Robbins Pathology figure). VISUAL STYLE: Clean line-art with thin uniform strokes. Limited color palette — deep purple (#330662) for primary structures, lighter purple (#ab82c5) for secondary, muted blue (#5a8acd) for normal physiology, accent red (#c0392b) for pathology, soft grays for context. White or off-white background. Crisp sans-serif typography (Helvetica/Arial style) for labels. Generous whitespace; no clutter. 16:9 horizontal slide-friendly composition. CONTENT: Show anatomy, pathway, OR mechanism relevant to the topic. Include 4-8 clear English labels (no obscure abbreviations). Use arrows or connecting lines to show relationships and direction. If pathology is depicted, mark it clearly. AVOID: photorealism, 3D rendering, heavy shading, cartoon style, paragraphs of text, watermarks, signatures. TOPIC: " + topicSummary;
+}
+
+// Allowlist for web_search_20250305 tool. MUST be duplicate-free (Anthropic API rejects dups).
+// Keep alphabetized so accidental re-adds jump out visually. The runtime guard in generate()
+// (see "allowed_domains has duplicates" throw) is belt-and-suspenders for the same reason.
+var ALLOWED_SEARCH_DOMAINS = ["aaaai.org","aad.org","aahpm.org","aan.com","aasld.org","academic.oup.com","acc.org","ahajournals.org","ajkd.org","americangeriatrics.org","annals.org","asco.org","ascopubs.org","ash.org","ashpublications.org","asn-online.org","atsjournals.org","bmj.com","cdc.gov","cell.com","chestnet.org","cjasn.asnjournals.org","cochranelibrary.com","dailymed.nlm.nih.gov","diabetes.org","easd.org","endocrine.org","escardio.org","fda.gov","gastro.org","gastrojournal.org","gut.bmj.com","haematologica.org","heart.org","icite.od.nih.gov","idsociety.org","jacc.org","jamanetwork.com","journals.asm.org","kdigo.org","kidney-international.org","link.springer.com","medlineplus.gov","nature.com","ncbi.nlm.nih.gov","nejm.org","nhlbi.nih.gov","nice.org.uk","nih.gov","onlinelibrary.wiley.com","pmc.ncbi.nlm.nih.gov","psychiatry.org","pubmed.ncbi.nlm.nih.gov","rheumatology.org","sciencedirect.com","thelancet.com","thoracic.org","uspreventiveservicestaskforce.org","who.int"];
 
 function getClaudeKey(){
   var k=localStorage.getItem("claude_api_key");
@@ -2016,7 +2068,35 @@ var SAMPLES = [
 ]; // __SAMPLES_MARKER__
 
 // ═══════════ STATE ═══════════
-var S = { topic:"", style:"lecture", files:[], loading:false, talk:null, error:"", sec:0, showLib:false, expCat:null, expSub:null, search:"", msgs:[], chatIn:"", chatBusy:false, dg:null, dgBusy:false, dgErr:"", dgMode:"ai", wantPod:false, wantWebSearch:false, podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false, loadSec:0, loadMsg:"", showAns:false, userPick:"", showFeedback:false, feedbackText:"", feedbackBusy:false, glRef:null, critiqueStatus:"idle", critiqueResult:null, critiqueShow:false, showSaved:false, savedSearch:"", savedFlash:"", ragOpen:false, showExamples:false, isSampleTalk:false, sampleSlug:"", useByok:!(PROXY_CONFIG.enabled&&PROXY_CONFIG.url), rateRemaining:null, depth:"concise", sharedTalk:false, vmcOpen:false, tab:"overview", activeSection:0, gldOpen:false, lightbox:false, refineContext:"", editSettings:false, overflowOpen:false, reviseIn:"", user:null, session:null, profile:null, signInOpen:false, authBusy:false, authEmail:"", authMsg:"", authMode:"signin", accountMenuOpen:false, cloudTalks:[], cloudLoaded:false, profileEditOpen:false, profileForm:null, favorites:{} };
+// Global app state. Grouped by domain. Pruned of dead keys (was: showFeedback, feedbackText,
+// feedbackBusy, vmcOpen, authMode, critiqueStatus, critiqueResult, critiqueShow).
+// When adding a key, also add to resetAll() if it should clear between talks.
+var S = {
+  // — Compose form / generation
+  topic:"", style:"lecture", depth:"concise", refineContext:"", files:[],
+  wantPod:false, wantWebSearch:false,
+  loading:false, loadSec:0, loadMsg:"", error:"",
+  // — Current talk + interaction
+  talk:null, sec:0, activeSection:0, tab:"overview",
+  showAns:false, userPick:"", reviseIn:"", chatIn:"", chatBusy:false, msgs:[],
+  isSampleTalk:false, sampleSlug:"", sharedTalk:false,
+  // — RAG retrieval
+  glRef:null, ragOpen:false, ragChunks:[],
+  // — Diagram / visual aid
+  dg:null, dgBusy:false, dgErr:"", dgMode:"ai", lightbox:false,
+  // — Podcast (audio narration)
+  podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false,
+  // — UI flags (drawers, modals, overflow menus)
+  showLib:false, expCat:null, expSub:null, search:"",
+  showSaved:false, savedSearch:"", savedFlash:"", libTab:"all",
+  gldOpen:false, editSettings:false, overflowOpen:false,
+  // — Auth + cloud
+  user:null, session:null, profile:null, signInOpen:false, authBusy:false, authEmail:"", authMsg:"",
+  accountMenuOpen:false, cloudTalks:[], cloudLoaded:false, profileEditOpen:false, profileForm:null,
+  favorites:{},
+  // — BYOK / billing
+  useByok: !(PROXY_CONFIG.enabled&&PROXY_CONFIG.url), rateRemaining:null
+};
 
 // ═══════════ SUPABASE AUTH ═══════════
 window.onSupabaseReady = function(client){
@@ -2106,6 +2186,69 @@ async function cloudLoadTalk(id){
 }
 
 // Helper: returns the active library array (cloud if logged in, else localStorage)
+// Canonical specialty taxonomy for the library — keep in sync with SPEC_ICONS below.
+var SPEC_ORDER = ["Cardiovascular","Pulmonary","Nephrology","Gastroenterology","Hepatology","Endocrinology","Hematology","Oncology","Infectious Disease","Rheumatology","Neurology","Allergy/Immunology","Dermatology","Psychiatry","Geriatrics","Other"];
+var SPEC_ICONS = {"Cardiovascular":"♥","Pulmonary":"🫁","Nephrology":"💧","Gastroenterology":"🍃","Hepatology":"🟤","Endocrinology":"⚪","Hematology":"🩸","Oncology":"🎗","Infectious Disease":"⚕","Rheumatology":"✦","Neurology":"⚡","Allergy/Immunology":"🌼","Dermatology":"☁","Psychiatry":"🧠","Geriatrics":"🕰","Other":"📚"};
+
+// Infer specialty from topic text + talk metadata. Samples already carry .specialty;
+// saved talks usually don't, so we keyword-match. First-match-wins per SPEC_ORDER.
+// Return value is GUARANTEED to be in SPEC_ORDER (anything off-taxonomy falls through
+// to keyword inference, then "Other"). This makes the renderSaved grouping loop
+// exhaustive and lets us delete the defensive "unknown specialty" branch.
+function inferSpecialty(topic, talk, fallback){
+  function canon(v){ return v && SPEC_ORDER.indexOf(v) >= 0 ? v : null; }
+  var c;
+  if((c = canon(fallback))) return c;
+  if(talk && (c = canon(talk.specialty))) return c;
+  var t = ((topic||"") + " " + (talk && talk.title || "") + " " + (talk && talk.subtitle || "")).toLowerCase();
+  var rules = [
+    ["Cardiovascular", /\b(heart|cardia|hfref|hfpef|afib|atrial fibrillation|atrial flutter|ventricular|coronary|angina|stent|valve|valvular|aortic|mitral|tricuspid|endocarditis|pericardial|cardiomyopath|chf|congestive heart|hypertension|htn|lipid|statin|cholesterol|syncope|bradycardia|tachycardia)\b/],
+    ["Pulmonary", /\b(lung|pulmonary|copd|asthma|pneumonia|interstitial lung|pleural|bronchi|emphysema|sleep apnea|osa|sarcoidosis|ild|ipf|pneumothorax|pe\b|pulmonary embolism)\b/],
+    ["Nephrology", /\b(kidney|renal|ckd|aki|nephrotic|nephritic|hyponatremia|hypernatremia|hyperkalemia|hypokalemia|dialysis|glomerul|hepatorenal|nephropath|nephrolith|tubular|polycystic kidney|acid.?base|electrolyte)\b/],
+    ["Gastroenterology", /\b(\bgi\b|gut|ibd|crohn|ulcerative colitis|ibs|gerd|peptic ulcer|pancrea|gallbladder|cholecyst|esophag|colon|diverticul|gi bleed|pancreatitis)\b/],
+    ["Hepatology", /\b(liver|cirrhosis|hepatitis|fatty liver|nash|masld|ascites|hepatic encephalopathy|portal hyper)\b/],
+    ["Endocrinology", /\b(diabetes|t1dm|t2dm|dka|hhs|thyroid|hyperthyroid|hypothyroid|adrenal|cortisol|cushing|addison|parathyroid|pituitary|prolactin|acromegal|insulin)\b/],
+    ["Hematology", /\b(anemia|sickle|thrombocyt|leukemia|lymphoma|myeloma|dvt|vte|venous thromboembolism|anticoag|bleeding|tma|ttp|hus|itp|coag|platelet|warfarin|doac|hemophilia|porphyria)\b/],
+    ["Oncology", /\b(cancer|tumor|malignan|chemotherap|neoplasm|sarcoma|carcinoma|melanoma|metastas)\b/],
+    ["Infectious Disease", /\b(hiv|sepsis|abscess|cellulitis|uti|meningitis|tuberculosis|\btb\b|malaria|fever of unknown|hcv|hbv|syphilis|gonorrhea|mrsa|candida|fungal|encephalitis|osteomyelitis|prosthetic joint infection|stis?\b)\b/],
+    ["Rheumatology", /\b(rheumatoid|lupus|sle|gout|pseudogout|ana\b|vasculitis|sjogren|scleroderma|ankylosing|psoriatic|polymyalgia|pmr|fibromyalgia|giant cell|temporal arteritis|gpa)\b/],
+    ["Neurology", /\b(stroke|seizure|epilepsy|neuropath|dementia|alzheimer|parkinson|multiple sclerosis|\bms\b|migraine|headache|myasthenia|guillain|tremor|delirium)\b/],
+    ["Allergy/Immunology", /\b(anaphylax|allergic|urticaria|angioedema|immunodefic|food allergy|drug allergy)\b/],
+    ["Dermatology", /\b(dermatit|psoriasis|eczema|rash|skin lesion|stevens.?johnson|toxic epidermal)\b/],
+    ["Psychiatry", /\b(depression|anxiety|bipolar|schizophrenia|ptsd|ocd|substance use|opioid use|alcohol use disorder|suicide)\b/],
+    ["Geriatrics", /\b(elderly|frailty|fall\b|polypharmacy|cognitive impairment|geriatric)\b/]
+  ];
+  for(var i=0;i<rules.length;i++) if(rules[i][1].test(t)) return rules[i][0];
+  return "Other";
+}
+
+// Render a single library card (sample or saved talk). Used inside renderSaved.
+// Pulled out so the SPEC_ORDER loop doesn't duplicate the card markup.
+function renderLibCard(x){
+  var t = x.talk||{};
+  var isBQ = (x._kind==="boards");
+  var isSample = (x._source==="sample");
+  var dateStr = x.savedAt ? new Date(x.savedAt).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "";
+  var h = '<div style="background:#fff;border:1px solid var(--line);border-left:4px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:12px;padding:14px 16px;margin-bottom:10px">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:var(--plum-deep);line-height:1.3">'+esc(t.title||x.topic||"Untitled")+'</div>';
+  if(t.subtitle) h += '<div style="font-size:12px;color:var(--ink-muted);margin-top:2px">'+esc(t.subtitle)+'</div>';
+  h += '<div style="display:flex;gap:6px;margin-top:6px;font-size:11px;color:var(--ink-muted);flex-wrap:wrap"><span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:2px 8px;border-radius:10px;font-weight:600">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
+  if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;border:1px solid #f0d8a0;padding:2px 8px;border-radius:10px;font-weight:600">✨ Sample</span>';
+  if(dateStr) h += '<span>'+dateStr+'</span>';
+  h += '</div></div></div>';
+  // Action row
+  h += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';
+  if(isSample){
+    h += '<button class="libOpenBtn" data-source="sample" data-slug="'+esc(x._slug)+'" style="flex:1;min-width:90px;background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:9px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Open</button>';
+  } else {
+    h += '<button class="libOpenBtn" data-source="saved" data-id="'+x._id+'" style="flex:1;min-width:90px;background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:9px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Open</button>';
+    h += '<button class="exportTalkBtn" data-id="'+x._id+'" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--ink-muted);font-size:12px;font-weight:600;cursor:pointer">JSON</button>';
+    h += '<button class="delTalkBtn" data-id="'+x._id+'" style="background:#fff;border:1px solid #e8c8c0;border-radius:8px;padding:9px 12px;color:#c0392b;font-size:12px;font-weight:600;cursor:pointer">Delete</button>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
 function getDisplayLibrary(){
   if(S.user) return (S.cloudTalks || []).map(function(row){
     return {
@@ -2160,7 +2303,7 @@ async function saveProfileForm(){
     name: p.name || null,
     role: p.role || null,
     specialty: p.specialty || null,
-    training_year: p.training_year ? parseInt(p.training_year, 10) : null,
+    training_year: p.training_year != null ? p.training_year : null,  // already coerced to Number|null by _pfBind toNumOrNull; preserve legitimate 0
     institution: p.institution || null,
     primary_use: p.primary_use || null
   };
@@ -2337,7 +2480,8 @@ async function loadSavedTalk(id){
   render();window.scrollTo(0,0);
 }
 function exportTalkJSON(id){
-  var arr=loadSavedTalks();var entry;
+  // Fix: read from getDisplayLibrary so cloud (UUID-id) talks export too, not just local (t_-prefix).
+  var arr=getDisplayLibrary();var entry;
   if(id){
     entry=arr.find(function(e){return e.id===id});
   } else {
@@ -2345,33 +2489,57 @@ function exportTalkJSON(id){
     var dgLite=S.dg?{hadImage:!!S.dg.imgB64, svg:S.dg.svg||null}:null;
     entry={savedAt:new Date().toISOString(),topic:S.topic,style:S.style,talk:S.talk,podScript:S.podScript,dg:dgLite,glRef:S.glRef};
   }
-  if(!entry)return;
+  if(!entry){alert("Couldn't find that talk to export. If you just signed in, wait for your library to finish loading and try again.");return}
   var blob=new Blob([JSON.stringify(entry,null,2)],{type:"application/json"});
   var url=URL.createObjectURL(blob);var a=document.createElement("a");
   a.href=url;a.download=(entry.talk&&entry.talk.title?entry.talk.title:"chalk-talk").replace(/[^a-z0-9]+/gi,"-").toLowerCase()+".json";
   a.click();URL.revokeObjectURL(url);
 }
 function exportLibraryJSON(){
-  var arr=loadSavedTalks();
-  if(arr.length===0){alert("No saved talks to export.");return}
+  // Fix: read from getDisplayLibrary so cloud users export their cloud library, not an empty local one.
+  var arr=getDisplayLibrary();
+  if(arr.length===0){alert(S.user&&!S.cloudLoaded?"Your library is still loading — try again in a moment.":"No saved talks to export.");return}
   var blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),count:arr.length,talks:arr},null,2)],{type:"application/json"});
   var url=URL.createObjectURL(blob);var a=document.createElement("a");
   a.href=url;a.download="chalk-talk-library-"+new Date().toISOString().slice(0,10)+".json";
   a.click();URL.revokeObjectURL(url);
 }
 function importLibraryJSON(file){
+  // Cloud-aware: if signed in, route each incoming talk through saveCurrentTalk's
+  // cloud path so it lands in Supabase (and shows up in the Library which reads
+  // from S.cloudTalks). For anonymous users, fall back to the original localStorage path.
   var r=new FileReader();
-  r.onload=function(){try{
+  r.onload=async function(){try{
     var data=JSON.parse(r.result);
     var incoming=Array.isArray(data)?data:(data.talks||[data]);
+    if(S.user && window.sb){
+      var added=0, failed=0;
+      for(var i=0;i<incoming.length;i++){
+        var e=incoming[i];
+        if(!e.talk)continue;
+        try{
+          var row = { user_id: S.user.id, topic: e.topic||(e.talk&&e.talk.title)||"Imported talk",
+                      style: e.style||"lecture", talk_json: e.talk };
+          var ins = await window.sb.from("talks").insert(row);
+          if(ins.error) throw ins.error;
+          added++;
+        }catch(_){ failed++; }
+      }
+      // Refresh cloud cache; if THAT throws, don't pretend the import failed (inserts already landed).
+      try { if(typeof refreshCloudTalks==="function") await refreshCloudTalks(); } catch(_) { /* surface in alert below */ }
+      alert("Imported "+added+" talk"+(added===1?"":"s")+" to your cloud library"+(failed?" ("+failed+" failed)":"")+". Refresh if they don't appear immediately.");
+      render();
+      return;
+    }
+    // Anonymous user — local storage path (original behavior)
     var arr=loadSavedTalks();
     var existingIds={};arr.forEach(function(e){existingIds[e.id]=true});
-    var added=0;
+    var added2=0;
     incoming.forEach(function(e){
       if(!e.id)e.id="t_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
-      if(!existingIds[e.id]&&e.talk){arr.unshift(e);added++}
+      if(!existingIds[e.id]&&e.talk){arr.unshift(e);added2++}
     });
-    writeSavedTalks(arr);alert("Imported "+added+" talk"+(added===1?"":"s")+".");render();
+    writeSavedTalks(arr);alert("Imported "+added2+" talk"+(added2===1?"":"s")+".");render();
   }catch(err){alert("Could not parse JSON file: "+err.message)}};
   r.readAsText(file);
 }
@@ -2694,9 +2862,7 @@ async function callAPIWithFallback(sys, content, maxTok, models, opts) {
   throw lastError || new Error("All model fallbacks failed");
 }
 
-// Sonnet 4 used as middle-tier fallback when Opus is overloaded
-var MODEL_SONNET_FALLBACK = "claude-sonnet-4-20250514";
-
+// (MODEL_SONNET_FALLBACK is declared in the CONFIG block near the top alongside MODEL_MAIN.)
 
 // ═══════════ RAG RETRIEVAL ═══════════
 async function retrieveRAG(topic, opts) {
@@ -2760,7 +2926,7 @@ function buildReferenceParts(files) {
 
 async function generate(){
   if(!S.topic.trim()||S.loading)return;
-  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.critiqueStatus="idle";S.critiqueResult=null;S.critiqueShow=false;S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;speechSynthesis.cancel();render();
+  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;speechSynthesis.cancel();render();
   loadTimer=setInterval(function(){S.loadSec++;var msgs=S.wantWebSearch?["Reasoning through physiology...","Searching current literature...","Cross-referencing societies...","Building content...","AI-checking...","Polishing final version..."]:["Reasoning through physiology...","Loading guidelines...","Building content...","AI-checking & polishing..."];S.loadMsg=msgs[Math.min(Math.floor(S.loadSec/3),msgs.length-1)];render()},1000);
   try{
     var glRef = getGuidelinesForTopic(S.topic);
@@ -2783,7 +2949,16 @@ async function generate(){
 
     // Step 1: Main generation with model fallback chain (Opus -> Sonnet -> Haiku)
     var mainOpts = {};
-    if (S.wantWebSearch) mainOpts.tools = [{type:"web_search_20250305",name:"web_search",max_uses:3,allowed_domains:["pubmed.ncbi.nlm.nih.gov","pmc.ncbi.nlm.nih.gov","ncbi.nlm.nih.gov","nih.gov","nhlbi.nih.gov","icite.od.nih.gov","medlineplus.gov","cdc.gov","uspreventiveservicestaskforce.org","fda.gov","dailymed.nlm.nih.gov","who.int","nice.org.uk","cochranelibrary.com","nejm.org","jamanetwork.com","thelancet.com","annals.org","bmj.com","ahajournals.org","jacc.org","escardio.org","acc.org","heart.org","asn-online.org","kidney-international.org","cjasn.asnjournals.org","ajkd.org","kdigo.org","atsjournals.org","chestnet.org","thoracic.org","gastrojournal.org","gut.bmj.com","gastro.org","aasld.org","idsociety.org","journals.asm.org","diabetes.org","endocrine.org","easd.org","ash.org","ashpublications.org","haematologica.org","asco.org","ascopubs.org","rheumatology.org","aaaai.org","aad.org","aan.com","psychiatry.org","americangeriatrics.org","aahpm.org","onlinelibrary.wiley.com","academic.oup.com","nature.com","sciencedirect.com","link.springer.com","cell.com","ahajournals.org"]}];
+    if (S.wantWebSearch) mainOpts.tools = [{type:"web_search_20250305",name:"web_search",max_uses:3,allowed_domains:ALLOWED_SEARCH_DOMAINS}];
+    // Guard: web-search allowed_domains must be duplicate-free, else Anthropic rejects the call.
+    if (S.wantWebSearch) {
+      var _dom = mainOpts.tools[0].allowed_domains;
+      if (new Set(_dom).size !== _dom.length) {
+        var _seen = {}, _dups = [];
+        for (var _i=0;_i<_dom.length;_i++){ if(_seen[_dom[_i]]) _dups.push(_dom[_i]); _seen[_dom[_i]]=1; }
+        throw new Error("web_search allowed_domains has duplicates: " + _dups.join(", ") + ". Fix the list in index.html before retrying.");
+      }
+    }
     var mainModels = [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC];
     var maxTok=(S.style==="boards")?6144:4096;
     var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
@@ -2885,7 +3060,7 @@ async function genDiagram(){
     var oaKey=getOpenAIKey();
     if(!oaKey){S.dgErr="OpenAI API key required (or switch to Gemini / Simple Diagram)";S.dgBusy=false;render();return}
     try{
-      var oaPrompt="Generate a polished, didactic medical teaching illustration in the style of a high-quality USMLE board review figure (think Pathoma, First Aid, or a Robbins Pathology figure). VISUAL STYLE: Clean line-art with thin uniform strokes. Limited color palette \u2014 deep purple (#330662) for primary structures, lighter purple (#ab82c5) for secondary, muted blue (#5a8acd) for normal physiology, accent red (#c0392b) for pathology, soft grays for context. White or off-white background. Crisp sans-serif typography (Helvetica/Arial style) for labels. Generous whitespace; no clutter. 16:9 horizontal slide-friendly composition. CONTENT: Show anatomy, pathway, OR mechanism relevant to the topic. Include 4-8 clear English labels (no obscure abbreviations). Use arrows or connecting lines to show relationships and direction. If pathology is depicted, mark it clearly. AVOID: photorealism, 3D rendering, heavy shading, cartoon style, paragraphs of text, watermarks, signatures. TOPIC: "+sm;
+      var oaPrompt=buildImagePrompt(sm);
       var oaRes=await fetch("https://api.openai.com/v1/images/generations",{
         method:"POST",
         headers:{"Content-Type":"application/json","Authorization":"Bearer "+oaKey},
@@ -2918,7 +3093,7 @@ async function genDiagram(){
   var key=getGeminiKey();
   if(!key){S.dgErr="Gemini API key required (or switch to ChatGPT / Simple Diagram)";S.dgBusy=false;render();return}
   try{
-    var imgPrompt="Generate a polished, didactic medical teaching illustration in the style of a high-quality USMLE board review figure (think Pathoma, First Aid, or a Robbins Pathology figure). VISUAL STYLE: Clean line-art with thin uniform strokes. Limited color palette \u2014 deep purple (#330662) for primary structures, lighter purple (#ab82c5) for secondary, muted blue (#5a8acd) for normal physiology, accent red (#c0392b) for pathology, soft grays for context. White or off-white background. Crisp sans-serif typography (Helvetica/Arial style) for labels. Generous whitespace; no clutter. 16:9 horizontal slide-friendly composition. CONTENT: Show anatomy, pathway, OR mechanism relevant to the topic. Include 4-8 clear English labels (no obscure abbreviations). Use arrows or connecting lines to show relationships and direction. If pathology is depicted, mark it clearly. AVOID: photorealism, 3D rendering, heavy shading, cartoon style, paragraphs of text, watermarks, signatures. TOPIC: "+sm;
+    var imgPrompt=buildImagePrompt(sm);
     var res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key="+encodeURIComponent(key),{
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -2985,21 +3160,9 @@ function playPod(){
   speechSynthesis.cancel();speechSynthesis.speak(u);S.podPlaying=true;render();
 }
 
-async function submitFeedback(){
-  if(!S.feedbackText.trim()||!S.talk||S.feedbackBusy)return;
-  S.feedbackBusy=true;render();
-  try{
-    var txt=await callAPI(
-      "You are an ABIM board question writer. The user disagrees with this question's answer. Review their feedback and regenerate a CORRECTED version of the entire question. Fix the answer if the user is right. Keep the same JSON schema. ONLY JSON, no backticks.\n\nCurrent question JSON:\n"+JSON.stringify(S.talk),
-      "FEEDBACK: "+S.feedbackText+"\n\nPlease review and correct the question, answer, and explanation based on this feedback. Return the complete corrected JSON.",
-      6144
-    );
-    var parsed=JSON.parse(fixJSON(txt));
-    parsed=deepCleanCitations(parsed);
-    if(parsed&&parsed.title){S.talk=parsed;S.showAns=false;S.userPick="";S.showFeedback=false;S.feedbackText="";S.podScript="";S.msgs.push({r:"a",t:"\u2713 Question corrected based on your feedback!"})}
-  }catch(e){S.msgs.push({r:"a",t:"Error correcting: "+e.message})}
-  S.feedbackBusy=false;render();
-}
+// submitFeedback() removed \u2014 its only caller was the feedbackSubmit handler in bindMain,
+// which was deleted along with the feedback widget UI. If the feedback UX is rebuilt,
+// re-add the function AND restore S.showFeedback/feedbackText/feedbackBusy to state.
 
 function shareTalk(){
   if(!S.talk)return;
@@ -3047,7 +3210,7 @@ function loadFromShareHash(){
 async function downloadVMC(){
   if(!S.talk)return;
   // Auto-expand VMC if collapsed, then wait one frame for render
-  if(!S.vmcOpen){S.vmcOpen=true;render();await new Promise(function(r){requestAnimationFrame(function(){requestAnimationFrame(r)})})}
+  // vmcCard is rendered unconditionally when a talk is loaded; no need to toggle a flag.
   var vmc=document.getElementById("vmcCard");
   if(!vmc){S.savedFlash="VMC card not on page yet \u2014 try again.";render();setTimeout(function(){S.savedFlash="";render()},3000);return}
   if(typeof html2canvas==="undefined"){S.savedFlash="Image library still loading. Try again in a moment.";render();setTimeout(function(){S.savedFlash="";render()},3000);return}
@@ -3111,7 +3274,20 @@ function copyBoardsQuestion(){
   }
 }
 
-function resetAll(){S.talk=null;S.topic="";S.sec=0;S.dg=null;S.dgErr="";S.msgs=[];S.error="";S.podScript="";S.podBusy=false;S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.showFeedback=false;S.feedbackText="";S.feedbackBusy=false;S.chatIn="";S.chatBusy=false;S.dgBusy=false;S.glRef=null;S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;speechSynthesis.cancel();render()}
+function resetAll(){
+  // Reset per-talk state + transient UI flags. Auth/profile/cloud/library survives — session-scoped.
+  S.talk=null; S.topic=""; S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview";
+  S.dg=null; S.dgErr=""; S.dgBusy=false;
+  S.msgs=[]; S.error="";
+  S.podScript=""; S.podBusy=false; S.podPlaying=false; S.podShow=false;
+  S.showAns=false; S.userPick=""; S.reviseIn="";
+  S.chatIn=""; S.chatBusy=false;
+  S.glRef=null; S.ragChunks=[];
+  S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false;
+  // Close any transient drawers/modals so a fresh compose view doesn't flash an open overlay.
+  S.editSettings=false; S.overflowOpen=false; S.lightbox=false; S.gldOpen=false; S.ragOpen=false;
+  speechSynthesis.cancel(); render();
+}
 
 // ═══════════ DIAGRAM SVG ═══════════
 function diagSVG(dg){
@@ -3277,7 +3453,8 @@ function linkifyPMIDs(root) {
 
 function render(){
   var root=document.getElementById("root");
-  if(S.showExamples){root.innerHTML=renderExamples();bindExamples();return}
+  // S.showExamples + renderExamples() / bindExamples() were removed when samples
+  // were merged into the Library view. Library is the unified entry point.
   if(S.showSaved){root.innerHTML=renderSaved();bindSaved();return}
   if(S.showLib){root.innerHTML=renderLib();bindLib();return}
   root.innerHTML=renderMain();bindMain();
@@ -3291,12 +3468,12 @@ function loadSample(slug){
   S.talk=s.talk;S.topic=s.topic;S.style=s.style||"lecture";
   S.isSampleTalk=true;S.sampleSlug=s.slug;S.sharedTalk=false;
   S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;
-  S.showAns=false;S.userPick="";S.showFeedback=false;S.feedbackText="";
+  S.showAns=false;S.userPick="";
   S.msgs=[];S.error="";
   if(s.guideline_sources&&s.guideline_sources.length){
     S.glRef={specialties:[s.specialty||""],context:"",sources:s.guideline_sources,trials:[],conferences:[]};
   } else { S.glRef=null; }
-  S.showExamples=false;
+  S.showSaved=false; // exit Library view if open; S.showExamples was removed (dead branch)
   speechSynthesis.cancel();
   render();
   var ts=document.getElementById("talkStart");
@@ -3304,55 +3481,79 @@ function loadSample(slug){
   else window.scrollTo({top:0,behavior:"smooth"});
 }
 
-function renderExamples(){
-  var h='<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px"><button id="examplesBack" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:8px 14px;color:#6b6780;font-size:13px;cursor:pointer">\u2190 Back</button><h2 style="font-size:20px;font-weight:700;color:#330662;margin:0;flex:1">\uD83D\uDCD6 Example Chalk Talks</h2></div>';
-  h+='<p style="font-size:12px;color:#6b6780;line-height:1.6;margin:0 0 16px;padding:12px 14px;background:#f0f7f0;border:1px solid #c8e0c8;border-radius:10px">These are pre-generated by the same two-step Claude pipeline the live app uses (Sonnet draft \u2192 Haiku peer review). <strong>No API key required to browse.</strong> Click one to see the full output \u2014 the same view a fresh generation produces.</p>';
-  if(!SAMPLES||SAMPLES.length===0){
-    h+='<div style="background:#fff;border:1px dashed #d0cce0;border-radius:12px;padding:40px 20px;text-align:center;color:#9490a6"><div style="font-size:42px;margin-bottom:10px">\uD83D\uDCDA</div><div style="font-size:14px;font-weight:600;color:#6b6780;margin-bottom:6px">No samples loaded yet</div><div style="font-size:12px;line-height:1.6;max-width:420px;margin:0 auto">Run the generator script in the project folder:<br><code style="display:inline-block;margin-top:8px;background:#f8f7fa;border:1px solid #e2dfe8;border-radius:6px;padding:6px 10px;font-size:12px;color:#702b9d">ANTHROPIC_API_KEY=sk-ant-... node generate_samples.js</code></div></div>';
-    return h;
-  }
-  for(var i=0;i<SAMPLES.length;i++){
-    var s=SAMPLES[i];var t=s.talk||{};var isBQ=!!(t.question);
-    h+='<button class="loadSampleBtn" data-slug="'+esc(s.slug)+'" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid #e2dfe8;border-left:4px solid '+(isBQ?"#e67e22":"#702b9d")+';border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer">';
-    h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#330662;line-height:1.3">'+esc(t.title||s.topic||"Untitled")+'</div>';
-    if(t.subtitle)h+='<div style="font-size:12px;color:#9490a6;margin-top:2px">'+esc(t.subtitle)+'</div>';
-    h+='<div style="display:flex;gap:6px;margin-top:8px;font-size:11px;color:#9490a6;flex-wrap:wrap"><span style="background:'+(isBQ?"#fdf0ee":"#eee6f3")+';color:'+(isBQ?"#8a3a2a":"#702b9d")+';padding:2px 8px;border-radius:10px;font-weight:600">'+(isBQ?"\uD83D\uDCCB Boards":"\uD83C\uDF93 Lecture")+'</span>';
-    if(s.specialty)h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:2px 8px;border-radius:10px;font-weight:600">'+esc(s.specialty)+'</span>';
-    if(s.generated_at)h+='<span style="color:#9490a6">Generated '+esc(s.generated_at)+'</span>';
-    h+='</div></div><span style="font-size:18px;color:#702b9d;flex-shrink:0">\u2192</span></div></button>';
-  }
-  return h;
-}
-
-function bindExamples(){
-  document.getElementById("examplesBack").onclick=function(){S.showExamples=false;render()};
-  document.querySelectorAll(".loadSampleBtn").forEach(function(b){b.onclick=function(){loadSample(b.dataset.slug)}});
-}
+// renderExamples() and bindExamples() removed \u2014 samples now live inside the Library view
+// (see renderSaved + bindSaved). loadSample() above is still used by the Library card
+// "Open" buttons (.libOpenBtn[data-source="sample"]).
 
 function renderSaved(){
-  var all=getDisplayLibrary();
-  var filtered=all;
-  if(S.savedSearch.trim()){var q=S.savedSearch.toLowerCase();filtered=all.filter(function(e){return(e.topic||"").toLowerCase().indexOf(q)>=0||(e.talk&&e.talk.title||"").toLowerCase().indexOf(q)>=0})}
-  var libLabel = S.user ? "Cloud Library" : "My Saved Talks";
-  var h='<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px"><button id="savedBack" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:8px 14px;color:#6b6780;font-size:13px">\u2190 Back</button><h2 style="font-size:20px;font-weight:700;color:#330662;margin:0;flex:1">\uD83D\uDCDA '+libLabel+' <span style="font-size:13px;color:#9490a6;font-weight:500">('+all.length+')</span></h2></div>';
-  if(S.user && !S.cloudLoaded){
-    h+='<div style="text-align:center;padding:30px 20px;color:var(--ink-muted);font-size:13px"><span class="spinner" style="margin-right:8px"></span>Loading your library\u2026</div>';
+  // Combined library \u2014 pre-built samples + user-saved talks (cloud or local).
+  var saved=getDisplayLibrary();
+  var samples=(typeof SAMPLES!=="undefined"&&SAMPLES)?SAMPLES:[];
+  // Normalize both into a single shape with _kind ("lecture"|"boards"), _source ("sample"|"saved"),
+  // and _spec (specialty — from sample metadata or inferred from topic/title).
+  var all=[];
+  for(var si=0;si<samples.length;si++){
+    var s=samples[si];var st=s.talk||{};
+    all.push({_source:"sample",_kind:st.question?"boards":"lecture",_slug:s.slug,_id:null,
+      _spec:inferSpecialty(s.topic, st, s.specialty),
+      topic:s.topic||"",talk:st,savedAt:null,specialty:s.specialty||"",generated_at:s.generated_at||""});
   }
-  h+='<div style="display:flex;gap:8px;margin-bottom:16px"><button id="exportLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:9px 14px;color:#702b9d;font-size:12px;font-weight:600">\u2B07 Export library</button><button id="importLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:9px 14px;color:#702b9d;font-size:12px;font-weight:600">\u2B06 Import library</button><input type="file" id="importLibInput" accept=".json" style="display:none"></div>';
-  h+='<input id="savedSearchIn" value="'+esc(S.savedSearch)+'" placeholder="Search your saved talks..." style="width:100%;background:#fff;border:1.5px solid #e2dfe8;border-radius:12px;padding:12px 16px;font-size:14px;outline:none;margin-bottom:16px">';
+  for(var di=0;di<saved.length;di++){
+    var e=saved[di];var et=e.talk||{};
+    all.push({_source:"saved",_kind:et.question?"boards":"lecture",_slug:null,_id:e.id,
+      _spec:inferSpecialty(e.topic, et, null),
+      topic:e.topic||"",talk:et,savedAt:e.savedAt,specialty:"",generated_at:""});
+  }
+  // Tab filter
+  var tab=S.libTab||"all";
+  var byTab=(tab==="all")?all:all.filter(function(x){return x._kind===(tab==="boards"?"boards":"lecture")});
+  // Search filter
+  var filtered=byTab;
+  if(S.savedSearch.trim()){var q=S.savedSearch.toLowerCase();filtered=byTab.filter(function(x){return(x.topic||"").toLowerCase().indexOf(q)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(q)>=0||(x.specialty||"").toLowerCase().indexOf(q)>=0})}
+  // Counts per tab (after search, before tab) \u2014 used in the tab pills
+  var searchOnly=all;
+  if(S.savedSearch.trim()){var q2=S.savedSearch.toLowerCase();searchOnly=all.filter(function(x){return(x.topic||"").toLowerCase().indexOf(q2)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(q2)>=0||(x.specialty||"").toLowerCase().indexOf(q2)>=0})}
+  var cAll=searchOnly.length, cLec=searchOnly.filter(function(x){return x._kind==="lecture"}).length, cBrd=searchOnly.filter(function(x){return x._kind==="boards"}).length;
+  // Header
+  var h='<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px"><button id="savedBack" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:8px 14px;color:#6b6780;font-size:13px;cursor:pointer">\u2190 Back</button><h2 style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:var(--plum-deep);margin:0;flex:1;letter-spacing:-0.01em">\uD83D\uDCDA Library</h2></div>';
+  // Tab strip \u2014 All | Lectures | Boards (segmented)
+  function tabBtn(key,label,count){var on=(tab===key);return '<button class="libTabBtn" data-tab="'+key+'" style="flex:1;min-width:0;background:'+(on?"#fff":"transparent")+';color:'+(on?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(on?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 10px;font-size:13px;font-weight:'+(on?"600":"500")+';cursor:pointer;box-shadow:'+(on?"var(--shadow-soft)":"none")+';display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .15s ease">'+label+' <span style="color:'+(on?"var(--ink-muted)":"var(--ink-soft)")+';font-size:11px;font-weight:500">'+count+'</span></button>'}
+  h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft);margin-bottom:14px">';
+  h+=tabBtn("all","All",cAll);
+  h+=tabBtn("lectures","\uD83C\uDF93 Lectures",cLec);
+  h+=tabBtn("boards","\uD83D\uDCCB Boards",cBrd);
+  h+='</div>';
+  // Loading state (cloud)
+  if(S.user && !S.cloudLoaded){
+    h+='<div style="text-align:center;padding:14px 20px;color:var(--ink-muted);font-size:12.5px"><span class="spinner" style="margin-right:8px"></span>Loading your library\u2026</div>';
+  }
+  // Search + export/import
+  h+='<input id="savedSearchIn" value="'+esc(S.savedSearch)+'" placeholder="Search the library\u2026" style="width:100%;background:#fff;border:1.5px solid #e2dfe8;border-radius:12px;padding:11px 16px;font-size:14px;outline:none;margin-bottom:10px">';
+  h+='<div style="display:flex;gap:8px;margin-bottom:14px;justify-content:flex-end"><button id="exportLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:7px 12px;color:#702b9d;font-size:11.5px;font-weight:600;cursor:pointer">\u2B07 Export</button><button id="importLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:7px 12px;color:#702b9d;font-size:11.5px;font-weight:600;cursor:pointer">\u2B06 Import</button><input type="file" id="importLibInput" accept=".json" style="display:none"></div>';
+  // Group filtered items by specialty, render in canonical order (SPEC_ORDER).
   if(filtered.length===0){
-    h+='<div style="background:#fff;border:1px dashed #d0cce0;border-radius:12px;padding:40px 20px;text-align:center;color:#9490a6"><div style="font-size:42px;margin-bottom:10px">\uD83D\uDCD6</div><div style="font-size:14px;font-weight:600;color:#6b6780;margin-bottom:6px">'+(all.length===0?"No saved talks yet":"No matches")+'</div><div style="font-size:12px">'+(all.length===0?"Generate a chalk talk and click \u2605 Save to add it here.":"Try a different search term.")+'</div></div>';
+    var emptyMsg = (all.length===0) ? "No items yet" : "No matches in "+(tab==="all"?"the library":tab);
+    var emptySub = (S.savedSearch.trim()) ? "Try a different search term." : (tab==="boards" ? "Generate a Boards-style talk to add it here." : "Generate a chalk talk and click \u2605 Save to add it here.");
+    h+='<div style="background:#fff;border:1px dashed #d0cce0;border-radius:12px;padding:40px 20px;text-align:center;color:#9490a6"><div style="font-size:42px;margin-bottom:10px">\uD83D\uDCD6</div><div style="font-size:14px;font-weight:600;color:#6b6780;margin-bottom:6px">'+emptyMsg+'</div><div style="font-size:12px">'+emptySub+'</div></div>';
   } else {
-    for(var i=0;i<filtered.length;i++){
-      var e=filtered[i];var t=e.talk||{};var isBQ=!!(t.question);
-      var dateStr=new Date(e.savedAt).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
-      h+='<div style="background:#fff;border:1px solid #e2dfe8;border-left:4px solid '+(isBQ?"#e67e22":"#702b9d")+';border-radius:12px;padding:14px 16px;margin-bottom:10px">';
-      h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#330662;line-height:1.3">'+esc(t.title||e.topic||"Untitled")+'</div>';
-      if(t.subtitle)h+='<div style="font-size:12px;color:#9490a6;margin-top:2px">'+esc(t.subtitle)+'</div>';
-      h+='<div style="display:flex;gap:8px;margin-top:6px;font-size:11px;color:#9490a6"><span style="background:'+(isBQ?"#fdf0ee":"#eee6f3")+';color:'+(isBQ?"#8a3a2a":"#702b9d")+';padding:2px 8px;border-radius:10px;font-weight:600">'+(isBQ?"\uD83D\uDCCB Boards":"\uD83C\uDF93 Lecture")+'</span><span>'+dateStr+'</span></div></div></div>';
-      h+='<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="loadTalkBtn" data-id="'+e.id+'" style="flex:1;min-width:90px;background:linear-gradient(135deg,#330662,#702b9d);border:none;border-radius:8px;padding:9px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Open</button><button class="exportTalkBtn" data-id="'+e.id+'" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:9px 12px;color:#6b6780;font-size:12px;font-weight:600;cursor:pointer">JSON</button><button class="delTalkBtn" data-id="'+e.id+'" style="background:#fff;border:1px solid #e8c8c0;border-radius:8px;padding:9px 12px;color:#c0392b;font-size:12px;font-weight:600;cursor:pointer">Delete</button></div>';
+    // Bucket by specialty
+    var bySpec={};
+    for(var fi=0;fi<filtered.length;fi++){var sp=filtered[fi]._spec||"Other";if(!bySpec[sp])bySpec[sp]=[];bySpec[sp].push(filtered[fi])}
+    // Render in canonical order (Cardiovascular \u2192 ... \u2192 Other); any unknown spec falls under "Other".
+    for(var oi=0;oi<SPEC_ORDER.length;oi++){
+      var specName=SPEC_ORDER[oi];var items=bySpec[specName];if(!items||items.length===0)continue;
+      var icon=SPEC_ICONS[specName]||"\uD83D\uDCDA";
+      // Section header
+      h+='<div style="display:flex;align-items:baseline;gap:8px;margin:18px 4px 8px;padding-bottom:6px;border-bottom:1px solid var(--line-soft)">';
+      h+='<span style="font-size:14px;color:var(--plum)">'+icon+'</span>';
+      h+='<span style="font-family:Georgia,serif;font-size:15px;font-weight:700;color:var(--plum-deep);letter-spacing:-0.005em">'+esc(specName)+'</span>';
+      h+='<span style="font-size:11px;color:var(--ink-muted);font-weight:500">'+items.length+'</span>';
       h+='</div>';
+      // Cards under this section \u2014 delegated to renderLibCard helper
+      for(var ci=0;ci<items.length;ci++){ h += renderLibCard(items[ci]); }
     }
+    // (The defensive "unknown specialty" branch was deleted \u2014 inferSpecialty now
+    // canonicalizes to SPEC_ORDER, so the main loop above is exhaustive.)
   }
   return h;
 }
@@ -3360,7 +3561,13 @@ function renderSaved(){
 function bindSaved(){
   document.getElementById("savedBack").onclick=function(){S.showSaved=false;render()};
   var ss=document.getElementById("savedSearchIn");if(ss)ss.oninput=function(e){S.savedSearch=e.target.value;render();var f=document.getElementById("savedSearchIn");if(f){f.focus();f.setSelectionRange(f.value.length,f.value.length)}};
-  document.querySelectorAll(".loadTalkBtn").forEach(function(b){b.onclick=function(){loadSavedTalk(b.dataset.id)}});
+  // Tab pills — All / Lectures / Boards
+  document.querySelectorAll(".libTabBtn").forEach(function(b){b.onclick=function(){S.libTab=b.dataset.tab||"all";render()}});
+  // Unified Open handler — routes to sample-load or saved-load based on data-source
+  document.querySelectorAll(".libOpenBtn").forEach(function(b){b.onclick=function(){
+    if(b.dataset.source==="sample"){loadSample(b.dataset.slug)}
+    else{loadSavedTalk(b.dataset.id)}
+  }});
   document.querySelectorAll(".exportTalkBtn").forEach(function(b){b.onclick=function(){exportTalkJSON(b.dataset.id)}});
   document.querySelectorAll(".delTalkBtn").forEach(function(b){b.onclick=function(){deleteSavedTalk(b.dataset.id)}});
   var el=document.getElementById("exportLibBtn");if(el)el.onclick=exportLibraryJSON;
@@ -3389,45 +3596,59 @@ function renderMain(){
   var h='';
   // Header
   var savedCount=getDisplayLibrary().length;
-  // === Hero card: title + inline byline + metadata row ===
+  // === Hero card: single 3-column row — title LEFT, tagline MIDDLE, Sign in + Library RIGHT ===
   h+='<div class="hero-card">';
-  h+='<div class="hero-row">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">';
+  // Column 1 — title + byline
+  h+='<div style="flex:0 0 auto;min-width:0">';
   h+='<h1 class="hero-title">Chalk Talk</h1>';
-  h+='<p class="hero-byline">by <a href="https://www.linkedin.com/in/tangjennii/" target="_blank">Jennifer Tang, MD</a></p>';
+  h+='<p class="hero-byline" style="margin-top:3px">by <a href="https://www.linkedin.com/in/tangjennii/" target="_blank">Jennifer Tang, MD</a></p>';
   h+='</div>';
-  // Metadata row — Examples | Library | account
-  h+='<div class="hero-meta">';
-  h+='<button id="examplesBtn"><span style="opacity:.7">▣</span> '+((typeof SAMPLES!=="undefined"&&SAMPLES&&SAMPLES.length)?SAMPLES.length+' Examples':'Examples')+'</button>';
-  h+='<span class="divider"></span>';
-  h+='<button id="myLibBtn"><span style="opacity:.7">📖</span> Library'+(savedCount>0?' <span style="color:var(--ink-muted);font-size:11px">('+savedCount+')</span>':'')+'</button>';
-  h+='<span class="divider"></span>';
+  // Column 2 — tagline + criteria (centered, inline with title)
+  h+='<div style="flex:1 1 auto;text-align:center;min-width:200px">';
+  h+='<div style="font-size:13px;color:var(--ink);font-weight:500;display:inline-flex;align-items:center;gap:6px;line-height:1.3;justify-content:center"><span style="color:var(--plum);font-size:14px">⏱</span> 10-minute evidence-based teaching</div>';
+  h+='<div style="font-size:11px;color:var(--ink-muted);letter-spacing:0.005em;margin-top:3px;line-height:1.4">ABIM aligned · Peer-reviewed · Society guidelines</div>';
+  h+='</div>';
+  // Column 3 — Sign in/account on top, Library underneath (upper right)
+  h+='<div style="flex:0 0 auto;align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end;gap:6px">';
   if(S.user){
     var initial = (S.profile && S.profile.name ? S.profile.name : S.user.email||"").trim().charAt(0).toUpperCase() || "?";
-    h+='<button id="accountBtn" title="'+esc(S.user.email||"")+'" style="display:inline-flex;align-items:center;gap:6px"><span style="background:var(--lavender-soft);color:var(--plum);width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">'+esc(initial)+'</span><span style="font-size:11.5px;color:var(--ink)">'+esc((S.profile&&S.profile.name)||S.user.email.split("@")[0])+'</span></button>';
+    h+='<button id="accountBtn" title="'+esc(S.user.email||"")+'" style="background:none;border:none;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;padding:2px 0"><span style="background:var(--lavender-soft);color:var(--plum);width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700">'+esc(initial)+'</span><span style="font-size:12px;color:var(--ink)">'+esc((S.profile&&S.profile.name)||S.user.email.split("@")[0])+'</span></button>';
   } else {
-    h+='<button id="signInBtn" class="meta-link" style="font-weight:600">Sign in</button>';
+    h+='<button id="signInBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--plum);text-decoration:underline;text-underline-offset:2px;font-size:13px;font-weight:600;padding:2px 0">Sign in</button>';
   }
+  // Library — combined samples + saved (count = samples + saved talks)
+  var libCount = ((typeof SAMPLES!=="undefined"&&SAMPLES)?SAMPLES.length:0) + savedCount;
+  h+='<button id="myLibBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--ink);font-size:12px;font-weight:600;padding:2px 0;display:inline-flex;align-items:center;gap:5px"><span style="opacity:.7;font-size:13px">📖</span>Library'+(libCount>0?' <span style="color:var(--ink-muted);font-size:11px;font-weight:500">('+libCount+')</span>':'')+'</button>';
+  h+='</div>';
   h+='</div>';
   h+='</div>';
 
-  // === Intro: timer line + criteria line ===
-  h+='<div style="text-align:center;margin:0 0 18px;padding:0 4px">';
-  h+='<p style="font-size:14px;color:var(--ink);margin:0;line-height:1.3;font-weight:500;display:inline-flex;align-items:center;gap:6px;justify-content:center"><span style="color:var(--plum);font-size:15px">⏱</span> 10-minute evidence-based teaching</p>';
-  h+='<p style="font-size:11.5px;color:var(--ink-muted);margin:5px 0 0;line-height:1.45;letter-spacing:0.005em">ABIM aligned · Peer-reviewed · Society guidelines</p>';
-  h+='</div>';
+  // === "How this works" — inline expandable, closed by default ===
+  if(!S.talk){
+    h+='<details class="howit">';
+    h+='<summary><span>✦ How this works</span><span class="howit-caret">⌄</span></summary>';
+    h+='<div class="howit-body">';
+    h+='<div class="howit-step"><span class="howit-num">1</span><div><b>You enter a topic.</b> We retrieve matching evidence from PubMed — landmark trials, meta-analyses, and recent reviews — using semantic search.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>Claude drafts the talk</b> grounded in those retrieved papers, with inline PMID citations next to every clinical fact. Optionally cross-checks against current literature on the open web (allowlisted medical domains only).</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">3</span><div><b>A second model peer-reviews</b> the draft before you see it. You get back a 5–10 min teaching outline with the PMIDs that ground each fact.</div></div>';
+    h+='<div class="howit-note">You can refine after generating using <i>Ask to revise lesson</i>. Your topic is sent to Anthropic via a Cloudflare proxy — no logging beyond standard request metadata.</div>';
+    h+='</div>';
+    h+='</details>';
+  }
 
   // === Sample cards — 2 side-by-side, icon circle + title + pills ===
   if(!S.talk&&!S.loading&&typeof SAMPLES!=="undefined"&&SAMPLES&&SAMPLES.length>0){
     h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
     h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all '+SAMPLES.length+' →</button></div>';
     h+='<div data-msample-grid style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">';
-    var SPEC_ICON={"Hematology":"🩸","Gastroenterology":"🍃","Cardiovascular":"♥","Nephrology":"💧","Pulmonary":"🫁","Rheumatology":"✦","Endocrinology":"⚪","Infectious Disease":"⚕","Neurology":"⚡"};
+    // Was: a local SPEC_ICON map shadowed the top-level SPEC_ICONS. Removed. Landing cards use the canonical map.
     var n=Math.min(SAMPLES.length,4);
     for(var li=0;li<n;li++){
       var ls=SAMPLES[li];
       var lt=ls.talk||{};
       var lisBQ=!!(lt.question);
-      var ico=SPEC_ICON[ls.specialty]||"●";
+      var ico=SPEC_ICONS[ls.specialty]||"●";
       var fav = !!(S.favorites && S.favorites[ls.slug]);
       h+='<div style="background:var(--cream);border:1px solid var(--line);border-left:2px solid '+(lisBQ?"#e67e22":"var(--plum)")+';border-radius:10px;padding:8px 9px;display:flex;flex-direction:column;gap:5px;min-height:64px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer" data-slug="'+esc(ls.slug)+'" class="landingSampleBtn">';
       h+='<button class="favBtn" data-slug="'+esc(ls.slug)+'" title="'+(fav?"Unfavorite":"Save favorite")+'" style="position:absolute;top:5px;right:5px;background:none;border:none;color:'+(fav?"#e8a91f":"var(--ink-soft)")+';font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;z-index:2">'+(fav?"★":"☆")+'</button>';
@@ -3445,37 +3666,35 @@ function renderMain(){
   // === COMPOSE STATE: only when no talk loaded ===
   if(!S.talk){
   // Topic — single-line input
-  h+='<div data-mtopic style="margin-bottom:10px">';
+  h+='<div data-mtopic style="margin-bottom:14px">';
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Topic</div>';
   h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-soft)">';
   h+='<span style="color:var(--ink-soft);font-size:14px;flex-shrink:0">🔍</span>';
   h+='<input id="topicTA" type="text" value="'+esc(S.topic)+'" placeholder="Enter a topic…" style="flex:1;min-width:0;background:transparent;border:none;padding:8px 0;font-size:14px;color:var(--ink);outline:none;font-family:inherit">';
-  h+='<button id="browseBtn" style="background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:6px 12px;color:var(--plum);font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">Browse topics →</button>';
-  h+='</div></div>';
+  h+='<button id="browseBtn" style="background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:6px 12px;color:var(--plum);font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">Browse ABIM topics →</button>';
+  h+='</div>';
+  // Helper hint — tells user that refine/context is available post-generation via the composer
+  h+='<div style="font-size:11px;color:var(--ink-muted);margin:7px 4px 0;line-height:1.4;display:flex;align-items:center;gap:5px"><span style="font-size:11px">💬</span>You can add context or refine the lesson after generating.</div>';
+  h+='</div>';
 
-  // Refine / Context — optional second input
-  h+='<div style="margin-bottom:14px">';
-  h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:10px 14px 10px 14px;display:flex;align-items:flex-start;gap:9px;box-shadow:var(--shadow-soft)">';
-  h+='<span style="color:var(--ink-soft);font-size:14px;flex-shrink:0;margin-top:2px">💬</span>';
-  h+='<textarea id="refineTA" rows="1" placeholder="Add context or refine topic (optional)…" style="flex:1;min-width:0;background:transparent;border:none;padding:0;font-size:13.5px;color:var(--ink);outline:none;font-family:inherit;resize:none;line-height:1.45">'+esc(S.refineContext||"")+'</textarea>';
-  h+='</div></div>';
-
-  // Style segmented control
-  h+='<div style="margin-bottom:10px">';
-  h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Style</div>';
-  h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
-  h+='<button class="styleBtn" data-s="lecture" style="flex:1 1 0;min-width:0;background:'+(S.style==="lecture"?"#fff":"transparent")+';color:'+(S.style==="lecture"?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(S.style==="lecture"?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(S.style==="lecture"?"600":"500")+';cursor:pointer;box-shadow:'+(S.style==="lecture"?"var(--shadow-soft)":"none")+';display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .15s ease"><span style="font-size:13px">🎓</span>Lecture</button>';
-  h+='<button class="styleBtn" data-s="boards" style="flex:1 1 0;min-width:0;background:'+(S.style==="boards"?"#fff":"transparent")+';color:'+(S.style==="boards"?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(S.style==="boards"?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(S.style==="boards"?"600":"500")+';cursor:pointer;box-shadow:'+(S.style==="boards"?"var(--shadow-soft)":"none")+';display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .15s ease"><span style="font-size:13px">📋</span>Boards</button>';
-  h+='</div></div>';
-
-  // Depth segmented control
+  // Style + Depth — combined row (side by side on desktop, stack on narrow mobile)
   var depthInactive = (S.style === "boards");
-  h+='<div style="margin-bottom:14px;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesnt apply to Boards":"5 min vs 10 min")+'">';
-  h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth</div>';
+  h+='<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">';
+  // Style group
+  h+='<div style="flex:1 1 220px;min-width:0">';
+  h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Style<span tabindex="0" class="opt-hint" aria-label="What is Style?">i<span class="opt-hint-pop"><b>Lecture:</b> structured 10-min teaching — sections, mechanism, evidence, clinical pearls.<br><b>Boards:</b> a single ABIM-style practice question with answer rationales.</span></span></div>';
   h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
-  h+='<button class="depthBtn" data-d="concise" title="~5 min" style="flex:1 1 0;min-width:0;background:'+(S.depth==="concise"?"#fff":"transparent")+';color:'+(S.depth==="concise"?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(S.depth==="concise"?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(S.depth==="concise"?"600":"500")+';cursor:pointer;box-shadow:'+(S.depth==="concise"?"var(--shadow-soft)":"none")+';display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .15s ease"><span style="font-size:13px">⊜</span>Concise</button>';
-  h+='<button class="depthBtn" data-d="detailed" title="~10 min" style="flex:1 1 0;min-width:0;background:'+(S.depth==="detailed"?"#fff":"transparent")+';color:'+(S.depth==="detailed"?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(S.depth==="detailed"?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(S.depth==="detailed"?"600":"500")+';cursor:pointer;box-shadow:'+(S.depth==="detailed"?"var(--shadow-soft)":"none")+';display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .15s ease"><span style="font-size:13px">≣</span>Detailed</button>';
+  h+=segBtn("styleBtn","s","lecture",S.style,"🎓","Lecture");
+  h+=segBtn("styleBtn","s","boards",S.style,"📋","Boards");
   h+='</div></div>';
+  // Depth group
+  h+='<div style="flex:1 1 220px;min-width:0;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesnt apply to Boards":"5 min vs 10 min")+'">';
+  h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span></div>';
+  h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
+  h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min"});
+  h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:"~10 min"});
+  h+='</div></div>';
+  h+='</div>';
 
   // References row
   h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .15s ease">';
@@ -3486,7 +3705,7 @@ function renderMain(){
   h+='</div>';
   for(var fi=0;fi<S.files.length;fi++)h+='<div style="display:flex;justify-content:space-between;background:var(--lavender-bg);border-radius:8px;padding:6px 12px;margin-bottom:6px"><span style="font-size:12px;color:var(--ink)">📄 '+esc(S.files[fi].n)+'</span><button class="rmFile" data-i="'+fi+'" style="background:none;border:none;color:var(--ink-muted);font-size:16px;cursor:pointer">×</button></div>';
 
-  // Toggles — Verify / Podcast as stacked rows with switches
+  // Toggles — Verify / Podcast as visible stacked rows with switches
   var verifyInactive = (S.style === "boards");
   h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-soft)">';
   h+='<label style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
@@ -3693,9 +3912,11 @@ function renderMain(){
         h+='</div>';
       }
       h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column">';
-      h+='<button id="pdfTalkBtn" style="background:none;border:none;border-bottom:1px solid var(--line-soft);padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left"><span style="color:var(--plum);font-size:14px">📄</span><span style="flex:1;font-size:13px;font-weight:600;color:var(--ink)">Export as PDF</span><span style="color:var(--ink-soft)">›</span></button>';
-      h+='<button id="shareTalkBtn" style="background:none;border:none;border-bottom:1px solid var(--line-soft);padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left"><span style="color:var(--plum);font-size:14px">🔗</span><span style="flex:1;font-size:13px;font-weight:600;color:var(--ink)">Share link</span><span style="color:var(--ink-soft)">›</span></button>';
-      h+='<button id="jsonTalkBtn" style="background:none;border:none;padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left"><span style="color:var(--plum);font-size:14px;font-family:ui-monospace,Menlo,monospace">{}</span><span style="flex:1;font-size:13px;font-weight:600;color:var(--ink)">Export JSON</span><span style="color:var(--ink-soft)">›</span></button>';
+      // Suffixed IDs so we don't collide with the overflow-menu buttons (which use the unsuffixed IDs).
+      // bindMain binds shareTalkBtnExport/pdfTalkBtnExport/jsonTalkBtnExport to the same handlers.
+      h+='<button id="pdfTalkBtnExport" style="background:none;border:none;border-bottom:1px solid var(--line-soft);padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left"><span style="color:var(--plum);font-size:14px">📄</span><span style="flex:1;font-size:13px;font-weight:600;color:var(--ink)">Export as PDF</span><span style="color:var(--ink-soft)">›</span></button>';
+      h+='<button id="shareTalkBtnExport" style="background:none;border:none;border-bottom:1px solid var(--line-soft);padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left"><span style="color:var(--plum);font-size:14px">🔗</span><span style="flex:1;font-size:13px;font-weight:600;color:var(--ink)">Share link</span><span style="color:var(--ink-soft)">›</span></button>';
+      h+='<button id="jsonTalkBtnExport" style="background:none;border:none;padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left"><span style="color:var(--plum);font-size:14px;font-family:ui-monospace,Menlo,monospace">{}</span><span style="flex:1;font-size:13px;font-weight:600;color:var(--ink)">Export JSON</span><span style="color:var(--ink-soft)">›</span></button>';
       h+='</div>';
     }
 
@@ -3722,14 +3943,14 @@ function renderMain(){
     h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Context (optional)</div><div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:flex;align-items:flex-start;gap:9px"><span style="color:var(--ink-soft);font-size:14px;margin-top:2px">💬</span><textarea id="refineTAd" rows="2" placeholder="Add context or refine topic…" style="flex:1;min-width:0;background:transparent;border:none;padding:0;font-size:13.5px;outline:none;font-family:inherit;resize:vertical;line-height:1.45">'+esc(S.refineContext||"")+'</textarea></div></div>';
     // Style
     h+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Style</div><div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px">';
-    h+='<button class="styleBtn" data-s="lecture" style="flex:1 1 0;min-width:0;background:'+(S.style==="lecture"?"#fff":"transparent")+';color:'+(S.style==="lecture"?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(S.style==="lecture"?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(S.style==="lecture"?"600":"500")+';cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span>🎓</span>Lecture</button>';
-    h+='<button class="styleBtn" data-s="boards" style="flex:1 1 0;min-width:0;background:'+(S.style==="boards"?"#fff":"transparent")+';color:'+(S.style==="boards"?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(S.style==="boards"?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(S.style==="boards"?"600":"500")+';cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span>📋</span>Boards</button>';
+    h+=segBtn("styleBtn","s","lecture",S.style,"🎓","Lecture",{compact:true});
+    h+=segBtn("styleBtn","s","boards",S.style,"📋","Boards",{compact:true});
     h+='</div></div>';
     // Depth
     var dInact2=(S.style==="boards");
     h+='<div style="margin-bottom:14px;opacity:'+(dInact2?"0.4":"1")+';pointer-events:'+(dInact2?"none":"auto")+'"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth</div><div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px">';
-    h+='<button class="depthBtn" data-d="concise" style="flex:1 1 0;min-width:0;background:'+(S.depth==="concise"?"#fff":"transparent")+';color:'+(S.depth==="concise"?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(S.depth==="concise"?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(S.depth==="concise"?"600":"500")+';cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span>⊜</span>Concise</button>';
-    h+='<button class="depthBtn" data-d="detailed" style="flex:1 1 0;min-width:0;background:'+(S.depth==="detailed"?"#fff":"transparent")+';color:'+(S.depth==="detailed"?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(S.depth==="detailed"?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(S.depth==="detailed"?"600":"500")+';cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span>≣</span>Detailed</button>';
+    h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{compact:true});
+    h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true});
     h+='</div></div>';
     // References manager (in drawer)
     h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer">';
@@ -3841,10 +4062,11 @@ function bindLib(){
 }
 
 function bindMain(){
+  // ─── Compose form ───────────────────────────────────────────────────────
   var ta=document.getElementById("topicTA");if(ta)ta.oninput=function(e){S.topic=e.target.value;var gb2=document.getElementById("genBtn");if(gb2){gb2.disabled=S.loading||!S.topic.trim();gb2.style.opacity=S.loading||!S.topic.trim()?"0.4":"1"}};
   var bb=document.getElementById("browseBtn");if(bb)bb.onclick=function(){S.showLib=true;S.expCat=null;render()};
-  var ci=document.getElementById("chatInput");if(ci){ci.oninput=function(e){S.chatIn=e.target.value;var csB=document.getElementById("chatSend");if(csB){var act=!S.chatBusy&&S.chatIn.trim();csB.style.background=act?"linear-gradient(135deg,#702b9d,#330662)":"#c9c3d6";csB.style.boxShadow=act?"0 2px 10px rgba(112,43,157,0.45)":"none";csB.style.cursor=act?"pointer":"not-allowed"}};ci.onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();sendChat()}}}
-  var cs=document.getElementById("chatSend");if(cs)cs.onclick=sendChat;
+  // chatInput/chatSend handlers deleted — those IDs are no longer rendered. The
+  // sendChat() function is still reachable via the reviseIn/reviseSend bindings below.
   document.querySelectorAll(".styleBtn").forEach(function(b){b.onclick=function(){if(S.style!==b.dataset.s){S.style=b.dataset.s;S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.error="";speechSynthesis.cancel()}render()}});
   document.querySelectorAll(".depthBtn").forEach(function(b){b.onclick=function(){if(S.depth!==b.dataset.d){S.depth=b.dataset.d;S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.error="";speechSynthesis.cancel()}render()}});
   var dz=document.getElementById("dropZone");if(dz)dz.onclick=function(){document.getElementById("fileInput").click()};
@@ -3857,25 +4079,25 @@ function bindMain(){
   var pc=document.getElementById("podCheck");if(pc)pc.onchange=function(e){S.wantPod=e.target.checked};
   var wc=document.getElementById("webCheck");if(wc)wc.onchange=function(e){S.wantWebSearch=e.target.checked};
   var gb=document.getElementById("genBtn");if(gb)gb.onclick=generate;
+
+  // ─── Generated-talk view ────────────────────────────────────────────────
   var rb=document.getElementById("resetBtn");if(rb)rb.onclick=resetAll;
   document.querySelectorAll(".secBtn").forEach(function(b){b.onclick=function(){var idx=+b.dataset.i;S.activeSection=(S.activeSection===idx?-1:idx);S.sec=idx;render()}});
   // Tab switching (top + bottom nav)
   document.querySelectorAll(".tk-tab,.bntab").forEach(function(b){b.onclick=function(){if(b.dataset.tab&&S.tab!==b.dataset.tab){S.tab=b.dataset.tab;render()}}});
   // Guideline collapsible
   var gtg=document.getElementById("gldToggle");if(gtg)gtg.onclick=function(){S.gldOpen=!S.gldOpen;render()};
-  var gtg2=document.getElementById("gldToggle2");if(gtg2)gtg2.onclick=function(){S.gldOpen=true;render()};
+  // gldToggle2 handler deleted — ID no longer rendered.
   // Lightbox
   var lo1=document.getElementById("lightboxOpenBtn");if(lo1)lo1.onclick=function(){S.lightbox=true;render()};
   var lo2=document.getElementById("lightboxOpenBtn2");if(lo2)lo2.onclick=function(){S.lightbox=true;render()};
   var lc=document.getElementById("lightboxClose");if(lc)lc.onclick=function(e){if(e.target===lc||e.target.id==="lightboxCloseX"){S.lightbox=false;render()}};
   // Save/share variants from new header + action row
-  var st2=document.getElementById("saveTalkBtn2");if(st2)st2.onclick=function(){var btn=document.getElementById("saveTalkBtn");if(btn)btn.click()};
-  var sh2=document.getElementById("shareTalkBtn2");if(sh2)sh2.onclick=function(){var btn=document.getElementById("shareTalkBtn");if(btn)btn.click()};
+  // saveTalkBtn2/shareTalkBtn2 handlers deleted — those IDs no longer rendered (leftover from a prior header layout).
   var stwt=document.getElementById("shareTwitterBtn");if(stwt)stwt.onclick=function(){var btn=document.getElementById("shareTalkBtn");if(btn)btn.click()};
   // Add has-talk class for bottom-nav padding
   if(S.talk){document.querySelector(".app").classList.add("has-talk")}else{document.querySelector(".app").classList.remove("has-talk")}
   // === Two-state UX bindings ===
-  var rta=document.getElementById("refineTA");if(rta)rta.oninput=function(e){S.refineContext=e.target.value};
   var rtad=document.getElementById("refineTAd");if(rtad)rtad.oninput=function(e){S.refineContext=e.target.value};
   var ttad=document.getElementById("topicTAd");if(ttad)ttad.oninput=function(e){S.topic=e.target.value};
   document.querySelectorAll(".mode-card").forEach(function(b){b.onclick=function(){if(b.dataset.tab&&S.tab!==b.dataset.tab){S.tab=b.dataset.tab;render()}}});
@@ -3892,7 +4114,7 @@ function bindMain(){
   var rin=document.getElementById("reviseIn");if(rin){rin.oninput=function(e){S.reviseIn=e.target.value;var sb=document.getElementById("reviseSend");if(sb)sb.disabled=!e.target.value.trim()};rin.onkeydown=function(e){if(e.key==="Enter"&&!e.shiftKey&&String(S.reviseIn||"").trim()){e.preventDefault();S.chatIn=S.reviseIn;S.reviseIn="";if(typeof sendChat==="function")sendChat()}}}
   var rsd=document.getElementById("reviseSend");if(rsd)rsd.onclick=function(){if(!String(S.reviseIn||"").trim())return;S.chatIn=S.reviseIn;S.reviseIn="";if(typeof sendChat==="function")sendChat()};
 
-  // === Auth bindings ===
+  // ─── Auth (sign-in modal + Google + account menu + profile editor) ─────
   var sib=document.getElementById("signInBtn");if(sib)sib.onclick=function(){S.signInOpen=true;S.authMsg="";render()};
   var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){S.signInOpen=false;render()};
   var sibd=document.getElementById("signInBackdrop");if(sibd)sibd.onclick=function(){S.signInOpen=false;render()};
@@ -3906,45 +4128,69 @@ function bindMain(){
   // Profile editor form
   var pcb=document.getElementById("profileCloseBtn");if(pcb)pcb.onclick=function(){S.profileEditOpen=false;S.profileForm=null;render()};
   var pbk=document.getElementById("profileBackdrop");if(pbk)pbk.onclick=function(){S.profileEditOpen=false;S.profileForm=null;render()};
-  function _pfBind(id,key){var el=document.getElementById(id);if(el)el.oninput=function(e){if(!S.profileForm)S.profileForm={};S.profileForm[key]=e.target.value};if(el&&el.tagName==="SELECT")el.onchange=function(e){if(!S.profileForm)S.profileForm={};S.profileForm[key]=e.target.value}}
-  _pfBind("pfName","name"); _pfBind("pfRole","role"); _pfBind("pfSpec","specialty"); _pfBind("pfYear","training_year"); _pfBind("pfInst","institution"); _pfBind("pfUse","primary_use");
+  function _pfBind(id,key,coerce){
+    var el=document.getElementById(id);if(!el)return;
+    var write=function(e){
+      if(!S.profileForm)S.profileForm={};
+      var v=e.target.value;
+      S.profileForm[key]=coerce?coerce(v):v;
+    };
+    // SELECT fires 'change' (and 'input' isn't reliable); INPUT fires 'input'. Wire whichever matches.
+    if(el.tagName==="SELECT") el.onchange=write; else el.oninput=write;
+  }
+  // pfYear is type="number" — coerce to Number (or null if blank) so Supabase stores int.
+  var toNumOrNull=function(v){var s=String(v||"").trim();if(!s)return null;var n=Number(s);return isFinite(n)?n:null};
+  _pfBind("pfName","name"); _pfBind("pfRole","role"); _pfBind("pfSpec","specialty");
+  _pfBind("pfYear","training_year",toNumOrNull); _pfBind("pfInst","institution"); _pfBind("pfUse","primary_use");
   var pfs=document.getElementById("pfSaveBtn");if(pfs)pfs.onclick=function(){saveProfileForm()};
+
+  // ─── Visual / diagram generator ────────────────────────────────────────
   var db=document.getElementById("dgBtn");if(db)db.onclick=genDiagram;
   document.querySelectorAll(".dgModeBtn").forEach(function(b){b.onclick=function(){if(S.dgMode!==b.dataset.m){S.dgMode=b.dataset.m;S.dg=null;S.dgErr="";render()}}});
-  var rk=document.getElementById("resetKey");if(rk)rk.onclick=function(e){e.preventDefault();localStorage.removeItem("gemini_api_key");S.dgErr="API key cleared. Click Generate Visual to re-enter.";render()};
-  var rck=document.getElementById("resetClaudeKey");if(rck)rck.onclick=function(){localStorage.removeItem("claude_api_key");var nk=prompt("Enter your Anthropic API key:\n\nGet one at: https://console.anthropic.com/settings/keys");if(nk&&nk.trim())localStorage.setItem("claude_api_key",nk.trim());render()};
+  // resetKey/resetClaudeKey handlers deleted — those IDs no longer rendered.
+  // ─── Boards-mode answer choices ────────────────────────────────────────
   document.querySelectorAll(".choiceBtn").forEach(function(b){b.onclick=function(){if(!S.showAns){S.userPick=b.dataset.letter;render()}}});
   var sb=document.getElementById("submitAnsBtn");if(sb)sb.onclick=function(){S.showAns=true;render()};
-  var ft=document.getElementById("feedbackToggle");if(ft)ft.onclick=function(){S.showFeedback=true;render()};
-  var fta=document.getElementById("feedbackTA");if(fta)fta.oninput=function(e){S.feedbackText=e.target.value;var fsb=document.getElementById("feedbackSubmit");if(fsb)fsb.style.opacity=S.feedbackText.trim()?"1":"0.4"};
-  var fs=document.getElementById("feedbackSubmit");if(fs)fs.onclick=submitFeedback;
-  var fc=document.getElementById("feedbackCancel");if(fc)fc.onclick=function(){S.showFeedback=false;S.feedbackText="";render()};
+
+  // Feedback widget handlers deleted — feedbackToggle/feedbackTA/feedbackSubmit/feedbackCancel
+  // IDs no longer rendered. submitFeedback() function and S.showFeedback/feedbackText/feedbackBusy
+  // state keys also pruned. Re-add if the feedback UI is rebuilt.
+
+  // ─── Podcast (audio narration) ─────────────────────────────────────────
   var pg=document.getElementById("podGenBtn");if(pg)pg.onclick=genPodcast;
   var pp=document.getElementById("podPlayBtn");if(pp)pp.onclick=playPod;
   document.querySelectorAll(".rateBtn").forEach(function(b){b.onclick=function(){S.podRate=parseFloat(b.dataset.r);if(S.podPlaying){speechSynthesis.cancel();S.podPlaying=false}render()}});
   var pt=document.getElementById("podToggle");if(pt)pt.onclick=function(){S.podShow=!S.podShow;render()};
+
+  // ─── Library / samples / favorites (hero & landing) ───────────────────
   var mlb=document.getElementById("myLibBtn");if(mlb)mlb.onclick=function(){S.showSaved=true;S.savedSearch="";render()};
-  var exb=document.getElementById("examplesBtn");if(exb)exb.onclick=function(){S.showExamples=true;render()};
+  // examplesBtn was removed from hero; samples now live inside the Library view.
   document.querySelectorAll(".landingSampleBtn").forEach(function(b){b.onclick=function(e){if(e.target.closest(".favBtn"))return;loadSample(b.dataset.slug)}});
   document.querySelectorAll(".favBtn").forEach(function(b){b.onclick=function(e){e.stopPropagation();toggleFavorite(b.dataset.slug)}});
+  // ─── Visual Memory Card (download / lightbox) ──────────────────────────
   var dvb=document.getElementById("downloadVMCBtn");if(dvb)dvb.onclick=downloadVMC;
-  var vob=document.getElementById("vmcOpenBtn");if(vob)vob.onclick=function(){S.vmcOpen=true;render()};
-  var vcb=document.getElementById("vmcCloseBtn");if(vcb)vcb.onclick=function(){S.vmcOpen=false;render()};
+  // vmcOpenBtn/vmcCloseBtn handlers deleted — those IDs no longer rendered.
   var cqb=document.getElementById("copyQBtn");if(cqb)cqb.onclick=copyBoardsQuestion;
-  var lmb=document.getElementById("landingMoreBtn");if(lmb)lmb.onclick=function(){S.showExamples=true;render()};
-  var mtb=document.getElementById("modeToggleBtn");if(mtb)mtb.onclick=function(){
-    if(!PROXY_CONFIG.enabled||!PROXY_CONFIG.url){alert("Demo proxy isn\'t configured for this build. Stay on your own key.");return}
-    S.useByok=!S.useByok;render();
-  };
+  // "See all N →" on the landing samples row now jumps into Library (samples merged in).
+  var lmb=document.getElementById("landingMoreBtn");if(lmb)lmb.onclick=function(){S.showSaved=true;S.libTab="all";render()};
+  // modeToggleBtn handler deleted — ID no longer rendered.
+  // ─── Save / export / share current talk ────────────────────────────────
+  // Note: overflow-menu buttons use the unsuffixed IDs (saveTalkBtn, pdfTalkBtn, ...).
+  // The Export tab uses *Export-suffixed IDs to avoid duplicate-ID collisions when both
+  // are in the DOM simultaneously (getElementById only attaches to the first).
   var stb=document.getElementById("saveTalkBtn");if(stb)stb.onclick=saveCurrentTalk;
   var ptb=document.getElementById("pdfTalkBtn");if(ptb)ptb.onclick=exportTalkPDF;
   var jtb=document.getElementById("jsonTalkBtn");if(jtb)jtb.onclick=function(){exportTalkJSON(null)};
   var shr=document.getElementById("shareTalkBtn");if(shr)shr.onclick=function(){shareTalk()};
+  var ptbE=document.getElementById("pdfTalkBtnExport");if(ptbE)ptbE.onclick=exportTalkPDF;
+  var jtbE=document.getElementById("jsonTalkBtnExport");if(jtbE)jtbE.onclick=function(){exportTalkJSON(null)};
+  var shrE=document.getElementById("shareTalkBtnExport");if(shrE)shrE.onclick=function(){shareTalk()};
 }
 
 // ═══════════ INIT ═══════════
 loadFromShareHash();
 render();
 </script>
-</body>
-</html>
+
+
+</body></html>
