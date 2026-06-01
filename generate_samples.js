@@ -37,7 +37,7 @@ const JSON_PATH = path.join(__dirname, "samples.json");
 const SEEDS = [
   // ===== EXISTING LECTURE SAMPLES — REGENERATED WITH DUAL-VERSION =====
   { slug: "tma",                topic: "Thrombotic Microangiopathy (TTP vs HUS vs aHUS vs DIC vs HELLP)", style: "lecture", specialty: "Heme/Onc" },
-  { slug: "portal-htn",         topic: "Portal Hypertension in Cirrhosis",                               style: "lecture", specialty: "GI/Hepatology" },
+  { slug: "portal-htn",         topic: "Portal Hypertension in Cirrhosis: variceal bleeding, ascites/SBP, HRS, hepatic encephalopathy, hepatopulmonary syndrome (HPS), and portopulmonary hypertension (POPH)", style: "lecture", specialty: "GI/Hepatology" },
   { slug: "hfref",              topic: "HFrEF: 4-pillar GDMT",                                            style: "lecture", specialty: "Cardiovascular" },
   { slug: "nephrotic",          topic: "Nephrotic Syndrome",                                              style: "lecture", specialty: "Nephrology" },
   { slug: "copd",                topic: "COPD exacerbation & GOLD",                                       style: "lecture", specialty: "Pulmonary" },
@@ -96,8 +96,8 @@ const GUIDELINE_CONTEXT = {
     trials: ["NOTT","MRC","REDUCE","IMPACT","ETHOS"]
   },
   "GI/Hepatology": {
-    text: "[AASLD Guidelines]\n• AASLD 2021 Cirrhosis & 2024 Ascites/AKI: Variceal bleed → octreotide + ceftriaxone (SBP prophylaxis) + EVL. Refractory ascites → TIPS (per recent EASL/AASLD). Hepatorenal syndrome-AKI: albumin + terlipressin (CONFIRM trial). HE: lactulose ± rifaximin. SBP: cefotaxime + albumin (Sort trial). HCC screening with US ± AFP q6mo. MELD-Na for transplant priority.",
-    sources: ["AASLD 2021 Cirrhosis","AASLD 2024 Ascites & HRS"],
+    text: "[AASLD Guidelines]\n• AASLD 2021 Cirrhosis & 2024 Ascites/AKI: Variceal bleed → octreotide + ceftriaxone (SBP prophylaxis) + EVL. Refractory ascites → TIPS (per recent EASL/AASLD). Hepatorenal syndrome-AKI: albumin + terlipressin (CONFIRM trial). HE: lactulose ± rifaximin. SBP: cefotaxime + albumin (Sort trial). HCC screening with US ± AFP q6mo. MELD-Na for transplant priority.\n• PULMONARY SYNDROMES OF PORTAL HTN (both must be covered): \n  HEPATOPULMONARY SYNDROME (HPS) = triad of liver disease + intrapulmonary vascular dilation + abnormal oxygenation (A-a gradient ≥15, or PaO2 <80). Diagnosis: contrast-enhanced echo (bubble study with late shunting at >3 beats) is gold standard. Mechanism: dilated pulmonary microvasculature impairs O2 diffusion. Platypnea-orthodeoxia is classic (worse upright). Treatment: supplemental O2; only definitive therapy is liver transplant (MELD exception points for PaO2 ≤60).\n  PORTOPULMONARY HYPERTENSION (POPH) = pulmonary arterial hypertension (mPAP ≥25, PVR >3 Wood units, normal PCWP) in setting of portal HTN. Mechanism: vasoconstrictors bypass hepatic clearance. Diagnose with RHC after suspicious TTE (RVSP >50). Treat as PAH (ERAs, PDE5i, prostacyclins) + transplant evaluation. mPAP >35 = transplant contraindication unless treated.",
+    sources: ["AASLD 2021 Cirrhosis","AASLD 2024 Ascites & HRS","AASLD/ATS 2023 HPS & POPH"],
     trials: ["CONFIRM","Sort"]
   },
   "Endocrinology": {
