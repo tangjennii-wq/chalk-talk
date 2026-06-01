@@ -1,5 +1,215 @@
 [
   {
+    "slug": "portal-htn",
+    "topic": "Portal Hypertension in Cirrhosis",
+    "style": "lecture",
+    "specialty": "GI/Hepatology",
+    "guideline_sources": [
+      "AASLD 2021 Cirrhosis",
+      "AASLD 2024 Ascites & HRS"
+    ],
+    "generated_at": "2026-06-01",
+    "talk_concise": {
+      "title": "Portal Hypertension in Cirrhosis",
+      "subtitle": "From sinusoidal resistance to decompensation",
+      "guideline_sources": [
+        "AASLD 2021 Practice Guidance on Cirrhosis",
+        "AASLD 2024 Ascites and AKI Guidance",
+        "Baveno VII Consensus 2022"
+      ],
+      "references": [
+        {
+          "id": 1,
+          "source": "AASLD Practice Guidance: Portal Hypertension and Varices",
+          "year": 2021,
+          "society": "AASLD",
+          "url": "https://journals.lww.com/hep/fulltext/2022/01000/",
+          "type": "guideline"
+        },
+        {
+          "id": 2,
+          "source": "CONFIRM Trial - Terlipressin for HRS-AKI",
+          "year": 2024,
+          "society": "NEJM",
+          "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa2118463",
+          "type": "landmark_trial"
+        },
+        {
+          "id": 3,
+          "source": "SORT Trial - Albumin in SBP",
+          "year": 1999,
+          "society": "NEJM",
+          "url": "https://www.nejm.org/doi/full/10.1056/NEJM199908053410603",
+          "type": "landmark_trial"
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Pathophysiology: Why Portal Pressure Rises",
+          "minutes": "2 min",
+          "points": [
+            "Fibrosis disrupts sinusoidal architecture, increasing intrahepatic vascular resistance",
+            "Stellate cell activation contracts sinusoids, reducing nitric oxide availability",
+            "Splanchnic vasodilation via excess NO causes compensatory hyperdynamic circulation",
+            "HVPG ≥10 mmHg = clinically significant portal hypertension; ≥12 mmHg associated with higher variceal bleeding risk"
+          ],
+          "teaching_pearl": "Portal HTN is both structural (fibrosis) and dynamic (stellate cell contraction).",
+          "board_tip": "HVPG ≥12 mmHg is associated with increased variceal hemorrhage risk, but not an absolute threshold—clinical factors matter."
+        },
+        {
+          "heading": "Complications and Clinical Recognition",
+          "minutes": "1.5 min",
+          "points": [
+            "Varices: collateral flow via left gastric vein to esophageal/gastric veins",
+            "Ascites: splanchnic vasodilation triggers RAAS, causing sodium/water retention",
+            "HRS-AKI: extreme underfilling causes renal vasoconstriction despite low SVR",
+            "SBP: bacterial translocation through edematous, hypoperfused gut wall"
+          ],
+          "teaching_pearl": "Every major complication traces back to splanchnic vasodilation and effective hypovolemia.",
+          "board_tip": "Ascites fluid PMN ≥250 cells/mm3 diagnoses SBP."
+        },
+        {
+          "heading": "Management by Complication",
+          "minutes": "1.5 min",
+          "points": [
+            "Variceal bleed: octreotide + ceftriaxone + EVL within 12h, per AASLD 2021",
+            "SBP: cefotaxime + IV albumin 1.5 g/kg day 1 and 1 g/kg day 3 reduces HRS (SORT trial 1999)",
+            "HRS-AKI: terlipressin + albumin is first-line, per CONFIRM trial 2024 (AASLD 2024)",
+            "Primary prophylaxis: NSBB (carvedilol or propranolol preferred) if medium/large varices"
+          ],
+          "teaching_pearl": "Ceftriaxone in variceal bleed is SBP prophylaxis, not infection treatment.",
+          "board_tip": "Terlipressin reverses splanchnic vasodilation to restore renal perfusion."
+        }
+      ],
+      "summary_points": [
+        "Portal HTN arises from increased sinusoidal resistance (fibrosis) plus dynamic vasoconstriction (stellate cells, low NO).",
+        "Splanchnic vasodilation drives effective hypovolemia, activating RAAS and causing ascites, HRS, and SBP.",
+        "Acute variceal bleed requires the triad: octreotide, ceftriaxone, and EVL per AASLD 2021.",
+        "HRS-AKI first-line is terlipressin plus albumin (CONFIRM trial 2024); definitive treatment is liver transplant."
+      ],
+      "visual_memory_card": {
+        "top_left": "Sinusoidal fibrosis + stellate cell contraction",
+        "top_right": "Varices, ascites, HRS, SBP",
+        "bottom_left": "HVPG ≥10 mmHg clinically significant",
+        "bottom_right": "NSBB prophylaxis; octreotide + EVL for bleed",
+        "center": ""
+      }
+    },
+    "talk_detailed": {
+      "title": "Portal Hypertension in Cirrhosis",
+      "subtitle": "From sinusoidal mechanics to variceal bleeding, ascites, and hepatorenal syndrome",
+      "guideline_sources": [
+        "AASLD 2021 Practice Guidance on Cirrhosis",
+        "AASLD 2024 Guidance on Ascites and AKI in Cirrhosis",
+        "EASL 2023 Clinical Practice Guidelines on Portal Hypertension",
+        "Baveno VII Consensus 2022"
+      ],
+      "references": [
+        {
+          "id": 1,
+          "source": "Garcia-Tsao G et al. Portal Hypertensive Bleeding in Cirrhosis: Risk Stratification, Diagnosis, and Management — AASLD Practice Guidance",
+          "year": 2021,
+          "society": "AASLD",
+          "url": "https://journals.lww.com/hep/fulltext/2022/01000/",
+          "type": "guideline"
+        },
+        {
+          "id": 2,
+          "source": "Biggins SW et al. Diagnosis, Evaluation, and Management of Ascites, SBP, and HRS — AASLD Practice Guidance",
+          "year": 2024,
+          "society": "AASLD",
+          "url": "https://journals.lww.com/hep/",
+          "type": "guideline"
+        },
+        {
+          "id": 3,
+          "source": "Wong F et al. Terlipressin plus Albumin for the Treatment of Type 1 Hepatorenal Syndrome (CONFIRM trial)",
+          "year": 2021,
+          "society": "NEJM",
+          "url": "https://www.nejm.org/doi/full/10.1056/NEJMoa2008290",
+          "type": "landmark_trial"
+        },
+        {
+          "id": 4,
+          "source": "Sort P et al. Effect of Intravenous Albumin on Renal Impairment and Mortality in Patients with Cirrhosis and SBP (Sort trial)",
+          "year": 1999,
+          "society": "NEJM",
+          "url": "https://www.nejm.org/doi/full/10.1056/NEJM199908053410603",
+          "type": "landmark_trial"
+        },
+        {
+          "id": 5,
+          "source": "de Franchis R et al. Baveno VII — Renewing Consensus in Portal Hypertension",
+          "year": 2022,
+          "society": "Journal of Hepatology",
+          "url": "https://doi.org/10.1016/j.jhep.2021.12.022",
+          "type": "consensus"
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Pathophysiology: Why Portal Pressure Rises and Stays High",
+          "minutes": "3-4 min",
+          "points": [
+            "Normal portal pressure gradient (HVPG) is 1-5 mmHg; clinically significant portal hypertension (CSPH) is defined as HVPG ≥10 mmHg — this is the threshold at which varices form and decompensation risk begins.",
+            "STRUCTURAL COMPONENT (70%): Cirrhotic remodeling creates sinusoidal distortion — collagen deposition in the space of Disse by activated hepatic stellate cells (transdifferentiated into myofibroblasts) obliterates sinusoidal fenestrae and increases intrahepatic vascular resistance. Regenerative nodules compress hepatic venules, further impeding outflow.",
+            "DYNAMIC COMPONENT (30%): Endothelial dysfunction within the cirrhotic liver causes a local deficit of nitric oxide (NO) due to decreased eNOS activity and increased endothelin-1, thromboxane A2, and angiotensin II — this produces intrahepatic vasoconstriction, paradoxically opposite to the splanchnic bed.",
+            "SPLANCHNIC VASODILATION: In the mesenteric circulation, the opposite occurs — excess NO production (via iNOS and eNOS upregulation driven by shear stress and bacterial translocation) causes arteriolar vasodilation, increasing portal venous inflow and worsening the pressure gradient.",
+            "HYPERDYNAMIC CIRCULATION: Splanchnic vasodilation triggers effective arterial underfilling, activating the RAAS, sympathetic nervous system, and non-osmotic ADH release. This causes sodium and water retention, plasma volume expansion, high cardiac output, and low SVR — the classic hyperdynamic state of advanced cirrhosis.",
+            "BACTERIAL TRANSLOCATION: Gut barrier dysfunction from intestinal edema and dysbiosis allows bacterial products (PAMPs/endotoxin) into portal blood, amplifying the inflammatory milieu, worsening splanchnic vasodilation, and driving the systemic inflammatory response that underlies decompensation.",
+            "Ohm's law analogy: Portal pressure = Flow × Resistance. Cirrhosis raises both: resistance rises from fibrosis/vasoconstriction, and flow increases from splanchnic vasodilation. This dual hit is why NSBB work — they reduce both cardiac output (beta-1 blockade) and splanchnic inflow (beta-2 blockade)."
+          ],
+          "teaching_pearl": "Think of portal hypertension as two opposite NO problems: too little NO in the liver (vasoconstriction) and too much NO in the gut (vasodilation). This paradox explains why liver-targeted NO donors and splanchnic vasoconstrictors are both rational therapies.",
+          "board_tip": "HVPG ≥10 mmHg = clinically significant portal hypertension (varices can form). HVPG ≥12 mmHg = threshold for variceal bleeding. HVPG reduction to 20% from baseline with NSBB correlates with protection from first bleed — this is a classic boards number."
+        },
+        {
+          "heading": "Clinical Consequences: The Four Pillars of Decompensation",
+          "minutes": "3 min",
+          "points": [
+            "VARICEAL HEMORRHAGE: High portal pressure forces blood through portosystemic collaterals. Esophageal varices at the GEJ are thin-walled and superficial — the LaPlace law (wall tension = pressure × radius / wall thickness) predicts rupture when varices become large, pressure is high, and walls are thin. Mortality per bleed episode is 15-20% at 6 weeks.",
+            "ASCITES: Sinusoidal hypertension increases hydrostatic pressure; hypoalbuminemia reduces oncotic pressure. The Starling forces shift favoring transudation into the peritoneal cavity. RAAS activation causes avid sodium retention (urine Na often <10 mEq/L). Serum-ascites albumin gradient (SAAG) ≥1.1 g/dL confirms portal hypertensive etiology.",
+            "SPONTANEOUS BACTERIAL PERITONITIS (SBP): Bacterial translocation seeds ascitic fluid; impaired opsonization (low complement and low protein in ascites) allows infection. Diagnosed by ascitic fluid PMN ≥250 cells/mm3 — culture is not required to initiate treatment. Low ascitic fluid protein (<1.5 g/dL) is a risk factor for SBP.",
+            "HEPATORENAL SYNDROME-AKI (HRS-AKI): End-stage of the circulatory dysfunction — extreme splanchnic vasodilation causes profound effective hypovolemia, maximal neurohormonal activation, and intense renal vasoconstriction. Kidneys are structurally normal but critically underperfused. Defined by AKI criteria (Cr rise ≥0.3 mg/dL within 48h or ≥50% within 7 days) that does not respond to volume expansion with albumin (1 g/kg × 2 days).",
+            "HEPATIC ENCEPHALOPATHY (HE): Portal-systemic shunting bypasses hepatic ammonia clearance. Ammonia crosses the BBB, is metabolized by astrocytes via glutamine synthetase, and the osmotic effect of intracellular glutamine causes astrocyte swelling and cerebral edema. Also involves neuroinflammation, GABAergic tone changes, and manganese deposition.",
+            "HEPATOCELLULAR CARCINOMA (HCC): Chronic inflammation and regenerative nodule formation create a pro-oncogenic microenvironment. Screening with ultrasound ± AFP every 6 months is recommended per AASLD in all cirrhotics, as HCC is the leading cause of death in compensated cirrhosis."
+          ],
+          "teaching_pearl": "The transition from compensated to decompensated cirrhosis (ascites, variceal bleed, HE, jaundice) is the critical prognostic event — median survival drops from >12 years to approximately 2 years. The driving force behind each decompensating event is portal hypertension with systemic inflammation.",
+          "board_tip": "Board question setup: patient with cirrhosis, new AKI not responding to albumin challenge, bland urine sediment, urine Na <10 mEq/L, no nephrotoxins — this is HRS-AKI. The key differentiator from ATN is the low urine sodium and bland sediment. Per AASLD 2024, first-line treatment is now terlipressin + albumin based on the CONFIRM trial."
+        },
+        {
+          "heading": "Treatment: Evidence-Based Management by Complication",
+          "minutes": "3-4 min",
+          "points": [
+            "VARICEAL BLEED MANAGEMENT (per AASLD 2021): Acute bleed requires a three-pronged approach — (1) IV octreotide (splanchnic vasoconstrictor reducing portal inflow), (2) IV ceftriaxone 1g/day for SBP prophylaxis (bacterial translocation risk is highest during acute bleed), and (3) emergent EGD with endoscopic variceal ligation (EVL) within 12 hours. Restrictive transfusion target Hb 7 g/dL — overtransfusion increases portal pressure and rebleeding risk.",
+            "PRIMARY PROPHYLAXIS OF VARICEAL BLEED: Non-selective beta-blockers (NSBB) — carvedilol (preferred, 6.25-12.5 mg/day) or nadolol/propranolol — reduce portal pressure by decreasing cardiac output (beta-1) and splanchnic blood flow (beta-2). Carvedilol has additional alpha-1 blockade reducing intrahepatic resistance. Per Baveno VII, carvedilol is now preferred NSBB. Alternative: EVL if NSBB-intolerant.",
+            "SECONDARY PROPHYLAXIS: Combination of NSBB plus EVL is superior to either alone per AASLD 2021. If rebleeding despite combination therapy, TIPS (transjugular intrahepatic portosystemic shunt) is indicated — TIPS decompresses the portal system by creating a low-resistance channel between portal and hepatic veins.",
+            "ASCITES MANAGEMENT: First-line is sodium restriction (2g/day) plus oral diuretics — spironolactone (aldosterone antagonist, addresses the RAAS activation mechanistically, starting 100mg) + furosemide (starting 40mg) in a 100:40 ratio. Refractory ascites options include serial large-volume paracentesis with albumin replacement (6-8g per liter removed) or TIPS per AASLD 2024/EASL guidance.",
+            "SBP TREATMENT: IV cefotaxime (or ceftriaxone) is first-line empiric antibiotic. The Sort trial (1999, NEJM) demonstrated that adding IV albumin (1.5 g/kg day 1, then 1 g/kg day 3) reduced renal failure from 33% to 10% and mortality from 29% to 10% — this is one of the most impactful albumin trials in hepatology. SBP prophylaxis with oral norfloxacin or TMP-SMX is indicated after a first episode.",
+            "HRS-AKI TREATMENT: Per AASLD 2024, first-line is terlipressin (V1 receptor agonist causing splanchnic vasoconstriction, counteracting the pathologic splanchnic NO excess) plus IV albumin. The CONFIRM trial (2021, NEJM) showed terlipressin + albumin achieved verified HRS reversal in 32% vs 17% with placebo + albumin. Caveat: terlipressin carries risk of respiratory failure (monitor closely, contraindicated if SpO2 <90%). Midodrine + octreotide + albumin is an alternative where terlipressin is unavailable or contraindicated.",
+            "HEPATIC ENCEPHALOPATHY: Lactulose (first-line, acidifies colonic lumen trapping ammonia as NH4+ and promoting osmotic diarrhea) titrated to 2-4 bowel movements/day. Rifaximin is added for secondary prophylaxis of recurrent HE — it reduces gut ammonia-producing bacteria with minimal systemic absorption. TIPS should be used cautiously in patients with prior HE (relative contraindication if recurrent/severe)."
+          ],
+          "teaching_pearl": "Carvedilol is emerging as the preferred NSBB per Baveno VII because its alpha-1 blockade provides an additional reduction in intrahepatic resistance (targeting the dynamic component of portal hypertension) beyond what propranolol/nadolol achieve. However, caution in decompensated patients with refractory ascites — NSBB can worsen hypotension and should be held if SBP <90 or MAP <65 (the 'window hypothesis').",
+          "board_tip": "The Sort trial albumin dosing for SBP (1.5 g/kg day 1, 1 g/kg day 3) is a frequently tested boards fact. The CONFIRM trial established terlipressin as first-line for HRS-AKI in the US. Remember terlipressin's major adverse effect is respiratory failure — always asked as a safety question on boards."
+        }
+      ],
+      "summary_points": [
+        "Portal hypertension results from increased intrahepatic resistance (stellate cell activation, sinusoidal fibrosis, deficient intrahepatic NO) PLUS increased portal inflow from splanchnic vasodilation (excess mesenteric NO) — this dual mechanism is the foundation for all complications.",
+        "HVPG ≥10 mmHg defines clinically significant portal hypertension and the threshold for varices to form; HVPG ≥12 mmHg is the threshold for variceal bleeding risk. NSBB reduce HVPG by lowering cardiac output and splanchnic flow.",
+        "Acute variceal bleed requires the triad of octreotide + ceftriaxone + EVL within 12 hours per AASLD 2021. Restrictive transfusion to Hb 7 g/dL is essential — overtransfusion raises portal pressure and worsens rebleeding.",
+        "SBP treatment is cefotaxime PLUS IV albumin — the Sort trial proved albumin reduces renal failure (33% to 10%) and mortality (29% to 10%). Low ascitic fluid total protein <1.5 g/dL is the key risk factor for developing SBP.",
+        "HRS-AKI is the ultimate consequence of circulatory dysfunction — first-line treatment is now terlipressin + albumin per AASLD 2024 based on the CONFIRM trial. The critical pitfall is respiratory failure with terlipressin; monitor oxygenation closely.",
+        "Decompensation (ascites, variceal bleed, HE, jaundice) is the key prognostic watershed in cirrhosis. Once decompensated, evaluate for liver transplant and use MELD-Na for prioritization. Screen all cirrhotics for HCC with US ± AFP every 6 months."
+      ],
+      "visual_memory_card": {
+        "top_left": "Stellate cell fibrosis + splanchnic NO excess",
+        "top_right": "Varices, ascites, HRS-AKI, encephalopathy",
+        "bottom_left": "HVPG ≥10 mmHg; SAAG ≥1.1 g/dL",
+        "bottom_right": "Carvedilol, octreotide/EVL, terlipressin+albumin",
+        "center": ""
+      }
+    }
+  },
+  {
     "slug": "hfref",
     "topic": "HFrEF: 4-pillar GDMT",
     "style": "lecture",
