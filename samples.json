@@ -703,5 +703,270 @@
         "center": ""
       }
     }
+  },
+  {
+    "slug": "afib-boards",
+    "topic": "Atrial Fibrillation: rate vs rhythm control",
+    "style": "boards",
+    "specialty": "Cardiovascular",
+    "guideline_sources": [
+      "2022 AHA/ACC/HFSA Heart Failure",
+      "2023 ACC/AHA Atrial Fibrillation",
+      "2025 AHA/ACC Hypertension",
+      "2025 ACC/AHA ACS"
+    ],
+    "generated_at": "2026-06-01",
+    "talk": {
+      "title": "Atrial Fibrillation: Rate vs Rhythm Control",
+      "subtitle": "Early Rhythm Control in Recently Diagnosed AF",
+      "guideline_sources": [
+        "2023 ACC/AHA/ACCP/HRS Guideline for Diagnosis and Management of Atrial Fibrillation"
+      ],
+      "references": [
+        {
+          "id": 1,
+          "source": "2023 ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline",
+          "year": 2023,
+          "society": "ACC/AHA",
+          "url": "",
+          "type": "guideline"
+        },
+        {
+          "id": 2,
+          "source": "EAST-AFNET 4 Trial, Kirchhof P et al, NEJM",
+          "year": 2020,
+          "society": "AFNET",
+          "url": "",
+          "type": "landmark trial"
+        },
+        {
+          "id": 3,
+          "source": "AFFIRM Trial, Wyse DG et al, NEJM",
+          "year": 2002,
+          "society": "NHLBI",
+          "url": "",
+          "type": "landmark trial"
+        },
+        {
+          "id": 4,
+          "source": "CASTLE-AF Trial, Mahnkopf C et al, NEJM",
+          "year": 2018,
+          "society": "",
+          "url": "",
+          "type": "landmark trial"
+        },
+        {
+          "id": 5,
+          "source": "CABANA Trial, Packer DL et al, JAMA",
+          "year": 2019,
+          "society": "",
+          "url": "",
+          "type": "landmark trial"
+        }
+      ],
+      "question": {
+        "stem": "A 58-year-old woman presents to the emergency department because of palpitations and lightheadedness for 3 hours. She was diagnosed with atrial fibrillation 8 months ago after presenting with similar symptoms and was started on apixaban and metoprolol at that time. She reports that despite taking metoprolol 50 mg twice daily, she continues to have episodes of palpitations occurring 3-4 times per week, each lasting 30-60 minutes, that interfere with her work as a schoolteacher. She also describes mild exertional dyspnea when climbing stairs but denies chest pain, syncope, or lower extremity edema. Her medical history includes hypertension treated with amlodipine 5 mg daily and type 2 diabetes mellitus treated with metformin 1000 mg twice daily. She does not smoke or drink alcohol. Her temperature is 36.8°C (98.2°F), blood pressure is 138/82 mmHg, heart rate is 124 beats/min and irregularly irregular, respiratory rate is 16/min, and oxygen saturation is 97% on room air. BMI is 27 kg/m2. Cardiac examination reveals an irregularly irregular rhythm without murmurs, rubs, or gallops. Lungs are clear to auscultation bilaterally. There is no jugular venous distension or peripheral edema. An electrocardiogram shows atrial fibrillation with a ventricular rate of 122 beats/min, no ST-segment changes, and a QRS duration of 88 ms. Transthoracic echocardiogram performed 6 months ago showed a left ventricular ejection fraction of 55%, mild left atrial enlargement (4.2 cm), and no significant valvular disease. Serum TSH is 2.1 mIU/L, hemoglobin is 13.4 g/dL, creatinine is 0.9 mg/dL, and potassium is 4.2 mEq/L. Which of the following is the most appropriate next step in management?",
+        "choices": [
+          {
+            "letter": "A",
+            "text": "Increase metoprolol dose to 100 mg twice daily",
+            "correct": false
+          },
+          {
+            "letter": "B",
+            "text": "Initiate early rhythm control with flecainide",
+            "correct": false
+          },
+          {
+            "letter": "C",
+            "text": "Refer for catheter ablation of atrial fibrillation",
+            "correct": true
+          },
+          {
+            "letter": "D",
+            "text": "Switch rate control agent to diltiazem",
+            "correct": false
+          },
+          {
+            "letter": "E",
+            "text": "Add digoxin to current metoprolol regimen",
+            "correct": false
+          }
+        ],
+        "correct_letter": "C",
+        "explanation": "Per the 2023 ACC/AHA AF guideline, early rhythm control is recommended for patients with AF diagnosed within the past 12 months, particularly when symptoms persist despite adequate rate control. The EAST-AFNET 4 trial (2020) demonstrated that early rhythm control within 1 year of AF diagnosis reduced the composite of cardiovascular death, stroke, and heart failure hospitalization compared to rate control alone. This patient has AF diagnosed 8 months ago with persistent, functionally limiting symptoms despite beta-blocker therapy, making her an ideal candidate for rhythm control. Among rhythm control strategies, the 2023 ACC/AHA guideline and supporting data from the CABANA trial give catheter ablation a Class 1 recommendation as first-line rhythm control therapy for symptomatic AF as an alternative to antiarrhythmic drugs. In a symptomatic patient with preserved LVEF who has failed rate control, catheter ablation offers superior rhythm control efficacy, freedom from antiarrhythmic drug side effects, and improved quality of life (CABANA quality-of-life substudy). Flecainide, while a rhythm control option, requires careful consideration: it is contraindicated in structural heart disease and requires an AV nodal blocking agent. Ablation is preferred here given her persistent symptoms, functional impairment, and guideline support for ablation as first-line therapy. Anticoagulation with apixaban must continue regardless of rhythm outcome, as CHA2DS2-VASc score is 3 (female sex, hypertension, diabetes).",
+        "wrong_explanations": [
+          {
+            "letter": "A",
+            "why": "Increasing metoprolol addresses rate control only. She already has symptoms despite rate control, and the EAST-AFNET 4 trial showed early rhythm control is superior. Escalating rate control does not reduce cardiovascular events or improve quality of life in this scenario."
+          },
+          {
+            "letter": "B",
+            "why": "Flecainide is a rhythm control option but requires absence of significant structural heart disease and concomitant AV nodal blockade. Per 2023 ACC/AHA guidelines, catheter ablation is a Class 1 first-line alternative to antiarrhythmic drugs and is preferred given her symptom burden and failure of rate control."
+          },
+          {
+            "letter": "D",
+            "why": "Switching to diltiazem is another rate control strategy. The clinical question is whether to pursue rhythm versus rate control. Given AF diagnosed under 12 months ago with persistent symptoms, EAST-AFNET 4 supports rhythm control, not continued rate control optimization."
+          },
+          {
+            "letter": "E",
+            "why": "Adding digoxin to metoprolol is a rate control escalation. Digoxin has a narrow therapeutic window, does not improve cardiovascular outcomes, and the patient needs rhythm control per EAST-AFNET 4 data, not further rate control augmentation."
+          }
+        ]
+      },
+      "abim_classification": {
+        "category": "Cardiovascular",
+        "subcategory": "Atrial Fibrillation",
+        "specific_topic": "Atrial Fibrillation: Rate vs Rhythm Control and Catheter Ablation",
+        "blueprint_weight": "14%"
+      },
+      "board_pearls": [
+        "EAST-AFNET 4 (2020) showed early rhythm control within 1 year of AF diagnosis reduces cardiovascular death, stroke, and HF hospitalization versus rate control alone, forming the basis for early rhythm control recommendations in the 2023 ACC/AHA AF guideline.",
+        "The 2023 ACC/AHA AF guideline gives catheter ablation a Class 1 recommendation as first-line rhythm control therapy for symptomatic AF, as an alternative to antiarrhythmic drugs, supported by CABANA trial data showing improved quality of life and similar or superior outcomes.",
+        "Catheter ablation is distinguished from flecainide by its superior long-term efficacy, avoidance of proarrhythmic drug risks, and applicability in patients with structural heart disease where Class IC agents like flecainide are contraindicated.",
+        "CASTLE-AF demonstrated that catheter ablation in AF patients with HFrEF reduced all-cause mortality and HF hospitalization versus rate control; CABANA showed ablation superiority for quality of life and per-protocol outcomes in the general AF population.",
+        "The most common wrong-answer trap is escalating rate control (increasing metoprolol or adding digoxin) in a patient with recently diagnosed symptomatic AF; the AFFIRM trial (2002) showed no mortality benefit with rhythm control, but EAST-AFNET 4 overturned this paradigm by showing benefit specifically with EARLY rhythm control within 12 months of diagnosis."
+      ],
+      "teaching_points": [
+        "The critical distinction tested here is the timing of AF diagnosis: AF diagnosed within 12 months is the key inclusion criterion from EAST-AFNET 4 that supports early rhythm control over rate control alone.",
+        "Anticoagulation decisions are independent of rhythm control success. Even if sinus rhythm is restored, patients with CHA2DS2-VASc of 2 or more (men) or 3 or more (women) should continue long-term anticoagulation with a DOAC.",
+        "Catheter ablation is now a Class 1 first-line rhythm control strategy per 2023 ACC/AHA guidelines, not just a backup after antiarrhythmic drug failure. This represents a paradigm shift from older guidelines."
+      ],
+      "summary_points": [
+        "In patients with symptomatic AF diagnosed within 12 months, early rhythm control (preferably catheter ablation per 2023 ACC/AHA guidelines) reduces cardiovascular events and improves quality of life compared to rate control alone, per EAST-AFNET 4 and CABANA."
+      ],
+      "visual_memory_card": {
+        "top_left": "Symptomatic AF diagnosed <12 months ago",
+        "top_right": "Early rhythm control reduces CV events",
+        "bottom_left": "EAST-AFNET 4: early rhythm > rate control",
+        "bottom_right": "Trap: escalating rate control in early AF",
+        "center": ""
+      }
+    }
+  },
+  {
+    "slug": "hocm-boards",
+    "topic": "HOCM with syncope — ICD indication and SCD risk stratification",
+    "style": "boards",
+    "specialty": "Cardiovascular",
+    "guideline_sources": [
+      "2022 AHA/ACC/HFSA Heart Failure",
+      "2023 ACC/AHA Atrial Fibrillation",
+      "2025 AHA/ACC Hypertension",
+      "2025 ACC/AHA ACS"
+    ],
+    "generated_at": "2026-06-01",
+    "talk": {
+      "title": "Hypertrophic Cardiomyopathy with Syncope",
+      "subtitle": "ICD Indication and Sudden Cardiac Death Risk Stratification in HCM",
+      "guideline_sources": [
+        "2024 AHA/ACC Guideline for the Diagnosis and Management of Hypertrophic Cardiomyopathy",
+        "2020 AHA/ACC Guideline for the Diagnosis and Treatment of Hypertrophic Cardiomyopathy"
+      ],
+      "references": [
+        {
+          "id": 1,
+          "source": "2020 AHA/ACC Guideline for the Diagnosis and Treatment of Patients with Hypertrophic Cardiomyopathy",
+          "year": 2020,
+          "society": "AHA/ACC",
+          "url": "https://doi.org/10.1161/CIR.0000000000000937",
+          "type": "guideline"
+        },
+        {
+          "id": 2,
+          "source": "2024 AHA/ACC/AMSSM/HRS/PACES/SCMR Guideline for the Management of Hypertrophic Cardiomyopathy",
+          "year": 2024,
+          "society": "AHA/ACC",
+          "url": "",
+          "type": "guideline"
+        },
+        {
+          "id": 3,
+          "source": "O'Mahony C et al. A novel clinical risk prediction model for sudden cardiac death in hypertrophic cardiomyopathy (HCM Risk-SCD). Eur Heart J",
+          "year": 2014,
+          "society": "ESC",
+          "url": "",
+          "type": "landmark study"
+        }
+      ],
+      "question": {
+        "stem": "A 28-year-old man is brought to the emergency department after losing consciousness while playing basketball. He reports sudden onset of lightheadedness followed by complete loss of awareness lasting approximately 30 seconds, with spontaneous recovery. He denies chest pain, palpitations, or seizure-like activity. His older brother died suddenly at age 32 during exercise; an autopsy revealed hypertrophic cardiomyopathy. The patient's medical history is notable for exertional dyspnea over the past year. He takes no medications. He does not smoke or drink alcohol. His temperature is 36.8°C (98.2°F), blood pressure is 118/72 mmHg, heart rate is 74/min, and respiratory rate is 16/min. On cardiac auscultation, there is a grade 3/6 harsh crescendo-decrescendo systolic murmur heard best at the left lower sternal border that increases with standing from a squatting position. A fourth heart sound is present. Jugular venous pressure is normal. Lungs are clear to auscultation. An electrocardiogram shows left ventricular hypertrophy with deep, narrow Q waves in leads I, aVL, V5, and V6. A transthoracic echocardiogram demonstrates asymmetric septal hypertrophy with a maximum left ventricular wall thickness of 34 mm, a dynamic left ventricular outflow tract gradient of 65 mmHg at rest, systolic anterior motion of the mitral valve, and a left ventricular ejection fraction of 68%. Cardiac MRI with gadolinium shows extensive late gadolinium enhancement involving approximately 20% of the left ventricular myocardium. A 48-hour ambulatory ECG monitor shows no episodes of nonsustained ventricular tachycardia. Which of the following is the most appropriate next step in management?",
+        "choices": [
+          {
+            "letter": "A",
+            "text": "Oral metoprolol and exercise restriction only",
+            "correct": false
+          },
+          {
+            "letter": "B",
+            "text": "Implantable cardioverter-defibrillator placement",
+            "correct": true
+          },
+          {
+            "letter": "C",
+            "text": "Septal myectomy",
+            "correct": false
+          },
+          {
+            "letter": "D",
+            "text": "Cardiac electrophysiology study",
+            "correct": false
+          },
+          {
+            "letter": "E",
+            "text": "Oral mavacamten",
+            "correct": false
+          }
+        ],
+        "correct_letter": "B",
+        "explanation": "Per the 2020 AHA/ACC HCM Guideline, ICD implantation is recommended (Class I) for patients with HCM who have experienced sudden cardiac arrest or sustained ventricular tachycardia, and it is reasonable (Class IIa) for patients with one or more major SCD risk factors. The established major risk factors for sudden cardiac death in HCM include: (1) family history of SCD attributable to HCM, (2) maximum LV wall thickness >=30 mm, (3) unexplained syncope suspected to be arrhythmic, (4) LV apical aneurysm, (5) LV ejection fraction =15% of LV mass) on cardiac MRI is an SCD risk enhancer that further supports ICD implantation. Per the guideline, when multiple major risk factors coexist, the cumulative SCD risk is substantial, making ICD implantation a Class IIa recommendation even in primary prevention. In this case, with three major risk factors plus an imaging risk enhancer, ICD placement is the most appropriate and urgent next step. Beta-blockers and exercise restriction are important adjuncts but do not address the arrhythmic death risk. Septal myectomy addresses obstruction-related symptoms but is not a substitute for ICD when SCD risk is high. Electrophysiology study has no established role in HCM risk stratification per guidelines. Mavacamten reduces LVOT gradients but does not mitigate arrhythmic SCD risk.",
+        "wrong_explanations": [
+          {
+            "letter": "A",
+            "why": "Beta-blockers reduce LVOT gradient and improve symptoms but have no proven mortality benefit in HCM. With three major SCD risk factors plus extensive LGE, failing to place an ICD leaves the patient at unacceptable risk of sudden arrhythmic death."
+          },
+          {
+            "letter": "C",
+            "why": "Septal myectomy is indicated for severe drug-refractory LVOT obstruction causing limiting symptoms (NYHA III-IV). It reduces gradient-related symptoms but does not eliminate arrhythmic SCD risk and is not a substitute for ICD in a high-risk patient."
+          },
+          {
+            "letter": "D",
+            "why": "Unlike ischemic cardiomyopathy, electrophysiology study with programmed stimulation has no established role in SCD risk stratification for HCM per AHA/ACC guidelines. Inducibility of VT/VF does not reliably predict outcomes in HCM."
+          },
+          {
+            "letter": "E",
+            "why": "Mavacamten is a cardiac myosin inhibitor FDA-approved for symptomatic obstructive HCM to reduce LVOT gradients. It addresses hemodynamic obstruction but has not been shown to reduce arrhythmic SCD risk and does not replace ICD in high-risk patients."
+          }
+        ]
+      },
+      "abim_classification": {
+        "category": "Cardiovascular",
+        "subcategory": "Myocardial Disease",
+        "specific_topic": "Hypertrophic Cardiomyopathy: SCD Risk Stratification and ICD Indications",
+        "blueprint_weight": "14%"
+      },
+      "board_pearls": [
+        "The five major SCD risk factors in HCM per AHA/ACC 2020 are: family history of HCM-related SCD, LV wall thickness >=30 mm, unexplained syncope, LV apical aneurysm, and LVEF <50%; a single major risk factor makes ICD reasonable (Class IIa), and multiple factors strengthen the indication.",
+        "Per AHA/ACC 2020, extensive late gadolinium enhancement (>=15% LV mass) on cardiac MRI is a recognized SCD risk enhancer that can tip a borderline case toward ICD implantation, though it is not sufficient as a sole indication.",
+        "Unexplained exertional syncope in HCM is classified as a major SCD risk factor and is distinct from neurally mediated syncope; the key discriminator is that exertional syncope in young HCM patients is arrhythmic until proven otherwise, whereas vasovagal syncope has typical prodrome and positional triggers.",
+        "The ESC HCM Risk-SCD calculator (O'Mahony 2014) provides a 5-year SCD risk estimate using age, LVOT gradient, maximal wall thickness, LA diameter, family history of SCD, NSVT, and unexplained syncope; a score >=6% at 5 years supports ICD (ESC approach), while AHA/ACC uses individual risk factor assessment.",
+        "The most common wrong-answer trap is choosing septal myectomy or mavacamten, which target LVOT obstruction and symptoms; these do NOT address arrhythmic risk and are never substitutes for ICD placement in patients meeting SCD risk criteria."
+      ],
+      "teaching_points": [
+        "In HCM, SCD risk stratification must be performed at initial evaluation and periodically thereafter; the presence of even one major risk factor warrants a shared-decision discussion about ICD implantation.",
+        "Massive LV hypertrophy (>=30 mm) is the single most powerful individual predictor of SCD in HCM and is an independent indication for ICD discussion regardless of symptoms.",
+        "Cardiac MRI with late gadolinium enhancement quantification has become integral to HCM evaluation; extensive fibrosis (>=15% LV mass) enhances SCD risk prediction beyond conventional echocardiographic parameters."
+      ],
+      "summary_points": [
+        "A young patient with HCM presenting with exertional syncope, massive LV hypertrophy (34 mm), family history of HCM-related sudden death, and extensive myocardial fibrosis on MRI has multiple major SCD risk factors and risk enhancers warranting ICD implantation as the priority management step."
+      ],
+      "visual_memory_card": {
+        "top_left": "Exertional syncope + family SCD + wall >=30mm",
+        "top_right": "Ventricular arrhythmia risk from myocardial disarray",
+        "bottom_left": ">=1 major HCM SCD risk factor = discuss ICD",
+        "bottom_right": "Myectomy/mavacamten treat obstruction not arrhythmia",
+        "center": ""
+      }
+    }
   }
 ]
