@@ -496,5 +496,212 @@
       "KDIGO 2022 Diabetes in CKD"
     ],
     "generated_at": "2026-04-29"
+  },
+  {
+    "slug": "polypharmacy",
+    "topic": "Polypharmacy + Deprescribing in older adults (Beers, STOPP/START)",
+    "style": "lecture",
+    "specialty": "Geriatrics",
+    "guideline_sources": [],
+    "generated_at": "2026-06-01",
+    "talk_concise": {
+      "title": "Polypharmacy & Deprescribing in Older Adults",
+      "subtitle": "Beers, STOPP/START, and Systematic Medication Reduction",
+      "guideline_sources": [
+        "2023 AGS Beers Criteria",
+        "STOPP/START Version 3 (2023)",
+        "Deprescribing evidence and resources"
+      ],
+      "references": [
+        {
+          "id": 1,
+          "source": "2023 AGS Updated Beers Criteria for Potentially Inappropriate Medication Use in Older Adults",
+          "year": 2023,
+          "society": "AGS",
+          "url": "https://doi.org/10.1111/jgs.18372",
+          "type": "guideline"
+        },
+        {
+          "id": 2,
+          "source": "STOPP/START Version 3: European Geriatric Medicine 2023",
+          "year": 2023,
+          "society": "European Geriatric Medicine Society",
+          "url": "",
+          "type": "guideline"
+        },
+        {
+          "id": 3,
+          "source": "OPERAM Trial - Deprescribing in polypharmacy - Blum et al, BMJ 2021",
+          "year": 2021,
+          "society": "",
+          "url": "",
+          "type": "landmark_trial"
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Physiology of Aging & Drug Handling",
+          "minutes": "1-2 min",
+          "points": [
+            "Decreased GFR, hepatic blood flow, and CYP activity slow drug clearance",
+            "Increased body fat prolongs half-life of lipophilic drugs (benzodiazepines)",
+            "Reduced albumin raises free fraction of highly protein-bound drugs (warfarin, phenytoin)",
+            "Increased BBB permeability and reduced cholinergic reserve amplify CNS drug effects"
+          ],
+          "teaching_pearl": "A 'normal' dose in a 40-year-old is pharmacologically an overdose in an 80-year-old.",
+          "board_tip": "Polypharmacy threshold is typically 5+ concurrent medications."
+        },
+        {
+          "heading": "Beers Criteria vs STOPP/START: Key Framework Differences",
+          "minutes": "1-2 min",
+          "points": [
+            "Beers: lists PIMs to AVOID regardless of alternatives (US-focused, AGS 2023)",
+            "STOPP: PIMs to STOP organized by organ system with clinical rationale",
+            "START: identifies medications that SHOULD be prescribed but are omitted",
+            "STOPP/START is more sensitive for prescribing omissions than Beers alone"
+          ],
+          "teaching_pearl": "STOPP/START uniquely captures undertreatment, which Beers does not address.",
+          "board_tip": "Beers high-yield PIMs: anticholinergics, benzodiazepines, PPIs long-term, NSAIDs."
+        },
+        {
+          "heading": "Deprescribing: Practical Approach",
+          "minutes": "1-2 min",
+          "points": [
+            "Stepwise: identify PIM, assess risk-benefit, taper one drug at a time, monitor",
+            "Always taper CNS-active drugs (benzodiazepines, SSRIs, gabapentinoids) to avoid withdrawal",
+            "PPIs: step down to H2RA or PRN after 8 weeks if no high-risk indication",
+            "OPERAM trial showed structured deprescribing reduced PIMs but also reduced overall medication burden and hospitalizations in some subgroups"
+          ],
+          "teaching_pearl": "Deprescribe one drug at a time so adverse withdrawal is attributable.",
+          "board_tip": "Prescribing cascade: new drug treats side effect of existing drug."
+        }
+      ],
+      "summary_points": [
+        "Aging pharmacokinetics (reduced clearance, increased volume for lipophilic drugs) make standard doses dangerous in elderly.",
+        "Beers lists drugs to avoid; STOPP/START adds clinical context and captures undertreated conditions.",
+        "Top Beers PIMs for boards: anticholinergics, long-acting benzodiazepines, chronic NSAIDs, long-term PPIs.",
+        "Deprescribe one medication at a time with taper for CNS drugs and structured monitoring for rebound symptoms."
+      ],
+      "visual_memory_card": {
+        "top_left": "Reduced clearance + increased CNS sensitivity",
+        "top_right": "Falls, delirium, cognitive decline, AKI",
+        "bottom_left": "Apply Beers + STOPP/START systematically",
+        "bottom_right": "Taper one PIM at a time, monitor",
+        "center": ""
+      }
+    },
+    "talk_detailed": {
+      "title": "Polypharmacy & Deprescribing in Older Adults",
+      "subtitle": "Beers Criteria, STOPP/START, and the Physiology of Aging That Makes It All Matter",
+      "guideline_sources": [
+        "2023 AGS Beers Criteria for Potentially Inappropriate Medication Use in Older Adults",
+        "STOPP/START Criteria Version 3 (2023)",
+        "2024 AGS Guidelines on Deprescribing"
+      ],
+      "references": [
+        {
+          "id": 1,
+          "source": "2023 AGS Updated Beers Criteria for Potentially Inappropriate Medication Use in Older Adults",
+          "year": 2023,
+          "society": "American Geriatrics Society",
+          "url": "https://agsjournals.onlinelibrary.wiley.com/doi/10.1111/jgs.18372",
+          "type": "guideline"
+        },
+        {
+          "id": 2,
+          "source": "STOPP/START Criteria Version 3 for Potentially Inappropriate Prescribing in Older People",
+          "year": 2023,
+          "society": "European Geriatric Medicine Society",
+          "url": "",
+          "type": "guideline"
+        },
+        {
+          "id": 3,
+          "source": "OPTI-SCRIPT RCT - medication review intervention to reduce potentially inappropriate prescribing",
+          "year": 2015,
+          "society": "BMC Geriatrics",
+          "url": "",
+          "type": "landmark_trial"
+        },
+        {
+          "id": 4,
+          "source": "EMPOWER cluster RCT - patient education brochure to reduce benzodiazepine use",
+          "year": 2014,
+          "society": "JAMA Internal Medicine",
+          "url": "",
+          "type": "landmark_trial"
+        },
+        {
+          "id": 5,
+          "source": "Garfinkel D, Mangin D. Feasibility study of a systematic approach for discontinuation of multiple medications in older adults",
+          "year": 2010,
+          "society": "Archives of Internal Medicine",
+          "url": "",
+          "type": "landmark_trial"
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Age-Related Pharmacokinetic & Pharmacodynamic Changes: Why Older Adults Are Uniquely Vulnerable",
+          "minutes": "3-4 min",
+          "points": [
+            "ABSORPTION: Gastric pH rises with aging (reduced parietal cell mass), slowing dissolution of weakly acidic drugs (e.g., ketoconazole, iron salts). Reduced splanchnic blood flow and GI motility delay Tmax but overall bioavailability is generally preserved — this is the one PK parameter LEAST affected by aging.",
+            "DISTRIBUTION: Total body water decreases 10-15% while adipose tissue increases 20-40% from age 25 to 75. Hydrophilic drugs (digoxin, lithium, aminoglycosides) have SMALLER Vd → higher peak plasma concentrations at standard doses. Lipophilic drugs (diazepam, amiodarone) have LARGER Vd → prolonged half-life and accumulation. Albumin drops ~15-20%, increasing free fraction of highly protein-bound drugs (warfarin, phenytoin, valproate).",
+            "METABOLISM: Hepatic mass declines ~25-35% and hepatic blood flow drops ~40% by age 65. Phase I reactions (CYP-mediated oxidation, reduction, hydrolysis) are significantly impaired; Phase II reactions (glucuronidation, acetylation, sulfation) are relatively preserved. This is why lorazepam, oxazepam, and temazepam (LOT — all Phase II only) are preferred benzodiazepines in older adults if absolutely needed.",
+            "ELIMINATION: GFR declines ~0.75 mL/min/year after age 40 even without CKD; by age 80, average GFR is 50-60 mL/min. Serum creatinine may appear normal despite significantly reduced GFR due to decreased muscle mass — always calculate CrCl (Cockcroft-Gault) or use CKD-EPI. Renally cleared drugs (DOACs, gabapentin, metformin, digoxin) require dose adjustment.",
+            "PHARMACODYNAMICS: Increased sensitivity of the CNS to sedatives, anticholinergics, and opioids due to reduced cholinergic neurons, decreased dopaminergic tone, and blood-brain barrier permeability changes. Baroreceptor reflex blunting increases susceptibility to orthostatic hypotension from alpha-blockers, diuretics, and vasodilators. Reduced beta-receptor sensitivity (downregulation) diminishes response to beta-agonists and beta-blockers.",
+            "ANTICHOLINERGIC BURDEN: The cumulative effect of multiple medications with anticholinergic properties (diphenhydramine + oxybutynin + paroxetine) is additive. Anticholinergic Cognitive Burden (ACB) scale quantifies risk. High cumulative ACB scores independently predict delirium, cognitive decline, falls, and mortality. Cholinergic deficit in aging brain means even low-grade anticholinergic exposure has outsized impact.",
+            "NET EFFECT: These physiologic changes create a narrow therapeutic index for many drugs in older adults, making standard adult dosing inherently risky. The adage 'start low, go slow, but go' applies — but the corollary is equally important: 'deprescribe when the risk-benefit shifts.'"
+          ],
+          "teaching_pearl": "The LOT drugs (Lorazepam, Oxazepam, Temazepam) bypass Phase I hepatic metabolism entirely via glucuronidation (Phase II), making them the 'safer' benzodiazepines in older adults — but per Beers 2023, ALL benzodiazepines are still potentially inappropriate regardless of metabolism route.",
+          "board_tip": "Board question classic: Elderly patient on phenytoin with low albumin — always correct the phenytoin level using the Sheiner-Tozer equation. A 'normal' total phenytoin level may actually represent a toxic free level when albumin is low."
+        },
+        {
+          "heading": "Beers Criteria & STOPP/START: The Screening Tools and How to Apply Them",
+          "minutes": "3-4 min",
+          "points": [
+            "BEERS CRITERIA (AGS 2023): Five categories — (1) PIMs to avoid in most older adults, (2) PIMs to avoid in certain diseases/syndromes, (3) drugs to use with caution, (4) drug-drug interactions to avoid, (5) dose adjustments based on renal function. Major updates in 2023 include refined guidance on PPIs, added warnings on long-term NSAID use, and clarified sulfonylurea recommendations.",
+            "HIGH-YIELD BEERS MEDICATIONS: First-gen antihistamines (diphenhydramine — strong anticholinergic), long-acting sulfonylureas (glyburide — hypoglycemia risk), skeletal muscle relaxants (cyclobenzaprine, metaxalone — sedation, anticholinergic), sliding scale insulin in non-ICU settings (hypoglycemia without benefit), peripheral alpha-1 blockers for hypertension (doxazosin — orthostasis, falls).",
+            "STOPP/START CRITERIA (Version 3, 2023): STOPP = Screening Tool of Older Persons' Prescriptions (identifies PIMs to STOP); START = Screening Tool to Alert to Right Treatment (identifies beneficial drugs being OMITTED). STOPP/START is more condition-specific than Beers and has stronger evidence for reducing ADEs in European trials. Includes 190 STOPP and 44 START criteria.",
+            "STOPP EXAMPLES: Stop long-acting benzodiazepines if fall risk, stop PPIs beyond 8 weeks without clear indication, stop loop diuretics for ankle edema without heart failure, stop anticholinergics in patients with dementia or chronic constipation, stop duplicate drug classes (two ACE inhibitors, two SSRIs).",
+            "START EXAMPLES: START statins in documented atherosclerotic CVD if life expectancy >3 years, START vitamin D/calcium in osteoporosis, START ACE inhibitor in HFrEF, START laxatives in patients on chronic opioids, START beta-blockers in stable angina. These omissions of beneficial therapy are as harmful as inappropriate prescriptions — the 'prescribing omission' concept.",
+            "COMPARISON: Beers is US-focused (AGS), widely used for quality metrics, but is sometimes criticized as a 'blacklist' that doesn't account for individual patient context. STOPP/START is used internationally, more explicit about indication-driven decisions, and has shown reduction in ADEs in the SENATOR and OPTI-SCRIPT trials. Both are screening tools, NOT absolute contraindications — clinical judgment remains paramount.",
+            "LIMITATIONS: Neither tool fully addresses patient goals of care, functional status, or remaining life expectancy. Deprescribing requires a broader framework than simply applying a checklist."
+          ],
+          "teaching_pearl": "STOPP/START has something Beers does not: the START component. Prescribing omissions (e.g., not starting an anticoagulant in AFib, not starting a bisphosphonate after hip fracture) cause as much morbidity as PIMs. Always look for undertreated conditions alongside overtreated ones.",
+          "board_tip": "Board favorite: 78-year-old with insomnia started on diphenhydramine who then develops urinary retention and confusion. This is the classic anticholinergic toxicity cascade (peripheral: urinary retention, dry mouth; central: delirium). Diphenhydramine is on Beers as 'avoid in most older adults.' The answer is always to STOP the offending drug first."
+        },
+        {
+          "heading": "Deprescribing: Systematic Approach, Evidence, and Practical Framework",
+          "minutes": "3-4 min",
+          "points": [
+            "DEFINITION: Deprescribing is the planned, supervised process of dose reduction or discontinuation of medications that are no longer beneficial or may be causing harm, in the context of an individual patient's current goals of care, functional status, and life expectancy. It is NOT simply stopping medications abruptly.",
+            "5-STEP DEPRESCRIBING FRAMEWORK (Scott et al.): (1) Ascertain all current medications and indications, (2) Consider overall fall/ADR risk using tools like anticholinergic burden scales, (3) Assess each drug for appropriateness using Beers/STOPP/START, (4) Prioritize drugs to discontinue (highest harm, lowest benefit first), (5) Implement a gradual taper plan with close monitoring for withdrawal or disease recurrence.",
+            "EVIDENCE — LANDMARK TRIALS: The EMPOWER trial (2014) showed a direct-to-patient educational brochure about benzodiazepine risks led to 27% complete discontinuation at 6 months vs 5% in controls — empowering patients works. The OPTI-SCRIPT RCT demonstrated pharmacist-physician collaborative medication review reduced PIMs by 25%. Garfinkel (2010) showed systematic deprescribing of a mean of 4.4 drugs per patient resulted in 88% success rate with improved mortality and cognition.",
+            "TAPER STRATEGIES BY DRUG CLASS: PPIs — step down to H2RA or reduce to lowest effective dose over 2-4 weeks (rebound acid hypersecretion if stopped abruptly). Benzodiazepines — reduce dose by 10-25% every 1-2 weeks (withdrawal seizures if stopped abruptly). SSRIs — taper over 4+ weeks to prevent discontinuation syndrome (dizziness, paresthesias, flu-like symptoms). Opioids — reduce by 10% every 1-4 weeks. Antihypertensives — reduce one agent at a time, monitor BP closely.",
+            "DRUGS TO DEPRESCRIBE FIRST (highest yield, most evidence): PPIs without clear indication beyond 8 weeks, benzodiazepines and Z-drugs for insomnia, anticholinergic medications especially if cumulative burden is high, duplicate therapies, and medications for conditions that have resolved or where treatment targets have shifted with limited life expectancy (e.g., aggressive diabetes control with A1c target <7% in a frail 85-year-old).",
+            "GOALS-OF-CARE INTEGRATION: Time-to-benefit is a critical concept. Statins take 2-5 years for NNT benefit; in patients with life expectancy <1-2 years, the burden (myalgias, pill burden, drug interactions) may outweigh benefit. Bisphosphonates take 12-18 months for fracture reduction benefit. Conversely, anticoagulants and analgesics have immediate benefit and should generally be continued.",
+            "BARRIERS TO DEPRESCRIBING: Patient reluctance ('but I've been on this for 20 years'), fear of disease recurrence, prescriber inertia, fragmented care across multiple specialists, and lack of structured deprescribing protocols in health systems. Shared decision-making and patient education are the most evidence-based solutions to overcome these barriers."
+          ],
+          "teaching_pearl": "The 'prescribing cascade' is a key concept: Drug A causes side effect → Side effect is misdiagnosed as a new condition → Drug B is prescribed to treat the side effect → Drug B causes its own side effects. Classic example: NSAID → hypertension → amlodipine → pedal edema → furosemide → hypokalemia → potassium supplement. Recognizing the cascade is the first step to effective deprescribing.",
+          "board_tip": "When a board question describes an elderly patient with a NEW symptom after starting a medication, always consider that the new symptom IS a drug adverse effect (the prescribing cascade), not a new disease. The correct answer is almost always to stop the offending drug, not to add a new one."
+        }
+      ],
+      "summary_points": [
+        "Age-related pharmacokinetic changes — decreased renal clearance, reduced hepatic Phase I metabolism, increased adipose distribution, lower albumin — narrow the therapeutic index and mandate dose adjustments; always calculate GFR rather than relying on serum creatinine alone in older adults.",
+        "The anticholinergic burden is cumulative and additive: combining even mildly anticholinergic drugs (paroxetine + oxybutynin + diphenhydramine) creates a high ACB score that independently predicts delirium, cognitive decline, falls, and mortality in older adults.",
+        "Beers Criteria (AGS 2023) identifies PIMs across five categories; STOPP/START (v3, 2023) adds the crucial dimension of prescribing omissions (START criteria) — beneficial drugs being withheld are as harmful as inappropriate drugs being given.",
+        "Deprescribing is a systematic, supervised, patient-centered process — not simply stopping drugs. High-yield first targets include PPIs beyond 8 weeks without indication, benzodiazepines, anticholinergics, and medications whose time-to-benefit exceeds life expectancy.",
+        "The prescribing cascade (Drug A side effect → misdiagnosed as new disease → Drug B added) is the single most testable and clinically important concept in geriatric pharmacology. Always ask 'could this new symptom be a drug side effect?' before adding another medication.",
+        "The EMPOWER trial demonstrated that patient education alone achieves 27% benzodiazepine discontinuation — shared decision-making and patient empowerment are evidence-based strategies that overcome barriers to deprescribing."
+      ],
+      "visual_memory_card": {
+        "top_left": "Reduced Phase I metabolism, GFR, increased Vd lipophilic",
+        "top_right": "Falls, delirium, anticholinergic toxicity cascade",
+        "bottom_left": "Beers + STOPP/START screening per indication",
+        "bottom_right": "Systematic deprescribe: taper highest-harm drug first",
+        "center": ""
+      }
+    }
   }
 ]
