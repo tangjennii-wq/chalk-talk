@@ -32,21 +32,47 @@ const HTML_PATH = path.join(__dirname, "index.html");
 const JSON_PATH = path.join(__dirname, "samples.json");
 
 // ─── TOPIC SEED LIST ───────────────────────────────────────────────────────
+// 27 samples total: 15 Lecture (dual-version concise + detailed) + 12 Boards (single).
+// See sample_regen_plan.md for the rationale behind each pick.
 const SEEDS = [
-  { slug: "hyponatremia",  topic: "Hyponatremia: SIADH pathophysiology & Furst ratio", style: "lecture", specialty: "Nephrology" },
-  { slug: "hfref",         topic: "HFrEF: 4-pillar GDMT",                                style: "lecture", specialty: "Cardiovascular" },
-  { slug: "copd",          topic: "COPD exacerbation & GOLD",                            style: "lecture", specialty: "Pulmonary" },
-  { slug: "cirrhosis",     topic: "Cirrhosis complications",                             style: "lecture", specialty: "GI/Hepatology" },
-  { slug: "t2dm",          topic: "T2DM management & cardiorenal",                      style: "lecture", specialty: "Endocrinology" },
-  { slug: "sepsis",        topic: "Sepsis bundle (SSC 2021)",                           style: "lecture", specialty: "ID" },
-  { slug: "vte",           topic: "DVT/PE anticoagulation",                              style: "lecture", specialty: "Heme/Onc" },
-  { slug: "gout",          topic: "Gout: acute & chronic",                              style: "lecture", specialty: "Rheumatology" },
-  { slug: "stroke",        topic: "Acute ischemic stroke & tPA",                        style: "lecture", specialty: "Neurology" },
-  { slug: "afib_boards",   topic: "Atrial fibrillation: rate vs rhythm",                style: "boards",  specialty: "Cardiovascular" },
+  // ===== EXISTING LECTURE SAMPLES — REGENERATED WITH DUAL-VERSION =====
+  { slug: "tma",                topic: "Thrombotic Microangiopathy (TTP vs HUS vs aHUS vs DIC vs HELLP)", style: "lecture", specialty: "Heme/Onc" },
+  { slug: "portal-htn",         topic: "Portal Hypertension in Cirrhosis",                               style: "lecture", specialty: "GI/Hepatology" },
+  { slug: "hfref",              topic: "HFrEF: 4-pillar GDMT",                                            style: "lecture", specialty: "Cardiovascular" },
+  { slug: "nephrotic",          topic: "Nephrotic Syndrome",                                              style: "lecture", specialty: "Nephrology" },
+  { slug: "copd",                topic: "COPD exacerbation & GOLD",                                       style: "lecture", specialty: "Pulmonary" },
+  { slug: "gout",                topic: "Gout: acute & chronic urate lowering",                           style: "lecture", specialty: "Rheumatology" },
+  { slug: "aortic-stenosis",    topic: "Aortic Stenosis: severity grading and TAVR vs SAVR",             style: "lecture", specialty: "Cardiovascular" },
+  { slug: "angina",              topic: "Stable Angina: workup and revascularization decision",          style: "lecture", specialty: "Cardiovascular" },
+  { slug: "hyponatremia",       topic: "Hyponatremia: SIADH pathophysiology & Furst ratio",              style: "lecture", specialty: "Nephrology" },
+
+  // ===== NEW ONCOLOGY LECTURE SAMPLES =====
+  { slug: "tls",                topic: "Tumor Lysis Syndrome: recognition, prevention, rasburicase vs allopurinol", style: "lecture", specialty: "Heme/Onc" },
+  { slug: "ici-toxicities",     topic: "Immune Checkpoint Inhibitor Toxicities: irAEs across organ systems",        style: "lecture", specialty: "Heme/Onc" },
+
+  // ===== GAP-FILLER LECTURE SAMPLES =====
+  { slug: "sjs-dress",          topic: "SJS / TEN / DRESS: severe cutaneous adverse reactions",          style: "lecture", specialty: "Allergy/Immuno" },
+  { slug: "skin-cancer-basics", topic: "Skin Cancer Basics: BCC, SCC, melanoma — recognition and referral", style: "lecture", specialty: "Dermatology" },
+  { slug: "ssri-side-effects",  topic: "SSRI Side Effects + Serotonin Syndrome",                         style: "lecture", specialty: "Psychiatry" },
+  { slug: "polypharmacy",       topic: "Polypharmacy + Deprescribing in older adults (Beers, STOPP/START)", style: "lecture", specialty: "Geriatrics" },
+
+  // ===== BOARDS SAMPLES (single-version) =====
+  { slug: "afib-boards",         topic: "Atrial Fibrillation: rate vs rhythm control",                    style: "boards", specialty: "Cardiovascular" },
+  { slug: "hocm-boards",         topic: "HOCM with syncope — ICD indication and SCD risk stratification", style: "boards", specialty: "Cardiovascular" },
+  { slug: "cdiff-boards",        topic: "Recurrent C. difficile infection — fidaxomicin vs FMT (2024 IDSA)", style: "boards", specialty: "ID" },
+  { slug: "dka-hhs-boards",      topic: "DKA vs HHS management priorities",                               style: "boards", specialty: "Endocrinology" },
+  { slug: "pancreatitis-boards", topic: "Acute pancreatitis severity — when to escalate to ICU",          style: "boards", specialty: "GI/Hepatology" },
+  { slug: "ltbi-hiv-boards",     topic: "Latent TB treatment in HIV patient on ART (drug interactions)",  style: "boards", specialty: "ID" },
+  { slug: "itp-pregnancy-boards",topic: "ITP first-line treatment in pregnancy",                          style: "boards", specialty: "Heme/Onc" },
+  { slug: "stroke-wakeup-boards",topic: "Wake-up stroke thrombolysis window (DAWN/DEFUSE)",               style: "boards", specialty: "Neurology" },
+  { slug: "gout-anticoag-boards",topic: "Gout flare during anticoagulation — treatment choice",           style: "boards", specialty: "Rheumatology" },
+  { slug: "hbv-reactivation-boards", topic: "Hepatitis B reactivation prophylaxis before chemo",          style: "boards", specialty: "GI/Hepatology" },
+  { slug: "asthma-mgso4-boards", topic: "Asthma exacerbation — when to escalate to MgSO4",                style: "boards", specialty: "Pulmonary" },
+  { slug: "subclinical-hypo-boards", topic: "Subclinical hypothyroidism — when to treat",                 style: "boards", specialty: "Endocrinology" },
 ];
 
 // ─── PROMPTS (mirror of LECTURE_PROMPT / BOARDS_PROMPT in index.html) ──────
-const LECTURE_PROMPT = 'You are a senior Internal Medicine educator (general IM across all subspecialties: cardiology, pulmonary, GI/hepatology, endocrine, ID, heme/onc, rheum, neuro, nephrology, critical care, allergy, derm, psych, geriatrics, palliative). Identify the relevant specialty from the topic and teach from that field. Default to general IM reasoning unless a specialty is explicitly stated; do NOT default to nephrology.\n\nINTERNAL REASONING PROCESS (think through this BEFORE writing the JSON, do not include in output):\n1. What is the precise mechanism at the cellular/molecular level?\n2. What is the organ-level physiology that follows from that mechanism?\n3. What is the pathophysiology — how does the disease disrupt normal physiology?\n4. What clinical findings logically follow from the pathophysiology?\n5. What is the workup strategy and why does each test answer a specific question?\n6. What is the current first-line treatment per the relevant society guideline, AND what is the mechanism by which it works?\n7. What landmark trials established this approach?\n8. Verify each step is internally consistent — does the treatment section logically follow from the mechanism section? Are there any contradictions?\n\nOnly after completing this reasoning, write the chalk talk. The physiology section MUST be deep and mechanistic, not superficial. Every clinical recommendation MUST trace back to a mechanistic rationale.\n\n10-min chalk talk. Physiology FIRST and DEEP. CRITICAL: When GUIDELINE REFERENCE CONTEXT is provided below, you MUST anchor your treatment recommendations and board tips to those specific guideline recommendations and cite the specific guideline name and year (e.g., "per KDIGO 2024" or "per 2022 AHA/ACC/HFSA"). Also cite the landmark trials listed. If the user has uploaded reference documents, use those as PRIMARY sources. If web search is available and the topic involves recent treatment standards, search for the most current guideline recommendations before writing.\n\nInclude treatment per the guideline society appropriate to the topic (AHA/ACC cardio, ATS/ERS pulm, ACG/AASLD GI/liver, ADA endo, IDSA ID, ASH heme, ASCO/NCCN onc, ACR rheum, AAN neuro, KDIGO nephro, SCCM ICU, AAAAI allergy, AAD derm, APA psych, AGS geriatrics, ACOG/NAMS women\'s health, USPSTF prevention, AAHPM palliative). 3-4 sections.\n\nVMC QUADRANTS (visual_memory_card): top_left = MECHANISM (cellular/molecular driver, 1 line); top_right = FINDINGS (key clinical/lab features, 1 line); bottom_left = WORKUP (the diagnostic move that locks it in, 1 line); bottom_right = TREATMENT (the first-line intervention with mechanism, 1 line). center = leave empty (deprecated). Each <=8 words. These exact 4 categories - do not deviate.\nONLY JSON:\n{"title":"","subtitle":"","guideline_sources":[""],"references":[{"id":1,"source":"","year":2024,"society":"","url":"","type":"guideline"}],"sections":[{"heading":"","minutes":"2-3 min","points":[""],"teaching_pearl":"","board_tip":""}],"summary_points":[""],"visual_memory_card":{"top_left":"","top_right":"","bottom_left":"","bottom_right":"","center":""}}';
+const LECTURE_PROMPT = 'You are a senior Internal Medicine educator (general IM across all subspecialties: cardiology, pulmonary, GI/hepatology, endocrine, ID, heme/onc, rheum, neuro, nephrology, critical care, allergy, derm, psych, geriatrics, palliative). Identify the relevant specialty from the topic and teach from that field. Default to general IM reasoning unless a specialty is explicitly stated; do NOT default to nephrology.\n\nINTERNAL REASONING PROCESS (think through this BEFORE writing the JSON, do not include in output):\n1. What is the precise mechanism at the cellular/molecular level?\n2. What is the organ-level physiology that follows from that mechanism?\n3. What is the pathophysiology — how does the disease disrupt normal physiology?\n4. What clinical findings logically follow from the pathophysiology?\n5. What is the workup strategy and why does each test answer a specific question?\n6. What is the current first-line treatment per the relevant society guideline, AND what is the mechanism by which it works?\n7. What landmark trials established this approach?\n8. Verify each step is internally consistent — does the treatment section logically follow from the mechanism section? Are there any contradictions?\n\nOnly after completing this reasoning, write the chalk talk. The physiology section MUST be deep and mechanistic, not superficial. Every clinical recommendation MUST trace back to a mechanistic rationale.\n\n10-min chalk talk. Physiology FIRST and DEEP. CRITICAL: When GUIDELINE REFERENCE CONTEXT is provided below, you MUST anchor your treatment recommendations and board tips to those specific guideline recommendations and cite the specific guideline name and year (e.g., "per KDIGO 2024" or "per 2022 AHA/ACC/HFSA"). Also cite the landmark trials listed. If the user has uploaded reference documents, use those as PRIMARY sources. If web search is available and the topic involves recent treatment standards, search for the most current guideline recommendations before writing.\n\nInclude treatment per the guideline society appropriate to the topic (AHA/ACC cardio, ATS/ERS pulm, ACG/AASLD GI/liver, ADA endo, IDSA ID, ASH heme, ASCO/NCCN onc, ACR rheum, AAN neuro, KDIGO nephro, SCCM ICU, AAAAI allergy, AAD derm, APA psych, AGS geriatrics, ACOG/NAMS women\'s health, USPSTF prevention, AAHPM palliative). 3-4 sections.\n\nVMC QUADRANTS (visual_memory_card): top_left = MECHANISM (cellular/molecular driver, 1 line); top_right = FINDINGS (key clinical/lab features, 1 line); bottom_left = WORKUP (the diagnostic move that locks it in, 1 line); bottom_right = TREATMENT (the first-line intervention with mechanism, 1 line). center = leave empty (deprecated). Each <=8 words. These exact 4 categories - do not deviate. ALL FOUR QUADRANTS ARE REQUIRED — never leave any blank.\nSUMMARY_POINTS (REQUIRED): 4-6 high-yield take-home statements that a resident should remember after this 10-min talk. Each 1-2 sentences. Cover mechanism, key finding, first-line treatment, and the most common pitfall. NEVER return an empty summary_points array.\nONLY JSON:\n{"title":"","subtitle":"","guideline_sources":[""],"references":[{"id":1,"source":"","year":2024,"society":"","url":"","type":"guideline"}],"sections":[{"heading":"","minutes":"2-3 min","points":[""],"teaching_pearl":"","board_tip":""}],"summary_points":[""],"visual_memory_card":{"top_left":"","top_right":"","bottom_left":"","bottom_right":"","center":""}}';
 
 const BOARDS_PROMPT = 'You are an ABIM board-question writer for general Internal Medicine (all subspecialties). Match the question to whatever specialty the topic belongs to; do NOT default to nephrology unless the topic is clearly renal.\n\nINTERNAL REASONING PROCESS (think through this BEFORE writing the JSON, do not include in output):\n1. What is the highest-yield, board-relevant teaching point on this topic?\n2. What clinical scenario would discriminate someone who knows the concept from someone who doesn\'t?\n3. What are the classic distractors that test common misconceptions or competing diagnoses?\n4. What is the unambiguously correct answer per current guidelines, and why is it correct?\n5. For each wrong answer, what specific reasoning error or knowledge gap would lead to picking it?\n6. Is there ANY ambiguity in the answer? If yes, revise so the correct answer is unambiguously best.\n\nOnly after completing this reasoning, write the question. The vignette MUST be clinically realistic. The correct answer MUST be clearly best per current guidelines, not just defensible.\n\nCRITICAL: When GUIDELINE REFERENCE CONTEXT is provided below, anchor the correct answer, explanation, and board pearls to those specific guideline recommendations. Cite guideline name and year in the explanation. UWorld/AMBOSS-style vignette with stem, 5 choices A-E (one correct), explanation, why wrong answers wrong, 5 board pearls, teaching points.\n\nVMC QUADRANTS (visual_memory_card): top_left = VIGNETTE KEY (the discriminating clue in the stem, <=8 words); top_right = MECHANISM (1-line pathophys behind the answer); bottom_left = PEARL (the high-yield take-home); bottom_right = PITFALL (the most common wrong-answer trap). center = leave empty (deprecated). Each <=8 words. These exact 4 categories - do not deviate.\nBOARD PEARLS REQUIREMENT: Each of the 5 board_pearls MUST be a high-yield fact directly tied to THIS specific clinical scenario (not generic disease facts). Cover, in order: (1) the mechanism behind the correct answer, (2) a specific guideline/year recommendation that supports the correct answer, (3) a discriminating feature that separates the correct answer from the most popular distractor, (4) a related landmark trial or named criterion the question tests, (5) the most common wrong-answer trap and why the trap is incorrect. Pearls should make a resident MORE LIKELY to get the next variant of this question right.\nEXPLANATION REQUIREMENTS: The explanation field must be \u2264 300 words, concise, and explicitly DERIVED from the relevant society guideline (KDIGO, AHA/ACC, ADA, IDSA, etc.) \u2014 not a paraphrase of common knowledge. Quote or directly reference the specific guideline statement that supports the answer (for example: per KDIGO 2024, RASi should be continued unless eGFR drops by greater than 30 percent from baseline). No filler. Lead with the guideline-derived rationale, then briefly explain why this clinical scenario satisfies that recommendation. wrong_explanations.why fields each \u2264 60 words.\nABIM CLASSIFICATION (REQUIRED for boards): Output an abim_classification object identifying which ABIM Internal Medicine Blueprint section this question maps to. Categories include: Cardiovascular, Pulmonary, Gastroenterology/Hepatology, Endocrinology, Infectious Disease, Hematology, Oncology, Nephrology, Rheumatology, Neurology, Allergy/Immunology, Dermatology, Psychiatry, Geriatrics, General Internal Medicine. Subcategories follow the standard blueprint nomenclature (e.g., Sodium & Water; Coronary Artery Disease; Heart Failure; Obstructive Lung Disease; Hepatology; Diabetes; Sepsis & Bloodstream Infection). specific_topic = the most precise topic name (for example: Hyponatremia: SIADH & Furst ratio). blueprint_weight = the approximate percent weight on the ABIM IM exam (for example: 6%, 14%, 9%). If unsure, leave blueprint_weight blank rather than guessing.\nSTEM STRUCTURE (UWorld / ABIM style, MANDATORY):\n1. Open with demographic + presentation: A [age]-year-old [man / woman / patient] [comes to the physician / is admitted / presents] [because of / with] [chief complaint].\n2. Describe symptom pattern with QUANTITATIVE detail: frequency (per day, per week, per month), duration, character (dull, sharp, crampy), severity, location, timing, and exacerbating or relieving factors.\n3. Include pertinent positives AND key pertinent negatives explicitly (e.g., He also describes occasional nausea but denies any vomiting, diarrhea, black stools, blood in the stool, or weight loss).\n4. Medical / social / family history when relevant. Quantify alcohol and tobacco (e.g., 8-10 beers over the weekends; 1 pack per day for 30 years).\n5. Vital signs with specific numbers (BP, HR, T, RR, SpO2) when relevant. Include BMI when relevant.\n6. Physical examination: specific findings, or state Physical examination is unremarkable.\n7. Laboratory studies: specific numeric values WITH UNITS (e.g., Fasting blood glucose is 127 mg/dL; serum sodium 132 mEq/L; creatinine 1.4 mg/dL).\n8. Imaging or other studies with specific findings when relevant (e.g., Abdominal x-ray shows focal calcifications anterior to the spine; Upper GI endoscopy reveals gastric varices in the fundus).\n9. End with: Which of the following is the most likely [diagnosis / next step in management / initial test / cause / treatment / explanation for these findings]?\n\nDISTRACTOR DESIGN:\n- 5 choices, single best answer.\n- Each choice 2 to 8 words. Parallel grammatical structure across choices (e.g., all are diagnoses, OR all are treatments, OR all are tests \u2014 do not mix categories within one question).\n- All 5 must be plausible alternatives in this clinical context. Avoid obvious throwaway distractors.\n- Mix common misdiagnoses, alternative treatments, and related conditions. Use specific named entities (drug names, diagnoses, named criteria) \u2014 not categories.\n- NO all of the above, NO none of the above, NO vague options.\n\nEXAMPLE STEM (style reference only \u2014 do not copy content):\nA 46-year-old man comes to the physician because of recurrent abdominal discomfort. He describes episodes of moderate, dull, epigastric pain lasting 2-3 days that have occurred 1-2 times per month over the last 2 years. He also describes occasional nausea but denies any vomiting, diarrhea, black stools, blood in the stool, abdominal distention, or weight loss. He takes ibuprofen for chronic low back pain. He drinks 8-10 beers over the weekends and frequently throughout the week. His vital signs are within normal limits and his BMI is 28 kg/m2. Physical examination is unremarkable. Fasting blood glucose is 127 mg/dL. Abdominal x-ray shows focal calcifications anterior to the spine over the epigastric area. Upper GI endoscopy reveals a normal esophagus, gastric varices in the fundus of the stomach, and a normal duodenum. Which of the following is the most likely diagnosis?\nExample choices: 1. Alcoholic liver cirrhosis  2. Gastroparesis  3. Helicobacter pylori infection  4. Non-ulcer dyspepsia  5. Splenic vein thrombosis\nONLY JSON:\n{"title":"","subtitle":"","guideline_sources":[""],"references":[{"id":1,"source":"","year":2024,"society":"","url":"","type":"guideline"}],"question":{"stem":"","choices":[{"letter":"A","text":"","correct":false},{"letter":"B","text":"","correct":true},{"letter":"C","text":"","correct":false},{"letter":"D","text":"","correct":false},{"letter":"E","text":"","correct":false}],"correct_letter":"B","explanation":"","wrong_explanations":[{"letter":"A","why":""},{"letter":"C","why":""},{"letter":"D","why":""},{"letter":"E","why":""}]},"abim_classification":{"category":"","subcategory":"","specific_topic":"","blueprint_weight":""},"board_pearls":["","","","",""],"teaching_points":["","",""],"summary_points":[""],"visual_memory_card":{"top_left":"","top_right":"","bottom_left":"","bottom_right":"","center":""}}';
 
@@ -160,7 +186,19 @@ async function callAPI({ system, content, maxTokens, model }) {
   return txt;
 }
 
-async function generateOne(seed) {
+// Depth hint mirrors the one in index.html's generate() so samples match what the live app produces.
+function depthHintFor(depth) {
+  if (depth === "concise") {
+    return '\n\nDEPTH: CONCISE (~5-min summary). Keep this TIGHT. Same overall structure, but cut depth ~50%.\n- Each section: 3-4 BRIEF bullets (<=15 words each), not 5-7 long ones\n- Subtitle: <=10 words\n- Teaching pearl: 1 sentence, <=20 words\n- Board tip: 1 sentence, <=15 words\n- Visual memory card quadrants: <=8 words each\n- Summary points: <=20 words each, 4 points (REQUIRED — never empty)\nNO redundancy. No flowery language. Every word earns its place. Aim for clarity, not comprehensiveness.';
+  }
+  if (depth === "detailed") {
+    return '\n\nDEPTH: DETAILED (full 10-min talk). Go deep. 5-7 substantive bullets per section exploring mechanism, evidence, clinical application. Teaching pearls and board tips can be 1-2 sentences with nuance. Summary points: 5-6 points, each 1-2 sentences (REQUIRED — never empty). Aim for the full 10-min chalk talk experience.';
+  }
+  return ""; // boards: no depth hint
+}
+
+// Generate a single talk JSON. `depth` is null for boards, "concise" or "detailed" for lectures.
+async function generateTalk(seed, depth) {
   const ctx = GUIDELINE_CONTEXT[seed.specialty];
   let guidelineContext = "";
   if (ctx) {
@@ -174,12 +212,13 @@ async function generateOne(seed) {
   const userContent =
     `Create content on: "${seed.topic}"` +
     guidelineContext +
+    depthHintFor(depth) +
     "\nRely on your training and the GUIDELINE REFERENCE CONTEXT above. Do not search the web." +
     "\nONLY JSON. Plain text values, no XML tags, no citation markup.";
 
   const system = seed.style === "boards" ? BOARDS_PROMPT : LECTURE_PROMPT;
 
-  process.stdout.write(`  → drafting with ${MODEL_MAIN}... `);
+  process.stdout.write(`  → drafting with ${MODEL_MAIN}` + (depth ? ` (${depth})` : "") + `... `);
   const draftRaw = await callAPI({ system, content: userContent, maxTokens: 4096, model: MODEL_MAIN });
   if (!draftRaw.trim()) throw new Error("Empty draft response");
   let draftTalk = JSON.parse(fixJSON(draftRaw));
@@ -210,16 +249,30 @@ async function generateOne(seed) {
   } catch (e) {
     process.stdout.write(`(failed: ${e.message.slice(0, 60)}, keeping draft)\n`);
   }
+  return finalTalk;
+}
 
-  return {
+// Build the full sample record. Lecture topics produce BOTH talk_concise + talk_detailed.
+// Boards topics produce a single `talk` field (no depth toggle in boards mode).
+async function generateOne(seed) {
+  const ctx = GUIDELINE_CONTEXT[seed.specialty];
+  const base = {
     slug: seed.slug,
     topic: seed.topic,
     style: seed.style,
     specialty: seed.specialty,
-    talk: finalTalk,
     guideline_sources: ctx ? ctx.sources : [],
     generated_at: new Date().toISOString().slice(0, 10)
   };
+
+  if (seed.style === "boards") {
+    base.talk = await generateTalk(seed, null);
+    return base;
+  }
+  // Lecture: dual-version (concise = hero, detailed = toggle target)
+  base.talk_concise  = await generateTalk(seed, "concise");
+  base.talk_detailed = await generateTalk(seed, "detailed");
+  return base;
 }
 
 function embedIntoHTML(samples) {

@@ -2234,6 +2234,7 @@ function renderLibCard(x){
   if(t.subtitle) h += '<div style="font-size:12px;color:var(--ink-muted);margin-top:2px">'+esc(t.subtitle)+'</div>';
   h += '<div style="display:flex;gap:6px;margin-top:6px;font-size:11px;color:var(--ink-muted);flex-wrap:wrap"><span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:2px 8px;border-radius:10px;font-weight:600">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;border:1px solid #f0d8a0;padding:2px 8px;border-radius:10px;font-weight:600">✨ Sample</span>';
+  if(isSample && x._hasBoth) h += '<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid #d8cfe6;padding:2px 8px;border-radius:10px;font-weight:600">Concise · Detailed</span>';
   if(dateStr) h += '<span>'+dateStr+'</span>';
   h += '</div></div></div>';
   // Action row
@@ -3461,19 +3462,39 @@ function render(){
 }
 
 // ═══════════ EXAMPLES (DEMO MODE) ═══════════
-function loadSample(slug){
+// Pick the right version for a dual-version sample. Hero default = concise.
+// Sample schema:
+//   { slug, topic, style, specialty, generated_at, guideline_sources,
+//     talk_concise: <json>, talk_detailed: <json>, talk: <legacy single-version fallback> }
+function pickSampleTalk(s, depth){
+  if(!s) return null;
+  var d = depth || "concise";
+  if(d === "detailed" && s.talk_detailed) return s.talk_detailed;
+  if(d === "concise"  && s.talk_concise)  return s.talk_concise;
+  // Fallbacks if the requested version doesn't exist
+  return s.talk_concise || s.talk_detailed || s.talk || null;
+}
+
+function loadSample(slug, depth){
   if(!SAMPLES||!SAMPLES.length)return;
   var s=null;for(var i=0;i<SAMPLES.length;i++){if(SAMPLES[i].slug===slug){s=SAMPLES[i];break}}
   if(!s)return;
-  S.talk=s.talk;S.topic=s.topic;S.style=s.style||"lecture";
-  S.isSampleTalk=true;S.sampleSlug=s.slug;S.sharedTalk=false;
+  // Determine which depth version was actually picked (handles fallback when requested version is missing).
+  var chosen = pickSampleTalk(s, depth);
+  if(!chosen) return;
+  var actualDepth = "concise";
+  if(s.talk_detailed && chosen === s.talk_detailed) actualDepth = "detailed";
+  else if(s.talk_concise && chosen === s.talk_concise) actualDepth = "concise";
+  // Otherwise it's the legacy single-version `talk` — we can't tell, default to concise.
+  S.talk=chosen; S.topic=s.topic; S.style=s.style||"lecture"; S.depth=actualDepth;
+  S.isSampleTalk=true; S.sampleSlug=s.slug; S.sharedTalk=false;
   S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;
   S.showAns=false;S.userPick="";
   S.msgs=[];S.error="";
   if(s.guideline_sources&&s.guideline_sources.length){
     S.glRef={specialties:[s.specialty||""],context:"",sources:s.guideline_sources,trials:[],conferences:[]};
   } else { S.glRef=null; }
-  S.showSaved=false; // exit Library view if open; S.showExamples was removed (dead branch)
+  S.showSaved=false; // exit Library view if open
   speechSynthesis.cancel();
   render();
   var ts=document.getElementById("talkStart");
@@ -3490,12 +3511,15 @@ function renderSaved(){
   var saved=getDisplayLibrary();
   var samples=(typeof SAMPLES!=="undefined"&&SAMPLES)?SAMPLES:[];
   // Normalize both into a single shape with _kind ("lecture"|"boards"), _source ("sample"|"saved"),
-  // and _spec (specialty — from sample metadata or inferred from topic/title).
+  // _spec (specialty), and _hasBoth (true if sample has both concise+detailed cached versions).
   var all=[];
   for(var si=0;si<samples.length;si++){
-    var s=samples[si];var st=s.talk||{};
+    var s=samples[si];
+    var st = s.talk_concise || s.talk || s.talk_detailed || {};
+    var hasBoth = !!(s.talk_concise && s.talk_detailed);
     all.push({_source:"sample",_kind:st.question?"boards":"lecture",_slug:s.slug,_id:null,
       _spec:inferSpecialty(s.topic, st, s.specialty),
+      _hasBoth:hasBoth,
       topic:s.topic||"",talk:st,savedAt:null,specialty:s.specialty||"",generated_at:s.generated_at||""});
   }
   for(var di=0;di<saved.length;di++){
@@ -3751,7 +3775,11 @@ function renderMain(){
       : '';
     h+='<div class="cap-meta"><b>'+esc(t.title||S.topic)+'</b><span class="sep">·</span>'+styleLbl+depthPill+(refsCount>0?' <span class="sep">·</span>'+refsCount+' ref'+(refsCount===1?'':'s'):'')+'</div>';
     h+='<div class="cap-actions">';
-    h+='<button id="editSettingsBtn" class="cap-primary" title="Edit settings">✏️ <span class="hide-mobile-text">Edit settings</span></button>';
+    // Save button — top-level so users don't have to dig through ⋯. Hidden for samples (already saved).
+    if(!S.isSampleTalk){
+      h+='<button id="saveTalkBtnTop" class="cap-primary" title="Save to library">★ <span class="hide-mobile-text">Save</span></button>';
+    }
+    h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit settings</span></button>';
     h+='<button id="rebuildBtn" title="Rebuild">↻ <span class="hide-mobile-text">Rebuild</span></button>';
     h+='<button id="overflowBtn" class="cap-more" title="More">⋯</button>';
     h+='</div>';
@@ -3794,26 +3822,8 @@ function renderMain(){
 
     // ---------------- OVERVIEW TAB ----------------
     if(S.tab==="overview"){
-      // Guideline collapsible
-      var glSources=(t.guideline_sources&&t.guideline_sources.length>0&&t.guideline_sources[0])?t.guideline_sources:(S.glRef?S.glRef.sources.slice(0,4):null);
-      if(glSources&&glSources.length>0){
-        h+='<div class="guideline-row '+(S.gldOpen?"open":"")+'">';
-        h+='<button class="gr-head" id="gldToggle"><span style="font-size:14px">📚</span><span class="gr-count">'+glSources.length+' guideline'+(glSources.length===1?'':'s')+'</span>';
-        if(!S.gldOpen){
-          // Collapsed: show first 3 chip names inline
-          h+='<span class="gr-chips">';
-          for(var gci=0;gci<Math.min(3,glSources.length);gci++)h+=(gci?' · ':'')+esc(glSources[gci].length>22?glSources[gci].slice(0,22)+'…':glSources[gci]);
-          h+='</span>';
-        } else {
-          h+='<span style="flex:1"></span>';
-        }
-        h+='<span class="gr-chev">⌄</span></button>';
-        if(S.gldOpen){h+='<div class="gr-body">';for(var gi=0;gi<glSources.length;gi++)h+='<span>'+esc(glSources[gi])+'</span>';h+='</div>'}
-        h+='</div>';
-      }
-
-      // === RAG sources panel ===
-      h+=renderRAGSources();
+      // (Guidelines + RAG sources panels were moved BELOW the lesson outline + references
+      // so they don't compete with the teaching content above the fold.)
 
       // BOARDS view
       if(isBQ){
@@ -3868,6 +3878,24 @@ function renderMain(){
         for(var rfi=0;rfi<t.references.length;rfi++){var rf=t.references[rfi];var meta=[];if(rf.year)meta.push(String(rf.year));if(rf.society)meta.push(esc(rf.society));h+='<li style="display:flex;gap:8px;font-size:11.5px;line-height:1.5;color:var(--ink);margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed var(--line-soft)"><span style="background:var(--lavender-bg);color:var(--plum);border-radius:4px;padding:0 6px;font-size:10px;font-weight:600;flex-shrink:0;height:fit-content;margin-top:1px">'+esc(String(rf.id))+'</span><span style="flex:1"><strong style="color:var(--plum-deep)">'+esc(rf.source||("Reference "+rf.id))+'</strong>'+(meta.length?' <span style="font-size:10.5px;color:var(--ink-muted)">· '+meta.join(" · ")+'</span>':'')+(rf.url?'<br><a href="'+esc(rf.url)+'" target="_blank" rel="noopener" style="color:var(--plum);text-decoration:none;font-size:10.5px;border-bottom:1px solid var(--lavender)">'+esc(rf.url.length>50?rf.url.slice(0,50)+"…":rf.url)+'</a>':'')+'</span></li>'}
         h+='</ol></div>';
       }
+
+      // Guidelines + RAG sources (moved here from above the lesson outline — supporting material at bottom)
+      var glSources=(t.guideline_sources&&t.guideline_sources.length>0&&t.guideline_sources[0])?t.guideline_sources:(S.glRef?S.glRef.sources.slice(0,4):null);
+      if(glSources&&glSources.length>0){
+        h+='<div class="guideline-row '+(S.gldOpen?"open":"")+'">';
+        h+='<button class="gr-head" id="gldToggle"><span style="font-size:14px">📚</span><span class="gr-count">'+glSources.length+' guideline'+(glSources.length===1?'':'s')+'</span>';
+        if(!S.gldOpen){
+          h+='<span class="gr-chips">';
+          for(var gci=0;gci<Math.min(3,glSources.length);gci++)h+=(gci?' · ':'')+esc(glSources[gci].length>22?glSources[gci].slice(0,22)+'…':glSources[gci]);
+          h+='</span>';
+        } else {
+          h+='<span style="flex:1"></span>';
+        }
+        h+='<span class="gr-chev">⌄</span></button>';
+        if(S.gldOpen){h+='<div class="gr-body">';for(var gi=0;gi<glSources.length;gi++)h+='<span>'+esc(glSources[gi])+'</span>';h+='</div>'}
+        h+='</div>';
+      }
+      h+=renderRAGSources();
     }
 
     // ---------------- SLIDES TAB ----------------
@@ -4111,10 +4139,20 @@ function bindMain(){
 
   // ─── Generated-talk view ────────────────────────────────────────────────
   var rb=document.getElementById("resetBtn");if(rb)rb.onclick=resetAll;
-  // One-tap depth flip in the capsule header — switches Concise ⇄ Detailed and rebuilds immediately.
+  // One-tap depth flip in the capsule header. Concise ⇄ Detailed.
+  // For samples: swap to the other CACHED version (no API call). For fresh generations: rebuild.
   var dtb=document.getElementById("depthToggleBtn");if(dtb)dtb.onclick=function(){
     if(S.style==="boards")return; // depth doesn't apply
-    S.depth = (S.depth==="detailed") ? "concise" : "detailed";
+    var newDepth = (S.depth==="detailed") ? "concise" : "detailed";
+    if(S.isSampleTalk && S.sampleSlug){
+      // Look up the sample; if the other depth is cached on it, swap instantly.
+      var s=null; for(var i=0;i<SAMPLES.length;i++){if(SAMPLES[i].slug===S.sampleSlug){s=SAMPLES[i];break}}
+      var otherTalk = s && (newDepth==="detailed" ? s.talk_detailed : s.talk_concise);
+      if(otherTalk){ loadSample(S.sampleSlug, newDepth); return; }
+      // Cached other-depth not available — silently no-op rather than burning an API call on a sample.
+      return;
+    }
+    S.depth = newDepth;
     generate();
   };
   document.querySelectorAll(".secBtn").forEach(function(b){b.onclick=function(){var idx=+b.dataset.i;S.activeSection=(S.activeSection===idx?-1:idx);S.sec=idx;render()}});
@@ -4214,6 +4252,8 @@ function bindMain(){
   // The Export tab uses *Export-suffixed IDs to avoid duplicate-ID collisions when both
   // are in the DOM simultaneously (getElementById only attaches to the first).
   var stb=document.getElementById("saveTalkBtn");if(stb)stb.onclick=saveCurrentTalk;
+  // Save button in capsule header (top of page) — same handler.
+  var stbTop=document.getElementById("saveTalkBtnTop");if(stbTop)stbTop.onclick=saveCurrentTalk;
   var ptb=document.getElementById("pdfTalkBtn");if(ptb)ptb.onclick=exportTalkPDF;
   var jtb=document.getElementById("jsonTalkBtn");if(jtb)jtb.onclick=function(){exportTalkJSON(null)};
   var shr=document.getElementById("shareTalkBtn");if(shr)shr.onclick=function(){shareTalk()};
