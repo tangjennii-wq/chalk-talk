@@ -2077,5 +2077,137 @@
         "center": ""
       }
     }
+  },
+  {
+    "slug": "subclinical-hypo-boards",
+    "topic": "Subclinical hypothyroidism — when to treat",
+    "style": "boards",
+    "specialty": "Endocrinology",
+    "guideline_sources": [
+      "ADA 2024 Standards of Care",
+      "KDIGO 2022 Diabetes in CKD"
+    ],
+    "generated_at": "2026-06-01",
+    "talk": {
+      "title": "Subclinical Hypothyroidism — When to Treat",
+      "subtitle": "TSH elevation with normal free T4: indications for levothyroxine therapy",
+      "guideline_sources": [
+        "ATA/AACE Guidelines for Hypothyroidism in Adults 2012",
+        "ETA 2013 Guidelines on Subclinical Hypothyroidism",
+        "ATA 2017 Guidelines for Thyroid Disease in Pregnancy"
+      ],
+      "references": [
+        {
+          "id": 1,
+          "source": "Garber JR et al. Clinical practice guidelines for hypothyroidism in adults. Thyroid.",
+          "year": 2012,
+          "society": "ATA/AACE",
+          "url": "",
+          "type": "guideline"
+        },
+        {
+          "id": 2,
+          "source": "Pearce SH et al. 2013 ETA guideline: management of subclinical hypothyroidism. Eur Thyroid J.",
+          "year": 2013,
+          "society": "ETA",
+          "url": "",
+          "type": "guideline"
+        },
+        {
+          "id": 3,
+          "source": "Alexander EK et al. 2017 Guidelines of the ATA for the diagnosis and management of thyroid disease during pregnancy and the postpartum. Thyroid.",
+          "year": 2017,
+          "society": "ATA",
+          "url": "",
+          "type": "guideline"
+        },
+        {
+          "id": 4,
+          "source": "Stott DJ et al. Thyroid hormone therapy for older adults with subclinical hypothyroidism (TRUST trial). N Engl J Med.",
+          "year": 2017,
+          "society": "",
+          "url": "",
+          "type": "landmark trial"
+        }
+      ],
+      "question": {
+        "stem": "A 34-year-old woman comes to the physician for a preconception visit. She and her husband are planning to conceive within the next 3 months. She has no chronic medical conditions and takes no medications. She denies fatigue, cold intolerance, constipation, weight gain, or hair loss. She does not smoke or drink alcohol. Her vital signs are normal; BMI is 23 kg/m2. Physical examination is unremarkable; the thyroid gland is normal in size without nodules. Laboratory studies show: TSH: 5.8 mIU/L (normal 0.4–4.0) Free T4: 1.1 ng/dL (normal 0.8–1.8) Anti-thyroid peroxidase (anti-TPO) antibodies: positive (elevated) Complete blood count, basic metabolic panel, and lipid panel are within normal limits. Which of the following is the most appropriate next step in management?",
+        "choices": [
+          {
+            "letter": "A",
+            "text": "Reassurance and recheck TSH in 6 months",
+            "correct": false
+          },
+          {
+            "letter": "B",
+            "text": "Initiate levothyroxine therapy",
+            "correct": true
+          },
+          {
+            "letter": "C",
+            "text": "Recheck TSH after conception is confirmed",
+            "correct": false
+          },
+          {
+            "letter": "D",
+            "text": "Order thyroid ultrasound",
+            "correct": false
+          },
+          {
+            "letter": "E",
+            "text": "Start low-dose liothyronine",
+            "correct": false
+          }
+        ],
+        "correct_letter": "B",
+        "explanation": "Per ATA 2017 guidelines for thyroid disease during pregnancy, levothyroxine treatment is recommended for women with subclinical hypothyroidism (SCH) who are TPO-antibody positive and planning pregnancy. The threshold for treatment in the preconception setting is a TSH above the upper limit of the pregnancy-specific reference range (generally above 4.0 mIU/L). This patient has a TSH of 5.8 mIU/L with positive anti-TPO antibodies and is actively planning conception within 3 months, making her a clear candidate for levothyroxine initiation now rather than waiting. Untreated SCH in pregnancy is associated with increased risk of miscarriage, preeclampsia, placental abruption, and impaired neurocognitive development. The ATA 2017 guideline specifically recommends initiating levothyroxine preconceptionally in TPO-positive women with TSH above the reference range. Goal TSH in the first trimester is below 2.5 mIU/L (or trimester-specific range). Reassurance alone is inappropriate because this patient has a clear treatment indication given her reproductive plans and antibody status. Waiting until conception is confirmed risks exposing the early embryo to inadequate thyroid hormone during the critical first trimester. Thyroid ultrasound is not indicated in the absence of thyroid nodules or goiter. Liothyronine (T3) is not recommended for hypothyroidism treatment in pregnancy due to its short half-life and inability to cross the placenta as effectively as T4.",
+        "wrong_explanations": [
+          {
+            "letter": "A",
+            "why": "Reassurance and watchful waiting is appropriate for asymptomatic SCH in non-pregnant patients without conception plans, but not for a TPO-positive woman actively planning pregnancy per ATA 2017 guidelines."
+          },
+          {
+            "letter": "C",
+            "why": "Waiting until conception is confirmed delays treatment during the critical first trimester when fetal neurodevelopment depends on maternal thyroid hormone. ATA 2017 recommends preconception treatment in this setting."
+          },
+          {
+            "letter": "D",
+            "why": "Thyroid ultrasound is indicated for palpable nodules or goiter, not for isolated TSH elevation with a clinically normal thyroid gland. It would not change management here."
+          },
+          {
+            "letter": "E",
+            "why": "Liothyronine (T3) is not recommended in pregnancy or preconception. Levothyroxine (T4) is the standard treatment; T4 crosses the placenta and provides the substrate for fetal brain development."
+          }
+        ]
+      },
+      "abim_classification": {
+        "category": "Endocrinology",
+        "subcategory": "Thyroid Disease",
+        "specific_topic": "Subclinical hypothyroidism: indications for treatment in preconception setting",
+        "blueprint_weight": "7%"
+      },
+      "board_pearls": [
+        "Subclinical hypothyroidism with positive TPO antibodies in a woman planning pregnancy is a firm indication for levothyroxine per ATA 2017, even in the absence of symptoms, because untreated SCH increases miscarriage risk and impairs fetal neurodevelopment.",
+        "ATA 2017 recommends preconception levothyroxine initiation when TSH exceeds the upper reference limit (approximately 4.0 mIU/L) in TPO-positive women planning pregnancy, with a first-trimester TSH goal below 2.5 mIU/L.",
+        "The key discriminator between treating vs. monitoring SCH is the clinical context: pregnancy planning or pregnancy plus TPO positivity mandates treatment, whereas an asymptomatic 75-year-old with TSH 6 mIU/L does not (TRUST trial showed no benefit in elderly).",
+        "The TRUST trial (2017) demonstrated no improvement in symptoms or quality of life with levothyroxine in adults aged 65 and older with SCH (TSH 4.6-19.9), reinforcing that age and clinical context determine the treatment decision.",
+        "The most common wrong-answer trap is choosing to wait until pregnancy is confirmed (choice C); this delays treatment during the first trimester when fetal thyroid hormone dependence on the mother is greatest and the risk of adverse obstetric outcomes is highest."
+      ],
+      "teaching_points": [
+        "Indications for treating subclinical hypothyroidism include: TSH above 10 mIU/L regardless of symptoms; pregnancy or preconception planning (especially if TPO-positive); symptoms attributable to hypothyroidism with TSH 4-10; goiter; or infertility.",
+        "In elderly patients (age 65 and older) with mild TSH elevation (under 10), the TRUST trial showed no benefit from levothyroxine, and guidelines recommend against routine treatment in this population.",
+        "During pregnancy, levothyroxine dose requirements increase by 25-50% due to rising TBG, increased T4 distribution volume, and placental deiodination; TSH should be monitored every 4 weeks during the first half of pregnancy."
+      ],
+      "summary_points": [
+        "Treat subclinical hypothyroidism in women planning pregnancy when TSH is elevated and TPO antibodies are positive, per ATA 2017 guidelines."
+      ],
+      "visual_memory_card": {
+        "top_left": "TPO-positive, planning pregnancy, TSH 5.8",
+        "top_right": "Fetal brain needs maternal T4 in T1",
+        "bottom_left": "Preconception SCH + TPO = treat now",
+        "bottom_right": "Trap: wait until pregnancy confirmed",
+        "center": ""
+      }
+    }
   }
 ]
