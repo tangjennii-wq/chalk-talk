@@ -5539,7 +5539,7 @@ function renderMain(){
       h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
       if(ls.specialty)h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(ls.specialty)+'</span>';
       h+='<span style="background:var(--lavender-bg);color:var(--ink-muted);padding:0 5px;border-radius:5px;font-weight:500;font-size:8.5px;line-height:1.55">'+(lisBQ?"Boards":"Lecture")+'</span>';
-      if(hasBoth) h+='<span style="background:#fff4e0;color:#7a5b1a;border:1px solid #f0d8a0;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;line-height:1.55">C·D</span>';
+      // (C·D dual-version badge removed — all Lecture samples are dual-version after regen, so it added no info.)
       h+='</div>';
       h+='</div>';
     }
