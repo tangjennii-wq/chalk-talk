@@ -234,48 +234,6 @@ textarea,input[type=text]{font-family:inherit}
   .app .choiceBtn { padding: 9px 12px !important; }
   .app .choiceBtn span:last-child { font-size: 13px !important; line-height: 1.45 !important; }
 }
-
-/* RAG sources panel */
-.rag-row { background:var(--cream); border:1px solid var(--line); border-radius:14px; margin-bottom:12px; overflow:hidden; box-shadow:var(--shadow-soft); }
-.rag-row .rh-head { width:100%; display:flex; align-items:center; gap:8px; padding:11px 14px; background:transparent; border:none; cursor:pointer; font-size:13px; color:var(--ink); font-family:inherit; text-align:left; }
-.rag-row .rh-count { font-weight:600; color:var(--plum-deep); }
-.rag-row .rh-chips { flex:1; min-width:0; color:var(--ink-muted); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rag-row .rh-chev { color:var(--ink-soft); transition:transform .2s; font-size:14px; }
-.rag-row.open .rh-chev { transform:rotate(180deg); }
-.rag-row .rh-body { padding:0 14px 12px; display:flex; flex-direction:column; gap:8px; }
-.rag-card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
-.rag-card .rc-head { display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
-.rag-card .rc-title { font-weight:600; color:var(--ink); font-size:13px; line-height:1.35; margin-bottom:4px; }
-.rag-card .rc-meta { color:var(--ink-muted); font-size:11px; margin-bottom:8px; line-height:1.4; }
-.rag-card .rc-bottom { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.rag-card .rc-cited { font-size:11px; color:#2d6a2d; font-weight:600; }
-.rag-card .rc-uncited { font-size:11px; color:var(--ink-muted); }
-.rag-card .rc-pub-link { font-size:11px; color:var(--plum); text-decoration:none; font-weight:500; }
-.rag-card .rc-pub-link:hover { text-decoration:underline; }
-.rag-pill { display:inline-flex; align-items:center; gap:3px; padding:1px 7px; border-radius:6px; font-size:10px; font-weight:600; }
-.rag-pill-tier1 { background:#fef3c7; color:#92400e; }
-.rag-pill-tier2 { background:#e0e7ff; color:#3730a3; }
-.rag-pill-tier3 { background:#f3f4f6; color:#374151; }
-.rag-pill-tier4 { background:#f9fafb; color:#9ca3af; }
-.rag-pill-rcr { background:var(--lavender-bg); color:var(--plum-deep); }
-.rag-pill-landmark { background:#fef3c7; color:#92400e; }
-.rag-pill-sim { background:#f3f4f6; color:#6b7280; font-weight:500; font-family:Menlo,monospace; margin-left:auto; }
-a.pmid-pill { display:inline-block; padding:1px 7px; background:var(--lavender-bg); color:var(--plum-deep); border-radius:6px; font-size:11px; font-weight:600; text-decoration:none; vertical-align:baseline; }
-a.pmid-pill:hover { background:var(--lavender-soft); }
-
-
-/* Compact RAG cards */
-.rag-row .rh-body { padding:0 12px 10px; gap:6px; }
-.rag-card { padding:7px 10px; }
-.rag-card .rc-head { margin-bottom:3px; gap:5px; }
-.rag-card .rc-title { font-size:12.5px; line-height:1.3; margin-bottom:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.rag-card .rc-meta { font-size:10.5px; margin-bottom:0; }
-.rag-pill { padding:0px 6px; font-size:9.5px; }
-.rag-pill-cited { background:#dcfce7; color:#166534; }
-.rag-pill-sim { margin-left:auto; }
-.rc-pub-inline { font-size:10.5px; color:var(--plum); text-decoration:none; font-weight:500; padding:0 4px; }
-.rc-pub-inline:hover { text-decoration:underline; }
-
 </style>
 </head>
 <body>
@@ -1030,12 +988,6 @@ var BOARDS_PROMPT = 'You are an ABIM board-question writer for general Internal 
 var PROXY_CONFIG = {
   enabled: false,
   url: ""
-};
-
-// ═══════════ RAG CONFIG ═══════════
-var RAG_CONFIG = {
-  enabled: true,
-  url: "https://chalk-talk-proxy.chalktalk.workers.dev"
 };
 
 // ═══════════ SUPABASE CONFIG ═══════════
@@ -2016,7 +1968,7 @@ var SAMPLES = [
 ]; // __SAMPLES_MARKER__
 
 // ═══════════ STATE ═══════════
-var S = { topic:"", style:"lecture", files:[], loading:false, talk:null, error:"", sec:0, showLib:false, expCat:null, expSub:null, search:"", msgs:[], chatIn:"", chatBusy:false, dg:null, dgBusy:false, dgErr:"", dgMode:"ai", wantPod:false, wantWebSearch:false, podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false, loadSec:0, loadMsg:"", showAns:false, userPick:"", showFeedback:false, feedbackText:"", feedbackBusy:false, glRef:null, critiqueStatus:"idle", critiqueResult:null, critiqueShow:false, showSaved:false, savedSearch:"", savedFlash:"", ragOpen:false, showExamples:false, isSampleTalk:false, sampleSlug:"", useByok:!(PROXY_CONFIG.enabled&&PROXY_CONFIG.url), rateRemaining:null, depth:"concise", sharedTalk:false, vmcOpen:false, tab:"overview", activeSection:0, gldOpen:false, lightbox:false, refineContext:"", editSettings:false, overflowOpen:false, reviseIn:"", user:null, session:null, profile:null, signInOpen:false, authBusy:false, authEmail:"", authMsg:"", authMode:"signin", accountMenuOpen:false, cloudTalks:[], cloudLoaded:false, profileEditOpen:false, profileForm:null, favorites:{} };
+var S = { topic:"", style:"lecture", files:[], loading:false, talk:null, error:"", sec:0, showLib:false, expCat:null, expSub:null, search:"", msgs:[], chatIn:"", chatBusy:false, dg:null, dgBusy:false, dgErr:"", dgMode:"ai", wantPod:false, wantWebSearch:false, podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false, loadSec:0, loadMsg:"", showAns:false, userPick:"", showFeedback:false, feedbackText:"", feedbackBusy:false, glRef:null, critiqueStatus:"idle", critiqueResult:null, critiqueShow:false, showSaved:false, savedSearch:"", savedFlash:"", showExamples:false, isSampleTalk:false, sampleSlug:"", useByok:!(PROXY_CONFIG.enabled&&PROXY_CONFIG.url), rateRemaining:null, depth:"concise", sharedTalk:false, vmcOpen:false, tab:"overview", activeSection:0, gldOpen:false, lightbox:false, refineContext:"", editSettings:false, overflowOpen:false, reviseIn:"", user:null, session:null, profile:null, signInOpen:false, authBusy:false, authEmail:"", authMsg:"", authMode:"signin", accountMenuOpen:false, cloudTalks:[], cloudLoaded:false, profileEditOpen:false, profileForm:null, favorites:{} };
 
 // ═══════════ SUPABASE AUTH ═══════════
 window.onSupabaseReady = function(client){
@@ -2549,27 +2501,6 @@ function stripCitations(str) {
     .trim();
 }
 
-
-// Strip references the model didn't actually cite in body text AND that aren't in retrieved RAG chunks.
-function pruneFakeReferences(talk) {
-  if (!talk || !Array.isArray(talk.references) || talk.references.length === 0) return talk;
-  var bodyText = JSON.stringify(talk);
-  var retrievedPmids = {};
-  if (S.ragChunks && S.ragChunks.length) {
-    for (var k = 0; k < S.ragChunks.length; k++) {
-      if (S.ragChunks[k].pmid) retrievedPmids[String(S.ragChunks[k].pmid)] = true;
-    }
-  }
-  talk.references = talk.references.filter(function(r) {
-    if (!r) return false;
-    // Keep if Claude cited it in body text (by source name or year mention) OR it's in retrieved RAG chunks
-    var isRetrieved = r.pmid && retrievedPmids[String(r.pmid)];
-    var bodyMentions = r.source && bodyText.indexOf(r.source) !== -1;
-    return isRetrieved || bodyMentions;
-  });
-  return talk;
-}
-
 function deepCleanCitations(obj) {
   if (typeof obj === "string") return stripCitations(obj);
   if (Array.isArray(obj)) return obj.map(deepCleanCitations);
@@ -2697,35 +2628,6 @@ async function callAPIWithFallback(sys, content, maxTok, models, opts) {
 // Sonnet 4 used as middle-tier fallback when Opus is overloaded
 var MODEL_SONNET_FALLBACK = "claude-sonnet-4-20250514";
 
-
-// ═══════════ RAG RETRIEVAL ═══════════
-async function retrieveRAG(topic, opts) {
-  opts = opts || {};
-  if (!RAG_CONFIG.enabled || !RAG_CONFIG.url) return {text: "", chunks: []};
-  try {
-    var endpoint = RAG_CONFIG.url.replace(/\/$/, "") + "/retrieve";
-    var r = await fetch(endpoint, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ query: topic, match_count: opts.match_count || 8 })
-    });
-    if (!r.ok) { console.warn("RAG retrieve failed: " + r.status); return {text: "", chunks: []}; }
-    var data = await r.json();
-    var chunks = data.chunks || [];
-    if (!chunks.length) return {text: "", chunks: []};
-    var lines = chunks.map(function(c, i) {
-      var auths = (c.authors || "").split(",").slice(0, 3).join(",");
-      if (c.authors && c.authors.split(",").length > 3) auths += " et al.";
-      return "[" + (i+1) + "] " + (c.title || "(untitled)") + " — " + auths + ". " + (c.journal || "") + " " + (c.year || "") + ". PMID: " + (c.pmid || "n/a") + ".\nAbstract: " + (c.text || "");
-    });
-    var text = "\n\n═══ RETRIEVED PUBMED SOURCES (real, verified citations — use these to ground your talk) ═══\nThese are REAL peer-reviewed sources retrieved for THIS topic. CITATION RULE: When you state a specific clinical fact (number, threshold, rate, NNT, hazard ratio, drug dose, treatment efficacy, mortality, prognosis, guideline recommendation), cite a provided PMID inline using EXACTLY the format \"PMID 12345678\" — the word PMID followed by a space and the number, in running text where the fact is stated, no brackets, no colon. Aim for AT LEAST 3 inline PMID citations across the talk on the most quantitative/specific claims. NEVER invent PMIDs — only use PMIDs from the sources listed below. If a claim has no matching source here, teach it normally from your training but skip the citation for that claim. Use your full clinical knowledge for teaching; the sources are for citation grounding, not to replace your pedagogical voice.\n\n" + lines.join("\n\n---\n\n") + "\n═══ END RETRIEVED SOURCES ═══";
-    return {text: text, chunks: chunks};
-  } catch (e) {
-    console.warn("RAG retrieve error: " + e.message);
-    return {text: "", chunks: []};
-  }
-}
-
 // ═══════════ ACTIONS ═══════════
 function buildReferenceParts(files) {
   var parts = [];
@@ -2764,7 +2666,6 @@ async function generate(){
   loadTimer=setInterval(function(){S.loadSec++;var msgs=S.wantWebSearch?["Reasoning through physiology...","Searching current literature...","Cross-referencing societies...","Building content...","AI-checking...","Polishing final version..."]:["Reasoning through physiology...","Loading guidelines...","Building content...","AI-checking & polishing..."];S.loadMsg=msgs[Math.min(Math.floor(S.loadSec/3),msgs.length-1)];render()},1000);
   try{
     var glRef = getGuidelinesForTopic(S.topic);
-    var ragResult = await retrieveRAG(S.topic); var ragContext = ragResult.text || ""; S.ragChunks = ragResult.chunks || [];
     var guidelineContext = "";
     if (glRef) {
       guidelineContext = "\n\n═══ GUIDELINE REFERENCE CONTEXT (use this to anchor your recommendations) ═══" + glRef.context;
@@ -2778,12 +2679,12 @@ async function generate(){
       ? '\n\nDEPTH: CONCISE (~5-min summary). Keep this TIGHT. Same overall structure, but cut depth ~50%.\n- Each section: 3-4 BRIEF bullets (<=15 words each), not 5-7 long ones\n- Subtitle: <=10 words\n- Teaching pearl: 1 sentence, <=20 words\n- Board tip: 1 sentence, <=15 words\n- Visual memory card quadrants: <=8 words each, center: <=6 words\n- Summary points: <=20 words each, max 4 points\n- For boards style: vignette <=80 words, explanation 3-5 sentences, wrong explanations 1 sentence each, 3-4 board pearls (not 5), 3 teaching points <=20 words each.\nNO redundancy. No flowery language. Every word earns its place. Aim for clarity, not comprehensiveness.'
       : '\n\nDEPTH: DETAILED (full 10-min talk). Go deep. 5-7 substantive bullets per section exploring mechanism, evidence, clinical application. Teaching pearls and board tips can be 1-2 sentences with nuance. Aim for the full 10-min chalk talk experience.';
     var refineHint = (S.refineContext && S.refineContext.trim()) ? "\n\nUSER CONTEXT/REFINEMENT: " + S.refineContext.trim() : "";
-    var uc=[{type:"text",text:'Create content on: "'+S.topic+'"' + refineHint + guidelineContext + ragContext + depthHint + searchHint + '\nONLY JSON. Plain text values, no XML tags, no citation markup.'}].concat(buildReferenceParts(S.files));
+    var uc=[{type:"text",text:'Create content on: "'+S.topic+'"' + refineHint + guidelineContext + depthHint + searchHint + '\nONLY JSON. Plain text values, no XML tags, no citation markup.'}].concat(buildReferenceParts(S.files));
     var sys=S.style==="boards"?BOARDS_PROMPT:LECTURE_PROMPT;
 
     // Step 1: Main generation with model fallback chain (Opus -> Sonnet -> Haiku)
     var mainOpts = {};
-    if (S.wantWebSearch) mainOpts.tools = [{type:"web_search_20250305",name:"web_search",max_uses:3,allowed_domains:["pubmed.ncbi.nlm.nih.gov","pmc.ncbi.nlm.nih.gov","ncbi.nlm.nih.gov","nih.gov","nhlbi.nih.gov","icite.od.nih.gov","medlineplus.gov","cdc.gov","uspreventiveservicestaskforce.org","fda.gov","dailymed.nlm.nih.gov","who.int","nice.org.uk","cochranelibrary.com","nejm.org","jamanetwork.com","thelancet.com","annals.org","bmj.com","ahajournals.org","jacc.org","escardio.org","acc.org","heart.org","asn-online.org","kidney-international.org","cjasn.asnjournals.org","ajkd.org","kdigo.org","atsjournals.org","chestnet.org","thoracic.org","gastrojournal.org","gut.bmj.com","gastro.org","aasld.org","idsociety.org","journals.asm.org","diabetes.org","endocrine.org","easd.org","ash.org","ashpublications.org","haematologica.org","asco.org","ascopubs.org","rheumatology.org","aaaai.org","aad.org","aan.com","psychiatry.org","americangeriatrics.org","aahpm.org","onlinelibrary.wiley.com","academic.oup.com","nature.com","sciencedirect.com","link.springer.com","cell.com","ahajournals.org"]}];
+    if (S.wantWebSearch) mainOpts.tools = [{type:"web_search_20250305",name:"web_search",max_uses:3}];
     var mainModels = [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC];
     var maxTok=(S.style==="boards")?6144:4096;
     var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
@@ -2792,7 +2693,6 @@ async function generate(){
     if(!txt.trim())throw new Error("Empty response");
     var draftTalk=JSON.parse(fixJSON(txt));
     draftTalk = deepCleanCitations(draftTalk);
-    draftTalk = pruneFakeReferences(draftTalk);
 
     // Step 2: Combined critique-and-fix in a single Haiku call
     // If clean, returns {"verdict":"clean"}; if issues, returns the corrected JSON in same schema as draft
@@ -3188,93 +3088,6 @@ function diagSVG(dg){
 }
 
 // ═══════════ RENDER ═══════════
-
-// ═══════════ RAG SOURCES PANEL ═══════════
-function renderRAGSources() {
-  if (!S.ragChunks || !S.ragChunks.length) return '';
-  var chunks = S.ragChunks;
-  var n = chunks.length;
-  var citedSet = {};
-  if (S.talk) {
-    var talkText = JSON.stringify(S.talk);
-    for (var ci = 0; ci < chunks.length; ci++) {
-      var pmidc = chunks[ci].pmid;
-      if (pmidc && talkText.indexOf(pmidc) !== -1) citedSet[pmidc] = true;
-    }
-  }
-  var out = '<div class="rag-row ' + (S.ragOpen ? 'open' : '') + '">';
-  out += '<button class="rh-head" onclick="S.ragOpen=!S.ragOpen;render();return false;">';
-  out += '<span style="font-size:14px">📑</span>';
-  out += '<span class="rh-count">' + n + ' source' + (n===1?'':'s') + '</span>';
-  if (!S.ragOpen) {
-    var chips = chunks.slice(0, 3).map(function(c){
-      var tt = c.title || '';
-      return esc(tt.length > 28 ? tt.slice(0, 28) + '…' : tt);
-    }).join(' · ');
-    out += '<span class="rh-chips">' + chips + '</span>';
-  } else {
-    out += '<span style="flex:1"></span>';
-  }
-  out += '<span class="rh-chev">⌄</span></button>';
-  if (S.ragOpen) {
-    out += '<div class="rh-body">';
-    for (var i = 0; i < chunks.length; i++) {
-      var c = chunks[i];
-      var tier = c.source_tier || 4;
-      var rcr = c.rcr;
-      var landmark = c.is_landmark_trial;
-      var sim = c.similarity;
-      var pmid = c.pmid;
-      var isCited = pmid && citedSet[pmid];
-      var authorsRaw = (c.authors || '').split(',').slice(0, 2).map(function(s){return s.trim()}).join(', ');
-      if (c.authors && c.authors.split(',').length > 2) authorsRaw += ' et al.';
-      out += '<div class="rag-card">';
-      out += '<div class="rc-head">';
-      out += '<span class="rag-pill rag-pill-tier' + tier + '">T' + tier + '</span>';
-      if (landmark) out += '<span class="rag-pill rag-pill-landmark">★</span>';
-      if (rcr && rcr > 1) out += '<span class="rag-pill rag-pill-rcr">RCR ' + rcr.toFixed(1) + '</span>';
-      if (isCited) out += '<span class="rag-pill rag-pill-cited">✓ Cited</span>';
-      if (typeof sim === 'number') out += '<span class="rag-pill rag-pill-sim">' + sim.toFixed(2) + '</span>';
-      if (c.url) out += '<a class="rc-pub-inline" href="' + esc(c.url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">PubMed →</a>';
-      out += '</div>';
-      out += '<div class="rc-title">' + esc(c.title || '(untitled)') + '</div>';
-      out += '<div class="rc-meta">' + esc(authorsRaw) + (c.journal ? ' · ' + esc(c.journal) : '') + (c.year ? ' · ' + c.year : '') + '</div>';
-      out += '</div>';
-    }
-    out += '</div>';
-  }
-  out += '</div>';
-  return out;
-}
-
-function linkifyPMIDs(root) {
-  if (!root) return;
-  var re = /\bPMID:?\s*(\d{6,9})\b/g;
-  var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode: function(node) {
-      if (!node.parentNode) return NodeFilter.FILTER_REJECT;
-      var p = node.parentNode;
-      if (p.tagName === 'A') return NodeFilter.FILTER_REJECT;
-      if (p.tagName === 'SCRIPT' || p.tagName === 'STYLE') return NodeFilter.FILTER_REJECT;
-      if (p.classList && p.classList.contains('pmid-pill')) return NodeFilter.FILTER_REJECT;
-      return re.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-    }
-  });
-  var nodes = [];
-  var node;
-  while ((node = walker.nextNode())) nodes.push(node);
-  for (var ni = 0; ni < nodes.length; ni++) {
-    var n = nodes[ni];
-    re.lastIndex = 0;
-    var html = n.nodeValue.replace(re, function(m, pmid){
-      return '<a href="https://pubmed.ncbi.nlm.nih.gov/' + pmid + '/" target="_blank" rel="noopener" class="pmid-pill">PMID ' + pmid + '</a>';
-    });
-    var wrap = document.createElement('span');
-    wrap.innerHTML = html;
-    if (n.parentNode) n.parentNode.replaceChild(wrap, n);
-  }
-}
-
 function render(){
   var root=document.getElementById("root");
   if(S.showExamples){root.innerHTML=renderExamples();bindExamples();return}
@@ -3588,9 +3401,6 @@ function renderMain(){
         if(S.gldOpen){h+='<div class="gr-body">';for(var gi=0;gi<glSources.length;gi++)h+='<span>'+esc(glSources[gi])+'</span>';h+='</div>'}
         h+='</div>';
       }
-
-      // === RAG sources panel ===
-      h+=renderRAGSources();
 
       // BOARDS view
       if(isBQ){

@@ -1,0 +1,381 @@
+{
+  "_meta": {
+    "purpose": "Curated journal/society whitelist for Chalk Talk RAG corpus. Only papers from these journals get ingested into PubMed-sourced retrieval. Maintained by Jenni; curated society-by-society.",
+    "schema_version": 1,
+    "last_updated": "2026-05-12",
+    "tier_meanings": {
+      "1": "Premier — anything published here is citable for chalk talks",
+      "2": "Strong — society/specialty journals, broadly trustworthy",
+      "3": "Selective — pull only reviews / meta-analyses / systematic reviews / practice guidelines"
+    },
+    "pubmed_filter_template": "(\"{JOURNAL_LIST_OR}\") AND (review[pt] OR meta-analysis[pt] OR systematic review[pt] OR practice guideline[pt])"
+  },
+
+  "general_im": {
+    "society": "ACP / generalist",
+    "status": "curated 2026-05-12 — confirmed by Jenni",
+    "journals": [
+      { "name": "New England Journal of Medicine",       "abbrev": "N Engl J Med",          "tier": 1 },
+      { "name": "The Lancet",                            "abbrev": "Lancet",                "tier": 1 },
+      { "name": "JAMA",                                  "abbrev": "JAMA",                  "tier": 1 },
+      { "name": "Annals of Internal Medicine",           "abbrev": "Ann Intern Med",        "tier": 1 },
+      { "name": "BMJ",                                   "abbrev": "BMJ",                   "tier": 1 },
+      { "name": "NEJM Evidence",                         "abbrev": "NEJM Evid",             "tier": 2, "notes": "Explicitly EBM-focused" },
+      { "name": "Mayo Clinic Proceedings",               "abbrev": "Mayo Clin Proc",        "tier": 2 },
+      { "name": "JAMA Internal Medicine",                "abbrev": "JAMA Intern Med",       "tier": 2 },
+      { "name": "PLOS Medicine",                         "abbrev": "PLoS Med",              "tier": 2, "notes": "Open access" },
+      { "name": "BMC Medicine",                          "abbrev": "BMC Med",               "tier": 2, "notes": "Open access" },
+      { "name": "Journal of General Internal Medicine",  "abbrev": "J Gen Intern Med",      "tier": 2 },
+      { "name": "BMJ Open",                              "abbrev": "BMJ Open",              "tier": 3 },
+      { "name": "Cleveland Clinic Journal of Medicine",  "abbrev": "Cleve Clin J Med",      "tier": 3 },
+      { "name": "American Journal of Medicine",          "abbrev": "Am J Med",              "tier": 3 },
+      { "name": "JAMA Network Open",                     "abbrev": "JAMA Netw Open",        "tier": 3, "notes": "Open access — reviews only per Jenni" }
+    ],
+    "guideline_bodies": ["USPSTF", "ACP", "Choosing Wisely"]
+  },
+
+  "evidence_synthesis": {
+    "society": "n/a — methodological",
+    "status": "curated 2026-05-12",
+    "journals": [
+      { "name": "Cochrane Database of Systematic Reviews", "abbrev": "Cochrane Database Syst Rev", "tier": 1 },
+      { "name": "BMJ Evidence-Based Medicine",             "abbrev": "BMJ Evid Based Med",         "tier": 1 }
+    ]
+  },
+
+  "nephrology": {
+    "society": "American Society of Nephrology (ASN) / KDIGO / National Kidney Foundation",
+    "status": "curated 2026-05-12 — confirmed by Jenni (incl transplant + HTN)",
+    "journals": [
+      { "name": "Journal of the American Society of Nephrology",          "abbrev": "J Am Soc Nephrol",    "tier": 1, "notes": "JASN — flagship; include even basic science reviews" },
+      { "name": "Kidney International",                                   "abbrev": "Kidney Int",          "tier": 1, "notes": "KDIGO-affiliated" },
+      { "name": "Clinical Journal of the American Society of Nephrology", "abbrev": "Clin J Am Soc Nephrol", "tier": 1, "notes": "CJASN — clinical-focused" },
+      { "name": "American Journal of Kidney Diseases",                    "abbrev": "Am J Kidney Dis",     "tier": 1, "notes": "AJKD — NKF flagship" },
+      { "name": "Nephrology Dialysis Transplantation",                    "abbrev": "Nephrol Dial Transplant", "tier": 2, "notes": "ERA-EDTA flagship (European)" },
+      { "name": "Kidney International Reports",                           "abbrev": "Kidney Int Rep",      "tier": 2, "notes": "Open access" },
+      { "name": "Seminars in Nephrology",                                 "abbrev": "Semin Nephrol",       "tier": 2, "notes": "Review-heavy" },
+      { "name": "BMC Nephrology",                                         "abbrev": "BMC Nephrol",         "tier": 2, "notes": "Open access" },
+      { "name": "Current Opinion in Nephrology and Hypertension",         "abbrev": "Curr Opin Nephrol Hypertens", "tier": 3 },
+      { "name": "Advances in Chronic Kidney Disease",                     "abbrev": "Adv Chronic Kidney Dis", "tier": 3 }
+    ],
+    "transplant_journals": [
+      { "name": "American Journal of Transplantation",                    "abbrev": "Am J Transplant",     "tier": 1, "notes": "AJT — AST flagship; covers kidney transplant" },
+      { "name": "Transplantation",                                        "abbrev": "Transplantation",     "tier": 2, "notes": "International transplant journal" },
+      { "name": "Clinical Transplantation",                               "abbrev": "Clin Transplant",     "tier": 2 },
+      { "name": "Transplant International",                               "abbrev": "Transpl Int",         "tier": 3 }
+    ],
+    "hypertension_journals": [
+      { "name": "Hypertension",                                           "abbrev": "Hypertension",        "tier": 1, "notes": "AHA flagship HTN journal — Jenni: stick to AHA mostly" },
+      { "name": "Journal of Hypertension",                                "abbrev": "J Hypertens",         "tier": 2, "notes": "ESH/ISH" },
+      { "name": "American Journal of Hypertension",                       "abbrev": "Am J Hypertens",      "tier": 2, "notes": "American Society of Hypertension" },
+      { "name": "Hypertension Research",                                  "abbrev": "Hypertens Res",       "tier": 3 }
+    ],
+    "guideline_bodies": [
+      "KDIGO (cite-only — copyright)",
+      "NKF / KDOQI",
+      "ASN",
+      "AST (American Society of Transplantation)",
+      "AHA/ACC HTN guidelines (cite-only — copyright)",
+      "ESH/ESC HTN"
+    ]
+  },
+
+  "cardiology": {
+    "society": "AHA / ACC / ESC (+ HFSA, HRS, SCAI for subspecialties)",
+    "status": "curated 2026-05-12 — confirmed by Jenni (skip Circ Res; one journal each for HF/EP/interventional; stroke → neuro)",
+    "journals": [
+      { "name": "Circulation",                                            "abbrev": "Circulation",         "tier": 1, "notes": "AHA flagship" },
+      { "name": "Journal of the American College of Cardiology",          "abbrev": "J Am Coll Cardiol",   "tier": 1, "notes": "JACC — ACC flagship" },
+      { "name": "European Heart Journal",                                 "abbrev": "Eur Heart J",         "tier": 1, "notes": "ESC flagship" },
+      { "name": "JAMA Cardiology",                                        "abbrev": "JAMA Cardiol",        "tier": 2 },
+      { "name": "Heart",                                                  "abbrev": "Heart",               "tier": 2, "notes": "BMJ — UK" },
+      { "name": "American Heart Journal",                                 "abbrev": "Am Heart J",          "tier": 2 },
+      { "name": "American Journal of Cardiology",                         "abbrev": "Am J Cardiol",        "tier": 2 },
+      { "name": "Trends in Cardiovascular Medicine",                      "abbrev": "Trends Cardiovasc Med", "tier": 3, "notes": "Reviews only" },
+      { "name": "Current Cardiology Reports",                             "abbrev": "Curr Cardiol Rep",    "tier": 3, "notes": "Reviews only" }
+    ],
+    "subspecialty_journals": [
+      { "name": "JACC: Heart Failure",                                    "abbrev": "JACC Heart Fail",     "tier": 1, "subspecialty": "heart_failure" },
+      { "name": "Heart Rhythm",                                           "abbrev": "Heart Rhythm",        "tier": 1, "subspecialty": "electrophysiology", "notes": "HRS official journal" },
+      { "name": "JACC: Cardiovascular Interventions",                     "abbrev": "JACC Cardiovasc Interv", "tier": 1, "subspecialty": "interventional" }
+    ],
+    "excluded": [
+      { "name": "Circulation Research", "reason": "Basic science focus — skip per Jenni" }
+    ],
+    "guideline_bodies": ["AHA/ACC (cite-only — copyright)", "ESC", "HFSA", "HRS", "SCAI"]
+  },
+
+  "neurology": {
+    "society": "American Academy of Neurology (AAN) / AHA Stroke Council / IHS",
+    "status": "curated 2026-05-12 — Jenni: tier 1 only + Continuum; skip MS/subspecialty",
+    "journals": [
+      { "name": "Neurology",                                              "abbrev": "Neurology",           "tier": 1, "notes": "AAN flagship" },
+      { "name": "Lancet Neurology",                                       "abbrev": "Lancet Neurol",       "tier": 1 },
+      { "name": "JAMA Neurology",                                         "abbrev": "JAMA Neurol",         "tier": 1 },
+      { "name": "Stroke",                                                 "abbrev": "Stroke",              "tier": 1, "notes": "AHA Stroke Council — moved from cards per Jenni" },
+      { "name": "Continuum: Lifelong Learning in Neurology",              "abbrev": "Continuum (Minneap Minn)", "tier": 2, "notes": "AAN — each issue = deep review of one neuro topic, ideal for chalk talks" }
+    ],
+    "excluded": [
+      { "name": "Multiple Sclerosis Journal, Muscle & Nerve, Annals of Clinical and Translational Neurology, etc.", "reason": "Subspecialty — too narrow for IM chalk talks per Jenni" }
+    ],
+    "guideline_bodies": ["AAN", "AHA Stroke Council (cite-only — copyright)", "IHS (International Headache Society)"]
+  },
+
+  "infectious_disease": {
+    "society": "IDSA / CDC / WHO / SHEA",
+    "status": "curated 2026-05-12 — Jenni: drop JID, skip Lancet HIV, skip subspecialty; HIV/AIDS folded into ID",
+    "journals": [
+      { "name": "Clinical Infectious Diseases",                           "abbrev": "Clin Infect Dis",     "tier": 1, "notes": "CID — IDSA flagship clinical" },
+      { "name": "Lancet Infectious Diseases",                             "abbrev": "Lancet Infect Dis",   "tier": 1 },
+      { "name": "Open Forum Infectious Diseases",                         "abbrev": "Open Forum Infect Dis", "tier": 1, "notes": "OFID — IDSA, open access, review-heavy" },
+      { "name": "Emerging Infectious Diseases",                           "abbrev": "Emerg Infect Dis",    "tier": 2, "notes": "CDC — public domain + OA" },
+      { "name": "Antimicrobial Agents and Chemotherapy",                  "abbrev": "Antimicrob Agents Chemother", "tier": 2, "notes": "AAC — ASM" },
+      { "name": "Journal of Antimicrobial Chemotherapy",                  "abbrev": "J Antimicrob Chemother", "tier": 2, "notes": "BSAC" },
+      { "name": "Infection Control and Hospital Epidemiology",            "abbrev": "Infect Control Hosp Epidemiol", "tier": 2, "notes": "SHEA flagship" },
+      { "name": "International Journal of Infectious Diseases",           "abbrev": "Int J Infect Dis",    "tier": 2, "notes": "ISID — OA" },
+      { "name": "Current Opinion in Infectious Diseases",                 "abbrev": "Curr Opin Infect Dis", "tier": 3 },
+      { "name": "Infectious Disease Clinics of North America",            "abbrev": "Infect Dis Clin North Am", "tier": 3, "notes": "Review-heavy series" }
+    ],
+    "excluded": [
+      { "name": "Journal of Infectious Diseases (JID)", "reason": "Too basic/translational per Jenni" },
+      { "name": "Lancet HIV", "reason": "Subspecialty per Jenni — HIV content covered in tier-1 ID journals" },
+      { "name": "J Clin Virol, Med Mycol, etc.", "reason": "Subspecialty per Jenni" }
+    ],
+    "guideline_bodies": ["IDSA (cite-only — copyright)", "CDC (public domain)", "WHO (CC-BY-IGO)", "SHEA"]
+  },
+
+  "pulm_critical_care": {
+    "society": "ATS / ACCP / ESICM / SCCM / AASM",
+    "status": "curated 2026-05-12 — Jenni: bundled, drop ERJ, include sleep medicine",
+    "journals": [
+      { "name": "American Journal of Respiratory and Critical Care Medicine", "abbrev": "Am J Respir Crit Care Med", "tier": 1, "notes": "AJRCCM — ATS flagship" },
+      { "name": "Chest",                                                  "abbrev": "Chest",               "tier": 1, "notes": "CHEST/ACCP flagship" },
+      { "name": "Lancet Respiratory Medicine",                            "abbrev": "Lancet Respir Med",   "tier": 1 },
+      { "name": "Critical Care Medicine",                                 "abbrev": "Crit Care Med",       "tier": 1, "notes": "SCCM flagship" },
+      { "name": "Intensive Care Medicine",                                "abbrev": "Intensive Care Med",  "tier": 1, "notes": "ESICM flagship" },
+      { "name": "Annals of the American Thoracic Society",                "abbrev": "Ann Am Thorac Soc",   "tier": 2, "notes": "ATS — more clinical than AJRCCM" },
+      { "name": "Thorax",                                                 "abbrev": "Thorax",              "tier": 2, "notes": "BTS — UK" },
+      { "name": "Critical Care",                                          "abbrev": "Crit Care",           "tier": 2, "notes": "BMC — open access" },
+      { "name": "Current Opinion in Pulmonary Medicine",                  "abbrev": "Curr Opin Pulm Med",  "tier": 3 },
+      { "name": "Current Opinion in Critical Care",                       "abbrev": "Curr Opin Crit Care", "tier": 3 }
+    ],
+    "sleep_medicine": [
+      { "name": "Journal of Clinical Sleep Medicine",                     "abbrev": "J Clin Sleep Med",    "tier": 1, "notes": "AASM official clinical journal" },
+      { "name": "SLEEP",                                                  "abbrev": "Sleep",               "tier": 2, "notes": "AASM / SRS — basic+clinical" }
+    ],
+    "excluded": [
+      { "name": "European Respiratory Journal", "reason": "Overlap with AJRCCM/Lancet Respir per Jenni" }
+    ],
+    "guideline_bodies": ["ATS", "ACCP/CHEST", "ESICM", "SCCM (incl. Surviving Sepsis Campaign)", "GINA (asthma)", "GOLD (COPD)", "AASM (sleep)"]
+  },
+
+  "gi_hepatology": {
+    "society": "AGA / ACG / AASLD / EASL / CCFA / ASGE",
+    "status": "curated 2026-05-12 — Jenni: keep all tier 1, drop Aliment Pharmacol Ther, include IBD journal, one endoscopy journal, include Nat Rev GH",
+    "journals": [
+      { "name": "Gastroenterology",                                       "abbrev": "Gastroenterology",    "tier": 1, "notes": "AGA flagship" },
+      { "name": "Gut",                                                    "abbrev": "Gut",                 "tier": 1, "notes": "BMJ — UK" },
+      { "name": "The American Journal of Gastroenterology",               "abbrev": "Am J Gastroenterol",  "tier": 1, "notes": "AJG — ACG flagship" },
+      { "name": "Clinical Gastroenterology and Hepatology",               "abbrev": "Clin Gastroenterol Hepatol", "tier": 1, "notes": "CGH — AGA, clinical" },
+      { "name": "Hepatology",                                             "abbrev": "Hepatology",          "tier": 1, "notes": "AASLD flagship" },
+      { "name": "Journal of Hepatology",                                  "abbrev": "J Hepatol",           "tier": 1, "notes": "EASL flagship" },
+      { "name": "Inflammatory Bowel Diseases",                            "abbrev": "Inflamm Bowel Dis",   "tier": 2, "notes": "CCFA flagship — IBD focus" },
+      { "name": "Gastrointestinal Endoscopy",                             "abbrev": "Gastrointest Endosc", "tier": 2, "notes": "ASGE flagship — only endo journal per Jenni" },
+      { "name": "Liver International",                                    "abbrev": "Liver Int",           "tier": 2 },
+      { "name": "Hepatology Communications",                              "abbrev": "Hepatol Commun",      "tier": 2, "notes": "AASLD — open access" },
+      { "name": "Current Opinion in Gastroenterology",                    "abbrev": "Curr Opin Gastroenterol", "tier": 3 },
+      { "name": "Nature Reviews Gastroenterology & Hepatology",           "abbrev": "Nat Rev Gastroenterol Hepatol", "tier": 3, "notes": "Review-heavy, high quality" }
+    ],
+    "excluded": [
+      { "name": "Alimentary Pharmacology & Therapeutics", "reason": "Dropped per Jenni" }
+    ],
+    "guideline_bodies": ["AGA (cite-only)", "ACG (cite-only)", "AASLD (cite-only)", "EASL (cite-only)", "ASGE", "CCFA"]
+  },
+
+  "hematology_oncology": {
+    "society": "ASH / ASCO / ESMO / EHA / NCCN",
+    "status": "curated 2026-05-12 — Jenni: bundle heme+onc, no Br J Haem, keep CA Cancer J + Leukemia + BMT + Nat Rev Clin Onc",
+    "journals": [
+      { "name": "Blood",                                                  "abbrev": "Blood",               "tier": 1, "notes": "ASH flagship" },
+      { "name": "Lancet Haematology",                                     "abbrev": "Lancet Haematol",     "tier": 1 },
+      { "name": "Haematologica",                                          "abbrev": "Haematologica",       "tier": 1, "notes": "EHA flagship" },
+      { "name": "Journal of Clinical Oncology",                           "abbrev": "J Clin Oncol",        "tier": 1, "notes": "JCO — ASCO flagship" },
+      { "name": "Lancet Oncology",                                        "abbrev": "Lancet Oncol",        "tier": 1 },
+      { "name": "JAMA Oncology",                                          "abbrev": "JAMA Oncol",          "tier": 1 },
+      { "name": "Annals of Oncology",                                     "abbrev": "Ann Oncol",           "tier": 1, "notes": "ESMO flagship" },
+      { "name": "CA: A Cancer Journal for Clinicians",                    "abbrev": "CA Cancer J Clin",    "tier": 1, "notes": "Highest-IF medical journal; almost entirely reviews — chalk-talk gold" },
+      { "name": "American Journal of Hematology",                         "abbrev": "Am J Hematol",        "tier": 2 },
+      { "name": "Blood Advances",                                         "abbrev": "Blood Adv",           "tier": 2, "notes": "ASH — open access" },
+      { "name": "Journal of the National Cancer Institute",               "abbrev": "J Natl Cancer Inst",  "tier": 2, "notes": "JNCI" },
+      { "name": "European Journal of Cancer",                             "abbrev": "Eur J Cancer",        "tier": 2 },
+      { "name": "Leukemia",                                               "abbrev": "Leukemia",            "tier": 2, "notes": "Kept per Jenni — heme malignancy focus" },
+      { "name": "Bone Marrow Transplantation",                            "abbrev": "Bone Marrow Transplant", "tier": 2, "notes": "Kept per Jenni — BMT focus" },
+      { "name": "Nature Reviews Clinical Oncology",                       "abbrev": "Nat Rev Clin Oncol",  "tier": 3, "notes": "Clinical-focused reviews" },
+      { "name": "Current Opinion in Oncology",                            "abbrev": "Curr Opin Oncol",     "tier": 3 },
+      { "name": "Current Opinion in Hematology",                          "abbrev": "Curr Opin Hematol",   "tier": 3 }
+    ],
+    "excluded": [
+      { "name": "British Journal of Haematology", "reason": "Dropped per Jenni" },
+      { "name": "Nature Reviews Cancer", "reason": "Basic-science focus — skip" },
+      { "name": "Cancer Cell", "reason": "Basic-science focus — skip" }
+    ],
+    "guideline_bodies": ["ASH", "ASCO", "ESMO", "NCCN (cite-only — proprietary clinical pathways)", "NCI / SEER"]
+  },
+
+  "rheumatology": {
+    "society": "ACR / EULAR / BSR",
+    "status": "curated 2026-05-12 — Jenni: split from allergy/immuno, keep Lancet Rheum + Rheumatology (Oxford)",
+    "journals": [
+      { "name": "Arthritis & Rheumatology",                               "abbrev": "Arthritis Rheumatol", "tier": 1, "notes": "ACR flagship" },
+      { "name": "Annals of the Rheumatic Diseases",                       "abbrev": "Ann Rheum Dis",       "tier": 1, "notes": "EULAR flagship" },
+      { "name": "Lancet Rheumatology",                                    "abbrev": "Lancet Rheumatol",    "tier": 1, "notes": "Newer but kept per Jenni" },
+      { "name": "Rheumatology",                                           "abbrev": "Rheumatology (Oxford)", "tier": 1, "notes": "BSR flagship — UK" },
+      { "name": "Arthritis Care & Research",                              "abbrev": "Arthritis Care Res",  "tier": 2, "notes": "ACR — more clinical" },
+      { "name": "Seminars in Arthritis and Rheumatism",                   "abbrev": "Semin Arthritis Rheum", "tier": 2, "notes": "Review-heavy" },
+      { "name": "Nature Reviews Rheumatology",                            "abbrev": "Nat Rev Rheumatol",   "tier": 2, "notes": "High-quality reviews" },
+      { "name": "Current Opinion in Rheumatology",                        "abbrev": "Curr Opin Rheumatol", "tier": 3 }
+    ],
+    "excluded": [
+      { "name": "Journal of Rheumatology (Canadian)", "reason": "Lower impact — skip per default" },
+      { "name": "Pediatric rheum journals", "reason": "Not IM-relevant" }
+    ],
+    "guideline_bodies": ["ACR", "EULAR", "BSR"]
+  },
+
+  "allergy_immunology": {
+    "society": "AAAAI / ACAAI / EAACI / JTF",
+    "status": "curated 2026-05-12 — Jenni: confirmed block",
+    "journals": [
+      { "name": "Journal of Allergy and Clinical Immunology",             "abbrev": "J Allergy Clin Immunol", "tier": 1, "notes": "JACI — AAAAI flagship" },
+      { "name": "The Journal of Allergy and Clinical Immunology: In Practice", "abbrev": "J Allergy Clin Immunol Pract", "tier": 1, "notes": "JACI In Practice — clinical sister journal" },
+      { "name": "Annals of Allergy, Asthma & Immunology",                 "abbrev": "Ann Allergy Asthma Immunol", "tier": 1, "notes": "ACAAI flagship" },
+      { "name": "Allergy",                                                "abbrev": "Allergy",             "tier": 2, "notes": "EAACI flagship" },
+      { "name": "Clinical & Experimental Allergy",                        "abbrev": "Clin Exp Allergy",    "tier": 2, "notes": "BSACI" },
+      { "name": "Current Opinion in Allergy and Clinical Immunology",     "abbrev": "Curr Opin Allergy Clin Immunol", "tier": 3 }
+    ],
+    "excluded": [
+      { "name": "Clinical Immunology", "reason": "Basic science focus" },
+      { "name": "Journal of Immunology", "reason": "Basic science focus" },
+      { "name": "Pediatric Allergy and Immunology", "reason": "Not IM-relevant" }
+    ],
+    "guideline_bodies": ["AAAAI", "ACAAI", "JTF (Joint Task Force) — anaphylaxis/drug allergy/urticaria", "EAACI"]
+  },
+
+  "endocrinology": {
+    "society": "Endocrine Society / ADA / AACE / EASD / ATA",
+    "status": "curated 2026-05-12 — Jenni: keep bundled (no separate diabetes bucket); rely on JCEM for thyroid; drop basic-science journals + Diab/Metab Res Rev",
+    "journals": [
+      { "name": "Journal of Clinical Endocrinology and Metabolism",       "abbrev": "J Clin Endocrinol Metab", "tier": 1, "notes": "JCEM — Endocrine Society flagship; covers thyroid per Jenni" },
+      { "name": "Diabetes Care",                                          "abbrev": "Diabetes Care",       "tier": 1, "notes": "ADA — high-volume clinical diabetes" },
+      { "name": "Lancet Diabetes & Endocrinology",                        "abbrev": "Lancet Diabetes Endocrinol", "tier": 1 },
+      { "name": "Diabetologia",                                           "abbrev": "Diabetologia",        "tier": 1, "notes": "EASD flagship" },
+      { "name": "Endocrine Reviews",                                      "abbrev": "Endocr Rev",          "tier": 2, "notes": "Endocrine Society — review-heavy, chalk-talk gold" },
+      { "name": "Journal of the Endocrine Society",                       "abbrev": "J Endocr Soc",        "tier": 2, "notes": "Open access" },
+      { "name": "Diabetes, Obesity and Metabolism",                       "abbrev": "Diabetes Obes Metab", "tier": 2 },
+      { "name": "Current Opinion in Endocrinology, Diabetes, and Obesity", "abbrev": "Curr Opin Endocrinol Diabetes Obes", "tier": 3 },
+      { "name": "Nature Reviews Endocrinology",                           "abbrev": "Nat Rev Endocrinol", "tier": 3, "notes": "High-quality reviews" }
+    ],
+    "excluded": [
+      { "name": "Thyroid (the journal)", "reason": "Rely on JCEM coverage per Jenni" },
+      { "name": "Diabetes (ADA basic-translational)", "reason": "Too basic-science" },
+      { "name": "Endocrinology (the journal)", "reason": "Too basic-science" },
+      { "name": "Diabetes/Metabolism Research and Reviews", "reason": "Dropped per Jenni" }
+    ],
+    "guideline_bodies": [
+      "ADA (Standards of Care — annually updated, partly open)",
+      "AACE",
+      "Endocrine Society guidelines (cite-only)",
+      "ATA (thyroid)",
+      "EASD"
+    ]
+  },
+
+  "geriatrics": {
+    "society": "AGS / BGS",
+    "status": "curated 2026-05-12 — Jenni: yes to block as proposed",
+    "journals": [
+      { "name": "Journal of the American Geriatrics Society",             "abbrev": "J Am Geriatr Soc",    "tier": 1, "notes": "JAGS — AGS flagship" },
+      { "name": "Age and Ageing",                                         "abbrev": "Age Ageing",          "tier": 1, "notes": "BGS — UK" },
+      { "name": "Lancet Healthy Longevity",                               "abbrev": "Lancet Healthy Longev", "tier": 1, "notes": "Open access, newer" },
+      { "name": "Journals of Gerontology Series A: Biological Sciences and Medical Sciences", "abbrev": "J Gerontol A Biol Sci Med Sci", "tier": 2, "notes": "Clinical side" },
+      { "name": "Journal of the American Medical Directors Association",  "abbrev": "J Am Med Dir Assoc",  "tier": 2, "notes": "JAMDA — post-acute/LTC" },
+      { "name": "Clinics in Geriatric Medicine",                          "abbrev": "Clin Geriatr Med",    "tier": 3, "notes": "Review-heavy" }
+    ],
+    "guideline_bodies": ["AGS Beers Criteria", "AGS guidelines"]
+  },
+
+  "palliative_care": {
+    "society": "AAHPM / NCP / EAPC",
+    "status": "curated 2026-05-12 — Jenni: yes to block as proposed",
+    "journals": [
+      { "name": "Journal of Pain and Symptom Management",                 "abbrev": "J Pain Symptom Manage", "tier": 1 },
+      { "name": "Journal of Palliative Medicine",                         "abbrev": "J Palliat Med",       "tier": 1 },
+      { "name": "Palliative Medicine",                                    "abbrev": "Palliat Med",         "tier": 1, "notes": "UK — SAGE" },
+      { "name": "BMJ Supportive & Palliative Care",                       "abbrev": "BMJ Support Palliat Care", "tier": 2 },
+      { "name": "Annals of Palliative Medicine",                          "abbrev": "Ann Palliat Med",     "tier": 2 },
+      { "name": "Current Opinion in Supportive and Palliative Care",      "abbrev": "Curr Opin Support Palliat Care", "tier": 3 }
+    ],
+    "guideline_bodies": ["NCP (National Consensus Project) Clinical Practice Guidelines for Quality Palliative Care", "AAHPM", "EAPC"]
+  },
+
+  "dermatology": {
+    "society": "AAD",
+    "status": "curated 2026-05-12 — Jenni: just JAAD",
+    "journals": [
+      { "name": "Journal of the American Academy of Dermatology",         "abbrev": "J Am Acad Dermatol",  "tier": 1, "notes": "JAAD — AAD flagship; only derm journal per Jenni" }
+    ],
+    "guideline_bodies": ["AAD guidelines"]
+  },
+
+  "psychiatry": {
+    "society": "APA / RCPsych",
+    "status": "curated 2026-05-12 — Jenni: include for IM-relevant psych (depression, anxiety, delirium, dementia, suicidality)",
+    "journals": [
+      { "name": "JAMA Psychiatry",                                        "abbrev": "JAMA Psychiatry",     "tier": 1 },
+      { "name": "American Journal of Psychiatry",                         "abbrev": "Am J Psychiatry",     "tier": 1, "notes": "APA flagship" },
+      { "name": "Lancet Psychiatry",                                      "abbrev": "Lancet Psychiatry",   "tier": 2 },
+      { "name": "World Psychiatry",                                       "abbrev": "World Psychiatry",    "tier": 2, "notes": "WPA — open access, very high impact for reviews" }
+    ],
+    "guideline_bodies": ["APA practice guidelines (cite-only)"]
+  },
+
+  "addiction_medicine": {
+    "society": "ASAM / SSA / NIDA",
+    "status": "curated 2026-05-12 — Jenni: include",
+    "journals": [
+      { "name": "Journal of Addiction Medicine",                          "abbrev": "J Addict Med",        "tier": 1, "notes": "ASAM flagship" },
+      { "name": "Addiction",                                              "abbrev": "Addiction",           "tier": 1, "notes": "SSA — international, high impact" },
+      { "name": "Drug and Alcohol Dependence",                            "abbrev": "Drug Alcohol Depend", "tier": 2 },
+      { "name": "American Journal on Addictions",                         "abbrev": "Am J Addict",         "tier": 2, "notes": "AAAP" }
+    ],
+    "guideline_bodies": ["ASAM National Practice Guidelines (OUD)", "SAMHSA (public domain)", "NIDA (public domain)"]
+  },
+
+  "womens_health": {
+    "society": "ACOG / NAMS / USPSTF",
+    "status": "curated 2026-05-12 — Jenni: HRT, pregnancy meds, outpatient women's health",
+    "journals": [
+      { "name": "Menopause",                                              "abbrev": "Menopause",           "tier": 1, "notes": "NAMS flagship — primary HRT journal" },
+      { "name": "Obstetrics & Gynecology",                                "abbrev": "Obstet Gynecol",      "tier": 1, "notes": "Green Journal — ACOG flagship" },
+      { "name": "Journal of Women's Health",                              "abbrev": "J Womens Health (Larchmt)", "tier": 1 },
+      { "name": "Contraception",                                          "abbrev": "Contraception",       "tier": 2, "notes": "ARHP" },
+      { "name": "American Journal of Obstetrics and Gynecology",          "abbrev": "Am J Obstet Gynecol", "tier": 2, "notes": "AJOG" },
+      { "name": "Current Opinion in Obstetrics and Gynecology",           "abbrev": "Curr Opin Obstet Gynecol", "tier": 3 }
+    ],
+    "guideline_bodies": ["ACOG", "NAMS (menopause/HRT)", "USPSTF women's health screening", "CDC Reproductive Health (public domain)"]
+  },
+
+  "emergency_medicine": {
+    "society": "ACEP / SAEM / RCEM",
+    "status": "curated 2026-05-12 — Jenni: yes include",
+    "journals": [
+      { "name": "Annals of Emergency Medicine",                           "abbrev": "Ann Emerg Med",       "tier": 1, "notes": "ACEP flagship" },
+      { "name": "Academic Emergency Medicine",                            "abbrev": "Acad Emerg Med",      "tier": 1, "notes": "SAEM flagship" },
+      { "name": "Emergency Medicine Journal",                             "abbrev": "Emerg Med J",         "tier": 1, "notes": "EMJ — BMJ/RCEM" },
+      { "name": "American Journal of Emergency Medicine",                 "abbrev": "Am J Emerg Med",      "tier": 2 },
+      { "name": "Western Journal of Emergency Medicine",                  "abbrev": "West J Emerg Med",    "tier": 2, "notes": "Open access" },
+      { "name": "Resuscitation",                                          "abbrev": "Resuscitation",       "tier": 2, "notes": "ILCOR-affiliated; cardiac arrest focus" }
+    ],
+    "guideline_bodies": ["ACEP", "SAEM", "ILCOR (resuscitation)", "AHA/ACC for STEMI/stroke"]
+  }
+}

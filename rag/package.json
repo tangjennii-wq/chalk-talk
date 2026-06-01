@@ -1,0 +1,13 @@
+{
+  "name": "chalk-talk-rag",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "RAG corpus ingestion for Chalk Talk",
+  "scripts": {
+    "ingest": "node ingest_pubmed.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}

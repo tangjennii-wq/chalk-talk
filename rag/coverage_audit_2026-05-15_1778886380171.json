@@ -1,0 +1,3417 @@
+{
+  "generated_at": "2026-05-15T23:06:20.171Z",
+  "summary": {
+    "excellent": 165,
+    "good": 39,
+    "thin": 14,
+    "GAP": 9,
+    "errored": 0
+  },
+  "results": [
+    {
+      "name": "Anaphylaxis",
+      "unique_docs": 16,
+      "chunks": 16,
+      "avg_similarity": 0.52,
+      "top_similarity": 0.652,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 1,
+        "3": 13,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Asthma",
+      "unique_docs": 13,
+      "chunks": 13,
+      "avg_similarity": 0.457,
+      "top_similarity": 0.515,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 4,
+        "3": 9,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Rhinitis, Sinusitis, Conjunctivitis",
+      "unique_docs": 22,
+      "chunks": 22,
+      "avg_similarity": 0.466,
+      "top_similarity": 0.585,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 2,
+        "3": 19,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Food Allergy",
+      "unique_docs": 16,
+      "chunks": 16,
+      "avg_similarity": 0.494,
+      "top_similarity": 0.721,
+      "landmark_chunks": 9,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 3,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Urticaria & Angioedema",
+      "unique_docs": 21,
+      "chunks": 21,
+      "avg_similarity": 0.492,
+      "top_similarity": 0.686,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 1,
+        "3": 17,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Skin Disorders",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.432,
+      "top_similarity": 0.488,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 25,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Drug Allergy",
+      "unique_docs": 23,
+      "chunks": 23,
+      "avg_similarity": 0.45,
+      "top_similarity": 0.578,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 1,
+        "3": 17,
+        "4": 3
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Primary Immunodeficiency",
+      "unique_docs": 24,
+      "chunks": 24,
+      "avg_similarity": 0.46,
+      "top_similarity": 0.703,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 24,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Transfusion Reactions",
+      "unique_docs": 17,
+      "chunks": 17,
+      "avg_similarity": 0.493,
+      "top_similarity": 0.728,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 3,
+        "3": 9,
+        "4": 2
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Autoimmune Systemic",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.455,
+      "top_similarity": 0.562,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 1,
+        "3": 23,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Hypertension",
+      "unique_docs": 17,
+      "chunks": 23,
+      "avg_similarity": 0.432,
+      "top_similarity": 0.497,
+      "landmark_chunks": 13,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 13,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Pericardial Disease",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.46,
+      "top_similarity": 0.573,
+      "landmark_chunks": 7,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 23,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Ischemic Heart Disease",
+      "unique_docs": 8,
+      "chunks": 8,
+      "avg_similarity": 0.452,
+      "top_similarity": 0.574,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 8,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Dysrhythmias & Conduction",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.46,
+      "top_similarity": 0.521,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Congenital Heart Disease (Adult)",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.493,
+      "top_similarity": 0.656,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 3,
+        "3": 22,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Valvular Heart Disease",
+      "unique_docs": 20,
+      "chunks": 20,
+      "avg_similarity": 0.483,
+      "top_similarity": 0.683,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 1,
+        "3": 17,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Myocardial Disease",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.462,
+      "top_similarity": 0.552,
+      "landmark_chunks": 10,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 23,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Endocarditis & CV Infection",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.51,
+      "top_similarity": 0.643,
+      "landmark_chunks": 10,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 3,
+        "3": 21,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Vascular Disease",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.442,
+      "top_similarity": 0.507,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 0,
+        "3": 23,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Syncope",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.476,
+      "top_similarity": 0.522,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 2,
+        "3": 3,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Preoperative Cardiac",
+      "unique_docs": 21,
+      "chunks": 21,
+      "avg_similarity": 0.448,
+      "top_similarity": 0.602,
+      "landmark_chunks": 12,
+      "tier_breakdown": {
+        "1": 7,
+        "2": 7,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Lipid Disorders",
+      "unique_docs": 14,
+      "chunks": 14,
+      "avg_similarity": 0.468,
+      "top_similarity": 0.565,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 13,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Antithrombotic Therapy",
+      "unique_docs": 19,
+      "chunks": 25,
+      "avg_similarity": 0.432,
+      "top_similarity": 0.508,
+      "landmark_chunks": 20,
+      "tier_breakdown": {
+        "1": 23,
+        "2": 0,
+        "3": 2,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Misc CV",
+      "unique_docs": 0,
+      "chunks": 0,
+      "avg_similarity": null,
+      "top_similarity": null,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "status": "GAP"
+    },
+    {
+      "name": "Dermatitis (Eczemas)",
+      "unique_docs": 23,
+      "chunks": 23,
+      "avg_similarity": 0.451,
+      "top_similarity": 0.571,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 3,
+        "3": 18,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Dermatologic Immunology",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.458,
+      "top_similarity": 0.575,
+      "landmark_chunks": 7,
+      "tier_breakdown": {
+        "1": 7,
+        "2": 5,
+        "3": 13,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Vascular Dermatoses",
+      "unique_docs": 23,
+      "chunks": 23,
+      "avg_similarity": 0.445,
+      "top_similarity": 0.54,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 21,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Acne & Rosacea",
+      "unique_docs": 16,
+      "chunks": 16,
+      "avg_similarity": 0.458,
+      "top_similarity": 0.616,
+      "landmark_chunks": 9,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 2,
+        "3": 13,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Papulosquamous",
+      "unique_docs": 6,
+      "chunks": 6,
+      "avg_similarity": 0.464,
+      "top_similarity": 0.551,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 6,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Skin & Soft Tissue Infections",
+      "unique_docs": 15,
+      "chunks": 15,
+      "avg_similarity": 0.503,
+      "top_similarity": 0.636,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 15,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Vesiculobullous",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.493,
+      "top_similarity": 0.648,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Pigment Disorders",
+      "unique_docs": 18,
+      "chunks": 18,
+      "avg_similarity": 0.469,
+      "top_similarity": 0.642,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 17,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Photosensitivity",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.495,
+      "top_similarity": 0.592,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Alopecia",
+      "unique_docs": 10,
+      "chunks": 10,
+      "avg_similarity": 0.537,
+      "top_similarity": 0.621,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 3,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Skin Cancer",
+      "unique_docs": 9,
+      "chunks": 9,
+      "avg_similarity": 0.477,
+      "top_similarity": 0.538,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 2,
+        "3": 6,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Nutritional & Nail",
+      "unique_docs": 4,
+      "chunks": 4,
+      "avg_similarity": 0.462,
+      "top_similarity": 0.52,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 3,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Environmental Injury",
+      "unique_docs": 3,
+      "chunks": 3,
+      "avg_similarity": 0.439,
+      "top_similarity": 0.475,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 3,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Pressure Injuries",
+      "unique_docs": 7,
+      "chunks": 7,
+      "avg_similarity": 0.489,
+      "top_similarity": 0.678,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 6,
+        "3": 1,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Dermatologic Emergencies",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.442,
+      "top_similarity": 0.668,
+      "landmark_chunks": 7,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 6,
+        "3": 16,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Adrenal",
+      "unique_docs": 6,
+      "chunks": 6,
+      "avg_similarity": 0.473,
+      "top_similarity": 0.571,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Thyroid",
+      "unique_docs": 12,
+      "chunks": 12,
+      "avg_similarity": 0.436,
+      "top_similarity": 0.475,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 11,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Lipid Disorders (Endo Lens)",
+      "unique_docs": 13,
+      "chunks": 13,
+      "avg_similarity": 0.436,
+      "top_similarity": 0.523,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 0,
+        "3": 11,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Ovarian / Reproductive",
+      "unique_docs": 20,
+      "chunks": 20,
+      "avg_similarity": 0.433,
+      "top_similarity": 0.481,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 8,
+        "3": 8,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Testes / Male",
+      "unique_docs": 6,
+      "chunks": 6,
+      "avg_similarity": 0.447,
+      "top_similarity": 0.517,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 6,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Diabetes Mellitus",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.441,
+      "top_similarity": 0.56,
+      "landmark_chunks": 9,
+      "tier_breakdown": {
+        "1": 7,
+        "2": 6,
+        "3": 12,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Calcium & Bone",
+      "unique_docs": 21,
+      "chunks": 21,
+      "avg_similarity": 0.464,
+      "top_similarity": 0.625,
+      "landmark_chunks": 7,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 5,
+        "3": 14,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Pituitary",
+      "unique_docs": 4,
+      "chunks": 4,
+      "avg_similarity": 0.524,
+      "top_similarity": 0.593,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 4,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Posterior Pituitary / Water",
+      "unique_docs": 15,
+      "chunks": 15,
+      "avg_similarity": 0.458,
+      "top_similarity": 0.5,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 15,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Endocrine Tumors",
+      "unique_docs": 13,
+      "chunks": 13,
+      "avg_similarity": 0.437,
+      "top_similarity": 0.53,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 2,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Hypoglycemia",
+      "unique_docs": 6,
+      "chunks": 8,
+      "avg_similarity": 0.485,
+      "top_similarity": 0.637,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 4,
+        "2": 1,
+        "3": 3,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Polyglandular Autoimmune",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.467,
+      "top_similarity": 0.651,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 25,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Esophageal",
+      "unique_docs": 7,
+      "chunks": 7,
+      "avg_similarity": 0.445,
+      "top_similarity": 0.494,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Stomach & Duodenal",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.433,
+      "top_similarity": 0.477,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 4,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Small Intestinal",
+      "unique_docs": 8,
+      "chunks": 8,
+      "avg_similarity": 0.457,
+      "top_similarity": 0.512,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Colonic & Anorectal",
+      "unique_docs": 23,
+      "chunks": 23,
+      "avg_similarity": 0.438,
+      "top_similarity": 0.543,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 1,
+        "3": 19,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Pancreatic",
+      "unique_docs": 11,
+      "chunks": 11,
+      "avg_similarity": 0.464,
+      "top_similarity": 0.505,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 5,
+        "2": 1,
+        "3": 5,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Biliary",
+      "unique_docs": 1,
+      "chunks": 1,
+      "avg_similarity": 0.513,
+      "top_similarity": 0.513,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Liver",
+      "unique_docs": 3,
+      "chunks": 3,
+      "avg_similarity": 0.422,
+      "top_similarity": 0.436,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 3,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "GI Hemorrhage",
+      "unique_docs": 20,
+      "chunks": 20,
+      "avg_similarity": 0.471,
+      "top_similarity": 0.536,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 4,
+        "2": 1,
+        "3": 15,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "GI in HIV",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.461,
+      "top_similarity": 0.623,
+      "landmark_chunks": 9,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 7,
+        "3": 16,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Wounds",
+      "unique_docs": 14,
+      "chunks": 14,
+      "avg_similarity": 0.471,
+      "top_similarity": 0.56,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 4,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "End-of-Life / Palliative",
+      "unique_docs": 15,
+      "chunks": 15,
+      "avg_similarity": 0.493,
+      "top_similarity": 0.554,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 9,
+        "3": 3,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Ethics in the Elderly",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.444,
+      "top_similarity": 0.636,
+      "landmark_chunks": 11,
+      "tier_breakdown": {
+        "1": 5,
+        "2": 8,
+        "3": 11,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "GI in Elderly",
+      "unique_docs": 23,
+      "chunks": 25,
+      "avg_similarity": 0.435,
+      "top_similarity": 0.618,
+      "landmark_chunks": 15,
+      "tier_breakdown": {
+        "1": 10,
+        "2": 6,
+        "3": 9,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "GU in Elderly",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.442,
+      "top_similarity": 0.546,
+      "landmark_chunks": 12,
+      "tier_breakdown": {
+        "1": 8,
+        "2": 7,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Cognitive",
+      "unique_docs": 1,
+      "chunks": 1,
+      "avg_similarity": 0.405,
+      "top_similarity": 0.405,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 0,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Nutrition in Elderly",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.491,
+      "top_similarity": 0.647,
+      "landmark_chunks": 9,
+      "tier_breakdown": {
+        "1": 7,
+        "2": 6,
+        "3": 12,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Ophth in Elderly",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.43,
+      "top_similarity": 0.51,
+      "landmark_chunks": 7,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 7,
+        "3": 18,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Psych in Elderly",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.45,
+      "top_similarity": 0.609,
+      "landmark_chunks": 7,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 10,
+        "3": 12,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Falls & Fractures",
+      "unique_docs": 16,
+      "chunks": 17,
+      "avg_similarity": 0.438,
+      "top_similarity": 0.475,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 10,
+        "3": 5,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Foot Problems",
+      "unique_docs": 7,
+      "chunks": 7,
+      "avg_similarity": 0.451,
+      "top_similarity": 0.512,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 2,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Geriatric Assessment",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.463,
+      "top_similarity": 0.603,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 5,
+        "2": 10,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Rehab",
+      "unique_docs": 2,
+      "chunks": 2,
+      "avg_similarity": 0.41,
+      "top_similarity": 0.419,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 1,
+        "3": 0,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Other",
+      "unique_docs": 0,
+      "chunks": 0,
+      "avg_similarity": null,
+      "top_similarity": null,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "status": "GAP"
+    },
+    {
+      "name": "Hypoproliferative Anemia",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.443,
+      "top_similarity": 0.508,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 24,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Hemolytic Anemia",
+      "unique_docs": 16,
+      "chunks": 16,
+      "avg_similarity": 0.446,
+      "top_similarity": 0.536,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 16,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Hemoglobinopathies",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.456,
+      "top_similarity": 0.657,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 24,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Leukocyte Disorders",
+      "unique_docs": 18,
+      "chunks": 18,
+      "avg_similarity": 0.428,
+      "top_similarity": 0.532,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 17,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Platelet Disorders",
+      "unique_docs": 14,
+      "chunks": 14,
+      "avg_similarity": 0.499,
+      "top_similarity": 0.657,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 13,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Coagulation & Thrombosis",
+      "unique_docs": 23,
+      "chunks": 24,
+      "avg_similarity": 0.468,
+      "top_similarity": 0.572,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 0,
+        "3": 20,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Porphyria",
+      "unique_docs": 8,
+      "chunks": 8,
+      "avg_similarity": 0.552,
+      "top_similarity": 0.643,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Myeloproliferative",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.47,
+      "top_similarity": 0.583,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 1,
+        "3": 22,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Myelodysplastic",
+      "unique_docs": 18,
+      "chunks": 18,
+      "avg_similarity": 0.495,
+      "top_similarity": 0.625,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 17,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Heme Malignancies",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.47,
+      "top_similarity": 0.577,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 1,
+        "3": 23,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Transfusion Medicine",
+      "unique_docs": 18,
+      "chunks": 18,
+      "avg_similarity": 0.484,
+      "top_similarity": 0.735,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 6,
+        "2": 2,
+        "3": 8,
+        "4": 2
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Heme Complications of HIV",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.451,
+      "top_similarity": 0.593,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 2,
+        "3": 21,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Bone Marrow Transplant",
+      "unique_docs": 16,
+      "chunks": 16,
+      "avg_similarity": 0.44,
+      "top_similarity": 0.475,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 5,
+        "2": 0,
+        "3": 11,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Skin & Soft Tissue",
+      "unique_docs": 10,
+      "chunks": 10,
+      "avg_similarity": 0.446,
+      "top_similarity": 0.494,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 1,
+        "3": 8,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "CNS Infections",
+      "unique_docs": 23,
+      "chunks": 23,
+      "avg_similarity": 0.436,
+      "top_similarity": 0.514,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 22,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Upper Respiratory",
+      "unique_docs": 19,
+      "chunks": 19,
+      "avg_similarity": 0.433,
+      "top_similarity": 0.513,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 5,
+        "3": 14,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Eye Infections",
+      "unique_docs": 21,
+      "chunks": 21,
+      "avg_similarity": 0.457,
+      "top_similarity": 0.523,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 20,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Lower Respiratory",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.443,
+      "top_similarity": 0.51,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 7,
+        "3": 17,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Endocarditis",
+      "unique_docs": 22,
+      "chunks": 22,
+      "avg_similarity": 0.495,
+      "top_similarity": 0.636,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 3,
+        "3": 18,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Hepatic Infections",
+      "unique_docs": 12,
+      "chunks": 12,
+      "avg_similarity": 0.433,
+      "top_similarity": 0.471,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 2,
+        "3": 8,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Enteric Infections",
+      "unique_docs": 17,
+      "chunks": 17,
+      "avg_similarity": 0.437,
+      "top_similarity": 0.496,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 16,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "HIV/AIDS",
+      "unique_docs": 24,
+      "chunks": 24,
+      "avg_similarity": 0.476,
+      "top_similarity": 0.593,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 6,
+        "3": 17,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "STIs / Reproductive",
+      "unique_docs": 20,
+      "chunks": 20,
+      "avg_similarity": 0.479,
+      "top_similarity": 0.625,
+      "landmark_chunks": 9,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 3,
+        "3": 16,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Urinary Tract",
+      "unique_docs": 13,
+      "chunks": 13,
+      "avg_similarity": 0.48,
+      "top_similarity": 0.532,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 12,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Bone & Joint",
+      "unique_docs": 10,
+      "chunks": 10,
+      "avg_similarity": 0.445,
+      "top_similarity": 0.46,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Sepsis",
+      "unique_docs": 19,
+      "chunks": 21,
+      "avg_similarity": 0.46,
+      "top_similarity": 0.596,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 5,
+        "2": 9,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Strep-Related",
+      "unique_docs": 4,
+      "chunks": 4,
+      "avg_similarity": 0.459,
+      "top_similarity": 0.498,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 4,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Procedure / Device",
+      "unique_docs": 0,
+      "chunks": 0,
+      "avg_similarity": null,
+      "top_similarity": null,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "status": "GAP"
+    },
+    {
+      "name": "Nosocomial",
+      "unique_docs": 8,
+      "chunks": 8,
+      "avg_similarity": 0.472,
+      "top_similarity": 0.568,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Prevention",
+      "unique_docs": 11,
+      "chunks": 11,
+      "avg_similarity": 0.436,
+      "top_similarity": 0.513,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 2,
+        "3": 8,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Specific Organisms",
+      "unique_docs": 1,
+      "chunks": 1,
+      "avg_similarity": 0.446,
+      "top_similarity": 0.446,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "FUO",
+      "unique_docs": 4,
+      "chunks": 4,
+      "avg_similarity": 0.46,
+      "top_similarity": 0.5,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 3,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Lung Cancer",
+      "unique_docs": 23,
+      "chunks": 23,
+      "avg_similarity": 0.434,
+      "top_similarity": 0.49,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 10,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Breast Cancer",
+      "unique_docs": 23,
+      "chunks": 23,
+      "avg_similarity": 0.443,
+      "top_similarity": 0.522,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 12,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Head & Neck",
+      "unique_docs": 9,
+      "chunks": 9,
+      "avg_similarity": 0.465,
+      "top_similarity": 0.535,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 8,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "GI / Hepatic Cancer",
+      "unique_docs": 22,
+      "chunks": 22,
+      "avg_similarity": 0.435,
+      "top_similarity": 0.506,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 5,
+        "3": 15,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Urologic Cancer",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.466,
+      "top_similarity": 0.633,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 4,
+        "2": 3,
+        "3": 18,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Gynecologic Cancer",
+      "unique_docs": 22,
+      "chunks": 22,
+      "avg_similarity": 0.438,
+      "top_similarity": 0.561,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 7,
+        "2": 2,
+        "3": 12,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Bone Tumors",
+      "unique_docs": 20,
+      "chunks": 20,
+      "avg_similarity": 0.466,
+      "top_similarity": 0.619,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 3,
+        "3": 16,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "CNS Tumors",
+      "unique_docs": 18,
+      "chunks": 18,
+      "avg_similarity": 0.505,
+      "top_similarity": 0.604,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 2,
+        "3": 14,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Hematologic Malignancies",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.5,
+      "top_similarity": 0.621,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 2,
+        "3": 20,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Soft Tissue / Bone",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.42,
+      "top_similarity": 0.475,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 4,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "HIV-Associated",
+      "unique_docs": 23,
+      "chunks": 23,
+      "avg_similarity": 0.486,
+      "top_similarity": 0.63,
+      "landmark_chunks": 7,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 4,
+        "3": 18,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "CUP",
+      "unique_docs": 1,
+      "chunks": 1,
+      "avg_similarity": 0.42,
+      "top_similarity": 0.42,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Cancer Prevention",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.45,
+      "top_similarity": 0.606,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 11,
+        "2": 5,
+        "3": 8,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Oncologic Emergencies",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.483,
+      "top_similarity": 0.702,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 4,
+        "2": 2,
+        "3": 18,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Treatment Complications",
+      "unique_docs": 12,
+      "chunks": 12,
+      "avg_similarity": 0.428,
+      "top_similarity": 0.454,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 2,
+        "3": 9,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Survivorship",
+      "unique_docs": 2,
+      "chunks": 2,
+      "avg_similarity": 0.448,
+      "top_similarity": 0.493,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 1,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Epidemiology",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.432,
+      "top_similarity": 0.488,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 17,
+        "3": 8,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Ethics",
+      "unique_docs": 2,
+      "chunks": 2,
+      "avg_similarity": 0.446,
+      "top_similarity": 0.475,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 2,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Safety & QI",
+      "unique_docs": 0,
+      "chunks": 0,
+      "avg_similarity": null,
+      "top_similarity": null,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "status": "GAP"
+    },
+    {
+      "name": "Acute Kidney Injury",
+      "unique_docs": 16,
+      "chunks": 25,
+      "avg_similarity": 0.496,
+      "top_similarity": 0.671,
+      "landmark_chunks": 16,
+      "tier_breakdown": {
+        "1": 17,
+        "2": 5,
+        "3": 3,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Chronic Kidney Disease",
+      "unique_docs": 9,
+      "chunks": 25,
+      "avg_similarity": 0.45,
+      "top_similarity": 0.556,
+      "landmark_chunks": 21,
+      "tier_breakdown": {
+        "1": 23,
+        "2": 0,
+        "3": 2,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Tubulointerstitial",
+      "unique_docs": 9,
+      "chunks": 9,
+      "avg_similarity": 0.423,
+      "top_similarity": 0.454,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 8,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Glomerular",
+      "unique_docs": 8,
+      "chunks": 8,
+      "avg_similarity": 0.445,
+      "top_similarity": 0.55,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 8,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Hypertension (Renal Lens)",
+      "unique_docs": 17,
+      "chunks": 21,
+      "avg_similarity": 0.428,
+      "top_similarity": 0.456,
+      "landmark_chunks": 12,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 10,
+        "3": 8,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "UTI",
+      "unique_docs": 21,
+      "chunks": 21,
+      "avg_similarity": 0.461,
+      "top_similarity": 0.553,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 4,
+        "3": 15,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Nephrolithiasis",
+      "unique_docs": 20,
+      "chunks": 20,
+      "avg_similarity": 0.481,
+      "top_similarity": 0.677,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 5,
+        "3": 13,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Other Kidney",
+      "unique_docs": 15,
+      "chunks": 25,
+      "avg_similarity": 0.424,
+      "top_similarity": 0.487,
+      "landmark_chunks": 17,
+      "tier_breakdown": {
+        "1": 4,
+        "2": 17,
+        "3": 4,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Urologic Cancer Screening",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.452,
+      "top_similarity": 0.543,
+      "landmark_chunks": 7,
+      "tier_breakdown": {
+        "1": 13,
+        "2": 5,
+        "3": 6,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Prostate",
+      "unique_docs": 9,
+      "chunks": 9,
+      "avg_similarity": 0.438,
+      "top_similarity": 0.514,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 2,
+        "3": 6,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Other Urologic",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.446,
+      "top_similarity": 0.612,
+      "landmark_chunks": 10,
+      "tier_breakdown": {
+        "1": 8,
+        "2": 2,
+        "3": 15,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Urinary Incontinence",
+      "unique_docs": 9,
+      "chunks": 9,
+      "avg_similarity": 0.434,
+      "top_similarity": 0.517,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 7,
+        "3": 2,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Water & Electrolyte",
+      "unique_docs": 4,
+      "chunks": 4,
+      "avg_similarity": 0.426,
+      "top_similarity": 0.466,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 3,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Hematuria",
+      "unique_docs": 1,
+      "chunks": 1,
+      "avg_similarity": 0.686,
+      "top_similarity": 0.686,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Seizures",
+      "unique_docs": 6,
+      "chunks": 6,
+      "avg_similarity": 0.446,
+      "top_similarity": 0.472,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 3,
+        "3": 2,
+        "4": 1
+      },
+      "status": "good"
+    },
+    {
+      "name": "Cerebrovascular",
+      "unique_docs": 3,
+      "chunks": 3,
+      "avg_similarity": 0.442,
+      "top_similarity": 0.489,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 2,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Headache & Facial Pain",
+      "unique_docs": 6,
+      "chunks": 6,
+      "avg_similarity": 0.445,
+      "top_similarity": 0.482,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 6,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Spine / Nerve Root",
+      "unique_docs": 2,
+      "chunks": 2,
+      "avg_similarity": 0.422,
+      "top_similarity": 0.439,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 2,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Peripheral Neuropathy",
+      "unique_docs": 20,
+      "chunks": 20,
+      "avg_similarity": 0.496,
+      "top_similarity": 0.715,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 4,
+        "3": 13,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Cranial Neuropathy",
+      "unique_docs": 20,
+      "chunks": 20,
+      "avg_similarity": 0.463,
+      "top_similarity": 0.6,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 19,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Cerebral Function",
+      "unique_docs": 3,
+      "chunks": 3,
+      "avg_similarity": 0.452,
+      "top_similarity": 0.493,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 3,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Movement Disorders",
+      "unique_docs": 13,
+      "chunks": 13,
+      "avg_similarity": 0.509,
+      "top_similarity": 0.65,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 12,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Muscle / NMJ",
+      "unique_docs": 9,
+      "chunks": 9,
+      "avg_similarity": 0.46,
+      "top_similarity": 0.56,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 8,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Demyelinating",
+      "unique_docs": 8,
+      "chunks": 8,
+      "avg_similarity": 0.458,
+      "top_similarity": 0.517,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 1,
+        "3": 5,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Neuro-Ophth",
+      "unique_docs": 4,
+      "chunks": 4,
+      "avg_similarity": 0.438,
+      "top_similarity": 0.491,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 4,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Misc",
+      "unique_docs": 0,
+      "chunks": 0,
+      "avg_similarity": null,
+      "top_similarity": null,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "status": "GAP"
+    },
+    {
+      "name": "Vulva / External Genitalia",
+      "unique_docs": 9,
+      "chunks": 9,
+      "avg_similarity": 0.434,
+      "top_similarity": 0.5,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 0,
+        "3": 6,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Breast",
+      "unique_docs": 1,
+      "chunks": 1,
+      "avg_similarity": 0.463,
+      "top_similarity": 0.463,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 1,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Ovarian",
+      "unique_docs": 14,
+      "chunks": 14,
+      "avg_similarity": 0.434,
+      "top_similarity": 0.468,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 6,
+        "3": 5,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Uterine",
+      "unique_docs": 6,
+      "chunks": 6,
+      "avg_similarity": 0.437,
+      "top_similarity": 0.46,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Vaginal",
+      "unique_docs": 13,
+      "chunks": 13,
+      "avg_similarity": 0.456,
+      "top_similarity": 0.511,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 0,
+        "3": 11,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Pregnancy (IM Issues)",
+      "unique_docs": 22,
+      "chunks": 22,
+      "avg_similarity": 0.428,
+      "top_similarity": 0.469,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 9,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Menstrual",
+      "unique_docs": 10,
+      "chunks": 10,
+      "avg_similarity": 0.456,
+      "top_similarity": 0.531,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 5,
+        "3": 5,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Menopause",
+      "unique_docs": 21,
+      "chunks": 21,
+      "avg_similarity": 0.514,
+      "top_similarity": 0.637,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 5,
+        "3": 16,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Family Planning",
+      "unique_docs": 2,
+      "chunks": 2,
+      "avg_similarity": 0.469,
+      "top_similarity": 0.489,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 2,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "STIs",
+      "unique_docs": 16,
+      "chunks": 16,
+      "avg_similarity": 0.494,
+      "top_similarity": 0.6,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 2,
+        "3": 13,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Conjunctivitis",
+      "unique_docs": 12,
+      "chunks": 12,
+      "avg_similarity": 0.531,
+      "top_similarity": 0.691,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 11,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Glaucoma",
+      "unique_docs": 9,
+      "chunks": 9,
+      "avg_similarity": 0.503,
+      "top_similarity": 0.623,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 4,
+        "3": 5,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Cataracts",
+      "unique_docs": 4,
+      "chunks": 4,
+      "avg_similarity": 0.564,
+      "top_similarity": 0.627,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 4,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Cornea",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.433,
+      "top_similarity": 0.479,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Retina",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.443,
+      "top_similarity": 0.524,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Uveitis",
+      "unique_docs": 18,
+      "chunks": 18,
+      "avg_similarity": 0.498,
+      "top_similarity": 0.672,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 1,
+        "3": 15,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Nose / Sinuses",
+      "unique_docs": 12,
+      "chunks": 12,
+      "avg_similarity": 0.474,
+      "top_similarity": 0.566,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 1,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Ear",
+      "unique_docs": 0,
+      "chunks": 0,
+      "avg_similarity": null,
+      "top_similarity": null,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "status": "GAP"
+    },
+    {
+      "name": "Oral / Pharynx",
+      "unique_docs": 2,
+      "chunks": 2,
+      "avg_similarity": 0.434,
+      "top_similarity": 0.443,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 2,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Larynx / Airway",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.51,
+      "top_similarity": 0.613,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Mood Disorders",
+      "unique_docs": 13,
+      "chunks": 13,
+      "avg_similarity": 0.457,
+      "top_similarity": 0.596,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 4,
+        "3": 9,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Eating Disorders",
+      "unique_docs": 11,
+      "chunks": 11,
+      "avg_similarity": 0.628,
+      "top_similarity": 0.716,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 2,
+        "3": 9,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Substance Use",
+      "unique_docs": 11,
+      "chunks": 11,
+      "avg_similarity": 0.498,
+      "top_similarity": 0.6,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 7,
+        "3": 4,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Schizophrenia / Delusional",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.451,
+      "top_similarity": 0.533,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 4,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Anxiety",
+      "unique_docs": 8,
+      "chunks": 8,
+      "avg_similarity": 0.418,
+      "top_similarity": 0.45,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 7,
+        "3": 1,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Somatoform",
+      "unique_docs": 3,
+      "chunks": 3,
+      "avg_similarity": 0.449,
+      "top_similarity": 0.458,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 3,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Sexual / Gender",
+      "unique_docs": 6,
+      "chunks": 6,
+      "avg_similarity": 0.432,
+      "top_similarity": 0.484,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 6,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Sleep",
+      "unique_docs": 0,
+      "chunks": 0,
+      "avg_similarity": null,
+      "top_similarity": null,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "status": "GAP"
+    },
+    {
+      "name": "Factitious",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.505,
+      "top_similarity": 0.583,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 4,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Personality Disorders",
+      "unique_docs": 9,
+      "chunks": 9,
+      "avg_similarity": 0.469,
+      "top_similarity": 0.542,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 3,
+        "3": 6,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Suicide / Risk",
+      "unique_docs": 10,
+      "chunks": 10,
+      "avg_similarity": 0.52,
+      "top_similarity": 0.585,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 3,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "NMS",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.415,
+      "top_similarity": 0.445,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Obstructive Airway",
+      "unique_docs": 10,
+      "chunks": 10,
+      "avg_similarity": 0.449,
+      "top_similarity": 0.532,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 9,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Occupational / Environmental",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.454,
+      "top_similarity": 0.533,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 2,
+        "4": 2
+      },
+      "status": "good"
+    },
+    {
+      "name": "Restrictive (Non-ILD)",
+      "unique_docs": 10,
+      "chunks": 10,
+      "avg_similarity": 0.423,
+      "top_similarity": 0.455,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 5,
+        "2": 1,
+        "3": 4,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Interstitial Lung Disease",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.501,
+      "top_similarity": 0.652,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 7,
+        "2": 6,
+        "3": 12,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Pulmonary Vascular",
+      "unique_docs": 17,
+      "chunks": 17,
+      "avg_similarity": 0.472,
+      "top_similarity": 0.571,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 16,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Pleural",
+      "unique_docs": 4,
+      "chunks": 4,
+      "avg_similarity": 0.484,
+      "top_similarity": 0.556,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 0,
+        "3": 2,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Lower Respiratory Infections",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.465,
+      "top_similarity": 0.559,
+      "landmark_chunks": 9,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 10,
+        "3": 14,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Bronchiectasis",
+      "unique_docs": 12,
+      "chunks": 12,
+      "avg_similarity": 0.575,
+      "top_similarity": 0.744,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 2,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Congenital Lung",
+      "unique_docs": 14,
+      "chunks": 14,
+      "avg_similarity": 0.511,
+      "top_similarity": 0.643,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 14,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "ARDS",
+      "unique_docs": 2,
+      "chunks": 2,
+      "avg_similarity": 0.412,
+      "top_similarity": 0.42,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 2,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Sleep Medicine",
+      "unique_docs": 19,
+      "chunks": 19,
+      "avg_similarity": 0.45,
+      "top_similarity": 0.521,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 11,
+        "3": 6,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Ventilator Management",
+      "unique_docs": 13,
+      "chunks": 25,
+      "avg_similarity": 0.44,
+      "top_similarity": 0.498,
+      "landmark_chunks": 20,
+      "tier_breakdown": {
+        "1": 19,
+        "2": 4,
+        "3": 2,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Pulm in HIV",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.452,
+      "top_similarity": 0.628,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 5,
+        "2": 3,
+        "3": 17,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Common Symptoms",
+      "unique_docs": 2,
+      "chunks": 2,
+      "avg_similarity": 0.433,
+      "top_similarity": 0.454,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 2,
+        "4": 0
+      },
+      "status": "thin"
+    },
+    {
+      "name": "Solitary Nodule",
+      "unique_docs": 4,
+      "chunks": 4,
+      "avg_similarity": 0.467,
+      "top_similarity": 0.546,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 0,
+        "3": 3,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "Crystal Arthropathy",
+      "unique_docs": 10,
+      "chunks": 10,
+      "avg_similarity": 0.439,
+      "top_similarity": 0.544,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 10,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Regional MSK",
+      "unique_docs": 18,
+      "chunks": 18,
+      "avg_similarity": 0.436,
+      "top_similarity": 0.507,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 3,
+        "3": 12,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Spondyloarthropathies",
+      "unique_docs": 23,
+      "chunks": 23,
+      "avg_similarity": 0.448,
+      "top_similarity": 0.61,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 3,
+        "3": 19,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Rheumatoid Arthritis",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.471,
+      "top_similarity": 0.562,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 9,
+        "2": 5,
+        "3": 11,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "SLE",
+      "unique_docs": 12,
+      "chunks": 12,
+      "avg_similarity": 0.45,
+      "top_similarity": 0.498,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 5,
+        "3": 5,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Systemic Sclerosis",
+      "unique_docs": 22,
+      "chunks": 22,
+      "avg_similarity": 0.472,
+      "top_similarity": 0.62,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 3,
+        "3": 17,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Vasculitis",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.469,
+      "top_similarity": 0.622,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 0,
+        "3": 22,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Other Rheum",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.453,
+      "top_similarity": 0.533,
+      "landmark_chunks": 7,
+      "tier_breakdown": {
+        "1": 12,
+        "2": 6,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Infectious Arthritis",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.442,
+      "top_similarity": 0.511,
+      "landmark_chunks": 5,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 1,
+        "3": 21,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Bone Disease",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.464,
+      "top_similarity": 0.572,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 4,
+        "3": 19,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Osteoarthritis",
+      "unique_docs": 9,
+      "chunks": 9,
+      "avg_similarity": 0.466,
+      "top_similarity": 0.539,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 1,
+        "2": 1,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Sports Injuries",
+      "unique_docs": 14,
+      "chunks": 14,
+      "avg_similarity": 0.488,
+      "top_similarity": 0.578,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 11,
+        "3": 3,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Other Specific",
+      "unique_docs": 0,
+      "chunks": 0,
+      "avg_similarity": null,
+      "top_similarity": null,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "status": "GAP"
+    },
+    {
+      "name": "Cardiovascular",
+      "unique_docs": 19,
+      "chunks": 19,
+      "avg_similarity": 0.425,
+      "top_similarity": 0.496,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 2,
+        "3": 15,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Pulmonary",
+      "unique_docs": 16,
+      "chunks": 16,
+      "avg_similarity": 0.429,
+      "top_similarity": 0.497,
+      "landmark_chunks": 3,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 1,
+        "3": 13,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "GI/Hepatology",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.439,
+      "top_similarity": 0.551,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 8,
+        "2": 4,
+        "3": 12,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Endocrinology",
+      "unique_docs": 5,
+      "chunks": 5,
+      "avg_similarity": 0.445,
+      "top_similarity": 0.506,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 5,
+        "4": 0
+      },
+      "status": "good"
+    },
+    {
+      "name": "ID",
+      "unique_docs": 0,
+      "chunks": 0,
+      "avg_similarity": null,
+      "top_similarity": null,
+      "landmark_chunks": 0,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0
+      },
+      "status": "GAP"
+    },
+    {
+      "name": "Heme/Onc",
+      "unique_docs": 20,
+      "chunks": 20,
+      "avg_similarity": 0.441,
+      "top_similarity": 0.585,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 0,
+        "3": 20,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Rheumatology",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.447,
+      "top_similarity": 0.533,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 12,
+        "2": 7,
+        "3": 6,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Neurology",
+      "unique_docs": 16,
+      "chunks": 16,
+      "avg_similarity": 0.423,
+      "top_similarity": 0.468,
+      "landmark_chunks": 2,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 15,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Critical Care",
+      "unique_docs": 14,
+      "chunks": 25,
+      "avg_similarity": 0.427,
+      "top_similarity": 0.453,
+      "landmark_chunks": 18,
+      "tier_breakdown": {
+        "1": 20,
+        "2": 4,
+        "3": 1,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Allergy/Immuno",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.448,
+      "top_similarity": 0.548,
+      "landmark_chunks": 10,
+      "tier_breakdown": {
+        "1": 5,
+        "2": 5,
+        "3": 14,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Dermatology",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.431,
+      "top_similarity": 0.532,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 2,
+        "2": 4,
+        "3": 19,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Psychiatry",
+      "unique_docs": 8,
+      "chunks": 8,
+      "avg_similarity": 0.423,
+      "top_similarity": 0.439,
+      "landmark_chunks": 1,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 1,
+        "3": 7,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Geriatrics",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.453,
+      "top_similarity": 0.604,
+      "landmark_chunks": 8,
+      "tier_breakdown": {
+        "1": 4,
+        "2": 4,
+        "3": 17,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Women's Health",
+      "unique_docs": 24,
+      "chunks": 24,
+      "avg_similarity": 0.43,
+      "top_similarity": 0.494,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 0,
+        "2": 4,
+        "3": 20,
+        "4": 0
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Oncology",
+      "unique_docs": 25,
+      "chunks": 25,
+      "avg_similarity": 0.44,
+      "top_similarity": 0.54,
+      "landmark_chunks": 6,
+      "tier_breakdown": {
+        "1": 7,
+        "2": 4,
+        "3": 13,
+        "4": 1
+      },
+      "status": "excellent"
+    },
+    {
+      "name": "Palliative",
+      "unique_docs": 11,
+      "chunks": 11,
+      "avg_similarity": 0.46,
+      "top_similarity": 0.509,
+      "landmark_chunks": 4,
+      "tier_breakdown": {
+        "1": 3,
+        "2": 7,
+        "3": 1,
+        "4": 0
+      },
+      "status": "excellent"
+    }
+  ]
+}

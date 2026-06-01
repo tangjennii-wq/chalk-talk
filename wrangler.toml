@@ -1,25 +1,7 @@
-# Cloudflare Workers config for the Chalk Talk proxy.
-# Deploy with `npx wrangler deploy`. See DEPLOY.md for the full walk-through.
-
 name = "chalk-talk-proxy"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 
-# ── Public config (visible in Worker code as `env.<KEY>`) ───────────────────
-# Comma-separated list of origins allowed to call this proxy.
-# Add your GitHub Pages URL (no trailing slash), and optionally localhost for dev.
 [vars]
-ALLOWED_ORIGINS = "https://YOUR-USERNAME.github.io,http://localhost:8000,http://127.0.0.1:8000"
+ALLOWED_ORIGINS = "https://tangjennii.github.io,https://tangjennii-wq.github.io,http://localhost:8000,http://127.0.0.1:8000"
 DAILY_LIMIT_PER_IP = "10"
-
-# ── KV namespace for daily rate-limit counters ─────────────────────────────
-# Create with:  npx wrangler kv namespace create RATE_LIMIT_KV
-# Paste the returned id below.
-[[kv_namespaces]]
-binding = "RATE_LIMIT_KV"
-id = "YOUR_KV_NAMESPACE_ID_HERE"
-
-# ── Secrets (DO NOT commit values; set via CLI) ────────────────────────────
-# Required: ANTHROPIC_API_KEY
-# Set with:  npx wrangler secret put ANTHROPIC_API_KEY
-# (Wrangler will prompt for the value and store it encrypted.)

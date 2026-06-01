@@ -1,0 +1,1459 @@
+{
+  "Anaphylaxis": [
+    "General anaphylaxis",
+    "Aspirin idiosyncrasy",
+    "Stinging insect hypersensitivity",
+    "Desensitization therapy",
+    "Serum sickness"
+  ],
+  "Asthma": [
+    "General asthma",
+    "Exercise- and cold-induced asthma",
+    "Allergic bronchopulmonary aspergillosis",
+    "Nasal polyps & aspirin sensitivity",
+    "Occupational asthma",
+    "Asthma in pregnancy"
+  ],
+  "Rhinitis, Sinusitis, Conjunctivitis": [
+    "Allergic rhinitis",
+    "Acute and chronic sinusitis",
+    "Allergic conjunctivitis",
+    "Upper airway cough syndrome"
+  ],
+  "Food Allergy": [
+    "Food allergy diagnosis & management"
+  ],
+  "Urticaria & Angioedema": [
+    "Hereditary angioedema",
+    "Drug-induced urticaria and angioedema",
+    "Contrast-related allergy"
+  ],
+  "Skin Disorders": [
+    "Atopic dermatitis",
+    "Contact dermatitis"
+  ],
+  "Drug Allergy": [
+    "Drug allergy beyond urticaria/angioedema",
+    "Penicillin allergy testing"
+  ],
+  "Primary Immunodeficiency": [
+    "Primary humoral immunodeficiency",
+    "Cellular immunodeficiency (non-HIV)",
+    "Complement deficiency"
+  ],
+  "Transfusion Reactions": [
+    "Hemolytic transfusion reactions",
+    "TRALI",
+    "Transfusion-related urticaria & anaphylaxis"
+  ],
+  "Autoimmune Systemic": [
+    "Mastocytosis",
+    "Allergic interstitial nephritis",
+    "Eosinophilic esophagitis",
+    "Eosinophilic pneumonia",
+    "EGPA (Churg-Strauss)",
+    "Hypersensitivity pneumonitis"
+  ],
+  "Hypertension": [
+    "Essential hypertension",
+    "Renovascular hypertension",
+    "Coarctation of the aorta",
+    "Hypertensive urgency & emergency",
+    "Resistant hypertension"
+  ],
+  "Pericardial Disease": [
+    "Acute pericarditis",
+    "Pericardial effusion",
+    "Constrictive pericarditis",
+    "Tamponade"
+  ],
+  "Ischemic Heart Disease": [
+    "Stable angina pectoris",
+    "ACS: STEMI vs NSTEMI",
+    "ACS complications",
+    "HF from ischemic cardiomyopathy",
+    "Non-cardiac chest pain",
+    "Coronary artery spasm"
+  ],
+  "Dysrhythmias & Conduction": [
+    "Atrial fibrillation: rate vs rhythm",
+    "Atrial flutter",
+    "SVT",
+    "VT/VF",
+    "Bradyarrhythmias & pacing",
+    "Conduction defects (AV blocks)",
+    "Cardiac resuscitation"
+  ],
+  "Congenital Heart Disease (Adult)": [
+    "ASD and PFO",
+    "Bicuspid aortic valve",
+    "PDA, VSD, pulmonic stenosis"
+  ],
+  "Valvular Heart Disease": [
+    "Aortic stenosis & TAVR",
+    "Aortic regurgitation",
+    "Mitral regurgitation",
+    "Mitral stenosis",
+    "Prosthetic valve management"
+  ],
+  "Myocardial Disease": [
+    "HFrEF: 4-pillar GDMT",
+    "HFpEF management",
+    "Acute decompensated HF",
+    "Cardiogenic shock",
+    "Myocarditis",
+    "Hypertrophic cardiomyopathy",
+    "Restrictive cardiomyopathy",
+    "Dilated cardiomyopathy",
+    "Cor pulmonale"
+  ],
+  "Endocarditis & CV Infection": [
+    "Infective endocarditis (Duke criteria)",
+    "POET trial: IV-to-PO",
+    "Pericardial space infection",
+    "Endocarditis prophylaxis",
+    "Cardiac device infection"
+  ],
+  "Vascular Disease": [
+    "Carotid artery disease",
+    "Aortic dissection & aneurysm",
+    "Peripheral arterial disease",
+    "Pulmonary hypertension",
+    "DVT",
+    "SVC syndrome (non-cancer)"
+  ],
+  "Syncope": [
+    "Reflex syncope (vasovagal)",
+    "Orthostatic hypotension",
+    "Cardiac syncope (structural & electrical)"
+  ],
+  "Preoperative Cardiac": [
+    "Cardiac risk assessment",
+    "Testing indicated vs not"
+  ],
+  "Lipid Disorders": [
+    "LDL targets",
+    "Statins (high-intensity)",
+    "PCSK9 inhibitors",
+    "Ezetimibe",
+    "Bempedoic acid",
+    "Lp(a) screening"
+  ],
+  "Antithrombotic Therapy": [
+    "DAPT duration after PCI",
+    "Anticoagulation in AF"
+  ],
+  "Misc CV": [
+    "Physical exam findings",
+    "Cardiac murmurs"
+  ],
+  "Dermatitis (Eczemas)": [
+    "Atopic dermatitis",
+    "Contact dermatitis",
+    "Photodermatitis",
+    "Stasis dermatitis",
+    "Hand dermatitis",
+    "Drug eruptions",
+    "Nummular dermatitis",
+    "Seborrheic dermatitis"
+  ],
+  "Dermatologic Immunology": [
+    "Urticaria and angioedema",
+    "Leukocytoclastic vasculitis"
+  ],
+  "Vascular Dermatoses": [
+    "Erythema multiforme",
+    "Erythema nodosum",
+    "Telangiectasia",
+    "Leg ulcers"
+  ],
+  "Acne & Rosacea": [
+    "Acne vulgaris",
+    "Rosacea"
+  ],
+  "Papulosquamous": [
+    "Psoriasis & biologics",
+    "Pityriasis rosea",
+    "Lichen planus"
+  ],
+  "Skin & Soft Tissue Infections": [
+    "Dermatophytes",
+    "Herpes zoster",
+    "Cellulitis vs erysipelas",
+    "Necrotizing soft-tissue infections",
+    "Lymphadenitis",
+    "Scabies & lice"
+  ],
+  "Vesiculobullous": [
+    "Pemphigus vulgaris",
+    "Bullous pemphigoid",
+    "Dermatitis herpetiformis"
+  ],
+  "Pigment Disorders": [
+    "Vitiligo",
+    "Melasma",
+    "Acanthosis nigricans"
+  ],
+  "Photosensitivity": [
+    "Porphyria cutanea tarda",
+    "Photodermatitis"
+  ],
+  "Alopecia": [
+    "Alopecia areata",
+    "Androgenic alopecia",
+    "Telogen effluvium"
+  ],
+  "Skin Cancer": [
+    "SCC of skin",
+    "BCC of skin",
+    "Melanoma",
+    "Mycosis fungoides"
+  ],
+  "Nutritional & Nail": [
+    "Cutaneous manifestations of nutritional deficiency",
+    "Nail disorders"
+  ],
+  "Environmental Injury": [
+    "Frostbite",
+    "Burns"
+  ],
+  "Pressure Injuries": [
+    "Pressure injury staging & management"
+  ],
+  "Dermatologic Emergencies": [
+    "SJS/TEN",
+    "DRESS",
+    "Severe drug reactions"
+  ],
+  "Adrenal": [
+    "Cushing syndrome",
+    "Adrenal insufficiency",
+    "Adrenal masses & nodules",
+    "Pheochromocytoma"
+  ],
+  "Thyroid": [
+    "Hyperthyroidism & Graves",
+    "Hypothyroidism",
+    "Thyroiditis",
+    "Thyroid nodules & cancer",
+    "Euthyroid sick syndrome",
+    "Thyroid storm",
+    "Myxedema coma",
+    "Thyroid in pregnancy"
+  ],
+  "Lipid Disorders (Endo Lens)": [
+    "Hypercholesterolemia",
+    "Hypertriglyceridemia",
+    "Chylomicronemia syndrome"
+  ],
+  "Ovarian / Reproductive": [
+    "PCOS",
+    "Premature ovarian failure",
+    "Female infertility",
+    "Hormonal therapy"
+  ],
+  "Testes / Male": [
+    "Male hypogonadism",
+    "Erectile dysfunction",
+    "Gynecomastia"
+  ],
+  "Diabetes Mellitus": [
+    "Type 1 DM",
+    "Type 2 DM management & cardiorenal",
+    "DKA vs HHS",
+    "DM in pregnancy",
+    "Diabetic foot & neuropathy",
+    "Diabetic retinopathy"
+  ],
+  "Calcium & Bone": [
+    "Hypercalcemia of malignancy",
+    "Primary hyperparathyroidism",
+    "Hypocalcemia",
+    "Phosphate disorders",
+    "Paget disease",
+    "Osteoporosis",
+    "Vitamin D deficiency",
+    "CKD-MBD"
+  ],
+  "Pituitary": [
+    "Pituitary tumors",
+    "Hypopituitarism",
+    "Acromegaly",
+    "Hyperprolactinemia"
+  ],
+  "Posterior Pituitary / Water": [
+    "Hypernatremia",
+    "Hyponatremia",
+    "Central vs nephrogenic DI",
+    "SIADH"
+  ],
+  "Endocrine Tumors": [
+    "Insulinoma",
+    "Carcinoid syndrome"
+  ],
+  "Hypoglycemia": [
+    "Non-insulinoma hypoglycemia"
+  ],
+  "Polyglandular Autoimmune": [
+    "Multiple endocrine hypofunction"
+  ],
+  "Esophageal": [
+    "GERD",
+    "Barrett esophagus",
+    "Esophageal cancer screening",
+    "Esophageal motility (achalasia)",
+    "Eosinophilic esophagitis",
+    "Esophageal varices",
+    "Pill esophagitis",
+    "Mallory-Weiss"
+  ],
+  "Stomach & Duodenal": [
+    "Helicobacter pylori",
+    "Peptic ulcer disease",
+    "Gastritis",
+    "Non-ulcer dyspepsia",
+    "Gastroparesis"
+  ],
+  "Small Intestinal": [
+    "Celiac disease",
+    "SIBO",
+    "Short bowel syndrome",
+    "Ischemic bowel",
+    "Crohn disease",
+    "Gastric bypass complications"
+  ],
+  "Colonic & Anorectal": [
+    "Colorectal cancer screening",
+    "Lynch syndrome",
+    "Diverticular disease",
+    "Ulcerative colitis",
+    "IBS",
+    "Hemorrhoids",
+    "C. difficile colitis",
+    "Acute appendicitis"
+  ],
+  "Pancreatic": [
+    "Acute pancreatitis",
+    "Chronic pancreatitis",
+    "Pancreatic neuroendocrine tumors",
+    "Pancreatic infections"
+  ],
+  "Biliary": [
+    "Cholelithiasis",
+    "Cholecystitis",
+    "Choledocholithiasis",
+    "Cholangitis",
+    "Primary sclerosing cholangitis"
+  ],
+  "Liver": [
+    "Viral hepatitis (A, B, C)",
+    "Cirrhosis complications",
+    "NAFLD/MASLD",
+    "Alcoholic hepatitis",
+    "Autoimmune hepatitis",
+    "Primary biliary cholangitis",
+    "Hemochromatosis",
+    "Wilson disease",
+    "Hepatocellular carcinoma screening",
+    "Hepatorenal syndrome",
+    "Liver transplant"
+  ],
+  "GI Hemorrhage": [
+    "Upper GI bleeding",
+    "Lower GI bleeding",
+    "Bleeding of unknown source"
+  ],
+  "GI in HIV": [
+    "GI complications of HIV"
+  ],
+  "Wounds": [
+    "Venous ulcers",
+    "Chronic wounds"
+  ],
+  "End-of-Life / Palliative": [
+    "EOL care of the elderly",
+    "Hospice eligibility"
+  ],
+  "Ethics in the Elderly": [
+    "Decisional capacity",
+    "Surrogate decision-making",
+    "Advance directives"
+  ],
+  "GI in Elderly": [
+    "Constipation",
+    "Disorders of swallowing"
+  ],
+  "GU in Elderly": [
+    "Urinary incontinence",
+    "UTI in elderly"
+  ],
+  "Cognitive": [
+    "Dementia",
+    "Delirium",
+    "Dizziness & vertigo"
+  ],
+  "Nutrition in Elderly": [
+    "Malnutrition assessment"
+  ],
+  "Ophth in Elderly": [
+    "Cataracts",
+    "Macular degeneration",
+    "Glaucoma"
+  ],
+  "Psych in Elderly": [
+    "Depression in elderly",
+    "Sleep disorders"
+  ],
+  "Falls & Fractures": [
+    "Falls assessment",
+    "Hip fracture",
+    "Frailty"
+  ],
+  "Foot Problems": [
+    "Common foot problems"
+  ],
+  "Geriatric Assessment": [
+    "Functional assessment",
+    "Polypharmacy & Beers criteria"
+  ],
+  "Rehab": [
+    "Rehab in elderly"
+  ],
+  "Other": [
+    "Head injury",
+    "Spinal cord injury",
+    "Idiopathic intracranial hypertension",
+    "ALS",
+    "NMS",
+    "Cerebellar ataxia"
+  ],
+  "Hypoproliferative Anemia": [
+    "Aplastic anemia",
+    "Anemia of chronic disease",
+    "Iron deficiency",
+    "Sideroblastic anemia",
+    "B12/folate deficiency",
+    "Lead intoxication"
+  ],
+  "Hemolytic Anemia": [
+    "G6PD deficiency",
+    "Autoimmune hemolytic anemia",
+    "Microangiopathic hemolytic anemia",
+    "Hereditary spherocytosis"
+  ],
+  "Hemoglobinopathies": [
+    "Sickle cell disease",
+    "Thalassemias"
+  ],
+  "Leukocyte Disorders": [
+    "Acute leukemia",
+    "Chronic leukemia",
+    "Marrow infiltration",
+    "Eosinophilia"
+  ],
+  "Platelet Disorders": [
+    "ITP",
+    "Drug-induced platelet dysfunction",
+    "HIT",
+    "Essential thrombocythemia"
+  ],
+  "Coagulation & Thrombosis": [
+    "Coagulation factor deficiencies",
+    "Hereditary thrombophilia",
+    "Antiphospholipid syndrome",
+    "DVT/PE anticoagulation",
+    "DIC",
+    "TTP vs HUS"
+  ],
+  "Porphyria": [
+    "Acute intermittent porphyria"
+  ],
+  "Myeloproliferative": [
+    "Polycythemia vera",
+    "Essential thrombocythemia",
+    "Primary myelofibrosis"
+  ],
+  "Myelodysplastic": [
+    "MDS"
+  ],
+  "Heme Malignancies": [
+    "Non-Hodgkin lymphoma",
+    "Hodgkin disease",
+    "Multiple myeloma",
+    "Plasma cell disorders",
+    "CLL"
+  ],
+  "Transfusion Medicine": [
+    "Transfusion indications",
+    "Transfusion complications",
+    "Massive transfusion protocol"
+  ],
+  "Heme Complications of HIV": [
+    "Cytopenias in HIV"
+  ],
+  "Bone Marrow Transplant": [
+    "Late complications of BMT"
+  ],
+  "Skin & Soft Tissue": [
+    "Dermatophytes",
+    "Herpes zoster",
+    "Cellulitis",
+    "Impetigo",
+    "Necrotizing soft tissue infections",
+    "Diabetic foot infection",
+    "Lymphangitis"
+  ],
+  "CNS Infections": [
+    "Meningitis",
+    "Brain abscess",
+    "Encephalitis",
+    "PML",
+    "Autoimmune encephalitis"
+  ],
+  "Upper Respiratory": [
+    "Acute and chronic sinusitis",
+    "Otitis media",
+    "Common cold",
+    "Pharyngitis",
+    "Epiglottitis",
+    "Pertussis"
+  ],
+  "Eye Infections": [
+    "Preseptal cellulitis",
+    "Conjunctivitis",
+    "Keratitis",
+    "Endophthalmitis",
+    "Uveitis",
+    "Orbital infections"
+  ],
+  "Lower Respiratory": [
+    "CAP: outpatient vs inpatient",
+    "HAP/VAP",
+    "Lung abscess",
+    "Tuberculosis: dx & RIPE",
+    "Empyema"
+  ],
+  "Endocarditis": [
+    "Infective endocarditis",
+    "Endocarditis prophylaxis",
+    "Catheter-related bloodstream infection",
+    "Device pocket infection"
+  ],
+  "Hepatic Infections": [
+    "Viral hepatitis",
+    "Liver abscess",
+    "Cholangitis"
+  ],
+  "Enteric Infections": [
+    "Esophagitis (Candida, HSV, CMV)",
+    "Gastroenteritis",
+    "Bacterial peritonitis",
+    "Intra-abdominal abscess"
+  ],
+  "HIV/AIDS": [
+    "HIV: ART initiation",
+    "Opportunistic infections",
+    "PrEP & PEP",
+    "IRIS",
+    "HIV neurologic complications"
+  ],
+  "STIs / Reproductive": [
+    "Urethritis",
+    "Genital ulcers",
+    "Vulvovaginitis",
+    "Cervicitis",
+    "PID",
+    "Syphilis",
+    "HPV"
+  ],
+  "Urinary Tract": [
+    "Asymptomatic bacteriuria",
+    "Cystitis & pyelonephritis",
+    "Perinephric abscess",
+    "Prostatitis"
+  ],
+  "Bone & Joint": [
+    "Septic arthritis",
+    "Osteomyelitis"
+  ],
+  "Sepsis": [
+    "Sepsis bundle (SSC 2021)",
+    "Septic shock vasopressors",
+    "Toxic shock syndrome",
+    "Febrile neutropenia"
+  ],
+  "Strep-Related": [
+    "Rheumatic fever",
+    "Poststreptococcal GN"
+  ],
+  "Procedure / Device": [
+    "Procedure-associated infections"
+  ],
+  "Nosocomial": [
+    "Hospital-acquired infections",
+    "Needlestick injury",
+    "Postexposure prophylaxis"
+  ],
+  "Prevention": [
+    "screen",
+    "prevention",
+    "uspstf",
+    "vaccin",
+    "immuniz",
+    "aspirin primary",
+    "statin primary",
+    "cancer screen",
+    "cardiovascular risk",
+    "tobacco cessation"
+  ],
+  "Specific Organisms": [
+    "Tick-borne illness",
+    "Malaria",
+    "Mycoses",
+    "Rickettsioses",
+    "Mycoplasma"
+  ],
+  "FUO": [
+    "Fever of unknown origin"
+  ],
+  "Lung Cancer": [
+    "Lung cancer screening",
+    "Paraneoplastic syndromes"
+  ],
+  "Breast Cancer": [
+    "Breast cancer screening",
+    "Breast cancer overview"
+  ],
+  "Head & Neck": [
+    "Thyroid nodules & cancer",
+    "Other H&N neoplasms"
+  ],
+  "GI / Hepatic Cancer": [
+    "Esophageal carcinoma",
+    "Stomach cancer",
+    "Colorectal cancer",
+    "Pancreatic carcinoma",
+    "Hepatocellular carcinoma",
+    "Gallbladder cancer",
+    "Anal cancer"
+  ],
+  "Urologic Cancer": [
+    "Renal cell carcinoma",
+    "Bladder carcinoma",
+    "Prostate cancer",
+    "Testicular cancer"
+  ],
+  "Gynecologic Cancer": [
+    "Ovarian cancer",
+    "Endometrial cancer",
+    "Cervical cancer",
+    "Vulvar cancer"
+  ],
+  "Bone Tumors": [
+    "Primary bone tumors",
+    "Bone metastases"
+  ],
+  "CNS Tumors": [
+    "Brain tumors",
+    "Spinal cord compression",
+    "Paraneoplastic syndromes"
+  ],
+  "Hematologic Malignancies": [
+    "Acute leukemias",
+    "NHL vs HL",
+    "Multiple myeloma",
+    "CLL"
+  ],
+  "Soft Tissue / Bone": [
+    "Soft tissue sarcoma"
+  ],
+  "HIV-Associated": [
+    "Oncologic complications of HIV"
+  ],
+  "CUP": [
+    "Cancer of unknown primary"
+  ],
+  "Cancer Prevention": [
+    "Smoking cessation",
+    "Environmental carcinogens",
+    "Inherited cancer risk"
+  ],
+  "Oncologic Emergencies": [
+    "SVC syndrome",
+    "Febrile neutropenia",
+    "Spinal cord compression",
+    "Cardiac tamponade",
+    "Tumor lysis syndrome",
+    "Hypercalcemia of malignancy"
+  ],
+  "Treatment Complications": [
+    "Cancer pain",
+    "Dyspnea",
+    "Paraneoplastic syndromes",
+    "Lymphedema",
+    "Chemo-induced N/V",
+    "Cardiotoxicity",
+    "Immunotherapy toxicities"
+  ],
+  "Survivorship": [
+    "Surveillance",
+    "Second malignancies"
+  ],
+  "Epidemiology": [
+    "Sensitivity, specificity, PPV, NPV",
+    "Bias & confounding",
+    "Study design"
+  ],
+  "Ethics": [
+    "Informed consent",
+    "Capacity vs competence",
+    "End-of-life ethics",
+    "Confidentiality"
+  ],
+  "Safety & QI": [
+    "Patient safety frameworks",
+    "Quality improvement methodology",
+    "Root cause analysis",
+    "Healthcare disparities"
+  ],
+  "Acute Kidney Injury": [
+    "AKI: prerenal vs intrinsic vs postrenal",
+    "Hypotension/shock-induced AKI",
+    "Toxic kidney injury",
+    "Rhabdomyolysis",
+    "Hepatorenal syndrome",
+    "Atheroembolism",
+    "Myeloma kidney"
+  ],
+  "Chronic Kidney Disease": [
+    "CKD staging & KFRE",
+    "RAAS + SGLT2i + finerenone",
+    "Hemodialysis principles",
+    "Peritoneal dialysis",
+    "Kidney transplant",
+    "Slowing CKD progression"
+  ],
+  "Tubulointerstitial": [
+    "AIN (drug, infection)",
+    "Analgesic nephropathy"
+  ],
+  "Glomerular": [
+    "Lupus nephritis",
+    "Minimal change disease",
+    "FSGS",
+    "Membranous nephropathy",
+    "MPGN",
+    "IgA nephropathy",
+    "Anti-GBM disease",
+    "ANCA vasculitis"
+  ],
+  "Hypertension (Renal Lens)": [
+    "Essential hypertension",
+    "Primary aldosteronism",
+    "Renovascular hypertension"
+  ],
+  "UTI": [
+    "Asymptomatic bacteriuria",
+    "Cystitis & pyelonephritis",
+    "Perinephric abscess",
+    "Prostatitis"
+  ],
+  "Nephrolithiasis": [
+    "Calcium stones",
+    "Uric acid stones",
+    "Struvite stones"
+  ],
+  "Other Kidney": [
+    "Renal vein thrombosis",
+    "Obstructive uropathy",
+    "Diabetic nephropathy",
+    "Polycystic kidney disease"
+  ],
+  "Urologic Cancer Screening": [
+    "Urologic cancer screening"
+  ],
+  "Prostate": [
+    "BPH",
+    "Prostate cancer screening"
+  ],
+  "Other Urologic": [
+    "Testicular torsion",
+    "Scrotal masses",
+    "Erectile dysfunction"
+  ],
+  "Urinary Incontinence": [
+    "Stress vs urge",
+    "Overflow incontinence"
+  ],
+  "Water & Electrolyte": [
+    "Hyponatremia: SIADH & Furst ratio",
+    "Hypernatremia (DI)",
+    "Hypokalemia / Hyperkalemia",
+    "Hypercalcemia / Hypocalcemia",
+    "Phosphate disorders",
+    "Magnesium disorders",
+    "Metabolic acidosis (AG vs NAG)",
+    "Metabolic alkalosis",
+    "Respiratory acidosis/alkalosis",
+    "Mixed acid-base"
+  ],
+  "Hematuria": [
+    "Glomerular vs non-glomerular hematuria"
+  ],
+  "Seizures": [
+    "Seizures & status epilepticus",
+    "Antiepileptic drug selection"
+  ],
+  "Cerebrovascular": [
+    "Acute ischemic stroke & tPA",
+    "TIA & secondary prevention",
+    "ICH",
+    "Cavernous sinus thrombosis"
+  ],
+  "Headache & Facial Pain": [
+    "Migraine",
+    "Cluster headache",
+    "Tension headache",
+    "Secondary headache (red flags)",
+    "Trigeminal neuralgia"
+  ],
+  "Spine / Nerve Root": [
+    "Cervical radiculopathy",
+    "Lumbar disc herniation",
+    "Spinal stenosis"
+  ],
+  "Peripheral Neuropathy": [
+    "Guillain-Barré",
+    "CIDP",
+    "Carpal tunnel",
+    "Diabetic neuropathy",
+    "Postherpetic neuralgia",
+    "Drug/toxin neuropathy"
+  ],
+  "Cranial Neuropathy": [
+    "Bell palsy",
+    "CN III/IV/VI palsies",
+    "Vestibular neuronitis"
+  ],
+  "Cerebral Function": [
+    "Dementia workup",
+    "Aphasia",
+    "Delirium"
+  ],
+  "Movement Disorders": [
+    "Parkinson disease",
+    "Essential tremor",
+    "Restless legs",
+    "Tardive dyskinesia"
+  ],
+  "Muscle / NMJ": [
+    "Myasthenia gravis",
+    "Lambert-Eaton",
+    "Polymyositis & dermatomyositis",
+    "Drug-induced myopathy"
+  ],
+  "Demyelinating": [
+    "Multiple sclerosis"
+  ],
+  "Neuro-Ophth": [
+    "Optic neuritis",
+    "Anisocoria",
+    "Disorders of eye movement",
+    "Papilledema"
+  ],
+  "Misc": [
+    "Episcleritis & scleritis",
+    "Preseptal cellulitis",
+    "Endophthalmitis",
+    "Orbital infections"
+  ],
+  "Vulva / External Genitalia": [
+    "Diseases of the vulva"
+  ],
+  "Breast": [
+    "Breast nodules",
+    "Mastitis",
+    "Other breast disorders"
+  ],
+  "Ovarian": [
+    "PCOS",
+    "Ovarian cysts",
+    "Ovarian cancer"
+  ],
+  "Uterine": [
+    "Uterine fibroids",
+    "Endometriosis",
+    "Endometrial cancer",
+    "Cervical cancer screening"
+  ],
+  "Vaginal": [
+    "Vaginal disorders (non-vaginitis)"
+  ],
+  "Pregnancy (IM Issues)": [
+    "HTN in pregnancy",
+    "Asthma in pregnancy",
+    "Hyperthyroidism peripartum",
+    "Liver disease in pregnancy",
+    "Peripartum cardiomyopathy",
+    "Ectopic pregnancy",
+    "Gestational diabetes",
+    "UTI in pregnancy"
+  ],
+  "Menstrual": [
+    "Dysmenorrhea",
+    "Amenorrhea",
+    "Abnormal uterine bleeding"
+  ],
+  "Menopause": [
+    "HRT — risks & benefits"
+  ],
+  "Family Planning": [
+    "Contraception",
+    "Reproductive health"
+  ],
+  "STIs": [
+    "STIs in reproductive organs"
+  ],
+  "Conjunctivitis": [
+    "Viral conjunctivitis",
+    "Bacterial conjunctivitis",
+    "Allergic conjunctivitis",
+    "Keratoconjunctivitis sicca"
+  ],
+  "Glaucoma": [
+    "Open-angle glaucoma",
+    "Angle-closure glaucoma"
+  ],
+  "Cataracts": [
+    "Cataracts"
+  ],
+  "Cornea": [
+    "Corneal abrasion",
+    "Keratitis"
+  ],
+  "Retina": [
+    "Macular degeneration",
+    "Retinal detachment",
+    "Diabetic retinopathy",
+    "Amaurosis fugax",
+    "Roth spots"
+  ],
+  "Uveitis": [
+    "Anterior uveitis"
+  ],
+  "Nose / Sinuses": [
+    "Allergic rhinitis",
+    "Acute and chronic sinusitis",
+    "Disturbances of taste/smell",
+    "Epistaxis"
+  ],
+  "Ear": [
+    "BPPV",
+    "Vestibular neuronitis",
+    "Meniere disease",
+    "Acoustic neuroma",
+    "Presbycusis",
+    "Otitis media & externa",
+    "Cholesteatoma"
+  ],
+  "Oral / Pharynx": [
+    "Pharyngitis",
+    "Epiglottitis",
+    "Deep H&N infections",
+    "Parotid disease",
+    "Diseases of oral mucosa"
+  ],
+  "Larynx / Airway": [
+    "Laryngitis",
+    "Vocal cord dysfunction"
+  ],
+  "Mood Disorders": [
+    "Major depression",
+    "Bipolar disorder",
+    "Premenstrual dysphoric disorder"
+  ],
+  "Eating Disorders": [
+    "Anorexia nervosa",
+    "Bulimia"
+  ],
+  "Substance Use": [
+    "Alcohol use disorder",
+    "Alcohol withdrawal",
+    "Opioid use disorder & MAT",
+    "Tobacco use disorder",
+    "Stimulant use disorder"
+  ],
+  "Schizophrenia / Delusional": [
+    "Schizophrenia",
+    "Delusional disorder",
+    "Antipsychotic complications"
+  ],
+  "Anxiety": [
+    "Generalized anxiety disorder",
+    "Panic disorder",
+    "OCD",
+    "PTSD",
+    "Phobias"
+  ],
+  "Somatoform": [
+    "Somatic symptom disorder",
+    "Conversion disorder"
+  ],
+  "Sexual / Gender": [
+    "Sexual dysfunction",
+    "Gender dysphoria"
+  ],
+  "Sleep": [
+    "Insomnia",
+    "Narcolepsy"
+  ],
+  "Factitious": [
+    "Factitious disorder"
+  ],
+  "Personality Disorders": [
+    "Personality disorders"
+  ],
+  "Suicide / Risk": [
+    "Suicide risk assessment"
+  ],
+  "NMS": [
+    "Neuroleptic malignant syndrome"
+  ],
+  "Obstructive Airway": [
+    "Asthma stepwise (GINA)",
+    "COPD exacerbation & GOLD",
+    "Bronchiectasis"
+  ],
+  "Occupational / Environmental": [
+    "Hypersensitivity pneumonitis",
+    "Pneumoconioses",
+    "Occupational asthma",
+    "High-altitude illness",
+    "CO poisoning"
+  ],
+  "Restrictive (Non-ILD)": [
+    "Obesity hypoventilation",
+    "Chest wall disorders",
+    "Neuromuscular respiratory failure"
+  ],
+  "Interstitial Lung Disease": [
+    "IPF & antifibrotics",
+    "Sarcoidosis",
+    "Radiation pneumonitis",
+    "Drug-induced ILD",
+    "Connective tissue ILD",
+    "Eosinophilic pneumonia",
+    "Anti-GBM"
+  ],
+  "Pulmonary Vascular": [
+    "PE: dx & treatment",
+    "Pulmonary hypertension",
+    "Cor pulmonale",
+    "Hepatopulmonary syndrome"
+  ],
+  "Pleural": [
+    "Pleural effusion: Light's criteria",
+    "Empyema",
+    "Pneumothorax"
+  ],
+  "Lower Respiratory Infections": [
+    "CAP: outpatient vs inpatient",
+    "HAP/VAP",
+    "Lung abscess",
+    "TB: dx & RIPE"
+  ],
+  "Bronchiectasis": [
+    "Bronchiectasis"
+  ],
+  "Congenital Lung": [
+    "Cystic fibrosis",
+    "Alpha-1 antitrypsin deficiency"
+  ],
+  "ARDS": [
+    "ARDS & lung-protective ventilation",
+    "Fat embolism",
+    "TRALI"
+  ],
+  "Sleep Medicine": [
+    "OSA",
+    "Obesity hypoventilation",
+    "Insomnia",
+    "Parasomnia"
+  ],
+  "Ventilator Management": [
+    "Mechanical ventilation principles"
+  ],
+  "Pulm in HIV": [
+    "Pulmonary complications of HIV"
+  ],
+  "Common Symptoms": [
+    "Cough workup",
+    "Dyspnea workup",
+    "Hemoptysis"
+  ],
+  "Solitary Nodule": [
+    "Solitary pulmonary nodule"
+  ],
+  "Crystal Arthropathy": [
+    "Gout: acute & chronic",
+    "Pseudogout (CPPD)",
+    "Hydroxyapatite disease"
+  ],
+  "Regional MSK": [
+    "Back pain",
+    "Shoulder syndromes",
+    "Elbow syndromes",
+    "Wrist/hand syndromes",
+    "Hip & pelvic pain",
+    "Knee syndromes",
+    "Foot & ankle syndromes",
+    "Bursitis"
+  ],
+  "Spondyloarthropathies": [
+    "Ankylosing spondylitis",
+    "Reactive arthritis",
+    "Psoriatic arthritis",
+    "IBD-associated arthritis"
+  ],
+  "Rheumatoid Arthritis": [
+    "RA: skeletal disease",
+    "RA systemic manifestations",
+    "DMARDs & biologics"
+  ],
+  "SLE": [
+    "SLE clinical presentation",
+    "Lupus nephritis",
+    "Discoid lupus",
+    "Drug-induced lupus"
+  ],
+  "Systemic Sclerosis": [
+    "Diffuse scleroderma",
+    "CREST",
+    "Scleroderma ILD",
+    "Raynaud phenomenon"
+  ],
+  "Vasculitis": [
+    "Polyarteritis nodosa",
+    "EGPA",
+    "Leukocytoclastic vasculitis",
+    "Large-vessel vasculitis (GCA, Takayasu)",
+    "ANCA-associated vasculitis",
+    "IgA vasculitis"
+  ],
+  "Other Rheum": [
+    "Polymyositis & dermatomyositis",
+    "Relapsing polychondritis",
+    "Behçet disease",
+    "Sjögren syndrome",
+    "Fibromyalgia",
+    "Adult Still disease",
+    "Marfan & Ehlers-Danlos"
+  ],
+  "Infectious Arthritis": [
+    "Septic arthritis"
+  ],
+  "Bone Disease": [
+    "Hyperparathyroidism",
+    "Paget disease of bone",
+    "Avascular necrosis",
+    "Osteogenesis imperfecta"
+  ],
+  "Osteoarthritis": [
+    "Osteoarthritis"
+  ],
+  "Sports Injuries": [
+    "Sports injuries & trauma"
+  ],
+  "Other Specific": [
+    "Charcot-Marie-Tooth",
+    "Mixed connective tissue disease"
+  ],
+  "Cardiovascular": [
+    "heart",
+    "cardiac",
+    "cardio",
+    "hf ",
+    "hfref",
+    "hfpef",
+    "acs",
+    "stemi",
+    "nstemi",
+    "atrial fib",
+    "af ",
+    "afib",
+    "valve",
+    "valvular",
+    "endocarditis",
+    "syncope",
+    "hypertension",
+    "htn",
+    "blood pressure",
+    "dyslipidemia",
+    "cholesterol",
+    "statin",
+    "anticoagul",
+    "warfarin",
+    "doac",
+    "chads"
+  ],
+  "Pulmonary": [
+    "copd",
+    "asthma",
+    "lung",
+    "pulmonary",
+    "pneumonia",
+    "cap ",
+    "hap ",
+    "vap",
+    "ards",
+    "pleural",
+    "pe ",
+    "pulmonary embolism",
+    "ild",
+    "ipf",
+    "pulmonary hypertension",
+    "oxygen",
+    "ventilat",
+    "intubat",
+    "bronch"
+  ],
+  "GI/Hepatology": [
+    "liver",
+    "hepat",
+    "cirrhosis",
+    "varices",
+    "ascites",
+    "nafld",
+    "masld",
+    "nash",
+    "mash",
+    "gi bleed",
+    "ibd",
+    "crohn",
+    "colitis",
+    "c diff",
+    "cdiff",
+    "pancreat",
+    "gi ",
+    "gastro",
+    "esophag",
+    "celiac",
+    "barrett"
+  ],
+  "Endocrinology": [
+    "diabet",
+    "dka",
+    "hhs",
+    "insulin",
+    "a1c",
+    "thyroid",
+    "hypothyroid",
+    "hyperthyroid",
+    "adrenal",
+    "cortisol",
+    "addison",
+    "cushing",
+    "pheochrom",
+    "calcium",
+    "hypercalcemia",
+    "pth",
+    "osteoporosis",
+    "pituitary",
+    "prolactin"
+  ],
+  "ID": [
+    "infect",
+    "sepsis",
+    "septic",
+    "hiv",
+    "aids",
+    "antibiotic",
+    "meningitis",
+    "tuberculosis",
+    "tb ",
+    "ripe",
+    "mrsa",
+    "vre",
+    "uti",
+    "endocarditis",
+    "pneumonia",
+    "fever",
+    "neutropenic"
+  ],
+  "Heme/Onc": [
+    "anemia",
+    "iron",
+    "b12",
+    "folate",
+    "sickle",
+    "thalassemia",
+    "ttp",
+    "hus",
+    "dic",
+    "platelet",
+    "thrombocytopenia",
+    "hit",
+    "dvt",
+    "vte",
+    "anticoagul",
+    "lymphoma",
+    "leukemia",
+    "myeloma",
+    "oncolog",
+    "cancer",
+    "malignancy",
+    "febrile neutropenia"
+  ],
+  "Rheumatology": [
+    "rheumat",
+    "arthritis",
+    "lupus",
+    "sle",
+    "gout",
+    "vasculitis",
+    "anca",
+    "scleroderma",
+    "myositis",
+    "antiphospholipid",
+    "dmard",
+    "biologic",
+    "autoimmune"
+  ],
+  "Neurology": [
+    "stroke",
+    "tpa",
+    "thrombectomy",
+    "seizure",
+    "epilepsy",
+    "headache",
+    "migraine",
+    "guillain",
+    "myasthenia",
+    "ms ",
+    "multiple sclerosis",
+    "neuropathy",
+    "parkinson",
+    "dementia"
+  ],
+  "Critical Care": [
+    "icu",
+    "critical care",
+    "ventilat",
+    "ards",
+    "sepsis",
+    "septic shock",
+    "vasopressor",
+    "norepinephrine",
+    "intubat",
+    "prone",
+    "sedation",
+    "delirium",
+    "rass",
+    "crrt"
+  ],
+  "Allergy/Immuno": [
+    "anaphylax",
+    "allerg",
+    "drug allergy",
+    "penicillin allergy",
+    "urticaria",
+    "angioedema",
+    "immunodefic",
+    "ivig",
+    "hereditary angioedema",
+    "mast cell"
+  ],
+  "Dermatology": [
+    "psoriasis",
+    "atopic dermatitis",
+    "eczema",
+    "sjs",
+    "tens",
+    "stevens",
+    "cellulit",
+    "erysipelas",
+    "melanoma",
+    "skin cancer",
+    "acne",
+    "pemphig",
+    "rash",
+    "dermatitis"
+  ],
+  "Psychiatry": [
+    "depress",
+    "anxiety",
+    "bipolar",
+    "schizophren",
+    "substance use",
+    "alcohol use",
+    "opioid use",
+    "mat ",
+    "buprenorphine",
+    "naltrexone",
+    "methadone",
+    "ssri",
+    "snri",
+    "ect",
+    "suicide",
+    "mania"
+  ],
+  "Geriatrics": [
+    "geriatr",
+    "elderly",
+    "frail",
+    "fall",
+    "beers",
+    "polypharmacy",
+    "dementia",
+    "alzheimer",
+    "delirium",
+    "pressure injury",
+    "decubitus",
+    "goals of care",
+    "advance directive",
+    "frailty"
+  ],
+  "Women's Health": [
+    "contracept",
+    "menopaus",
+    "hrt",
+    "menstrua",
+    "pregnan",
+    "cervical cancer",
+    "breast cancer screen",
+    "ocp",
+    "preeclamp",
+    "postpartum",
+    "gestational"
+  ],
+  "Oncology": [
+    "cancer",
+    "tumor",
+    "oncolog",
+    "malignan",
+    "chemo",
+    "immunotherapy",
+    "metastasis",
+    "metastatic",
+    "carcinoma",
+    "lymphoma",
+    "leukemia",
+    "myeloma",
+    "sarcoma",
+    "lung cancer",
+    "breast cancer",
+    "colorectal",
+    "prostate cancer"
+  ],
+  "Palliative": [
+    "palliat",
+    "hospice",
+    "end of life",
+    "cancer pain",
+    "opioid titration",
+    "goals of care",
+    "comfort care",
+    "dnr",
+    "dni"
+  ]
+}

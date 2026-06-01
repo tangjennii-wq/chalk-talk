@@ -116,5 +116,5 @@ If spend gets out of hand, drop `DAILY_LIMIT_PER_IP` to 3 or set up an Anthropic
 ## Security notes
 
 - The proxy enforces an origin allowlist, so only requests from your deployed site will succeed. Someone running locally could spoof the `Origin` header — for the threat model of "med-ed teaching tool," this is fine, but be aware.
-- The proxy whitelists models (`claude-sonnet-4`, `claude-haiku-4-5`) and tools (only built-in `web_search`). An abuser can't sneak in Opus or arbitrary tool calls.
+- The proxy whitelists specific Claude models and tools (only built-in `web_search`). An abuser can't sneak in arbitrary models or tool calls.
 - Rate limit is per-IP-per-day. A determined abuser on a residential ISP will cycle IPs every few hours. For higher protection, add a Cloudflare Turnstile challenge — out of scope here.
