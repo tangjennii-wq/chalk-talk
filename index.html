@@ -4120,14 +4120,23 @@ function renderLibCard(x){
   var isBQ = (x._kind==="boards");
   var isSample = (x._source==="sample");
   var dateStr = x.savedAt ? new Date(x.savedAt).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "";
+  var visuals = (t.savedVisuals && t.savedVisuals.length) ? t.savedVisuals : null;
   var h = '<div style="background:#fff;border:1px solid var(--line);border-left:4px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:12px;padding:14px 16px;margin-bottom:10px">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:var(--plum-deep);line-height:1.3">'+esc(t.title||x.topic||"Untitled")+'</div>';
   if(t.subtitle) h += '<div style="font-size:12px;color:var(--ink-muted);margin-top:2px">'+esc(t.subtitle)+'</div>';
   h += '<div style="display:flex;gap:6px;margin-top:6px;font-size:11px;color:var(--ink-muted);flex-wrap:wrap"><span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:2px 8px;border-radius:10px;font-weight:600">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;border:1px solid #f0d8a0;padding:2px 8px;border-radius:10px;font-weight:600">✨ Sample</span>';
   if(isSample && x._hasBoth) h += '<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid #d8cfe6;padding:2px 8px;border-radius:10px;font-weight:600">Concise · Detailed</span>';
+  if(visuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid #d8cfe6;padding:2px 8px;border-radius:10px;font-weight:600">🖼 '+visuals.length+' image'+(visuals.length===1?'':'s')+'</span>';
   if(dateStr) h += '<span>'+dateStr+'</span>';
-  h += '</div></div></div>';
+  h += '</div></div>';
+  // Right-side: thumbnail of first saved visual (prominent on Visuals tab, smaller elsewhere)
+  if(visuals){
+    var isVisualsTab = (S.libTab === "visuals");
+    var thumbSize = isVisualsTab ? 72 : 48;
+    h += '<img src="data:image/png;base64,'+visuals[0].imgB64+'" alt="" style="width:'+thumbSize+'px;height:'+thumbSize+'px;object-fit:cover;border-radius:8px;border:1px solid var(--line);flex-shrink:0">';
+  }
+  h += '</div>';
   // Action row
   h += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';
   if(isSample){
@@ -4934,11 +4943,17 @@ function getGeminiKey(){
 function getOpenAIKey(){
   var k=localStorage.getItem("openai_api_key");
   if(!k){
-    k=prompt("Enter your OpenAI API key (stored locally in your browser only \u2014 never sent anywhere except OpenAI).\n\nGet one at: https://platform.openai.com/api-keys\n\nUsed for ChatGPT image generation (gpt-image-2, ~$0.04-0.17 per image).");
+    k=prompt("Enter your OpenAI API key (stored locally in your browser only \u2014 never sent anywhere except OpenAI).\n\nGet one at: https://platform.openai.com/api-keys\n\nUsed for ChatGPT image generation (gpt-image-2).");
     if(k&&k.trim()){localStorage.setItem("openai_api_key",k.trim());return k.trim()}
     return null;
   }
   return k;
+}
+function getImageProxyURL(){
+  var url = "";
+  if (PROXY_CONFIG.enabled && PROXY_CONFIG.url && !S.useByok) url = PROXY_CONFIG.url;
+  else if (RAG_CONFIG.enabled && RAG_CONFIG.url) url = RAG_CONFIG.url;
+  return url ? url.replace(/\/$/, "") : "";
 }
 async function genDiagram(){
   if(!S.talk||S.dgBusy)return;
@@ -4970,14 +4985,19 @@ async function genDiagram(){
   }
 
   if(S.dgMode==="openai"){
-    // ChatGPT image generation via OpenAI gpt-image-2
-    var oaKey=getOpenAIKey();
-    if(!oaKey){S.dgErr="OpenAI API key required (or switch to Gemini / Simple Diagram)";S.dgBusy=false;render();return}
+    // ChatGPT image generation via the Cloudflare proxy. Direct browser calls to
+    // OpenAI commonly fail before returning an API response.
+    var imageProxy=getImageProxyURL();
+    var oaKey=imageProxy ? null : getOpenAIKey();
+    if(!imageProxy&&!oaKey){S.dgErr="OpenAI API key required (or switch to Gemini)";S.dgBusy=false;render();return}
     try{
       var oaPrompt=buildImagePrompt(sm);
-      var oaRes=await fetch("https://api.openai.com/v1/images/generations",{
+      var oaEndpoint=imageProxy ? imageProxy + "/v1/images/generations" : "https://api.openai.com/v1/images/generations";
+      var oaHeaders={"Content-Type":"application/json"};
+      if(oaKey)oaHeaders.Authorization="Bearer "+oaKey;
+      var oaRes=await fetch(oaEndpoint,{
         method:"POST",
-        headers:{"Content-Type":"application/json","Authorization":"Bearer "+oaKey},
+        headers:oaHeaders,
         body:JSON.stringify({
           model:"gpt-image-2",
           prompt:oaPrompt,
@@ -4998,7 +5018,11 @@ async function genDiagram(){
       var oaImgB64=oaData.data&&oaData.data[0]&&oaData.data[0].b64_json;
       if(!oaImgB64)throw new Error("No image returned from OpenAI.");
       S.dg={imgB64:oaImgB64};
-    }catch(e){S.dgErr="Failed: "+e.message}
+    }catch(e){
+      var msg=e&&e.message?e.message:"unknown error";
+      if(/failed to fetch|networkerror|load failed/i.test(msg))msg="Could not reach OpenAI from the browser. Use the deployed proxy or switch to Gemini.";
+      S.dgErr="Failed: "+msg
+    }
     S.dgBusy=false;render();
     return;
   }
@@ -5079,7 +5103,9 @@ async function weaveRevision(userMsg){
 
 async function sendChat(){
   if(!S.chatIn.trim()||S.chatBusy||S.loading)return;
-  var msg=S.chatIn.trim();S.chatIn="";S.reviseIn="";S._composerOpen=false;
+  var msg=S.chatIn.trim();S.chatIn="";S.reviseIn="";
+  // Keep the composer OPEN during the refine so the user can see the working state.
+  // It auto-closes only after success or error (see end of weave-path below).
   if(!S.talk){
     // No talk loaded \u2014 interpret the input as a topic.
     S.topic=msg;
@@ -5110,6 +5136,7 @@ async function sendChat(){
       // Don't reset section index / mode \u2014 user stays where they were in the talk.
       S.dg = null; S.dgErr = ""; S.podScript = ""; // visuals/podcast may need refresh after content change
       S.msgs.push({r:"a",t:"\u2713 Updated \u2014 only the new content was added; everything else preserved. If you'd rather start over, say \"rewrite\" or \"start from scratch\"."});
+      S._composerOpen = false; // auto-collapse on success
     } else {
       S.msgs.push({r:"a",t:"Couldn't parse the update \u2014 try again or say \"rewrite\" for a full regenerate."});
     }
@@ -5506,16 +5533,20 @@ function renderSaved(){
       _spec:inferSpecialty(e.topic, et, null),
       topic:e.topic||"",talk:et,savedAt:e.savedAt,specialty:"",generated_at:""});
   }
-  // Tab filter
+  // Mark items that have saved visuals (for the Visuals tab + thumbnail rendering)
+  all.forEach(function(x){ x._hasVisuals = !!(x.talk && x.talk.savedVisuals && x.talk.savedVisuals.length); });
+  // Tab filter \u2014 All | Lectures | Boards | Visuals
   var tab=S.libTab||"all";
-  var byTab=(tab==="all")?all:all.filter(function(x){return x._kind===(tab==="boards"?"boards":"lecture")});
+  var byTab = (tab==="all") ? all
+            : (tab==="visuals") ? all.filter(function(x){return x._hasVisuals})
+            : all.filter(function(x){return x._kind === (tab==="boards" ? "boards" : "lecture")});
   // Search filter
   var filtered=byTab;
   if(S.savedSearch.trim()){var q=S.savedSearch.toLowerCase();filtered=byTab.filter(function(x){return(x.topic||"").toLowerCase().indexOf(q)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(q)>=0||(x.specialty||"").toLowerCase().indexOf(q)>=0})}
   // Counts per tab (after search, before tab) \u2014 used in the tab pills
   var searchOnly=all;
   if(S.savedSearch.trim()){var q2=S.savedSearch.toLowerCase();searchOnly=all.filter(function(x){return(x.topic||"").toLowerCase().indexOf(q2)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(q2)>=0||(x.specialty||"").toLowerCase().indexOf(q2)>=0})}
-  var cAll=searchOnly.length, cLec=searchOnly.filter(function(x){return x._kind==="lecture"}).length, cBrd=searchOnly.filter(function(x){return x._kind==="boards"}).length;
+  var cAll=searchOnly.length, cLec=searchOnly.filter(function(x){return x._kind==="lecture"}).length, cBrd=searchOnly.filter(function(x){return x._kind==="boards"}).length, cVis=searchOnly.filter(function(x){return x._hasVisuals}).length;
   // Header
   var h='<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px"><button id="savedBack" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:8px 14px;color:#6b6780;font-size:13px;cursor:pointer">\u2190 Back</button><h2 style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:var(--plum-deep);margin:0;flex:1;letter-spacing:-0.01em">\uD83D\uDCDA Library</h2></div>';
   // Tab strip \u2014 All | Lectures | Boards (segmented)
@@ -5524,6 +5555,7 @@ function renderSaved(){
   h+=tabBtn("all","All",cAll);
   h+=tabBtn("lectures","\uD83C\uDF93 Lectures",cLec);
   h+=tabBtn("boards","\uD83D\uDCCB Boards",cBrd);
+  h+=tabBtn("visuals","\uD83D\uDDBC Visuals",cVis);
   h+='</div>';
   // Loading state (cloud)
   if(S.user && !S.cloudLoaded){
@@ -5946,8 +5978,30 @@ function renderMain(){
       // Guard: if S.dgMode is stuck on "svg" from a previous session, fall back to "ai".
       if(S.dgMode==="svg")S.dgMode="ai";
       h+='<div style="display:flex;gap:5px;margin-bottom:10px"><button class="dgModeBtn" data-m="ai" style="flex:1;background:'+(S.dgMode==="ai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="ai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="ai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">🎨 Gemini (Nano Banana Pro)</button><button class="dgModeBtn" data-m="openai" style="flex:1;background:'+(S.dgMode==="openai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="openai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="openai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">💬 ChatGPT (gpt-image-2)</button></div>';
+      // Inline notice when neither key is present — tells user they need to add one to use this tab.
+      var _hasGeminiKey = !!localStorage.getItem("gemini_api_key");
+      var _hasOpenAIKey = !!(localStorage.getItem("openai_api_key") || getImageProxyURL());
+      var _needGem = (S.dgMode==="ai" && !_hasGeminiKey);
+      var _needOA  = (S.dgMode==="openai" && !_hasOpenAIKey);
+      if(_needGem || _needOA){
+        var _which = _needGem ? "Gemini" : "OpenAI";
+        var _url   = _needGem ? "https://aistudio.google.com/apikey" : "https://platform.openai.com/api-keys";
+        h+='<div style="background:var(--lavender-bg);border:1px solid #d8cfe6;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11.5px;color:var(--ink);line-height:1.45"><div style="font-weight:600;color:var(--plum-deep);margin-bottom:3px">🔑 '+_which+' API key needed</div>Visual generation uses the '+_which+' image model. You will be prompted to paste a key when you tap Generate. <a href="'+_url+'" target="_blank" rel="noopener" style="color:var(--plum);font-weight:600">Get a free '+_which+' key →</a></div>';
+      }
       if(S.dgErr)h+='<div style="color:#c0392b;font-size:11.5px;margin-bottom:10px">'+esc(S.dgErr)+'</div>';
-      if(S.dg&&S.dg.imgB64){h+='<div style="background:#fff;border-radius:10px;padding:6px;border:1px solid var(--line);margin-bottom:10px;cursor:zoom-in" id="lightboxOpenBtn"><img src="data:image/png;base64,'+S.dg.imgB64+'" style="width:100%;height:auto;display:block;border-radius:7px"/></div>';h+='<button id="lightboxOpenBtn2" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:6px">🔍 Open full image</button><div style="display:flex;gap:6px;margin-bottom:6px"><button id="dgDownloadBtn" style="flex:1;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">⬇ Download PNG</button><button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="flex:1;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">↻ Regenerate</button></div>';}
+      if(S.dg&&S.dg.imgB64){
+        h+='<div style="background:#fff;border-radius:10px;padding:6px;border:1px solid var(--line);margin-bottom:10px;cursor:zoom-in" id="lightboxOpenBtn"><img src="data:image/png;base64,'+S.dg.imgB64+'" style="width:100%;height:auto;display:block;border-radius:7px"/></div>';
+        h+='<button id="lightboxOpenBtn2" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:6px">🔍 Open full image</button>';
+        // Check if THIS exact image is already saved (compare by first 60 chars of base64 — unique enough)
+        var _savedVis = (S.talk && S.talk.savedVisuals) || [];
+        var _imgKey = S.dg.imgB64.slice(0, 60);
+        var _alreadySaved = _savedVis.some(function(v){return v.imgB64 && v.imgB64.slice(0,60) === _imgKey});
+        h+='<div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">';
+        h+='  <button id="dgSaveImgBtn" '+(_alreadySaved?'disabled':'')+' style="flex:1;min-width:110px;background:'+(_alreadySaved?'var(--lavender-bg)':'linear-gradient(135deg,var(--plum-rich),var(--plum-deep))')+';border:none;border-radius:10px;padding:11px;color:'+(_alreadySaved?'var(--plum)':'#fff')+';font-size:13px;font-weight:600;cursor:'+(_alreadySaved?'default':'pointer')+'">'+(_alreadySaved?'★ Saved to library':'★ Save to library')+'</button>';
+        h+='  <button id="dgDownloadBtn" style="flex:1;min-width:110px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">⬇ Download PNG</button>';
+        h+='  <button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="flex:1;min-width:110px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">↻ Regenerate</button>';
+        h+='</div>';
+      }
       else{h+='<button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:13px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer">'+(S.dgBusy?"Generating…":"✨ Generate Visual")+'</button>'}
       h+='</div>';
     }
@@ -5985,18 +6039,27 @@ function renderMain(){
     }
 
     // === Floating chat-bubble composer (lower-right). Collapsed pill by default; tap to expand. ===
-    h+='<div class="composer-bubble '+(S._composerOpen?"open":"closed")+'">';
-    h+='  <button class="composer-pill" id="composerOpenBtn" aria-label="Ask or refine this lesson">💬 Ask or refine</button>';
+    // When a refine is in-flight (chatBusy = weave path, or loading = full regen), force the panel
+    // open and show a working state so the user gets visible feedback.
+    var _refineBusy = !!(S.chatBusy || (S.loading && S.talk));
+    var _composerOpenNow = _refineBusy || S._composerOpen;
+    h+='<div class="composer-bubble '+(_composerOpenNow?"open":"closed")+'">';
+    h+='  <button class="composer-pill" id="composerOpenBtn" aria-label="Ask or refine this lesson">'+(_refineBusy?'<span class="spinner" style="margin-right:6px"></span>Updating…':'💬 Ask or refine')+'</button>';
     h+='  <div class="composer-panel">';
     h+='    <div class="composer-panel-head">';
-    h+='      <span class="cp-title">Refine this lesson</span>';
-    h+='      <button class="cp-close" id="composerCloseBtn" aria-label="Close">×</button>';
+    h+='      <span class="cp-title">'+(_refineBusy?'Updating lesson…':'Refine this lesson')+'</span>';
+    h+='      <button class="cp-close" id="composerCloseBtn" aria-label="Close" '+(_refineBusy?'disabled style="opacity:.4;cursor:wait"':'')+'>×</button>';
     h+='    </div>';
-    h+='    <div class="composer-panel-row">';
-    h+='      <button class="ref-btn" id="composerRefBtn" title="Upload reference"><span style="font-size:14px">+</span> Reference</button>';
-    h+='      <input class="revise-input" id="reviseIn" value="'+esc(S.reviseIn||"")+'" placeholder="Ask to revise lesson…">';
-    h+='      <button class="send-btn" id="reviseSend" '+(!String(S.reviseIn||"").trim()?"disabled":"")+'>→</button>';
-    h+='    </div>';
+    if(_refineBusy){
+      // Busy state: replace the input row with a clear progress message + spinner
+      h+='    <div style="display:flex;align-items:center;gap:10px;padding:10px 4px;font-size:12.5px;color:var(--plum);font-weight:500"><span class="spinner"></span><span>'+(S.loading?'Regenerating lesson… '+(S.loadSec||0)+'s':'Weaving in your update… (preserving existing content)')+'</span></div>';
+    } else {
+      h+='    <div class="composer-panel-row">';
+      h+='      <button class="ref-btn" id="composerRefBtn" title="Upload reference"><span style="font-size:14px">+</span> Reference</button>';
+      h+='      <input class="revise-input" id="reviseIn" value="'+esc(S.reviseIn||"")+'" placeholder="Ask to revise lesson…">';
+      h+='      <button class="send-btn" id="reviseSend" '+(!String(S.reviseIn||"").trim()?"disabled":"")+'>→</button>';
+      h+='    </div>';
+    }
     h+='  </div>';
     h+='</div>';
     h+='<input type="file" id="composerFileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none">';
@@ -6251,6 +6314,22 @@ function bindMain(){
 
   // ─── Visual / diagram generator ────────────────────────────────────────
   var db=document.getElementById("dgBtn");if(db)db.onclick=genDiagram;
+  // Save the current visual to the lesson record + library. Persists with the talk.
+  var dsi=document.getElementById("dgSaveImgBtn");if(dsi)dsi.onclick=function(){
+    if(!S.talk||!S.dg||!S.dg.imgB64)return;
+    S.talk.savedVisuals = S.talk.savedVisuals || [];
+    S.talk.savedVisuals.push({
+      imgB64: S.dg.imgB64,
+      mode: S.dgMode,                 // "ai" (Gemini) or "openai"
+      savedAt: new Date().toISOString(),
+      label: (S.talk.title || S.topic || "Visual")
+    });
+    // Persist by calling the existing saveCurrentTalk path (handles cloud + local).
+    if(typeof saveCurrentTalk === "function") saveCurrentTalk();
+    S.savedFlash = "★ Image saved to library";
+    render();
+    setTimeout(function(){S.savedFlash=""; render()}, 2200);
+  };
   // Download the generated raster image (Gemini Nano Banana Pro or OpenAI gpt-image-2) as PNG.
   var ddb=document.getElementById("dgDownloadBtn");if(ddb)ddb.onclick=function(){
     if(!S.dg||!S.dg.imgB64)return;

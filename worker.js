@@ -23,6 +23,9 @@ const EMBEDDING_MODEL = "text-embedding-3-small";
 const EMBEDDING_DIM = 1536;
 const RETRIEVE_DEFAULT_MATCH_COUNT = 12;
 const RETRIEVE_MAX_MATCH_COUNT = 50;
+const ALLOWED_IMAGE_MODELS = ["gpt-image-2", "gpt-image-1.5", "gpt-image-1", "gpt-image-1-mini"];
+const ALLOWED_IMAGE_SIZES = ["1024x1024", "1024x1536", "1536x1024", "auto"];
+const ALLOWED_IMAGE_QUALITIES = ["low", "medium", "high", "auto"];
 
 export default {
   async fetch(request, env, ctx) {
@@ -48,6 +51,10 @@ export default {
 
     if (request.method === "POST" && url.pathname === "/retrieve") {
       return handleRetrieve(request, env, origin);
+    }
+
+    if (request.method === "POST" && url.pathname === "/v1/images/generations") {
+      return handleImageGeneration(request, env, ctx, origin);
     }
 
     if (request.method !== "POST" || url.pathname !== "/v1/messages")
@@ -160,6 +167,68 @@ async function handleRetrieve(request, env, origin) {
   }
 
   return jsonOK({ query, count: chunks.length, chunks }, origin);
+}
+
+async function handleImageGeneration(request, env, ctx, origin) {
+  if (!env.OPENAI_API_KEY)
+    return jsonError(503, "openai_not_configured", "OpenAI image generation is not configured on this proxy.", origin);
+
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const limit = parseInt(env.DAILY_LIMIT_PER_IP || DEFAULT_DAILY_LIMIT);
+  const used = await readDailyCount(env, ip);
+  if (used >= limit)
+    return jsonError(429, "rate_limit_exceeded",
+      `Daily limit reached (${limit} generations/day). Resets at midnight UTC.`,
+      origin, { limit, used, resets_at: midnightUTC() });
+
+  const raw = await request.text();
+  if (raw.length > 40_000)
+    return jsonError(413, "request_too_large", "Image generation request body is too large.", origin);
+
+  let body;
+  try { body = JSON.parse(raw); }
+  catch { return jsonError(400, "invalid_json", "Request body is not valid JSON.", origin); }
+
+  const prompt = (body.prompt || "").toString().trim();
+  if (!prompt || prompt.length < 3)
+    return jsonError(400, "missing_prompt", "`prompt` (string, min 3 chars) is required.", origin);
+  if (prompt.length > 32_000)
+    return jsonError(400, "prompt_too_long", "`prompt` must be ≤32000 chars.", origin);
+
+  const model = ALLOWED_IMAGE_MODELS.includes(body.model) ? body.model : "gpt-image-1.5";
+  const size = ALLOWED_IMAGE_SIZES.includes(body.size) ? body.size : "1536x1024";
+  const quality = ALLOWED_IMAGE_QUALITIES.includes(body.quality) ? body.quality : "high";
+  const n = Math.max(1, Math.min(parseInt(body.n) || 1, 1));
+
+  let upstream;
+  try {
+    upstream = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ model, prompt, size, quality, n }),
+    });
+  } catch (err) {
+    return jsonError(502, "upstream_unreachable", "Could not reach OpenAI Images API: " + err.message, origin);
+  }
+
+  if (upstream.ok) ctx.waitUntil(incrementDailyCount(env, ip));
+
+  const text = await upstream.text();
+  return new Response(text, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: {
+      "Content-Type": upstream.headers.get("Content-Type") || "application/json",
+      "Access-Control-Allow-Origin": origin || "*",
+      "Vary": "Origin",
+      "X-RateLimit-Limit": String(limit),
+      "X-RateLimit-Remaining": String(Math.max(0, limit - used - (upstream.ok ? 1 : 0))),
+      "X-RateLimit-Reset": midnightUTC(),
+    },
+  });
 }
 
 async function embedQuery(openaiKey, text) {
