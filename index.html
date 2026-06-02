@@ -4949,15 +4949,16 @@ async function genDiagram(){
   if(S.talk.teaching_points)parts.push("Teaching: "+S.talk.teaching_points.slice(0,3).join("; "));
   var sm=parts.join(". ");
 
-  if(S.dgMode==="svg"){
-    // First, check for a canonical template
+  // Flowchart/SVG mode REMOVED — autoLayout produced overlapping/clipped output. Use Gemini or ChatGPT for raster visuals.
+  // The branch below is now unreachable (UI no longer exposes "svg"); kept inside this guard so a stale
+  // localStorage/preference can't trigger it — the render-side guard also flips dgMode back to "ai".
+  if(false && S.dgMode==="svg"){
     var tpl=findDiagramTemplate(S.topic);
     if(tpl){
       S.dg={template:tpl};
       S.dgBusy=false;render();
       return;
     }
-    // No template match — fall back to generative SVG flowchart via Claude (no API key needed)
     try{
       var txt=await callAPI('Generate JSON for a CLEAN MEDICAL FLOWCHART in the style of Pathoma, Robbins Pathology, or a USMLE board review figure. NOT a beautiful illustration \u2014 a tight clinical-reasoning diagram with crisp labeled boxes and arrows.\n\nFormat: {"nodes":[{"id":"n1","label":"Concise label","type":"title"}],"arrows":[{"from":"n1","to":"n2","label":"optional edge label"}]}\n\nCOMMIT TO FLOWCHART AESTHETIC:\n- ONE title node at top = the key concept being taught (the takeaway, not the disease name)\n- Then a hierarchical/decision-tree structure: mechanism \u2192 consequence \u2192 clinical finding \u2192 workup \u2192 treatment\n- 7-9 nodes total (max 10). Fewer is better than crammed.\n- Labels SHORT: 2-5 words each. NEVER a full sentence. If you need a sentence, break it into 2 nodes.\n- Use arrow labels for relationships: "leads to", "blocks", "\u2191", "\u2193", "if positive", "if negative", "first-line", "if refractory" \u2014 make causality explicit.\n- Branching is GOOD when the topic has decision points (e.g. "ferritin >300?" \u2192 Yes branch / No branch). Use it.\n- Node types pick the right one: "title" (the main concept, EXACTLY 1), "accent" (key transitions/turning points), "formula" (equations, scoring criteria, named ratios), "warning" (red flags, contraindications, pitfalls \u2014 use red/orange), "box" (default for everything else).\n- NO redundant nodes. NO decorative nodes. Every node earns its place by adding a real teaching point or decision.\n\nNo x/y coordinates \u2014 layout is computed automatically. Output ONLY the JSON, no commentary.',"Topic: "+sm,1200);
       var p=JSON.parse(fixJSON(txt));
@@ -5041,26 +5042,81 @@ async function genDiagram(){
   S.dgBusy=false;render();
 }
 
+// Detect when the user wants a RADICAL rewrite (full regenerate) vs. a normal additive refine.
+// Default is additive \u2014 only trigger a full regen when they clearly say so. Keeps the user's good content
+// intact when they're just adding context (e.g. "include EGPA" or "add a pregnancy section").
+function isRadicalRevision(msg){
+  var m = String(msg||"").toLowerCase();
+  return /\b(rewrite|redo|start over|from scratch|completely (?:different|new|change)|trash (?:it|this)|throw (?:it|this) out|wrong angle|totally different|new approach|different approach|scrap (?:it|this)|change everything|regenerate)\b/.test(m);
+}
+
+// Additive refinement \u2014 pass the EXISTING talk JSON to Claude + the user's add/change request.
+// Explicitly tells the model: preserve sections, pearls, citations, references. ONLY add new content
+// (new sections, new bullets, new references) unless the user explicitly asked to remove something.
+async function weaveRevision(userMsg){
+  if(!S.talk) return;
+  var existingJson = JSON.stringify(S.talk);
+  var sys = "You are refining an existing chalk talk for an internal medicine educator. " +
+    "The user wants to ADD content, not start over. " +
+    "PRESERVATION RULES (strict):\n" +
+    "- KEEP all existing sections, teaching pearls, board tips, summary points, visual memory card quadrants, and references that are already working.\n" +
+    "- KEEP the title and subtitle unless the user's request directly contradicts them.\n" +
+    "- KEEP the citation IDs as they are; if you add new references, assign them new IDs continuing from the existing list.\n" +
+    "ADDITION RULES:\n" +
+    "- You MAY add new sections, new bullets to existing sections, new references, new teaching pearls \u2014 whatever the user asked for.\n" +
+    "- You MAY expand or clarify existing content when the user's request demands it (e.g. 'go deeper on physiology').\n" +
+    "- You MUST NOT delete or rewrite working content unless the user EXPLICITLY asked you to remove or replace something.\n" +
+    "- If the user asks to add a topic that overlaps with an existing section, weave it in (add bullets, extend the section heading) rather than creating a duplicate section.\n" +
+    "- If the user uploaded reference PDFs/notes (in the context below), use them as PRIMARY sources for the additions and add them to the references array.\n" +
+    "Return the COMPLETE updated talk JSON in the EXACT same schema. ONLY JSON, no commentary, no markdown fences.";
+  var content = "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (preserve this, weave in additions):\n" + existingJson;
+  var txt = await callAPI(sys, content, 8192);
+  var parsed = JSON.parse(fixJSON(txt));
+  parsed = deepCleanCitations(parsed);
+  if(typeof pruneFakeReferences === "function") parsed = pruneFakeReferences(parsed);
+  return parsed;
+}
+
 async function sendChat(){
   if(!S.chatIn.trim()||S.chatBusy||S.loading)return;
-  var msg=S.chatIn.trim();S.chatIn="";S.reviseIn="";
-  if(S.talk){
-    // User is asking for a revision \u2014 append to refine-context and trigger a FULL regenerate
-    // (RAG retrieval + peer review + dual citation pipeline) instead of a quick JSON patch.
-    // This way new info (e.g. "add EGPA", "include pregnancy considerations") flows through
-    // the same evidence-grounded path as the original generation.
-    S.refineContext = (S.refineContext && S.refineContext.trim() ? S.refineContext.trim() + "\n\nAlso: " : "") + msg;
-    S.msgs.push({r:"u",t:msg});
-    S.msgs.push({r:"a",t:"Regenerating the lesson with your update\u2026"});
-    S._composerOpen = false; // collapse the floating bubble after submit
-    generate(); // handles S.loading + render() internally
-  } else {
-    // No talk loaded yet \u2014 interpret the input as a topic.
+  var msg=S.chatIn.trim();S.chatIn="";S.reviseIn="";S._composerOpen=false;
+  if(!S.talk){
+    // No talk loaded \u2014 interpret the input as a topic.
     S.topic=msg;
     S.msgs.push({r:"u",t:msg});
     S.msgs.push({r:"a",t:'Topic set to "'+msg+'". Tap Generate to start.'});
     render();
+    return;
   }
+
+  S.msgs.push({r:"u",t:msg});
+  if(isRadicalRevision(msg)){
+    // User signalled they want a fresh take \u2014 full regenerate path (RAG + peer review + everything).
+    S.refineContext = (S.refineContext && S.refineContext.trim() ? S.refineContext.trim() + "\n\nAlso: " : "") + msg;
+    S.msgs.push({r:"a",t:"Regenerating the lesson from scratch with your direction\u2026"});
+    render();
+    generate();
+    return;
+  }
+
+  // Default \u2014 additive weave. Keep what's working, add the requested content.
+  S.chatBusy=true;
+  S.msgs.push({r:"a",t:"Weaving in your update (preserving the rest of the lesson)\u2026"});
+  render();
+  try{
+    var updated = await weaveRevision(msg);
+    if(updated && (updated.title || updated.question)){
+      S.talk = updated;
+      // Don't reset section index / mode \u2014 user stays where they were in the talk.
+      S.dg = null; S.dgErr = ""; S.podScript = ""; // visuals/podcast may need refresh after content change
+      S.msgs.push({r:"a",t:"\u2713 Updated \u2014 only the new content was added; everything else preserved. If you'd rather start over, say \"rewrite\" or \"start from scratch\"."});
+    } else {
+      S.msgs.push({r:"a",t:"Couldn't parse the update \u2014 try again or say \"rewrite\" for a full regenerate."});
+    }
+  } catch(e){
+    S.msgs.push({r:"a",t:"Refine failed: "+e.message+". Try \"rewrite\" if you want a full regenerate."});
+  }
+  S.chatBusy=false;render();
 }
 
 async function genPodcast(){
@@ -5892,8 +5948,6 @@ function renderMain(){
       h+='<div style="display:flex;gap:5px;margin-bottom:10px"><button class="dgModeBtn" data-m="ai" style="flex:1;background:'+(S.dgMode==="ai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="ai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="ai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">🎨 Gemini (Nano Banana Pro)</button><button class="dgModeBtn" data-m="openai" style="flex:1;background:'+(S.dgMode==="openai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="openai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="openai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">💬 ChatGPT (gpt-image-2)</button></div>';
       if(S.dgErr)h+='<div style="color:#c0392b;font-size:11.5px;margin-bottom:10px">'+esc(S.dgErr)+'</div>';
       if(S.dg&&S.dg.imgB64){h+='<div style="background:#fff;border-radius:10px;padding:6px;border:1px solid var(--line);margin-bottom:10px;cursor:zoom-in" id="lightboxOpenBtn"><img src="data:image/png;base64,'+S.dg.imgB64+'" style="width:100%;height:auto;display:block;border-radius:7px"/></div>';h+='<button id="lightboxOpenBtn2" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:6px">🔍 Open full image</button><div style="display:flex;gap:6px;margin-bottom:6px"><button id="dgDownloadBtn" style="flex:1;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">⬇ Download PNG</button><button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="flex:1;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">↻ Regenerate</button></div>';}
-      else if(S.dg&&S.dg.svg){h+='<div style="background:var(--ink);border-radius:10px;padding:14px;margin-bottom:10px">'+diagSVG(S.dg.svg)+'</div><div style="display:flex;gap:6px;margin-bottom:6px"><button id="dgDownloadBtn" style="flex:1;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">⬇ Download SVG</button><button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="flex:1;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">↻ Regenerate</button></div>'}
-      else if(S.dg&&S.dg.template){h+='<div style="background:#fff;border-radius:10px;padding:10px;border:1px solid var(--line);margin-bottom:10px">'+S.dg.template.svg+'</div><div style="display:flex;gap:6px;margin-bottom:6px"><button id="dgDownloadBtn" style="flex:1;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">⬇ Download SVG</button><button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="flex:1;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">↻ Regenerate</button></div>'}
       else{h+='<button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:13px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer">'+(S.dgBusy?"Generating…":"✨ Generate Visual")+'</button>'}
       h+='</div>';
     }
@@ -6197,6 +6251,21 @@ function bindMain(){
 
   // ─── Visual / diagram generator ────────────────────────────────────────
   var db=document.getElementById("dgBtn");if(db)db.onclick=genDiagram;
+  // Download the generated raster image (Gemini Nano Banana Pro or OpenAI gpt-image-2) as PNG.
+  var ddb=document.getElementById("dgDownloadBtn");if(ddb)ddb.onclick=function(){
+    if(!S.dg||!S.dg.imgB64)return;
+    try{
+      var bin=atob(S.dg.imgB64);
+      var bytes=new Uint8Array(bin.length);
+      for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+      var blob=new Blob([bytes],{type:"image/png"});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement("a");
+      var slug=((S.talk&&S.talk.title)||S.topic||"chalk-talk-visual").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60);
+      a.href=url;a.download=slug+"-visual.png";a.click();
+      URL.revokeObjectURL(url);
+    }catch(e){alert("Download failed: "+e.message)}
+  };
   document.querySelectorAll(".dgModeBtn").forEach(function(b){b.onclick=function(){if(S.dgMode!==b.dataset.m){S.dgMode=b.dataset.m;S.dg=null;S.dgErr="";render()}}});
   // resetKey/resetClaudeKey handlers deleted — those IDs no longer rendered.
   // ─── Boards-mode answer choices ────────────────────────────────────────
