@@ -4868,7 +4868,13 @@ async function generate(){
         throw new Error("web_search allowed_domains has duplicates: " + _dups.join(", ") + ". Fix the list in index.html before retrying.");
       }
     }
-    var mainModels = [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC];
+    // Model selection by mode — fast path for concise lectures, full quality for detailed/boards.
+    // Concise Lecture: Sonnet first (much faster than Opus, still high quality for shorter output).
+    // Detailed Lecture & Boards: Opus first for depth/accuracy, fall through to Sonnet/Haiku on overload.
+    var isConciseLecture = (S.style !== "boards" && S.depth === "concise");
+    var mainModels = isConciseLecture
+      ? [MODEL_SONNET_FALLBACK, MODEL_CRITIC]
+      : [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC];
     var maxTok=(S.style==="boards")?6144:4096;
     var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
     var txt = mainResult.txt;
@@ -4884,7 +4890,9 @@ async function generate(){
     var critiqueInput = "Topic: " + S.topic + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
     var finalTalk = draftTalk;
-    try {
+    // Skip critique entirely for Concise Lecture — shaves ~5-10s; Sonnet drafts are reliable enough for the shorter format.
+    // (Detailed Lecture still gets Haiku review; Boards still gets Opus→Sonnet→Haiku for high-stakes accuracy.)
+    if (!isConciseLecture) try {
       // Boards-mode review prefers Opus (high-stakes accuracy); falls back to Sonnet then Haiku on overload.
       // Lecture-mode review just uses Haiku (sufficient for prose accuracy review).
       var criticModels = (S.style === "boards")
@@ -5038,15 +5046,25 @@ async function genDiagram(){
 }
 
 async function sendChat(){
-  if(!S.chatIn.trim()||S.chatBusy)return;
-  var msg=S.chatIn.trim();S.chatIn="";S.chatBusy=true;S.msgs.push({r:"u",t:msg});render();
-  try{
-    if(S.talk){
-      var txt=await callAPI("Modify this content. Current JSON:\n"+JSON.stringify(S.talk)+"\n\nApply changes, return COMPLETE updated JSON same schema. ONLY JSON.",msg,6144);
-      try{var upd=JSON.parse(fixJSON(txt));upd=deepCleanCitations(upd);if(upd&&upd.title){S.talk=upd;S.sec=0;S.dg=null;S.msgs.push({r:"a",t:"\u2713 Updated!"})}else S.msgs.push({r:"a",t:txt.slice(0,400)})}catch(e2){S.msgs.push({r:"a",t:txt.slice(0,400)})}
-    }else{S.topic=msg;S.msgs.push({r:"a",t:'Topic set to "'+msg+'". Hit Generate!'})}
-  }catch(e){S.msgs.push({r:"a",t:"Error: "+e.message})}
-  S.chatBusy=false;render();
+  if(!S.chatIn.trim()||S.chatBusy||S.loading)return;
+  var msg=S.chatIn.trim();S.chatIn="";S.reviseIn="";
+  if(S.talk){
+    // User is asking for a revision \u2014 append to refine-context and trigger a FULL regenerate
+    // (RAG retrieval + peer review + dual citation pipeline) instead of a quick JSON patch.
+    // This way new info (e.g. "add EGPA", "include pregnancy considerations") flows through
+    // the same evidence-grounded path as the original generation.
+    S.refineContext = (S.refineContext && S.refineContext.trim() ? S.refineContext.trim() + "\n\nAlso: " : "") + msg;
+    S.msgs.push({r:"u",t:msg});
+    S.msgs.push({r:"a",t:"Regenerating the lesson with your update\u2026"});
+    S._composerOpen = false; // collapse the floating bubble after submit
+    generate(); // handles S.loading + render() internally
+  } else {
+    // No talk loaded yet \u2014 interpret the input as a topic.
+    S.topic=msg;
+    S.msgs.push({r:"u",t:msg});
+    S.msgs.push({r:"a",t:'Topic set to "'+msg+'". Tap Generate to start.'});
+    render();
+  }
 }
 
 async function genPodcast(){
