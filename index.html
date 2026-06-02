@@ -4868,13 +4868,9 @@ async function generate(){
         throw new Error("web_search allowed_domains has duplicates: " + _dups.join(", ") + ". Fix the list in index.html before retrying.");
       }
     }
-    // Model selection by mode — fast path for concise lectures, full quality for detailed/boards.
-    // Concise Lecture: Sonnet first (much faster than Opus, still high quality for shorter output).
-    // Detailed Lecture & Boards: Opus first for depth/accuracy, fall through to Sonnet/Haiku on overload.
-    var isConciseLecture = (S.style !== "boards" && S.depth === "concise");
-    var mainModels = isConciseLecture
-      ? [MODEL_SONNET_FALLBACK, MODEL_CRITIC]
-      : [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC];
+    // Always use Opus first for draft quality (regardless of depth). Sonnet/Haiku are overload fallbacks only.
+    // Tested Sonnet-first for Concise — quality regressed too much, not worth the ~15s saved.
+    var mainModels = [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC];
     var maxTok=(S.style==="boards")?6144:4096;
     var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
     var txt = mainResult.txt;
@@ -4890,9 +4886,9 @@ async function generate(){
     var critiqueInput = "Topic: " + S.topic + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
     var finalTalk = draftTalk;
-    // Skip critique entirely for Concise Lecture — shaves ~5-10s; Sonnet drafts are reliable enough for the shorter format.
-    // (Detailed Lecture still gets Haiku review; Boards still gets Opus→Sonnet→Haiku for high-stakes accuracy.)
-    if (!isConciseLecture) try {
+    // ALWAYS run critique — accuracy > a few seconds saved. Concise uses Sonnet draft + Haiku review,
+    // so total still ~25-30s. Detailed: Opus draft + Haiku review. Boards: Opus draft + Opus review fallback chain.
+    try {
       // Boards-mode review prefers Opus (high-stakes accuracy); falls back to Sonnet then Haiku on overload.
       // Lecture-mode review just uses Haiku (sufficient for prose accuracy review).
       var criticModels = (S.style === "boards")
