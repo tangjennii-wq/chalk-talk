@@ -4337,6 +4337,7 @@ async function saveCurrentTalk(){
   if(S.user && window.sb){
     var ok = await cloudSaveCurrentTalk();
     if(ok){
+      S.talkIsSaved=true; // gate the New-talk confirmation dialog
       S.savedFlash="\u2713 Saved to your cloud library";render();
       setTimeout(function(){S.savedFlash="";render()},2200);
     } else {
@@ -4362,7 +4363,7 @@ async function saveCurrentTalk(){
     glRef:S.glRef||null
   };
   arr.unshift(entry);
-  if(writeSavedTalks(arr)){S.savedFlash="\u2713 Saved to library";render();setTimeout(function(){S.savedFlash="";render()},2200)}
+  if(writeSavedTalks(arr)){S.talkIsSaved=true;S.savedFlash="\u2713 Saved to library";render();setTimeout(function(){S.savedFlash="";render()},2200)}
 }
 async function deleteSavedTalk(id){
   if(!confirm("Delete this saved chalk talk? This cannot be undone."))return;
@@ -5301,6 +5302,16 @@ function copyBoardsQuestion(){
   }
 }
 
+// Guarded wrapper for resetAll. Prompts before discarding an unsaved, non-sample talk
+// (samples don't need confirmation — they're cached, can be reopened from Library anytime).
+// All "New talk" UI paths route through this — both the capsule header button + overflow menu.
+function safeResetAll(){
+  if(S.talk && !S.isSampleTalk && !S.talkIsSaved){
+    if(!confirm("Start a new talk?\n\nThis one isn't saved yet — it'll be gone.")) return;
+  }
+  resetAll();
+}
+
 function resetAll(){
   // Reset per-talk state + transient UI flags. Auth/profile/cloud/library survives — session-scoped.
   S.talk=null; S.topic=""; S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview";
@@ -5310,7 +5321,7 @@ function resetAll(){
   S.showAns=false; S.userPick=""; S.reviseIn="";
   S.chatIn=""; S.chatBusy=false;
   S.glRef=null; S.ragChunks=[];
-  S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false;
+  S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false; S.talkIsSaved=false;
   // Close any transient drawers/modals so a fresh compose view doesn't flash an open overlay.
   S.editSettings=false; S.overflowOpen=false; S.lightbox=false; S.gldOpen=false; S.ragOpen=false;
   speechSynthesis.cancel(); render();
@@ -5667,10 +5678,19 @@ function renderMain(){
   // Column 3 — Sign in/account on top, Library underneath (upper right)
   h+='<div class="hero-account-col" style="flex:0 0 auto;align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end;gap:6px">';
   if(S.user){
+    // Logged in: icon-only (initial in a circle) — tap to expand the account menu.
+    // Caret hints that it's expandable. Email shows on hover (title attr).
     var initial = (S.profile && S.profile.name ? S.profile.name : S.user.email||"").trim().charAt(0).toUpperCase() || "?";
-    h+='<button id="accountBtn" title="'+esc(S.user.email||"")+'" style="background:none;border:none;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;padding:2px 0"><span style="background:var(--lavender-soft);color:var(--plum);width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700">'+esc(initial)+'</span><span style="font-size:12px;color:var(--ink)">'+esc((S.profile&&S.profile.name)||S.user.email.split("@")[0])+'</span></button>';
+    h+='<button id="accountBtn" title="'+esc(S.user.email||"")+' — tap to open account menu" style="background:none;border:none;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;padding:2px 0">';
+    h+='  <span style="background:var(--plum);color:#fff;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;box-shadow:0 1px 3px rgba(75,17,111,0.2)">'+esc(initial)+'</span>';
+    h+='  <span style="color:var(--ink-soft);font-size:10px;line-height:1">⌄</span>';
+    h+='</button>';
   } else {
-    h+='<button id="signInBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--plum);text-decoration:underline;text-underline-offset:2px;font-size:13px;font-weight:600;padding:2px 0">Sign in</button>';
+    // Logged out: "Sign in" link with a small person icon so it's recognizable as an account affordance.
+    h+='<button id="signInBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--plum);font-size:13px;font-weight:600;padding:2px 0;display:inline-flex;align-items:center;gap:6px">';
+    h+='  <span style="background:var(--lavender-bg);color:var(--plum);width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px">👤</span>';
+    h+='  <span style="text-decoration:underline;text-underline-offset:2px">Sign in</span>';
+    h+='</button>';
   }
   // Library — combined samples + saved (count = samples + saved talks)
   var libCount = ((typeof SAMPLES!=="undefined"&&SAMPLES)?SAMPLES.length:0) + savedCount;
@@ -6167,7 +6187,22 @@ function renderMain(){
 
   // === Account dropdown menu (when logged in + accountMenuOpen) ===
   if(S.accountMenuOpen && S.user){
-    h+='<div class="overflow-menu" id="accountMenu" style="right:16px;top:auto;margin-top:46px">';
+    var _hasClaude = !!localStorage.getItem("claude_api_key");
+    var _hasGem = !!localStorage.getItem("gemini_api_key");
+    var _hasOA = !!localStorage.getItem("openai_api_key");
+    h+='<div class="overflow-menu" id="accountMenu" style="right:16px;top:auto;margin-top:46px;min-width:240px">';
+    h+='<div style="padding:11px 14px;border-bottom:1px solid var(--line-soft);font-size:11.5px;color:var(--ink-muted);display:flex;align-items:center;gap:9px">';
+    var _initial = (S.profile && S.profile.name ? S.profile.name : S.user.email||"").trim().charAt(0).toUpperCase() || "?";
+    h+='  <span style="background:var(--plum);color:#fff;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex-shrink:0">'+esc(_initial)+'</span>';
+    h+='  <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc((S.profile && S.profile.name) || S.user.email)+'</span>';
+    h+='</div>';
+    h+='<button id="profileEditBtn">👤 Edit profile</button>';
+    // API key management — let users add/replace their personal keys without digging through prompts.
+    h+='<div style="padding:6px 14px;border-top:1px solid var(--line-soft);font-size:10px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.08em">API Keys</div>';
+    h+='<button id="setClaudeKeyBtn">🔑 Anthropic key '+(_hasClaude?'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">set</span>':'<span style="margin-left:auto;color:#c0392b;font-size:11px;font-weight:500">not set</span>')+'</button>';
+    h+='<button id="setGeminiKeyBtn">🔑 Gemini key '+(_hasGem?'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">set</span>':'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">optional</span>')+'</button>';
+    h+='<button id="setOpenAIKeyBtn">🔑 OpenAI key '+(_hasOA?'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">set</span>':'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">optional</span>')+'</button>';
+    h+='<div style="padding:0;border-top:1px solid var(--line-soft)"></div>';
     h+='<div style="padding:11px 14px;border-bottom:1px solid var(--line-soft);font-size:11.5px;color:var(--ink-muted)">'+esc(S.user.email||"")+'</div>';
     h+='<button id="profileEditBtn">👤 Edit profile</button>';
     h+='<button id="signOutBtn" class="danger">↶ Sign out</button>';
@@ -6256,7 +6291,7 @@ function bindMain(){
   var gb=document.getElementById("genBtn");if(gb)gb.onclick=generate;
 
   // ─── Generated-talk view ────────────────────────────────────────────────
-  var rb=document.getElementById("resetBtn");if(rb)rb.onclick=resetAll;
+  var rb=document.getElementById("resetBtn");if(rb)rb.onclick=safeResetAll;
   // One-tap depth flip in the capsule header. Concise ⇄ Detailed.
   // For samples: swap to the other CACHED version (no API call). For fresh generations: rebuild.
   var dtb=document.getElementById("depthToggleBtn");if(dtb)dtb.onclick=function(){
@@ -6297,7 +6332,7 @@ function bindMain(){
   var rb2=document.getElementById("rebuildBtn2");if(rb2)rb2.onclick=function(){S.editSettings=false;generate()};
   var ofb=document.getElementById("overflowBtn");if(ofb)ofb.onclick=function(e){e.stopPropagation();S.overflowOpen=!S.overflowOpen;render()};
   if(S.overflowOpen){document.body.onclick=function(e){if(!e.target.closest(".overflow-menu")&&!e.target.closest("#overflowBtn")){S.overflowOpen=false;render()}}}else{document.body.onclick=null}
-  var nbt=document.getElementById("newTalkBtn");if(nbt)nbt.onclick=function(){S.overflowOpen=false;resetAll()};
+  var nbt=document.getElementById("newTalkBtn");if(nbt)nbt.onclick=function(){S.overflowOpen=false;safeResetAll()};
   var dcb=document.getElementById("drawerCloseBtn");if(dcb)dcb.onclick=function(){S.editSettings=false;render()};
   var dbk=document.getElementById("drawerBackdrop");if(dbk)dbk.onclick=function(){S.editSettings=false;render()};
   // Floating bubble open/close
@@ -6319,6 +6354,19 @@ function bindMain(){
   if(S.accountMenuOpen){document.body.onclick=function(e){if(!e.target.closest("#accountMenu")&&!e.target.closest("#accountBtn")){S.accountMenuOpen=false;render()}}}
   var sob=document.getElementById("signOutBtn");if(sob)sob.onclick=function(){S.accountMenuOpen=false;signOut()};
   var peb=document.getElementById("profileEditBtn");if(peb)peb.onclick=function(){S.accountMenuOpen=false;S.profileEditOpen=true;S.profileForm=Object.assign({},S.profile||{});render()};
+  // API key buttons in account menu — prompt for new key, save to localStorage.
+  function _setKey(storageKey, name, url){
+    return function(){
+      S.accountMenuOpen=false; render();
+      var existing = localStorage.getItem(storageKey);
+      var msg = (existing ? "Replace your " : "Add your ") + name + " API key.\n\nStored locally in your browser only — never sent anywhere except " + name + ".\n\nGet a key at: " + url;
+      var k = prompt(msg, "");
+      if(k && k.trim()){ localStorage.setItem(storageKey, k.trim()); S.savedFlash="✓ "+name+" key saved"; render(); setTimeout(function(){S.savedFlash="";render()},2000); }
+    };
+  }
+  var sckb=document.getElementById("setClaudeKeyBtn");if(sckb)sckb.onclick=_setKey("claude_api_key","Anthropic","https://console.anthropic.com/settings/keys");
+  var sgkb=document.getElementById("setGeminiKeyBtn");if(sgkb)sgkb.onclick=_setKey("gemini_api_key","Gemini","https://aistudio.google.com/apikey");
+  var sokb=document.getElementById("setOpenAIKeyBtn");if(sokb)sokb.onclick=_setKey("openai_api_key","OpenAI","https://platform.openai.com/api-keys");
   // Profile editor form
   var pcb=document.getElementById("profileCloseBtn");if(pcb)pcb.onclick=function(){S.profileEditOpen=false;S.profileForm=null;render()};
   var pbk=document.getElementById("profileBackdrop");if(pbk)pbk.onclick=function(){S.profileEditOpen=false;S.profileForm=null;render()};
