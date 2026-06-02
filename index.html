@@ -3991,7 +3991,7 @@ var S = {
   // — Current talk + interaction
   talk:null, sec:0, activeSection:0, tab:"overview",
   showAns:false, userPick:"", reviseIn:"", chatIn:"", chatBusy:false, msgs:[],
-  isSampleTalk:false, sampleSlug:"", sharedTalk:false,
+  isSampleTalk:false, sampleSlug:"", sharedTalk:false, talkIsSaved:false,
   // — RAG retrieval
   glRef:null, ragOpen:false, ragChunks:[],
   // — Diagram / visual aid
@@ -5805,13 +5805,17 @@ function renderMain(){
     // === Capsule header ===
     h+='<div id="talkStart" style="scroll-margin-top:8px"></div>';
     h+='<div class="tk-capsule">';
-    h+='<button class="cap-back" id="resetBtn" title="New talk">←</button>';
+    // Back-arrow removed — replaced by explicit "+ New talk" button in cap-actions (right side)
+    // to fix the bug where users read "←" as browser-back instead of "discard current talk".
     // Depth pill is tappable — flips depth and triggers Rebuild. Hidden in Boards (depth N/A).
     var depthPill = depthLbl
       ? ' <span class="sep">·</span><button id="depthToggleBtn" title="Switch to '+(S.depth==="detailed"?"Concise":"Detailed")+' and rebuild" style="background:var(--lavender-bg);border:1px solid transparent;color:var(--plum);font:inherit;font-weight:600;padding:1px 8px;border-radius:10px;cursor:pointer;letter-spacing:.005em">'+depthLbl+' ⇄</button>'
       : '';
     h+='<div class="cap-meta"><b>'+esc(t.title||S.topic)+'</b><span class="sep">·</span>'+styleLbl+depthPill+(refsCount>0?' <span class="sep cap-sep-refs">·</span><span class="cap-meta-refs">'+refsCount+' ref'+(refsCount===1?'':'s')+'</span>':'')+'</div>';
     h+='<div class="cap-actions">';
+    // New talk — explicit text label so users know it discards the current talk and returns to compose.
+    // Uses "+" (creative framing) not "✕" (destructive framing) per ui-critic recommendation.
+    h+='<button id="resetBtn" title="Start a new talk">+ <span class="hide-mobile-text">New talk</span></button>';
     // Save button — primary action in the capsule (filled CTA treatment). Hidden for samples (already saved).
     if(!S.isSampleTalk){
       h+='<button id="saveTalkBtnTop" class="cap-save" title="Save to library">★ <span class="hide-mobile-text">Save</span></button>';
