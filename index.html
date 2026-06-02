@@ -170,11 +170,10 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 /* Lesson outline header */
 .outline-head{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 6px;padding:0 4px;font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em}
 .outline-head .total{font-size:11px;font-weight:500;color:var(--ink-soft);text-transform:none;letter-spacing:0}
-/* Landing sample-card grid — 4-col desktop, 2-col mobile showing ONLY first 2 cards */
-.msample-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+/* Landing sample-card grid — exactly 2 cards (HFrEF + Hyponatremia), 2-col both desktop and mobile */
+.msample-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:560px}
 @media (max-width:640px){
-  .msample-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .msample-grid > *:nth-child(n+3){display:none}  /* hide samples 3-4 on mobile; user can tap "See all" */
+  .msample-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-width:100%}
 }
 /* Hero card mobile layout — keep Sign-in/Library upper-right, tagline drops below */
 @media (max-width:640px){
@@ -280,19 +279,40 @@ textarea,input[type=text]{font-family:inherit}
 }
 /* Small mobile body tweaks (non-hero) */
 @media (max-width: 640px) {
-  .app { padding: 12px 10px 32px !important; max-width: 100% !important; }
-  [data-msample-grid] { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-  /* Show only first 2 sample tiles on mobile */
-  [data-msample-grid] > button:nth-child(n+3) { display: none !important; }
-  [data-msample-grid] > button { padding: 10px 11px !important; min-height: 80px !important; }
-  [data-msample-grid] > button > div:first-child > span:last-child { font-size: 12px !important; }
-  [data-msample-grid] > button span[style*="background:#f0f7f0"], [data-msample-grid] > button span[style*="background:var(--lavender-bg)"] { font-size: 9.5px !important; padding: 1px 6px !important; }
+  .app { padding: 10px 10px 16px !important; max-width: 100% !important; }
+  [data-msample-grid] { grid-template-columns: 1fr 1fr !important; gap: 7px !important; }
+  [data-msample-grid] > div { padding: 8px 9px !important; min-height: 64px !important; gap: 5px !important; }
+  [data-msample-grid] > div > div:first-child > span:last-child { font-size: 11.5px !important; -webkit-line-clamp: 2 !important; }
+  [data-msample-grid] > div span[style*="background:#f0f7f0"], [data-msample-grid] > div span[style*="background:var(--lavender-bg)"] { font-size: 9px !important; padding: 1px 5px !important; }
   /* Editorial mobile — talk content tightening */
   .app h1 { font-size: 18px !important; line-height: 1.22 !important; letter-spacing: -0.003em !important; }
   .app h2 { font-size: 14px !important; line-height: 1.3 !important; }
   .app .secBtn { padding: 8px 10px !important; }
   .app .choiceBtn { padding: 9px 12px !important; }
   .app .choiceBtn span:last-child { font-size: 13px !important; line-height: 1.45 !important; }
+}
+/* Aggressive landing-only compaction so mobile fits in one viewport (no scroll) */
+@media (max-width: 640px) {
+  .app:not(.has-talk) .hero-card { padding: 10px 14px 8px !important; margin-bottom: 8px !important; }
+  .app:not(.has-talk) .hero-card .hero-meta { margin-top: 8px !important; padding-top: 7px !important; font-size: 11px !important; }
+  .app:not(.has-talk) .hero-tagline-col { margin-top: 6px !important; padding-top: 6px !important; }
+  .app:not(.has-talk) .hero-tagline-col > div:last-child { display: none !important; } /* hide "ABIM topics · Peer-reviewed..." subline */
+  .app:not(.has-talk) .howit { margin-bottom: 8px !important; }
+  .app:not(.has-talk) .howit > summary { padding: 6px 10px !important; font-size: 11.5px !important; }
+  .app:not(.has-talk) [data-mtopic] { margin-bottom: 8px !important; }
+  .app:not(.has-talk) [data-mtopic] + div { margin-bottom: 8px !important; }
+  .app:not(.has-talk) #dropZone { padding: 8px 12px !important; margin-bottom: 6px !important; }
+  .app:not(.has-talk) #dropZone > div > div:nth-child(3) { display: none !important; } /* hide "Not stored, not used for training" line */
+  .app:not(.has-talk) #dropZone > div > div:nth-child(2) { font-size: 10.5px !important; margin-top: 1px !important; }
+  /* Tighten the two toggle rows */
+  .app:not(.has-talk) label[style*="display:flex"][style*="padding:12px 14px"] { padding: 8px 12px !important; }
+  /* Hide the "You can add context..." helper hint */
+  .app:not(.has-talk) [data-mtopic] > div:last-child { display: none !important; }
+  /* Footer compaction on landing only */
+  .app:not(.has-talk) #appFooter { margin-top: 12px !important; padding: 10px 8px 4px !important; font-size: 10px !important; line-height: 1.4 !important; }
+  .app:not(.has-talk) #appFooter > div:first-child { margin-bottom: 3px !important; font-size: 9px !important; }
+  .app:not(.has-talk) #appFooter > div:nth-child(2) { font-size: 10.5px !important; }
+  .app:not(.has-talk) #appFooter > div:last-child { margin-top: 1px !important; font-size: 9.5px !important; }
 }
 
 /* RAG sources panel */
@@ -4143,7 +4163,7 @@ function renderLibCard(x){
     h += '<button class="libOpenBtn" data-source="sample" data-slug="'+esc(x._slug)+'" style="flex:1;min-width:90px;background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:9px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Open</button>';
   } else {
     h += '<button class="libOpenBtn" data-source="saved" data-id="'+x._id+'" style="flex:1;min-width:90px;background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:9px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Open</button>';
-    h += '<button class="exportTalkBtn" data-id="'+x._id+'" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--ink-muted);font-size:12px;font-weight:600;cursor:pointer">JSON</button>';
+    h += '<button class="exportTalkBtn" data-id="'+x._id+'" title="Export talk as JSON" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--ink-muted);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px"><span style="font-size:13px;line-height:1">⬇</span>Export</button>';
     h += '<button class="delTalkBtn" data-id="'+x._id+'" style="background:#fff;border:1px solid #e8c8c0;border-radius:8px;padding:9px 12px;color:#c0392b;font-size:12px;font-weight:600;cursor:pointer">Delete</button>';
   }
   h += '</div></div>';
@@ -5675,11 +5695,12 @@ function renderMain(){
   if(!S.talk&&!S.loading&&typeof SAMPLES!=="undefined"&&SAMPLES&&SAMPLES.length>0){
     h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
     h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all '+SAMPLES.length+' →</button></div>';
-    // 4 columns on desktop, 2 on mobile (via .msample-grid media query). Cards are ~25% taller so titles aren't truncated.
+    // Landing shows exactly 2 hand-picked samples (HFrEF cardio + Hyponatremia nephro). Full 19 still in library.
     h+='<div data-msample-grid class="msample-grid">';
-    var n=Math.min(SAMPLES.length,4);
-    for(var li=0;li<n;li++){
-      var ls=SAMPLES[li];
+    var LANDING_SLUGS=["hfref","hyponatremia"];
+    var landingSamples=LANDING_SLUGS.map(function(sl){return SAMPLES.find(function(s){return s.slug===sl})}).filter(Boolean);
+    for(var li=0;li<landingSamples.length;li++){
+      var ls=landingSamples[li];
       var lt=ls.talk_concise || ls.talk || ls.talk_detailed || {};
       var lisBQ=!!(lt.question);
       var ico=SPEC_ICONS[ls.specialty]||"●";
@@ -6108,7 +6129,7 @@ function renderMain(){
   }
 
   // ═══ FOOTER ═══
-  h+='<div style="margin-top:48px;padding:24px 8px 8px;border-top:1px solid #e8e6f0;text-align:center;font-size:11px;color:#9490a6;line-height:1.7;letter-spacing:0.01em">';
+  h+='<div id="appFooter" style="margin-top:48px;padding:24px 8px 8px;border-top:1px solid #e8e6f0;text-align:center;font-size:11px;color:#9490a6;line-height:1.7;letter-spacing:0.01em">';
   h+='<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:#b0aac0;margin-bottom:8px;font-weight:600">A teaching tool · Free for educational use</div>';
   h+='<div style="font-size:11.5px;color:#6b6780">© 2026 <a href="https://www.linkedin.com/in/tangjennii/" target="_blank" style="color:#702b9d;text-decoration:none;font-weight:600;border-bottom:1px solid rgba(112,43,157,0.25);padding-bottom:1px">Jennifer Tang, MD</a> · Internal Medicine · Nephrology</div>';
   h+='<div style="margin-top:4px;font-size:10.5px;color:#a8a3b8">Licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" style="color:#9490a6;text-decoration:none;border-bottom:1px dotted #c4c0d0">CC BY-NC-SA 4.0</a></div>';
