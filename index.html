@@ -144,6 +144,20 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 .mode-card.active .mc-ico{color:var(--plum-deep)}
 .mode-card:not(.active):hover{color:var(--plum)}
 .mode-card:disabled,.mode-card[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+/* Mobile: tighten capsule + mode tabs so everything fits without scroll */
+@media (max-width:640px){
+  /* Hide the depth-⇄ pill and the "N refs" suffix on the capsule meta — keep them in the title block below */
+  .tk-capsule .cap-meta #depthToggleBtn,
+  .tk-capsule .cap-meta .cap-meta-refs{display:none}
+  .tk-capsule .cap-meta .sep.cap-sep-refs{display:none}
+  /* Tighten Save CTA and Edit settings on mobile so all 3 actions + ⋮ fit */
+  .tk-capsule .cap-actions button.cap-save{padding:6px 10px;font-size:11.5px;border-radius:14px}
+  .tk-capsule .cap-actions button{padding:5px 6px;font-size:11px}
+  .tk-capsule{padding:7px 10px;gap:6px}
+  /* Mode tabs: shrink padding so 4 fit comfortably on narrow viewports */
+  .mode-card{padding:7px 4px;font-size:12px;gap:4px}
+  .mode-card .mc-ico{font-size:13px}
+}
 /* Guideline row collapsed/expanded */
 .guideline-row{background:#f0f7f0;border:1px solid #b8d8b8;border-radius:14px;margin-bottom:10px;overflow:hidden}
 .guideline-row .gr-head{display:flex;align-items:center;gap:9px;padding:9px 13px;cursor:pointer;width:100%;background:none;border:none;text-align:left;font-size:12.5px;color:#2d6a2d;font-weight:600}
@@ -156,9 +170,17 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 /* Lesson outline header */
 .outline-head{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 6px;padding:0 4px;font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em}
 .outline-head .total{font-size:11px;font-weight:500;color:var(--ink-soft);text-transform:none;letter-spacing:0}
-/* Landing sample-card grid — 4-col desktop, 2-col mobile, taller cards than before */
+/* Landing sample-card grid — 4-col desktop, 2-col mobile showing ONLY first 2 cards */
 .msample-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-@media (max-width:640px){.msample-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+@media (max-width:640px){
+  .msample-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .msample-grid > *:nth-child(n+3){display:none}  /* hide samples 3-4 on mobile; user can tap "See all" */
+}
+/* Hero card mobile layout — keep Sign-in/Library upper-right, tagline drops below */
+@media (max-width:640px){
+  .hero-tagline-col{order:3;flex-basis:100% !important;text-align:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--line-soft)}
+  .hero-account-col{order:2}
+}
 /* Floating chat-bubble composer (lower-right, generated state) */
 .composer-bubble{position:fixed;bottom:20px;right:20px;z-index:55;font-family:inherit}
 .composer-bubble .composer-pill{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;border-radius:30px;padding:13px 22px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 6px 22px rgba(75,17,111,0.32);font-family:inherit;transition:transform .15s ease,box-shadow .15s ease}
@@ -411,7 +433,7 @@ function segBtn(cls, dataAttr, val, current, icon, label, opts){
     '<span'+(compact?'':' style="font-size:13px"')+'>'+icon+'</span>'+label+'</button>';
 }
 
-// Image-generation prompt shared by both OpenAI gpt-image-1 and Gemini image branches in genDiagram().
+// Image-generation prompt shared by both OpenAI gpt-image-2 and Gemini image branches in genDiagram().
 // Edit visual style here ONCE; both providers pick it up.
 function buildImagePrompt(topicSummary){
   return "Generate a polished, didactic medical teaching illustration in the style of a high-quality USMLE board review figure (think Pathoma, First Aid, or a Robbins Pathology figure). VISUAL STYLE: Clean line-art with thin uniform strokes. Limited color palette — deep purple (#330662) for primary structures, lighter purple (#ab82c5) for secondary, muted blue (#5a8acd) for normal physiology, accent red (#c0392b) for pathology, soft grays for context. White or off-white background. Crisp sans-serif typography (Helvetica/Arial style) for labels. Generous whitespace; no clutter. 16:9 horizontal slide-friendly composition. CONTENT: Show anatomy, pathway, OR mechanism relevant to the topic. Include 4-8 clear English labels (no obscure abbreviations). Use arrows or connecting lines to show relationships and direction. If pathology is depicted, mark it clearly. AVOID: photorealism, 3D rendering, heavy shading, cartoon style, paragraphs of text, watermarks, signatures. TOPIC: " + topicSummary;
@@ -430,6 +452,18 @@ function getClaudeKey(){
     return null;
   }
   return k;
+}
+
+// Triggered when an existing key fails (auth rejected or out of credits). Clears the bad key
+// and prompts the user inline for a replacement so they can keep working without digging through menus.
+function promptForNewClaudeKey(reasonMsg){
+  localStorage.removeItem("claude_api_key");
+  var nk = prompt(reasonMsg + "\n\nPaste a new Anthropic API key (or click Cancel to set one later):\n\nGet a key or top up at: https://console.anthropic.com/settings/keys");
+  if (nk && nk.trim()) {
+    localStorage.setItem("claude_api_key", nk.trim());
+    return nk.trim();
+  }
+  return null;
 }
 
 // ═══════════ TOPICS ═══════════
@@ -4690,7 +4724,24 @@ async function callAPI(sys, content, maxTok, opts) {
   if(!r.ok){var e={};try{e=await r.json()}catch(x){}
     if (useProxy && r.status === 429) throw new Error("Daily demo-proxy limit reached. Switch to your own API key (top of header) for unlimited access, or come back tomorrow.");
     if (useProxy && r.status === 403) throw new Error("Demo proxy denied this origin. Open the deployed site or use your own API key.");
-    if(!useProxy && (r.status===401||r.status===403)){localStorage.removeItem("claude_api_key");throw new Error("Invalid API key (cleared). Click 'Set key' to re-enter.")}
+    // BYOK auth fail OR out-of-credits — prompt inline for a new key + retry once (don't loop forever).
+    if (!useProxy && !opts.__retried) {
+      var emsg = ((e.error && e.error.message) || "").toLowerCase();
+      var isAuthFail = (r.status === 401 || r.status === 403);
+      var isOutOfCredits = (r.status === 400 || r.status === 429) && /insufficient_quota|credit_balance|credit balance|exceeded.+credit|billing|payment/.test(emsg);
+      if (isAuthFail || isOutOfCredits) {
+        var reason = isOutOfCredits
+          ? "⚠️ Your API key ran out of credits."
+          : "⚠️ Your API key was rejected (auth error).";
+        var newKey = promptForNewClaudeKey(reason);
+        if (newKey) {
+          // Retry the same call with the new key (loop guard via opts.__retried so we only retry once).
+          return await callAPI(sys, content, maxTok, Object.assign({}, opts||{}, { __retried: true }));
+        }
+        // User cancelled — fall through to a friendly error.
+        throw new Error(isOutOfCredits ? "API key is out of credits. Top up or set a new key, then click Generate again." : "API key required. Click 'Set key' in the header to add one.");
+      }
+    }
     if (r.status === 529 || r.status === 503) throw new Error("Anthropic servers are temporarily overloaded (we retried twice). This usually clears in 1-2 minutes — please wait and click Generate again. Boards mode uses Opus which is more capacity-constrained; if it persists, try Lecture mode (uses Haiku for review).");
     if (r.status === 408 || r.status === 504) throw new Error("Request timed out. Anthropic servers are slow right now — try again in a moment.");
     if (r.status >= 500) throw new Error("Anthropic API server error ("+r.status+"). Try again in a moment.");
@@ -4879,7 +4930,7 @@ function getGeminiKey(){
 function getOpenAIKey(){
   var k=localStorage.getItem("openai_api_key");
   if(!k){
-    k=prompt("Enter your OpenAI API key (stored locally in your browser only \u2014 never sent anywhere except OpenAI).\n\nGet one at: https://platform.openai.com/api-keys\n\nUsed for ChatGPT image generation (gpt-image-1, ~$0.04-0.17 per image).");
+    k=prompt("Enter your OpenAI API key (stored locally in your browser only \u2014 never sent anywhere except OpenAI).\n\nGet one at: https://platform.openai.com/api-keys\n\nUsed for ChatGPT image generation (gpt-image-2, ~$0.04-0.17 per image).");
     if(k&&k.trim()){localStorage.setItem("openai_api_key",k.trim());return k.trim()}
     return null;
   }
@@ -4904,7 +4955,7 @@ async function genDiagram(){
     }
     // No template match — fall back to generative SVG flowchart via Claude (no API key needed)
     try{
-      var txt=await callAPI('Generate a polished medical-diagram JSON for a teaching chalk talk. Format: {"nodes":[{"id":"n1","label":"Concise label","type":"title"}],"arrows":[{"from":"n1","to":"n2","label":"optional edge label"}]}. AIM FOR 7-9 nodes (max 10). Use a clear hierarchical/flow structure: ONE title node at the top (the key concept), then mechanism nodes, leading to clinical findings or treatment nodes. Node types: "title" (main concept, exactly 1), "accent" (important steps), "formula" (equations/criteria), "warning" (red flags / pitfalls), "box" (default). Keep labels SHORT (2-5 words) so they render cleanly. Add edge labels for "leads to", "blocks", "increases", etc when meaningful. No x/y coordinates \u2014 layout is computed automatically.',"Diagram for: "+sm,1000);
+      var txt=await callAPI('Generate JSON for a CLEAN MEDICAL FLOWCHART in the style of Pathoma, Robbins Pathology, or a USMLE board review figure. NOT a beautiful illustration \u2014 a tight clinical-reasoning diagram with crisp labeled boxes and arrows.\n\nFormat: {"nodes":[{"id":"n1","label":"Concise label","type":"title"}],"arrows":[{"from":"n1","to":"n2","label":"optional edge label"}]}\n\nCOMMIT TO FLOWCHART AESTHETIC:\n- ONE title node at top = the key concept being taught (the takeaway, not the disease name)\n- Then a hierarchical/decision-tree structure: mechanism \u2192 consequence \u2192 clinical finding \u2192 workup \u2192 treatment\n- 7-9 nodes total (max 10). Fewer is better than crammed.\n- Labels SHORT: 2-5 words each. NEVER a full sentence. If you need a sentence, break it into 2 nodes.\n- Use arrow labels for relationships: "leads to", "blocks", "\u2191", "\u2193", "if positive", "if negative", "first-line", "if refractory" \u2014 make causality explicit.\n- Branching is GOOD when the topic has decision points (e.g. "ferritin >300?" \u2192 Yes branch / No branch). Use it.\n- Node types pick the right one: "title" (the main concept, EXACTLY 1), "accent" (key transitions/turning points), "formula" (equations, scoring criteria, named ratios), "warning" (red flags, contraindications, pitfalls \u2014 use red/orange), "box" (default for everything else).\n- NO redundant nodes. NO decorative nodes. Every node earns its place by adding a real teaching point or decision.\n\nNo x/y coordinates \u2014 layout is computed automatically. Output ONLY the JSON, no commentary.',"Topic: "+sm,1200);
       var p=JSON.parse(fixJSON(txt));
       if(p.nodes&&p.nodes.length>0){autoLayout(p.nodes,p.arrows||[]);S.dg={svg:p}}
       else throw new Error("No nodes returned");
@@ -4914,7 +4965,7 @@ async function genDiagram(){
   }
 
   if(S.dgMode==="openai"){
-    // ChatGPT image generation via OpenAI gpt-image-1
+    // ChatGPT image generation via OpenAI gpt-image-2
     var oaKey=getOpenAIKey();
     if(!oaKey){S.dgErr="OpenAI API key required (or switch to Gemini / Simple Diagram)";S.dgBusy=false;render();return}
     try{
@@ -4923,7 +4974,7 @@ async function genDiagram(){
         method:"POST",
         headers:{"Content-Type":"application/json","Authorization":"Bearer "+oaKey},
         body:JSON.stringify({
-          model:"gpt-image-1",
+          model:"gpt-image-2",
           prompt:oaPrompt,
           size:"1536x1024",
           quality:"high",
@@ -4952,7 +5003,7 @@ async function genDiagram(){
   if(!key){S.dgErr="Gemini API key required (or switch to ChatGPT / Simple Diagram)";S.dgBusy=false;render();return}
   try{
     var imgPrompt=buildImagePrompt(sm);
-    var res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key="+encodeURIComponent(key),{
+    var res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent?key="+encodeURIComponent(key),{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
@@ -5486,12 +5537,12 @@ function renderMain(){
   h+='<p class="hero-byline" style="margin-top:3px">by <a href="https://www.linkedin.com/in/tangjennii/" target="_blank">Jennifer Tang, MD</a></p>';
   h+='</div>';
   // Column 2 — tagline + criteria (centered, inline with title)
-  h+='<div style="flex:1 1 auto;text-align:center;min-width:200px">';
+  h+='<div class="hero-tagline-col" style="flex:1 1 auto;text-align:center;min-width:200px">';
   h+='<div style="font-size:13px;color:var(--ink);font-weight:500;display:inline-flex;align-items:center;gap:6px;line-height:1.3;justify-content:center"><span style="color:var(--plum);font-size:14px">⏱</span> 10-minute evidence-based teaching</div>';
   h+='<div style="font-size:11px;color:var(--ink-muted);letter-spacing:0.005em;margin-top:3px;line-height:1.4">ABIM topics · Peer-reviewed sources · Society guidelines</div>';
   h+='</div>';
   // Column 3 — Sign in/account on top, Library underneath (upper right)
-  h+='<div style="flex:0 0 auto;align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end;gap:6px">';
+  h+='<div class="hero-account-col" style="flex:0 0 auto;align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end;gap:6px">';
   if(S.user){
     var initial = (S.profile && S.profile.name ? S.profile.name : S.user.email||"").trim().charAt(0).toUpperCase() || "?";
     h+='<button id="accountBtn" title="'+esc(S.user.email||"")+'" style="background:none;border:none;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;padding:2px 0"><span style="background:var(--lavender-soft);color:var(--plum);width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700">'+esc(initial)+'</span><span style="font-size:12px;color:var(--ink)">'+esc((S.profile&&S.profile.name)||S.user.email.split("@")[0])+'</span></button>';
@@ -5585,7 +5636,7 @@ function renderMain(){
   // References row
   h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .15s ease">';
   h+='<span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:400;flex-shrink:0">+</span>';
-  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Add references <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span></div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Upload PDFs, paste links, or add notes</div></div>';
+  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Add your own references <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span></div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.4">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.</div><div style="font-size:10.5px;color:var(--ink-soft);margin-top:3px;line-height:1.35">🔒 Not stored, not used for training.</div></div>';
   h+='<span style="color:var(--ink-soft);font-size:14px;flex-shrink:0">⌄</span>';
   h+='<input type="file" id="fileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none">';
   h+='</div>';
@@ -5635,7 +5686,7 @@ function renderMain(){
     var depthPill = depthLbl
       ? ' <span class="sep">·</span><button id="depthToggleBtn" title="Switch to '+(S.depth==="detailed"?"Concise":"Detailed")+' and rebuild" style="background:var(--lavender-bg);border:1px solid transparent;color:var(--plum);font:inherit;font-weight:600;padding:1px 8px;border-radius:10px;cursor:pointer;letter-spacing:.005em">'+depthLbl+' ⇄</button>'
       : '';
-    h+='<div class="cap-meta"><b>'+esc(t.title||S.topic)+'</b><span class="sep">·</span>'+styleLbl+depthPill+(refsCount>0?' <span class="sep">·</span>'+refsCount+' ref'+(refsCount===1?'':'s'):'')+'</div>';
+    h+='<div class="cap-meta"><b>'+esc(t.title||S.topic)+'</b><span class="sep">·</span>'+styleLbl+depthPill+(refsCount>0?' <span class="sep cap-sep-refs">·</span><span class="cap-meta-refs">'+refsCount+' ref'+(refsCount===1?'':'s')+'</span>':'')+'</div>';
     h+='<div class="cap-actions">';
     // Save button — primary action in the capsule (filled CTA treatment). Hidden for samples (already saved).
     if(!S.isSampleTalk){
@@ -5820,8 +5871,8 @@ function renderMain(){
     // ---------------- VISUAL TAB ----------------
     if(S.tab==="visual"&&!isBQ){
       h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)">';
-      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px">🎨</span><div><div style="font-size:14px;font-weight:700;color:var(--ink)">Visual Aid</div><div style="font-size:11px;color:var(--ink-muted)">'+(S.dgMode==="ai"?(S.dg&&S.dg.imgB64?"Generated with Nano Banana 2":"AI illustration"):(findDiagramTemplate(S.topic)?"Canonical template":"Simple flowchart"))+'</div></div></div>';
-      h+='<div style="display:flex;gap:5px;margin-bottom:10px"><button class="dgModeBtn" data-m="ai" style="flex:1;background:'+(S.dgMode==="ai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="ai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="ai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:7px;font-size:10.5px;font-weight:600;cursor:pointer">🎨 Gemini</button><button class="dgModeBtn" data-m="openai" style="flex:1;background:'+(S.dgMode==="openai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="openai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="openai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:7px;font-size:10.5px;font-weight:600;cursor:pointer">💬 ChatGPT</button><button class="dgModeBtn" data-m="svg" style="flex:1;background:'+(S.dgMode==="svg"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="svg"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="svg"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:7px;font-size:10.5px;font-weight:600;cursor:pointer">📈 Simple</button></div>';
+      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px">🎨</span><div><div style="font-size:14px;font-weight:700;color:var(--ink)">Visual Aid</div><div style="font-size:11px;color:var(--ink-muted)">'+(S.dgMode==="ai"?(S.dg&&S.dg.imgB64?"Generated with Nano Banana Pro":"AI illustration"):(findDiagramTemplate(S.topic)?"Canonical template":"Clean medical flowchart (no extra API key)"))+'</div></div></div>';
+      h+='<div style="display:flex;gap:5px;margin-bottom:10px"><button class="dgModeBtn" data-m="ai" style="flex:1;background:'+(S.dgMode==="ai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="ai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="ai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:7px;font-size:10.5px;font-weight:600;cursor:pointer">🎨 Gemini</button><button class="dgModeBtn" data-m="openai" style="flex:1;background:'+(S.dgMode==="openai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="openai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="openai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:7px;font-size:10.5px;font-weight:600;cursor:pointer">💬 ChatGPT</button><button class="dgModeBtn" data-m="svg" style="flex:1;background:'+(S.dgMode==="svg"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="svg"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="svg"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:7px;font-size:10.5px;font-weight:600;cursor:pointer">📈 Flowchart</button></div>';
       if(S.dgErr)h+='<div style="color:#c0392b;font-size:11.5px;margin-bottom:10px">'+esc(S.dgErr)+'</div>';
       if(S.dg&&S.dg.imgB64){h+='<div style="background:#fff;border-radius:10px;padding:6px;border:1px solid var(--line);margin-bottom:10px;cursor:zoom-in" id="lightboxOpenBtn"><img src="data:image/png;base64,'+S.dg.imgB64+'" style="width:100%;height:auto;display:block;border-radius:7px"/></div>';h+='<button id="lightboxOpenBtn2" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:6px">🔍 Open full image</button><button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="width:100%;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">↻ Regenerate</button>';}
       else if(S.dg&&S.dg.svg){h+='<div style="background:var(--ink);border-radius:10px;padding:14px;margin-bottom:10px">'+diagSVG(S.dg.svg)+'</div><button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="width:100%;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">↻ Regenerate</button>'}
@@ -5906,7 +5957,7 @@ function renderMain(){
     // References manager (in drawer)
     h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer">';
     h+='<span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">+</span>';
-    h+='<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--ink)">Add references</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px">Upload PDFs, paste links, or add notes</div></div>';
+    h+='<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--ink)">Add your own references</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.</div></div>';
     h+='<input type="file" id="fileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none">';
     h+='</div>';
     for(var fid=0;fid<S.files.length;fid++)h+='<div style="display:flex;justify-content:space-between;background:var(--lavender-bg);border-radius:8px;padding:6px 12px;margin-bottom:6px"><span style="font-size:12px;color:var(--ink)">📄 '+esc(S.files[fid].n)+'</span><button class="rmFile" data-i="'+fid+'" style="background:none;border:none;color:var(--ink-muted);font-size:16px">×</button></div>';
