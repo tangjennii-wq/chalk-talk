@@ -4999,7 +4999,7 @@ async function genDiagram(){
         method:"POST",
         headers:oaHeaders,
         body:JSON.stringify({
-          model:"gpt-image-2",
+          model:"gpt-image-1.5",  // Bump to "gpt-image-2" once OpenAI org verification is complete (gpt-image-2 is gated)
           prompt:oaPrompt,
           size:"1536x1024",
           quality:"high",
@@ -5973,11 +5973,11 @@ function renderMain(){
     // ---------------- VISUAL TAB ----------------
     if(S.tab==="visual"&&!isBQ){
       h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)">';
-      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px">🎨</span><div><div style="font-size:14px;font-weight:700;color:var(--ink)">Visual Aid</div><div style="font-size:11px;color:var(--ink-muted)">'+(S.dgMode==="ai"?(S.dg&&S.dg.imgB64?"Generated with Nano Banana Pro":"AI illustration"):(findDiagramTemplate(S.topic)?"Canonical template":"Clean medical flowchart (no extra API key)"))+'</div></div></div>';
+      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px">🎨</span><div><div style="font-size:14px;font-weight:700;color:var(--ink)">Visual Aid</div><div style="font-size:11px;color:var(--ink-muted)">'+(S.dgMode==="ai"?(S.dg&&S.dg.imgB64?"Generated with Nano Banana Pro":"Gemini Nano Banana Pro"):(S.dg&&S.dg.imgB64?"Generated with gpt-image-1.5":"OpenAI gpt-image-1.5"))+'</div></div></div>';
       // Flowchart (SVG) mode removed — autoLayout produced overlapping/clipped output. Only raster modes remain.
       // Guard: if S.dgMode is stuck on "svg" from a previous session, fall back to "ai".
       if(S.dgMode==="svg")S.dgMode="ai";
-      h+='<div style="display:flex;gap:5px;margin-bottom:10px"><button class="dgModeBtn" data-m="ai" style="flex:1;background:'+(S.dgMode==="ai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="ai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="ai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">🎨 Gemini (Nano Banana Pro)</button><button class="dgModeBtn" data-m="openai" style="flex:1;background:'+(S.dgMode==="openai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="openai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="openai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">💬 ChatGPT (gpt-image-2)</button></div>';
+      h+='<div style="display:flex;gap:5px;margin-bottom:10px"><button class="dgModeBtn" data-m="ai" style="flex:1;background:'+(S.dgMode==="ai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="ai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="ai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">🎨 Gemini (Nano Banana Pro)</button><button class="dgModeBtn" data-m="openai" style="flex:1;background:'+(S.dgMode==="openai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="openai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="openai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">💬 ChatGPT (gpt-image-1.5)</button></div>';
       // Inline notice when neither key is present — tells user they need to add one to use this tab.
       var _hasGeminiKey = !!localStorage.getItem("gemini_api_key");
       var _hasOpenAIKey = !!(localStorage.getItem("openai_api_key") || getImageProxyURL());
