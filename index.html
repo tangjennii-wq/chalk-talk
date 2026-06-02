@@ -170,10 +170,11 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 /* Lesson outline header */
 .outline-head{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 6px;padding:0 4px;font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em}
 .outline-head .total{font-size:11px;font-weight:500;color:var(--ink-soft);text-transform:none;letter-spacing:0}
-/* Landing sample-card grid — exactly 2 cards (HFrEF + Hyponatremia), 2-col both desktop and mobile */
-.msample-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:560px}
+/* Landing sample-card grid — 4-col desktop, 2-col mobile showing ONLY first 2 cards (HFrEF + Hyponatremia) */
+.msample-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 @media (max-width:640px){
-  .msample-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-width:100%}
+  .msample-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .msample-grid > *:nth-child(n+3){display:none}  /* hide cards 3-4 on mobile; tap "See all" for full list */
 }
 /* Hero card mobile layout — keep Sign-in/Library upper-right, tagline drops below */
 @media (max-width:640px){
@@ -5695,9 +5696,9 @@ function renderMain(){
   if(!S.talk&&!S.loading&&typeof SAMPLES!=="undefined"&&SAMPLES&&SAMPLES.length>0){
     h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
     h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all '+SAMPLES.length+' →</button></div>';
-    // Landing shows exactly 2 hand-picked samples (HFrEF cardio + Hyponatremia nephro). Full 19 still in library.
+    // Landing shows 4 hand-picked samples on desktop, first 2 (HFrEF + Hyponatremia) on mobile via CSS.
     h+='<div data-msample-grid class="msample-grid">';
-    var LANDING_SLUGS=["hfref","hyponatremia"];
+    var LANDING_SLUGS=["hfref","hyponatremia","copd","gout"];
     var landingSamples=LANDING_SLUGS.map(function(sl){return SAMPLES.find(function(s){return s.slug===sl})}).filter(Boolean);
     for(var li=0;li<landingSamples.length;li++){
       var ls=landingSamples[li];
