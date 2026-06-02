@@ -3976,6 +3976,411 @@ var SAMPLES = [
         "center": ""
       }
     }
+  },
+  {
+    "slug": "kidney-transplant",
+    "topic": "Kidney Transplant: induction, rejection, maintenance, toxicities",
+    "style": "lecture",
+    "specialty": "Nephrology",
+    "guideline_sources": [
+      "KDIGO 2009 — Care of the Kidney Transplant Recipient (still current)",
+      "KDIGO 2020 — Evaluation of Candidates for Kidney Transplantation",
+      "Banff 2022 Kidney Classification (reaffirmed at Banff 2024 Paris meeting)",
+      "Fourth International Consensus Guidelines for CMV in SOT (2025)"
+    ],
+    "generated_at": "2026-06-02",
+    "talk_concise": {
+      "title": "Kidney Transplant: A Practical Framework",
+      "subtitle": "Induction, maintenance, rejection, monitoring, toxicities",
+      "guideline_sources": [
+        "KDIGO 2009 Care of the Kidney Transplant Recipient (still the current comprehensive guideline)",
+        "Banff 2022 Classification (reaffirmed unchanged at the Banff 2024 Paris meeting)",
+        "Fourth International Consensus Guidelines for CMV in SOT (Kotton et al, 2025)"
+      ],
+      "references": [
+        {"id":1,"source":"KDIGO Clinical Practice Guideline for the Care of Kidney Transplant Recipients","year":2009,"society":"KDIGO","url":"https://kdigo.org/guidelines/care-of-the-kidney-transplant-recipient/","type":"guideline"},
+        {"id":2,"source":"Symphony Trial (Ekberg, NEJM)","year":2007,"society":"NEJM","url":"https://doi.org/10.1056/NEJMoa067411","type":"landmark_trial"},
+        {"id":3,"source":"BENEFIT (belatacept, Vincenti, AJT)","year":2010,"society":"AJT","url":"https://doi.org/10.1111/j.1600-6143.2010.03005.x","type":"landmark_trial"},
+        {"id":4,"source":"The Banff 2022 Kidney Meeting Report — refined microvascular inflammation framework","year":2024,"society":"AJT","url":"https://doi.org/10.1016/j.ajt.2023.10.016","type":"guideline"},
+        {"id":5,"source":"The Banff 2024 Kidney Meeting Report (Paris) — reaffirmed Banff 2022 classification","year":2026,"society":"AJT","url":"https://www.amjtransplant.org/article/S1600-6135(26)00040-7/fulltext","type":"guideline"},
+        {"id":6,"source":"Fourth International Consensus Guidelines on CMV in SOT (Kotton et al, Transplantation)","year":2025,"society":"Transplantation","url":"https://journals.lww.com/transplantjournal/fulltext/2025/07000/the_fourth_international_consensus_guidelines_on.6.aspx","type":"guideline"}
+      ],
+      "sections": [
+        {
+          "heading": "Induction — Setting the Immunologic Tone",
+          "minutes": "2 min",
+          "points": [
+            "Goal: deplete or block T-cells at the moment of antigen exposure to prevent early acute rejection.",
+            "Low immunologic risk (1st transplant, low PRA, well-matched living donor): basiliximab — anti-CD25 (IL-2Rα) blocker, 20 mg day 0 + day 4, non-depleting.",
+            "High immunologic risk (high PRA, DSA, re-transplant, ABO-incompatible, African-American, deceased donor): rabbit anti-thymocyte globulin (rATG) 1.5 mg/kg × 3–5 doses — pan-T-cell depletion.",
+            "Steroid-sparing protocols use rATG induction to permit rapid steroid taper or avoidance — reduces NODAT, weight gain, bone loss."
+          ],
+          "teaching_pearl": "Induction is one-time, peri-operative — it buys time for maintenance to reach steady state. Choice tracks immunologic risk, not surgical risk.",
+          "board_tip": "Alemtuzumab (anti-CD52) causes profound, prolonged lymphocyte depletion — used selectively but raises late infection/PTLD risk."
+        },
+        {
+          "heading": "Maintenance Immunosuppression — The Symphony Triple",
+          "minutes": "2 min",
+          "points": [
+            "Modern standard (post-Symphony 2007): low-dose tacrolimus + mycophenolate + low-dose prednisone — superior renal function and acute rejection rates vs older CNI/sirolimus regimens.",
+            "Tacrolimus: calcineurin inhibitor, blocks NFAT → IL-2 transcription. Target trough 5–10 ng/mL early, 4–7 ng/mL after 1 year. Narrow therapeutic index, CYP3A4 metabolism (azoles, diltiazem ↑ levels).",
+            "Mycophenolate (MMF/MPA): inhibits IMPDH → blocks de novo purine synthesis, preferentially affecting lymphocytes. Dose-limiting GI toxicity and leukopenia/anemia.",
+            "Prednisone: low-dose maintenance (5 mg) or avoidance with rATG induction. Belatacept (CTLA-4 Ig, costimulation blockade) is a CNI-free alternative — Class I in EBV+ recipients; avoid in EBV− (PTLD risk)."
+          ],
+          "teaching_pearl": "Tacrolimus + MMF + steroid is the workhorse. Replace one piece only for a specific reason: BK nephropathy → reduce MMF/tac; CNI toxicity → switch to belatacept; PTLD/skin cancer → consider mTOR inhibitor (everolimus).",
+          "board_tip": "Sirolimus/everolimus impair wound healing — avoid in the first 3 months post-op; they are also associated with proteinuria and pneumonitis."
+        },
+        {
+          "heading": "Rejection — Cellular vs Antibody-Mediated",
+          "minutes": "2 min",
+          "points": [
+            "T-cell-mediated rejection (TCMR): tubulitis + interstitial inflammation on biopsy, Banff grades IA/IB (tubulitis), IIA/IIB (intimal arteritis), III (transmural arteritis). Treat with pulse steroids; rATG for steroid-refractory or grade ≥II.",
+            "Antibody-mediated rejection (ABMR): donor-specific antibodies (DSA), microvascular inflammation (peritubular capillaritis, glomerulitis), C4d staining in peritubular capillaries. Treat with plasmapheresis + IVIG ± rituximab; emerging role for daratumumab/imlifidase.",
+            "Workup of acute graft dysfunction: rule out volume/obstruction/CNI toxicity → tacro trough → DSA + BK/CMV PCR → biopsy. Don't empirically treat — biopsy first.",
+            "Chronic ABMR (transplant glomerulopathy) is the leading cause of late graft loss; no proven therapy reverses it — prevention via DSA monitoring and adherence is key."
+          ],
+          "teaching_pearl": "TCMR = inflammation in the tubules/interstitium; ABMR = injury at the capillary endothelium with C4d + DSA. Two different problems, two different treatments.",
+          "board_tip": "C4d staining is the histologic fingerprint of complement-fixing DSA — diagnostic of ABMR. C4d-negative ABMR exists (microvascular inflammation + DSA without C4d)."
+        },
+        {
+          "heading": "Monitoring & Toxicities — What Goes Wrong",
+          "minutes": "2 min",
+          "points": [
+            "Routine surveillance: tacro trough, BMP, CBC at every visit; DSA, BK PCR, CMV PCR (esp D+/R−) at scheduled intervals per Fourth International Consensus 2025.",
+            "CNI nephrotoxicity: acute = afferent arteriolar vasoconstriction (reversible, dose-dependent); chronic = arteriolar hyalinosis, striped IF/TA — drives long-term graft loss.",
+            "Infections: BK polyomavirus nephropathy (treat by reducing immunosuppression, not antivirals); CMV (valganciclovir prophylaxis 3–6 months in D+/R−); PJP prophylaxis with TMP-SMX × 6–12 months.",
+            "Malignancy: PTLD (EBV-driven, mostly B-cell) — reduce IS + rituximab; non-melanoma skin cancer is the most common late malignancy (sun-protection counseling for all).",
+            "Metabolic: new-onset diabetes after transplant (NODAT) ~20%, driven by tacro + steroids; hypertension, dyslipidemia, weight gain — manage aggressively."
+          ],
+          "teaching_pearl": "BK nephropathy is treated by lowering immunosuppression, not by antivirals — the most common board trap in transplant nephrology.",
+          "board_tip": "CMV D+/R− is the highest-risk serostatus pair; D−/R− is the lowest. Prophylaxis duration and surveillance frequency scale with this risk."
+        },
+        {
+          "heading": "Outcomes — What to Tell the Patient",
+          "minutes": "1 min",
+          "points": [
+            "1-year graft survival: ~97% living-donor, ~93% deceased-donor (SRTR contemporary data).",
+            "5-year graft survival: ~85% living-donor, ~75% deceased-donor; primary late driver is chronic ABMR + death with functioning graft.",
+            "Median graft half-life: ~15–20 years living donor, ~10–12 years deceased donor (improving with steroid minimization + DSA surveillance).",
+            "Patient survival benefit vs dialysis is established within 1–2 years; transplant remains the gold standard for ESKD."
+          ],
+          "teaching_pearl": "The biggest threat to long-term graft survival is chronic ABMR — so the unglamorous things (adherence, BP control, DSA surveillance) matter more than choice of induction.",
+          "board_tip": "Death with a functioning graft (cardiovascular) is now the leading cause of graft loss beyond 5 years — manage CV risk as aggressively as CKD."
+        }
+      ],
+      "summary_points": [
+        "Induction choice tracks immunologic risk: basiliximab for low-risk, rATG for high-risk or steroid-sparing protocols.",
+        "Maintenance: tacrolimus + MMF + low-dose prednisone is the Symphony-era standard; trough-guided tacro 5–10 ng/mL early, 4–7 ng/mL maintenance.",
+        "Acute graft dysfunction needs a biopsy — TCMR (tubulitis) treats with steroids ± rATG; ABMR (DSA + C4d + microvascular inflammation) treats with PLEX + IVIG ± rituximab.",
+        "BK nephropathy is treated by reducing immunosuppression; CMV D+/R− is the highest-risk pairing and gets prolonged valganciclovir prophylaxis.",
+        "Long-term graft loss is driven by chronic ABMR + death with functioning graft — adherence, BP, lipids, and DSA surveillance are the levers that matter."
+      ],
+      "visual_memory_card": {
+        "top_left": "Risk-stratified induction → tacro/MMF/steroid maintenance",
+        "top_right": "Acute Cr rise → trough, DSA, BK, CMV, biopsy",
+        "bottom_left": "TCMR = tubulitis; ABMR = DSA + C4d + cap inflammation",
+        "bottom_right": "BK: lower IS, not antivirals. CMV D+/R−: valgancyclovir prophy",
+        "center": "Tacro + MMF + Pred"
+      }
+    },
+    "talk_detailed": {
+      "title": "Kidney Transplant: A Practical Framework",
+      "subtitle": "Mechanism-based deep dive on induction, maintenance, rejection, and long-term care",
+      "guideline_sources": [
+        "KDIGO 2009 — Care of the Kidney Transplant Recipient (still the current comprehensive guideline)",
+        "KDIGO 2020 — Evaluation and Management of Candidates for Kidney Transplantation",
+        "Banff 2022 Classification, reaffirmed at the Banff 2024 Paris meeting",
+        "Fourth International Consensus Guidelines on CMV in SOT (Kotton et al, Transplantation 2025)"
+      ],
+      "references": [
+        {"id":1,"source":"KDIGO Guideline for the Care of Kidney Transplant Recipients","year":2009,"society":"KDIGO","url":"https://kdigo.org/guidelines/care-of-the-kidney-transplant-recipient/","type":"guideline"},
+        {"id":2,"source":"KDIGO Guideline on the Evaluation and Management of Candidates for Kidney Transplantation","year":2020,"society":"KDIGO","url":"https://journals.lww.com/transplantjournal/fulltext/2020/04001/kdigo_clinical_practice_guideline_on_the.9.aspx","type":"guideline"},
+        {"id":3,"source":"Symphony Trial (Ekberg et al, NEJM)","year":2007,"society":"NEJM","url":"https://doi.org/10.1056/NEJMoa067411","type":"landmark_trial"},
+        {"id":4,"source":"BENEFIT / BENEFIT-EXT (Vincenti, AJT)","year":2010,"society":"AJT","url":"https://doi.org/10.1111/j.1600-6143.2010.03005.x","type":"landmark_trial"},
+        {"id":5,"source":"Banff 2022 Kidney Meeting Report — refined microvascular inflammation framework","year":2024,"society":"AJT","url":"https://doi.org/10.1016/j.ajt.2023.10.016","type":"guideline"},
+        {"id":6,"source":"Banff 2024 Kidney Meeting Report (Paris) — reaffirmed Banff 2022 classification","year":2026,"society":"AJT","url":"https://www.amjtransplant.org/article/S1600-6135(26)00040-7/fulltext","type":"guideline"},
+        {"id":7,"source":"Fourth International Consensus Guidelines on CMV in SOT (Kotton et al)","year":2025,"society":"Transplantation","url":"https://journals.lww.com/transplantjournal/fulltext/2025/07000/the_fourth_international_consensus_guidelines_on.6.aspx","type":"guideline"}
+      ],
+      "sections": [
+        {
+          "heading": "Induction — Why, What, and for Whom",
+          "minutes": "2 min",
+          "points": [
+            "The first 30 days carry the highest risk of acute T-cell rejection because donor antigen presentation is maximal and recipient T-cells have not yet been suppressed by maintenance. Induction occupies this window by either depleting T-cells (rATG, alemtuzumab) or blocking T-cell activation (basiliximab — anti-CD25).",
+            "Low immunologic risk recipients (first transplant, PRA <20%, no DSA, well-matched living donor): basiliximab 20 mg IV on day 0 and day 4. Non-depleting, well-tolerated, no first-dose reaction.",
+            "High immunologic risk (high PRA, preformed DSA, retransplant, ABO-incompatible, deceased donor with prolonged cold ischemia, African-American recipient): rabbit anti-thymocyte globulin (rATG) 1.5 mg/kg/day × 3–5 doses with premedication (steroid, antihistamine, acetaminophen) to blunt cytokine release.",
+            "Steroid-sparing or steroid-avoidance protocols typically pair rATG induction with rapid early taper — they reduce NODAT, dyslipidemia, weight gain, and bone loss without increasing rejection in carefully selected patients.",
+            "Alemtuzumab (anti-CD52, off-label) produces profound and prolonged lymphocyte depletion. Reserved for selective protocols; higher late infection and PTLD risk."
+          ],
+          "teaching_pearl": "Think of induction as a one-time, peri-operative tool calibrated to the patient's immunologic risk, not to surgical complexity. Maintenance is a daily, decades-long tool calibrated to overall infection vs. rejection balance.",
+          "board_tip": "rATG can cause severe cytokine release with first dose — always premedicate. Thrombocytopenia and lymphopenia are expected and not reasons to stop unless severe."
+        },
+        {
+          "heading": "Maintenance Triple Therapy — Mechanisms and Targets",
+          "minutes": "3 min",
+          "points": [
+            "The Symphony trial (NEJM 2007) established low-dose tacrolimus + mycophenolate + low-dose prednisone as the modern standard, with superior renal function and acute rejection rates compared to standard-dose cyclosporine, low-dose cyclosporine, or sirolimus-based regimens.",
+            "Tacrolimus binds FKBP-12, inhibiting calcineurin → blocks dephosphorylation of NFAT → suppresses IL-2 and other cytokine transcription. Trough targets: 8–10 ng/mL early, 5–8 ng/mL months 1–12, 4–7 ng/mL thereafter — institution-specific.",
+            "Tacrolimus interactions to commit to memory: azole antifungals, diltiazem, verapamil, macrolides, grapefruit ↑ levels; rifampin, phenytoin, carbamazepine, St. John's wort ↓ levels. CYP3A4/5 polymorphisms drive substantial dose variability.",
+            "Mycophenolate (MMF as mofetil ester, or enteric-coated MPA) inhibits inosine monophosphate dehydrogenase (IMPDH) → blocks de novo purine synthesis. Lymphocytes lack a salvage pathway, so they are preferentially suppressed. Dose: usually 1 g BID (MMF) or 720 mg BID (MPA). Toxicity is GI (diarrhea, abdominal pain) and hematologic (leukopenia, anemia). Strongly teratogenic — confirm contraception in patients of reproductive potential.",
+            "Prednisone: 5 mg daily long-term in most protocols, or earlier withdrawal in steroid-sparing regimens. Belatacept (CTLA-4 Ig) is the principal CNI-free maintenance alternative — Class I costimulation blocker, IV every 4 weeks, requires EBV+ recipient (high PTLD risk in EBV− recipients).",
+            "mTOR inhibitors (sirolimus, everolimus): used selectively for CNI minimization, PTLD risk reduction, or in patients with skin cancers. Major drawbacks are impaired wound healing (avoid first 3 months post-op), proteinuria, oral ulcers, pneumonitis, dyslipidemia."
+          ],
+          "teaching_pearl": "Three drugs, three pathways: calcineurin signaling (tacro), purine synthesis (MMF), and broad anti-inflammatory + cytokine suppression (steroid). Substituting any one of them is always a tradeoff — never a free swap.",
+          "board_tip": "Belatacept-treated patients have lower rates of NODAT, hypertension, and CNI nephrotoxicity but more acute rejection — and are absolutely contraindicated in EBV-seronegative recipients due to PTLD risk."
+        },
+        {
+          "heading": "Rejection — Recognition, Banff Classification, Treatment",
+          "minutes": "3 min",
+          "points": [
+            "Acute rejection presents as a rise in serum creatinine, sometimes with proteinuria or hypertension. Workup before treatment: rule out volume status, ureteral obstruction (ultrasound), tacrolimus trough (toxicity vs sub-therapy), BK PCR, CMV PCR, then biopsy. Empirical pulse steroids without a tissue diagnosis is a board (and clinical) error.",
+            "T-cell-mediated rejection (TCMR) — Banff grades: borderline (foci of tubulitis without significant interstitial inflammation), IA (moderate interstitial infiltrate + moderate tubulitis), IB (severe tubulitis), IIA (mild-moderate intimal arteritis), IIB (severe intimal arteritis), III (transmural arteritis or fibrinoid necrosis). Treat IA/IB with pulse methylprednisolone × 3; II and III with rATG.",
+            "Antibody-mediated rejection (ABMR): the diagnostic triad is (1) donor-specific antibody (DSA) — most commonly anti-HLA class II, (2) microvascular inflammation (glomerulitis [g], peritubular capillaritis [ptc]), and (3) evidence of antibody-endothelial interaction (C4d staining in peritubular capillaries, or — in C4d-negative ABMR — characteristic gene transcripts and microvascular injury).",
+            "ABMR treatment: plasmapheresis to remove circulating DSA + IVIG to neutralize and modulate antibody, often with rituximab (anti-CD20) to deplete B-cells. Emerging agents: daratumumab (anti-CD38, plasma cell-directed), imlifidase (IgG-cleaving enzyme used in desensitization).",
+            "Chronic active TCMR and chronic active ABMR represent ongoing immunologic injury with chronic histologic changes (interstitial fibrosis/tubular atrophy [IF/TA], transplant glomerulopathy [TG]). Chronic ABMR — transplant glomerulopathy — is the dominant cause of late graft loss. No therapy reliably reverses TG once established; prevention through DSA surveillance and adherence is the only durable strategy.",
+            "Subclinical rejection (rejection found on protocol biopsy in absence of Cr rise) is common, particularly in the first 6 months. Whether to treat is debated; many programs treat subclinical TCMR ≥IA but monitor borderline lesions."
+          ],
+          "teaching_pearl": "TCMR is inflammation between the tubules (tubulitis + interstitial infiltrate); ABMR is injury at the capillary endothelium (DSA + C4d + glomerulitis/peritubular capillaritis). Different mechanism, different cell target, different treatment.",
+          "board_tip": "A C4d-positive peritubular capillary stain in the setting of DSA establishes ABMR even if light microscopy is unimpressive — this is one of the highest-yield transplant pathology facts for boards."
+        },
+        {
+          "heading": "Monitoring, Infections, and Toxicities",
+          "minutes": "3 min",
+          "points": [
+            "Routine surveillance: tacrolimus trough, CMP, CBC, urinalysis with protein/creatinine at every visit. DSA every 6–12 months (more often in high-risk). BK polyomavirus PCR monthly × 6 months, then every 3 months × 1 year per AST 2019 IDCOP. CMV PCR per risk-stratified protocol from the Fourth International Consensus Guidelines (2025).",
+            "Calcineurin inhibitor (CNI) nephrotoxicity has two phases: acute (afferent arteriolar vasoconstriction, dose-dependent, reversible — Cr improves with dose reduction) and chronic (arteriolar hyalinosis with striped interstitial fibrosis and tubular atrophy — irreversible, contributes to late graft loss).",
+            "BK polyomavirus nephropathy: viremia precedes nephropathy; treatment is reduction of immunosuppression (typically lower MMF first, then tacrolimus). Antivirals (leflunomide, cidofovir, IVIG) are unproven adjuncts. Untreated BK leads to graft loss.",
+            "CMV: stratify by donor/recipient serostatus. D+/R− is highest risk → valganciclovir prophylaxis × 6 months. D+/R+ or D−/R+ → 3 months prophylaxis or pre-emptive monitoring. D−/R− → no prophylaxis (but blood products should be CMV-safe).",
+            "Other infections: PJP prophylaxis with TMP-SMX × 6–12 months (or longer with rATG induction). Reactivation infections — HSV, HBV, latent TB — require pre-transplant screening and tailored prophylaxis.",
+            "Malignancy: post-transplant lymphoproliferative disorder (PTLD) is mostly EBV-driven B-cell proliferation, highest risk in EBV− recipients. First-line treatment: reduce IS + rituximab. Skin cancer (especially SCC) is the most common late malignancy — counsel rigorous photoprotection and annual dermatology.",
+            "Metabolic complications: NODAT in 15–25% (tacro + steroids; consider cyclosporine or belatacept if severe), hypertension in 60–80%, dyslipidemia in 60% — manage with the same vigor as native CKD because cardiovascular death is the leading cause of late graft loss."
+          ],
+          "teaching_pearl": "When in doubt about a transplant patient's Cr rise, think 'trough, infection, biopsy' before reaching for steroids — the differential is wider than rejection and the wrong empiric treatment can be catastrophic.",
+          "board_tip": "Reduce immunosuppression first for BK nephropathy. Empiric antivirals (cidofovir, leflunomide) are not standard-of-care and have toxicity that may exceed benefit."
+        },
+        {
+          "heading": "Outcomes and Counseling Points",
+          "minutes": "1 min",
+          "points": [
+            "Contemporary 1-year graft survival exceeds 97% for living donor and 93% for deceased donor recipients (SRTR data).",
+            "5-year graft survival is ~85% for living donor and ~75% for deceased donor; the gap is closing with better DSA surveillance and steroid minimization.",
+            "Median graft half-life: ~15–20 years (living donor) and ~10–12 years (deceased donor). Death with a functioning graft, primarily from CVD, now exceeds rejection as a cause of graft loss after the first decade.",
+            "Patient survival is superior to dialysis within 1–2 years post-transplant — transplantation remains the renal replacement therapy of choice for ESKD when feasible.",
+            "Counsel patients up-front: adherence to immunosuppression, BP and lipid control, sun protection, vaccination (no live vaccines post-transplant), and contraception/family-planning conversations matter as much as any one drug choice."
+          ],
+          "teaching_pearl": "Most late graft losses are unsexy — chronic ABMR, cardiovascular death, recurrence of native disease. The boring interventions (BP, lipids, adherence, DSA surveillance) save grafts.",
+          "board_tip": "Live vaccines (MMR, varicella, live attenuated zoster, yellow fever, oral typhoid, nasal influenza) are contraindicated post-transplant. Inactivated influenza and recombinant zoster (Shingrix) are encouraged."
+        }
+      ],
+      "summary_points": [
+        "Induction is risk-stratified: basiliximab for low-risk recipients, rATG for high-risk or steroid-sparing protocols; alemtuzumab is selective.",
+        "Maintenance after Symphony: low-dose tacrolimus + MMF + low-dose prednisone — three pathways (calcineurin, purine synthesis, anti-inflammatory).",
+        "Acute graft dysfunction needs a workup before treatment: trough, ultrasound, DSA, BK/CMV, biopsy. TCMR treats with steroids (or rATG for grade ≥II); ABMR treats with PLEX + IVIG ± rituximab.",
+        "BK nephropathy treats by reducing immunosuppression, not antivirals. CMV D+/R− is the highest-risk serostatus → 6-month valganciclovir prophylaxis.",
+        "Long-term graft survival is limited by chronic ABMR and cardiovascular death — surveillance, BP/lipid control, and adherence are the most consequential interventions.",
+        "Live vaccines are contraindicated post-transplant; pregnancy is feasible but requires switching MMF to azathioprine months in advance due to teratogenicity."
+      ],
+      "visual_memory_card": {
+        "top_left": "Risk-stratified induction (basiliximab vs rATG)",
+        "top_right": "Cr rise → trough, US, DSA, BK/CMV, biopsy",
+        "bottom_left": "TCMR (tubulitis) vs ABMR (DSA + C4d + cap inflam)",
+        "bottom_right": "BK: lower IS. CMV D+/R−: 6 mo valgan. Live vax: never.",
+        "center": "Tacro + MMF + Pred → 4–7 ng/mL trough"
+      }
+    }
+  },
+  {
+    "slug": "lupus-nephritis",
+    "topic": "Lupus Nephritis: classification, induction, maintenance",
+    "style": "lecture",
+    "specialty": "Nephrology",
+    "guideline_sources": [
+      "KDIGO 2024 Clinical Practice Guideline for the Management of Lupus Nephritis",
+      "EULAR 2025 Recommendations for SLE with Kidney Involvement",
+      "EULAR 2023 Recommendations for the Management of SLE",
+      "ACR 2024 Lupus Nephritis Guideline"
+    ],
+    "generated_at": "2026-06-02",
+    "talk_concise": {
+      "title": "Lupus Nephritis",
+      "subtitle": "Classification, induction, maintenance, and the newer agents",
+      "guideline_sources": [
+        "KDIGO 2024 LN Guideline (focused update of the 2021 GN guideline)",
+        "EULAR 2025 SLE with Kidney Involvement Update"
+      ],
+      "references": [
+        {"id":1,"source":"KDIGO 2024 Clinical Practice Guideline for the Management of Lupus Nephritis","year":2024,"society":"KDIGO","url":"https://kdigo.org/guidelines/lupus-nephritis/","type":"guideline"},
+        {"id":2,"source":"EULAR Recommendations for the Management of SLE with Kidney Involvement: 2025 Update","year":2025,"society":"EULAR/ERA","url":"https://ard.eular.org/article/S0003-4967(25)04412-7/fulltext","type":"guideline"},
+        {"id":3,"source":"ALMS Trial (Appel, JASN)","year":2009,"society":"JASN","url":"https://doi.org/10.1681/ASN.2008101028","type":"landmark_trial"},
+        {"id":4,"source":"Euro-Lupus Nephritis Trial (Houssiau, A&R)","year":2002,"society":"A&R","url":"https://doi.org/10.1002/art.10461","type":"landmark_trial"},
+        {"id":5,"source":"BLISS-LN (Furie, NEJM — belimumab)","year":2020,"society":"NEJM","url":"https://doi.org/10.1056/NEJMoa2001180","type":"landmark_trial"},
+        {"id":6,"source":"AURORA-1 (Rovin, Lancet — voclosporin)","year":2021,"society":"Lancet","url":"https://doi.org/10.1016/S0140-6736(21)00578-X","type":"landmark_trial"}
+      ],
+      "sections": [
+        {
+          "heading": "Why Biopsy and the ISN/RPS Classes",
+          "minutes": "2 min",
+          "points": [
+            "Indication: any SLE patient with proteinuria ≥0.5 g/day, active urinary sediment (RBC casts, dysmorphic RBCs), or unexplained Cr rise — biopsy is required because clinical features cannot reliably distinguish classes.",
+            "ISN/RPS classes (2003, updated 2018): I (minimal mesangial), II (mesangial proliferative), III (focal proliferative <50% glomeruli), IV (diffuse proliferative ≥50% glomeruli), V (membranous), VI (advanced sclerosis ≥90%).",
+            "Class III and IV — proliferative disease — drive immediate kidney loss and require aggressive immunosuppression. Class V — membranous — presents with nephrotic-range proteinuria and follows a more indolent course.",
+            "Activity index (cellular crescents, fibrinoid necrosis, hyaline thrombi, interstitial inflammation) guides intensity of induction. Chronicity index (sclerosis, IF/TA, fibrous crescents) flags poor reversibility."
+          ],
+          "teaching_pearl": "You cannot manage lupus nephritis without a biopsy. Treating proteinuria + serologies alone misses Class V (which needs different therapy) and misjudges chronicity (which changes prognosis).",
+          "board_tip": "A 'full-house' immunofluorescence (IgG, IgA, IgM, C3, C1q) is the LN signature on biopsy."
+        },
+        {
+          "heading": "Induction for Proliferative LN (Class III/IV ± V)",
+          "minutes": "2 min",
+          "points": [
+            "Two backbones, both supported by KDIGO 2024 Class 1A: mycophenolate mofetil (MMF, target 2–3 g/day) OR low-dose IV cyclophosphamide (Euro-Lupus: 500 mg every 2 weeks × 6 doses).",
+            "ALMS (2009) established MMF non-inferior to NIH high-dose IV cyclophosphamide; preferred in African-American and Hispanic patients (better response) and in patients of reproductive age (less gonadotoxicity).",
+            "Add belimumab (BLISS-LN, 2020): 10 mg/kg IV monthly, added to MMF/CYC + steroids — significantly higher complete renal response at 2 years.",
+            "Or add voclosporin (AURORA-1, 2021): 23.7 mg BID, calcineurin inhibitor with predictable PK so no trough monitoring; faster proteinuria reduction at 1 year. Cannot combine voclosporin and belimumab.",
+            "Steroids: KDIGO 2024 endorses lower starting dose (0.6–0.8 mg/kg/day, max 60 mg) with rapid taper to ≤5 mg by month 3 — and use of pulse methylprednisolone (250–500 mg × 3 days) to allow lower oral start.",
+            "Always continue hydroxychloroquine — disease-modifying, reduces flares, improves renal response. No SLE patient should be off HCQ unless contraindicated."
+          ],
+          "teaching_pearl": "Modern induction for proliferative LN is a triplet: backbone (MMF or low-dose CYC) + add-on (belimumab OR voclosporin) + steroids that taper fast — not the old high-dose monthly cyclophosphamide regimen.",
+          "board_tip": "Euro-Lupus low-dose cyclophosphamide is non-inferior to high-dose NIH regimen with substantially less gonadotoxicity — high-yield board fact."
+        },
+        {
+          "heading": "Class V (Membranous LN) and Maintenance",
+          "minutes": "2 min",
+          "points": [
+            "Pure Class V with nephrotic-range proteinuria: MMF + low-dose steroids first-line; tacrolimus or voclosporin acceptable alternatives, especially in patients seeking pregnancy.",
+            "Mixed Class III/V or IV/V is treated as proliferative — the proliferative lesion drives prognosis.",
+            "Maintenance phase: MMF 1–2 g/day preferred over azathioprine — MAINTAIN and ALMS-M showed lower flare rates with MMF. Duration is ≥3 years total (induction + maintenance) before considering taper.",
+            "Adjuncts that matter: ACEi/ARB for proteinuria, SGLT2i if eGFR allows (extrapolated from CKD trials), strict BP control (<130/80), statin if indicated, and sun protection."
+          ],
+          "teaching_pearl": "MMF is the preferred maintenance for both proliferative and membranous LN; AZA is the backup, mainly used in pregnancy planning (MMF is teratogenic).",
+          "board_tip": "MMF is Category D in pregnancy — switch to azathioprine months before conception. Hydroxychloroquine is continued throughout pregnancy."
+        },
+        {
+          "heading": "Monitoring, Flares, and What Counts as Response",
+          "minutes": "2 min",
+          "points": [
+            "Routine monitoring: BP, UPCR, urinalysis, serum Cr, complements (C3/C4), anti-dsDNA every 1–3 months early; less frequent in stable maintenance.",
+            "Complete renal response (KDIGO 2024): UPCR <0.5 g/g + stable/improved Cr (within 10–15% of baseline) by 12 months. Partial: ≥50% UPCR reduction.",
+            "Rising anti-dsDNA + falling complements with rising UPCR or new sediment activity → suggests flare, often warrants re-biopsy if pattern unclear, especially distinguishing flare from chronicity.",
+            "Refractory disease (no response by 6–12 months): consider rituximab, switch CYC↔MMF, or trial belimumab/voclosporin if not yet used. Anifrolumab is approved for non-renal SLE; LN data are emerging."
+          ],
+          "teaching_pearl": "A 'response' is defined by proteinuria reduction + stable Cr, not by serology normalization. Treating to undetectable anti-dsDNA leads to over-immunosuppression.",
+          "board_tip": "Drug-induced lupus is ANA+ and anti-histone+, but typically does NOT cause significant renal disease — if you see significant nephritis, it is almost always idiopathic SLE."
+        }
+      ],
+      "summary_points": [
+        "Always biopsy a SLE patient with proteinuria ≥0.5 g/day, active sediment, or Cr rise — ISN/RPS class drives therapy and chronicity drives prognosis.",
+        "Induction for proliferative LN: MMF or low-dose IV CYC (Euro-Lupus) + steroids (lower dose + rapid taper, per KDIGO 2024) + belimumab (BLISS-LN) or voclosporin (AURORA-1).",
+        "Pure Class V (membranous): MMF + low-dose steroids; tacrolimus or voclosporin acceptable; mixed Class III/V or IV/V treated as proliferative.",
+        "Maintenance: MMF preferred over azathioprine (MAINTAIN, ALMS-M); ≥3 years total before considering taper; never stop hydroxychloroquine.",
+        "Response is defined by proteinuria reduction and stable Cr — not by serology normalization; refractory disease may need rituximab or a switch in induction backbone.",
+        "Pregnancy planning: switch MMF to azathioprine months before conception; HCQ continues throughout pregnancy."
+      ],
+      "visual_memory_card": {
+        "top_left": "SLE + protein ≥0.5 or sediment → BIOPSY",
+        "top_right": "ISN/RPS III/IV = proliferative → aggressive Tx",
+        "bottom_left": "Induction: MMF or low-dose CYC + steroid + belimumab/voclosporin",
+        "bottom_right": "Maintenance: MMF + HCQ; switch to AZA for pregnancy",
+        "center": "Always HCQ"
+      }
+    },
+    "talk_detailed": {
+      "title": "Lupus Nephritis",
+      "subtitle": "Histologic classification, mechanism-based therapy, and modern multi-agent induction",
+      "guideline_sources": [
+        "KDIGO 2024 Clinical Practice Guideline for the Management of Lupus Nephritis",
+        "EULAR 2025 Recommendations for the Management of SLE with Kidney Involvement",
+        "EULAR 2023 Recommendations for the Management of SLE",
+        "ACR 2024 Lupus Nephritis Management"
+      ],
+      "references": [
+        {"id":1,"source":"KDIGO 2024 Clinical Practice Guideline for the Management of Lupus Nephritis","year":2024,"society":"KDIGO","url":"https://kdigo.org/guidelines/lupus-nephritis/","type":"guideline"},
+        {"id":2,"source":"EULAR Recommendations for the Management of SLE with Kidney Involvement: 2025 Update","year":2025,"society":"EULAR/ERA","url":"https://ard.eular.org/article/S0003-4967(25)04412-7/fulltext","type":"guideline"},
+        {"id":3,"source":"EULAR 2023 Recommendations for the Management of SLE","year":2024,"society":"EULAR","url":"https://ard.eular.org/article/S0003-4967(24)66542-8/fulltext","type":"guideline"},
+        {"id":4,"source":"ALMS Induction Trial (Appel, JASN)","year":2009,"society":"JASN","url":"https://doi.org/10.1681/ASN.2008101028","type":"landmark_trial"},
+        {"id":5,"source":"Euro-Lupus Nephritis Trial (Houssiau, A&R)","year":2002,"society":"A&R","url":"https://doi.org/10.1002/art.10461","type":"landmark_trial"},
+        {"id":6,"source":"BLISS-LN (Furie, NEJM — belimumab + standard care)","year":2020,"society":"NEJM","url":"https://doi.org/10.1056/NEJMoa2001180","type":"landmark_trial"},
+        {"id":7,"source":"AURORA-1 (Rovin, Lancet — voclosporin)","year":2021,"society":"Lancet","url":"https://doi.org/10.1016/S0140-6736(21)00578-X","type":"landmark_trial"},
+        {"id":8,"source":"MAINTAIN Nephritis Trial (Houssiau, ARD)","year":2010,"society":"ARD","url":"https://doi.org/10.1136/ard.2010.131995","type":"landmark_trial"},
+        {"id":9,"source":"ALMS Maintenance (Dooley, NEJM)","year":2011,"society":"NEJM","url":"https://doi.org/10.1056/NEJMoa1014460","type":"landmark_trial"}
+      ],
+      "sections": [
+        {
+          "heading": "Diagnosis — Who Gets Biopsied, and How to Read the Path",
+          "minutes": "2 min",
+          "points": [
+            "Indications for renal biopsy in SLE: proteinuria ≥0.5 g/day (or UPCR ≥0.5 g/g), active urinary sediment (dysmorphic RBCs, RBC casts), or unexplained rise in serum creatinine. Clinical features cannot reliably predict ISN/RPS class — biopsy is mandatory.",
+            "ISN/RPS 2003 classification (modified 2018): Class I (minimal mesangial), Class II (mesangial proliferative), Class III (focal proliferative — <50% glomeruli), Class IV (diffuse proliferative — ≥50% glomeruli; subdivided into segmental S vs global G), Class V (membranous — subepithelial deposits with diffuse capillary wall thickening), Class VI (advanced sclerosis ≥90% — limited therapeutic implications).",
+            "The 2018 revision removed the A/C (active/chronic) subdivisions from Class III/IV and instead emphasized the activity and chronicity indices, which guide intensity of immunosuppression and counseling on prognosis.",
+            "Activity index (0–24): endocapillary hypercellularity, leukocyte infiltration, hyaline deposits, fibrinoid necrosis/karyorrhexis, cellular crescents, interstitial inflammation. Each item scored 0–3.",
+            "Chronicity index (0–12): glomerular sclerosis, fibrous crescents, tubular atrophy, interstitial fibrosis. Higher chronicity = worse renal prognosis and less reversibility.",
+            "Immunofluorescence in LN: characteristic 'full-house' pattern (IgG, IgA, IgM, C3, and C1q) — the C1q positivity is fairly specific for lupus among the glomerulonephritides. Electron microscopy shows subendothelial deposits in proliferative disease and subepithelial deposits in membranous disease."
+          ],
+          "teaching_pearl": "You cannot manage lupus nephritis without a biopsy — clinical phenotype overlaps across classes, and chronicity (which biopsy reveals) is the single best predictor of long-term renal outcome.",
+          "board_tip": "Full-house immunofluorescence (IgG + IgA + IgM + C3 + C1q) is the lupus nephritis fingerprint on biopsy. C1q positivity is the most specific component."
+        },
+        {
+          "heading": "Induction for Proliferative Disease — Two Backbones, Two Add-Ons",
+          "minutes": "3 min",
+          "points": [
+            "Two equally evidence-based backbones for proliferative LN (Class III, IV, or mixed III/V or IV/V), per KDIGO 2024: mycophenolate mofetil (MMF, target 2–3 g/day) OR low-dose IV cyclophosphamide (Euro-Lupus regimen: 500 mg IV every 2 weeks for 6 doses).",
+            "ALMS (Appel 2009, JASN) established MMF as non-inferior to high-dose monthly NIH cyclophosphamide for induction. Subgroup analysis suggested superior response in Black and Hispanic patients with MMF — these populations are preferentially treated with MMF.",
+            "Euro-Lupus (Houssiau 2002, A&R) demonstrated that low-dose cyclophosphamide (3 g cumulative) was non-inferior to high-dose monthly NIH cyclophosphamide (~9 g cumulative) for renal outcomes — with substantially less gonadotoxicity and infection. This has replaced the NIH regimen in most centers.",
+            "BLISS-LN (Furie 2020, NEJM): adding belimumab (10 mg/kg IV monthly, anti-BAFF/BLyS monoclonal) to standard induction (MMF + steroids OR low-dose CYC + steroids) significantly improved complete renal response at 2 years.",
+            "AURORA-1 (Rovin 2021, Lancet): adding voclosporin (23.7 mg BID, a modified calcineurin inhibitor with stable PK that requires no trough monitoring) to MMF + steroids significantly increased complete renal response at 1 year, with faster proteinuria reduction than MMF alone. Voclosporin and belimumab are not co-administered.",
+            "Steroids per KDIGO 2024: starting oral prednisone 0.6–0.8 mg/kg/day (max 60 mg), with rapid taper to ≤5 mg by month 3. Pulse methylprednisolone (250–500 mg IV × 3 days) is recommended to allow a lower oral starting dose and reduce cumulative steroid burden.",
+            "Hydroxychloroquine should be continued indefinitely in all SLE patients (unless retinopathy contraindication) — reduces flare rate, improves renal response, and protects against thrombosis and lipid abnormalities.",
+            "Adjunctive measures: ACEi or ARB for proteinuria, statin for cardiovascular risk reduction, SGLT2i if eGFR criteria met (extrapolated from CKD trials — direct LN evidence is emerging), strict BP control to <130/80, Pneumocystis prophylaxis with TMP-SMX in patients on high-dose steroids + MMF/CYC."
+          ],
+          "teaching_pearl": "Modern induction is a triplet: backbone (MMF or low-dose CYC) + add-on (belimumab or voclosporin) + steroids that taper fast. The old monthly high-dose cyclophosphamide is largely historical.",
+          "board_tip": "Euro-Lupus = low-dose IV cyclophosphamide (500 mg every 2 weeks × 6 doses, cumulative 3 g) is non-inferior to high-dose NIH regimen for renal outcomes with markedly less gonadotoxicity — a high-yield exam fact."
+        },
+        {
+          "heading": "Class V (Membranous) and Pregnancy Considerations",
+          "minutes": "2 min",
+          "points": [
+            "Pure Class V (membranous LN) typically presents with nephrotic-range proteinuria, normal serum creatinine, and a more indolent course than proliferative disease. First-line induction is MMF + low-dose corticosteroids.",
+            "Alternative regimens for Class V: tacrolimus + MMF (multitarget) or voclosporin + MMF — particularly favored when proteinuria is severe or when pregnancy is being considered, because tacrolimus has favorable pregnancy safety data.",
+            "Mixed Class III/V or IV/V LN is treated as proliferative disease — the proliferative lesion drives prognosis and dictates therapy intensity.",
+            "Pregnancy planning is a critical conversation: mycophenolate is Category D and teratogenic (mycophenolate embryopathy) — switch to azathioprine ≥3 months before conception. Cyclophosphamide is also teratogenic and gonadotoxic. Tacrolimus, hydroxychloroquine, and low-dose prednisone are continued.",
+            "Active LN at the time of conception is associated with high rates of pre-eclampsia, fetal loss, prematurity, and renal flare — counsel that pregnancy should ideally follow ≥6 months of remission off cyclophosphamide and on a pregnancy-compatible regimen."
+          ],
+          "teaching_pearl": "Pure Class V is membranous and indolent; mixed Class III/V or IV/V is proliferative dressed up in membranous features — treat the worse class.",
+          "board_tip": "Mycophenolate embryopathy (cleft lip/palate, microtia, cardiac defects) is the highest-yield teratogen association for SLE management; switch to azathioprine well before conception."
+        },
+        {
+          "heading": "Maintenance, Monitoring, and Defining Response",
+          "minutes": "2 min",
+          "points": [
+            "Maintenance phase begins 3–6 months after induction in patients with at least partial response. MMF 1–2 g/day is the preferred maintenance agent — MAINTAIN (2010) and ALMS Maintenance (2011) showed lower renal flare rates with MMF compared with azathioprine.",
+            "Azathioprine 2 mg/kg/day is the alternative maintenance agent, preferred in pregnancy. Always continue hydroxychloroquine and low-dose prednisone (typically ≤5 mg) during maintenance.",
+            "Duration of maintenance: at least 3 years total (induction + maintenance) is the conventional standard before considering very gradual taper; KDIGO 2024 acknowledges that some patients may benefit from longer therapy and the decision should be individualized to prior flare history, serology trends, and chronicity index.",
+            "Routine monitoring: blood pressure, UPCR, urinalysis (sediment, RBC casts), serum creatinine, complements (C3, C4), and anti-dsDNA every 1–3 months in the first year, then less frequently in stable maintenance.",
+            "KDIGO 2024 response definitions: complete renal response = UPCR <0.5 g/g + stable or improved serum creatinine (within 10–15% of baseline) by 12 months; partial response = ≥50% reduction in UPCR with similar creatinine criteria.",
+            "Refractory disease (no partial response by 6 months or no complete response by 12–24 months): consider switching backbones (MMF↔CYC), adding rituximab (anti-CD20, off-label but in guidelines), or adding belimumab/voclosporin if not yet used. Anifrolumab (anti-IFN type I receptor) is approved for extrarenal SLE; LN evidence is evolving.",
+            "Renal flare red flags: rising UPCR, new active sediment, rising anti-dsDNA + falling complements. A second biopsy is appropriate when the distinction between renewed activity and accumulating chronicity is clinically consequential."
+          ],
+          "teaching_pearl": "Response is defined by proteinuria reduction and stable creatinine — not by serology normalization. Treating to undetectable anti-dsDNA leads to over-immunosuppression without renal benefit.",
+          "board_tip": "MMF beats azathioprine for maintenance in non-pregnant patients (MAINTAIN, ALMS Maintenance). Switch to azathioprine if pregnancy is planned."
+        }
+      ],
+      "summary_points": [
+        "Renal biopsy is mandatory in SLE with proteinuria ≥0.5 g/day, active sediment, or unexplained Cr rise — ISN/RPS class drives therapy, and chronicity index drives prognosis.",
+        "Full-house immunofluorescence (IgG, IgA, IgM, C3, C1q) is the lupus signature; C1q is the most specific component.",
+        "Induction for proliferative LN (III/IV) per KDIGO 2024: MMF (2–3 g/day) or low-dose IV cyclophosphamide (Euro-Lupus: 500 mg q2 weeks × 6) + lower-dose steroids with rapid taper + add belimumab (BLISS-LN) or voclosporin (AURORA-1).",
+        "Pure Class V membranous: MMF + low-dose steroids; tacrolimus or voclosporin acceptable; mixed III/V or IV/V is treated as proliferative.",
+        "Maintenance: MMF preferred over azathioprine (MAINTAIN, ALMS-M); ≥3 years total therapy; never stop hydroxychloroquine.",
+        "Pregnancy: switch MMF to azathioprine ≥3 months before conception; continue HCQ, tacrolimus, and low-dose prednisone; counsel against pregnancy during active disease.",
+        "Response is proteinuria + stable creatinine, not serology — over-treating dsDNA leads to harm without benefit."
+      ],
+      "visual_memory_card": {
+        "top_left": "Biopsy: SLE + UPCR ≥0.5, sediment, or Cr rise",
+        "top_right": "ISN/RPS III/IV = proliferative → triplet induction",
+        "bottom_left": "MMF or low-dose CYC + steroid taper + belimumab/voclosporin",
+        "bottom_right": "MMF maintenance; AZA for pregnancy; HCQ for everyone",
+        "center": "Full-house IF"
+      }
+    }
   }
 ]; // __SAMPLES_MARKER__
 
@@ -5718,7 +6123,7 @@ function renderMain(){
     h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all '+SAMPLES.length+' →</button></div>';
     // Landing shows 4 hand-picked samples on desktop, first 2 (HFrEF + Hyponatremia) on mobile via CSS.
     h+='<div data-msample-grid class="msample-grid">';
-    var LANDING_SLUGS=["hfref","hyponatremia","copd","gout"];
+    var LANDING_SLUGS=["hfref","kidney-transplant","copd","gout"];
     var landingSamples=LANDING_SLUGS.map(function(sl){return SAMPLES.find(function(s){return s.slug===sl})}).filter(Boolean);
     for(var li=0;li<landingSamples.length;li++){
       var ls=landingSamples[li];
