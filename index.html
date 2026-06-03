@@ -5949,41 +5949,20 @@ function renderMain(){
     if(t.sections){for(var smi=0;smi<t.sections.length;smi++){var mm=String(t.sections[smi].minutes||"").match(/(\d+(?:\.\d+)?)/);if(mm)totalMin+=parseFloat(mm[1])}}
     if(!totalMin)totalMin=isBQ?5:(S.depth==="detailed"?10:5);
 
-    // === Capsule header ===
+    // === Capsule header (Jenni 2026-06-03: stripped — left=New talk only, right=Save/Edit/⋮ horizontal) ===
+    // Removed from capsule: Lecture pill, depth toggle, refs count, Expand all
+    // (Lecture/Concise/refs still shown in the title-block badges below. Depth toggle accessible
+    // via Edit settings drawer. Expand all moved to the "LESSON OUTLINE" header.)
     h+='<div id="talkStart" style="scroll-margin-top:8px"></div>';
     h+='<div class="tk-capsule">';
-    // Back-arrow removed — replaced by explicit "+ New talk" button in cap-actions (right side)
-    // to fix the bug where users read "←" as browser-back instead of "discard current talk".
-    // Depth pill is tappable — flips depth and triggers Rebuild. Hidden in Boards (depth N/A).
-    var depthPill = depthLbl
-      ? ' <span class="sep">·</span><button id="depthToggleBtn" title="Switch to '+(S.depth==="detailed"?"Concise":"Detailed")+' and rebuild" style="background:var(--lavender-bg);border:1px solid transparent;color:var(--plum);font:inherit;font-weight:600;padding:1px 8px;border-radius:10px;cursor:pointer;letter-spacing:.005em">'+depthLbl+' ⇄</button>'
-      : '';
-    // === REDUNDANT TITLE REMOVED (June 2026 per Jenni) ===
-    // Was: '<b>'+esc(t.title||S.topic)+'</b><span class="sep">·</span>'+styleLbl
-    // The full title is already in the headline directly below the capsule,
-    // so showing it again in the cap-meta crowded the row and didn't add info.
-    // Now: just the style label (Lecture/Boards) + depth pill + refs count.
-    h+='<div class="cap-meta">'+styleLbl+depthPill+(refsCount>0?' <span class="sep cap-sep-refs">·</span><span class="cap-meta-refs">'+refsCount+' ref'+(refsCount===1?'':'s')+'</span>':'')+'</div>';
+    // LEFT: + New talk only.
+    h+='<div class="cap-meta" style="flex:1;min-width:0"><button id="resetBtn" title="Start a new talk" style="background:none;border:none;color:var(--plum);font:inherit;font-weight:600;font-size:12.5px;padding:4px 8px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px">+ New talk</button></div>';
+    // RIGHT: Save · Edit settings · ⋮  (horizontal)
     h+='<div class="cap-actions">';
-    // New talk — explicit text label so users know it discards the current talk and returns to compose.
-    // Uses "+" (creative framing) not "✕" (destructive framing) per ui-critic recommendation.
-    h+='<button id="resetBtn" title="Start a new talk">+ <span class="hide-mobile-text">New talk</span></button>';
-    // Save button — primary action in the capsule (filled CTA treatment). Hidden for samples (already saved).
     if(!S.isSampleTalk){
       h+='<button id="saveTalkBtnTop" class="cap-save" title="Save to library">★ <span class="hide-mobile-text">Save</span></button>';
     }
     h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit settings</span></button>';
-    // === EXPAND ALL TOGGLE (June 2026 per Jenni) ===
-    // Default state: single-section accordion (one open at a time).
-    // Tap → all sections open at once for scan-through reading.
-    // Tap again → back to default. Only renders on lecture talks
-    // where sections actually exist (Boards questions don't have them).
-    if(!isBQ && (t.sections||[]).length>1){
-      var allExpLbl = S.allExpanded ? '⌃ Collapse all' : '⌄ Expand all';
-      var allExpTitle = S.allExpanded ? 'Collapse all sections' : 'Expand all sections at once';
-      h+='<button id="expandAllBtn" title="'+allExpTitle+'">'+allExpLbl.split(' ')[0]+' <span class="hide-mobile-text">'+allExpLbl.split(' ').slice(1).join(' ')+'</span></button>';
-    }
-    // Rebuild moved into the overflow menu (was redundant — the depth-toggle pill above already triggers a rebuild on tap).
     h+='<button id="overflowBtn" class="cap-more" title="More options" aria-label="More options">⋮</button>';
     h+='</div>';
     h+='</div>';
@@ -6041,14 +6020,14 @@ function renderMain(){
           if(ab.subcategory)h+='<span style="color:var(--ink-soft)">›</span><span style="color:var(--plum)">'+esc(ab.subcategory)+'</span>';
           h+='</div>';
         }
-        h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><div style="font-size:11px;font-weight:700;color:var(--plum);text-transform:uppercase;letter-spacing:0.05em">📋 Clinical Vignette</div><button id="copyQBtn" style="background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 10px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer">📋 Copy</button></div><p style="font-size:14px;color:var(--ink);line-height:1.55;margin:0;word-break:break-word">'+esc(q.stem)+'</p><div style="margin-top:14px;display:flex;flex-direction:column;gap:7px">';
+        h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><div style="font-size:11px;font-weight:700;color:var(--plum);text-transform:uppercase;letter-spacing:0.05em">📋 Clinical Vignette</div><button id="copyQBtn" title="Copy question + choices (no answer — send to a learner)" style="background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;color:var(--plum);font-size:13px;cursor:pointer;line-height:1">⎘</button></div><p style="font-size:14px;color:var(--ink);line-height:1.55;margin:0;word-break:break-word">'+esc(q.stem)+'</p><div style="margin-top:14px;display:flex;flex-direction:column;gap:7px">';
         for(var ci=0;ci<(q.choices||[]).length;ci++){var ch=q.choices[ci];var picked=S.userPick===ch.letter;var isRight=ch.correct&&S.showAns;var isWrongPick=picked&&!ch.correct&&S.showAns;var borderStyle=isRight?"2px solid #2d8a2d":isWrongPick?"2px solid #c0392b":picked&&!S.showAns?"2px solid var(--plum)":"1px solid var(--line)";var bgStyle=isRight?"#f0f7f0":isWrongPick?"#fdf0ee":picked&&!S.showAns?"var(--lavender-bg)":"#fff";var textColor=isRight?"#2d6a2d":isWrongPick?"#c0392b":"var(--ink)";var letterColor=isRight?"#2d6a2d":isWrongPick?"#c0392b":"var(--plum)";var suffix=isRight?" ✓":isWrongPick?" ✗":"";h+='<button class="choiceBtn" data-letter="'+ch.letter+'" style="display:flex;gap:9px;align-items:flex-start;padding:9px 12px;border-radius:8px;border:'+borderStyle+';background:'+bgStyle+';cursor:'+(S.showAns?"default":"pointer")+';text-align:left;width:100%"><span style="font-weight:700;color:'+letterColor+';font-size:13px;flex-shrink:0">'+ch.letter+'.</span><span style="font-size:13px;color:'+textColor+';line-height:1.45">'+esc(ch.text)+suffix+'</span></button>'}
         h+='</div>';
         if(!S.showAns){if(S.userPick)h+='<button id="submitAnsBtn" style="width:100%;margin-top:14px;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer">✓ Submit</button>';else h+='<div style="text-align:center;margin-top:10px;font-size:12px;color:var(--ink-muted);font-style:italic">Pick an answer above</div>'}
         else{var gotIt=S.userPick===q.correct_letter;h+='<div style="margin-top:14px;padding:12px;border-radius:10px;text-align:center;font-size:14px;font-weight:700;background:'+(gotIt?"#f0f7f0":"#fdf0ee")+';border:2px solid '+(gotIt?"#2d8a2d":"#c0392b")+';color:'+(gotIt?"#2d6a2d":"#c0392b")+'">'+(gotIt?"🎉 Correct! "+S.userPick:"❌ Incorrect — answer is "+q.correct_letter)+'</div>'}
         h+='</div>';
         if(S.showAns){
-          h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.05em">✓ Correct: '+esc(q.correct_letter)+'</div><button id="copyQFullBtn" title="Copy stem + answer + explanation for self-study or email" style="background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 10px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer">⎘ Copy w/ answer</button></div><p style="font-size:14px;color:var(--ink);line-height:1.55;margin:0 0 12px">'+renderCite(q.explanation,t.references)+'</p>';
+          h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.05em">✓ Correct: '+esc(q.correct_letter)+'</div><button id="copyQFullBtn" title="Copy stem + answer + explanation for self-study, print, or email" style="background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;color:var(--plum);font-size:13px;cursor:pointer;line-height:1">⎘<span style="font-size:9px;vertical-align:super;margin-left:1px">+</span></button></div><p style="font-size:14px;color:var(--ink);line-height:1.55;margin:0 0 12px">'+renderCite(q.explanation,t.references)+'</p>';
           if((q.wrong_explanations||[]).length>0){h+='<div style="font-size:10.5px;font-weight:700;color:#8a3a2a;text-transform:uppercase;margin-bottom:6px">Why others are wrong</div>';for(var wi=0;wi<q.wrong_explanations.length;wi++){var w=q.wrong_explanations[wi];h+='<div style="font-size:12px;color:var(--ink);line-height:1.5;margin-bottom:5px;display:flex;gap:7px"><span style="font-weight:700;color:#8a3a2a;flex-shrink:0">'+esc(w.letter)+'.</span><span>'+renderCite(w.why,t.references)+'</span></div>'}}
           h+='</div>';
         }
@@ -6058,8 +6037,14 @@ function renderMain(){
 
       // LECTURE — accordion lesson outline (hero content)
       if(!isBQ&&(t.sections||[]).length>0){
-        var totLbl=totalMin%1===0?totalMin:totalMin.toFixed(1);
-        h+='<div class="outline-head"><span>Lesson outline</span><span class="total">Total ~'+totLbl+' min</span></div>';
+        // Expand/Collapse all moved here from the capsule (Jenni 2026-06-03 — replaces "Total ~X min" display).
+        var hasMultiSec = (t.sections||[]).length>1;
+        var allExpLbl2 = S.allExpanded ? '⌃ Collapse all' : '⌄ Expand all';
+        h+='<div class="outline-head"><span>Lesson outline</span>';
+        if(hasMultiSec){
+          h+='<button id="expandAllBtn" title="'+(S.allExpanded?"Collapse all sections":"Expand all sections at once")+'" style="background:none;border:none;padding:2px 8px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;border-radius:6px">'+allExpLbl2+'</button>';
+        }
+        h+='</div>';
         for(var si2=0;si2<t.sections.length;si2++){
           var x=t.sections[si2];
           // June 2026 per Jenni: allExpanded overrides single-section
@@ -6069,7 +6054,7 @@ function renderMain(){
           h+='<div style="position:relative">';
           h+='<button class="tk-acc-head secBtn" data-i="'+si2+'"><span class="tk-acc-num">'+(si2+1)+'</span><span class="tk-acc-ttl">'+esc(x.heading)+'</span><span class="tk-acc-min">'+esc(x.minutes||"")+'</span><span class="tk-acc-chev">⌄</span></button>';
           if(open){
-            h+='<button class="copySecBtn" data-i="'+si2+'" title="Copy this section to clipboard" style="position:absolute;top:10px;right:38px;background:rgba(255,255,255,0.7);border:1px solid var(--line-soft);color:var(--ink-soft);cursor:pointer;padding:2px 7px;font-size:12px;border-radius:6px;z-index:2">⎘ Copy</button>';
+            h+='<button class="copySecBtn" data-i="'+si2+'" title="Copy this section to clipboard" style="position:absolute;top:10px;right:38px;background:rgba(255,255,255,0.7);border:1px solid var(--line-soft);color:var(--ink-soft);cursor:pointer;padding:3px 8px;font-size:13px;border-radius:6px;z-index:2;line-height:1">⎘</button>';
           }
           h+='</div>';
           if(open){
