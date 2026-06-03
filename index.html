@@ -5375,27 +5375,57 @@ async function downloadVMC(){
   }
 }
 
-function copyBoardsQuestion(){
+// Copy a boards question. mode="stem" copies just stem+choices (good to send a learner without
+// giving away the answer). mode="full" copies stem+choices+answer+explanation+wrong-answer rationales
+// (good for self-study, printing, or sending complete review material).
+function copyBoardsQuestion(mode){
   if(!S.talk||!S.talk.question)return;
   var q=S.talk.question;
+  mode=mode||"stem";
   var lines=[];
   if(S.talk.title)lines.push(S.talk.title);
   lines.push("");
   lines.push(String(q.stem||""));
   lines.push("");
   (q.choices||[]).forEach(function(ch){lines.push(ch.letter+". "+ch.text)});
-  lines.push("");
-  lines.push("Answer: "+(q.correct_letter||""));
+  if(mode==="full"){
+    lines.push("");
+    lines.push("ANSWER: "+(q.correct_letter||""));
+    if(q.explanation){lines.push("");lines.push(String(q.explanation))}
+    if((q.wrong_explanations||[]).length){
+      lines.push("");lines.push("Why other answers are wrong:");
+      q.wrong_explanations.forEach(function(w){lines.push(w.letter+". "+w.why)});
+    }
+    var pearls=(S.talk.board_pearls||[]).filter(function(p){return p&&String(p).trim().length>0});
+    if(pearls.length){lines.push("");lines.push("Board pearls:");pearls.forEach(function(p,i){lines.push((i+1)+". "+p)})}
+  } else {
+    lines.push("");lines.push("(Answer + explanation withheld \u2014 send this version to a learner.)");
+  }
   var text=lines.join("\n");
+  var doneMsg=mode==="full"?"\u2713 Full question + answer + explanation copied":"\u2713 Question + choices copied (no answer)";
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(function(){
-      S.savedFlash="\u2713 Question copied to clipboard (no explanations included).";render();
+      S.savedFlash=doneMsg;render();
       setTimeout(function(){S.savedFlash="";render()},2800);
     }).catch(function(){
       prompt("Couldn't auto-copy. Select and copy manually:",text);
     });
   } else {
     prompt("Copy this question:",text);
+  }
+}
+
+// Generic clipboard helper for any text block. Flashes a toast on success.
+function copyTextToClipboard(text,label){
+  if(!text)return;
+  var msg="\u2713 "+(label||"Copied to clipboard");
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      S.savedFlash=msg;render();
+      setTimeout(function(){S.savedFlash="";render()},2200);
+    }).catch(function(){prompt("Copy:",text)});
+  } else {
+    prompt("Copy:",text);
   }
 }
 
@@ -6018,7 +6048,7 @@ function renderMain(){
         else{var gotIt=S.userPick===q.correct_letter;h+='<div style="margin-top:14px;padding:12px;border-radius:10px;text-align:center;font-size:14px;font-weight:700;background:'+(gotIt?"#f0f7f0":"#fdf0ee")+';border:2px solid '+(gotIt?"#2d8a2d":"#c0392b")+';color:'+(gotIt?"#2d6a2d":"#c0392b")+'">'+(gotIt?"🎉 Correct! "+S.userPick:"❌ Incorrect — answer is "+q.correct_letter)+'</div>'}
         h+='</div>';
         if(S.showAns){
-          h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">✓ Correct: '+esc(q.correct_letter)+'</div><p style="font-size:13px;color:var(--ink);line-height:1.55;margin:0 0 12px">'+renderCite(q.explanation,t.references)+'</p>';
+          h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.05em">✓ Correct: '+esc(q.correct_letter)+'</div><button id="copyQFullBtn" title="Copy stem + answer + explanation for self-study or email" style="background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 10px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer">⎘ Copy w/ answer</button></div><p style="font-size:14px;color:var(--ink);line-height:1.55;margin:0 0 12px">'+renderCite(q.explanation,t.references)+'</p>';
           if((q.wrong_explanations||[]).length>0){h+='<div style="font-size:10.5px;font-weight:700;color:#8a3a2a;text-transform:uppercase;margin-bottom:6px">Why others are wrong</div>';for(var wi=0;wi<q.wrong_explanations.length;wi++){var w=q.wrong_explanations[wi];h+='<div style="font-size:12px;color:var(--ink);line-height:1.5;margin-bottom:5px;display:flex;gap:7px"><span style="font-weight:700;color:#8a3a2a;flex-shrink:0">'+esc(w.letter)+'.</span><span>'+renderCite(w.why,t.references)+'</span></div>'}}
           h+='</div>';
         }
@@ -6036,7 +6066,12 @@ function renderMain(){
           // accordion. Default behavior preserved when allExpanded is false.
           var open=S.allExpanded || (S.activeSection===si2);
           h+='<div class="tk-acc '+(open?"open":"")+'">';
+          h+='<div style="position:relative">';
           h+='<button class="tk-acc-head secBtn" data-i="'+si2+'"><span class="tk-acc-num">'+(si2+1)+'</span><span class="tk-acc-ttl">'+esc(x.heading)+'</span><span class="tk-acc-min">'+esc(x.minutes||"")+'</span><span class="tk-acc-chev">⌄</span></button>';
+          if(open){
+            h+='<button class="copySecBtn" data-i="'+si2+'" title="Copy this section to clipboard" style="position:absolute;top:10px;right:38px;background:rgba(255,255,255,0.7);border:1px solid var(--line-soft);color:var(--ink-soft);cursor:pointer;padding:2px 7px;font-size:12px;border-radius:6px;z-index:2">⎘ Copy</button>';
+          }
+          h+='</div>';
           if(open){
             h+='<div class="tk-acc-body"><ul>';
             for(var pi2=0;pi2<(x.points||[]).length;pi2++)h+='<li>'+esc(x.points[pi2])+'</li>';
@@ -6332,9 +6367,10 @@ function renderMain(){
     h+='<button id="setClaudeKeyBtn">🔑 Anthropic key '+(_hasClaude?'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">set</span>':'<span style="margin-left:auto;color:#c0392b;font-size:11px;font-weight:500">not set</span>')+'</button>';
     h+='<button id="setGeminiKeyBtn">🔑 Gemini key '+(_hasGem?'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">set</span>':'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">optional</span>')+'</button>';
     h+='<button id="setOpenAIKeyBtn">🔑 OpenAI key '+(_hasOA?'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">set</span>':'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">optional</span>')+'</button>';
-    h+='<div style="padding:0;border-top:1px solid var(--line-soft)"></div>';
-    h+='<div style="padding:11px 14px;border-bottom:1px solid var(--line-soft);font-size:11.5px;color:var(--ink-muted)">'+esc(S.user.email||"")+'</div>';
-    h+='<button id="profileEditBtn">👤 Edit profile</button>';
+    // Email line (small, beneath keys) + sign-out
+    if(S.user.email && S.profile && S.profile.name && S.profile.name !== S.user.email){
+      h+='<div style="padding:8px 14px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(S.user.email)+'</div>';
+    }
     h+='<button id="signOutBtn" class="danger">↶ Sign out</button>';
     h+='</div>';
   }
@@ -6576,7 +6612,22 @@ function bindMain(){
   // ─── Visual Memory Card (download / lightbox) ──────────────────────────
   var dvb=document.getElementById("downloadVMCBtn");if(dvb)dvb.onclick=downloadVMC;
   // vmcOpenBtn/vmcCloseBtn handlers deleted — those IDs no longer rendered.
-  var cqb=document.getElementById("copyQBtn");if(cqb)cqb.onclick=copyBoardsQuestion;
+  var cqb=document.getElementById("copyQBtn");if(cqb)cqb.onclick=function(){copyBoardsQuestion("stem")};
+  var cqfb=document.getElementById("copyQFullBtn");if(cqfb)cqfb.onclick=function(){copyBoardsQuestion("full")};
+  // Per-section copy buttons (lecture mode)
+  document.querySelectorAll(".copySecBtn").forEach(function(b){
+    b.onclick=function(e){
+      e.stopPropagation();
+      if(!S.talk||!S.talk.sections)return;
+      var idx=parseInt(b.dataset.i,10);var sec=S.talk.sections[idx];if(!sec)return;
+      var lines=[(idx+1)+". "+(sec.heading||"")+(sec.minutes?" ("+sec.minutes+")":"")];
+      lines.push("");
+      (sec.points||[]).forEach(function(p){lines.push("• "+p)});
+      if(sec.teaching_pearl){lines.push("");lines.push("💡 Teaching Pearl: "+sec.teaching_pearl)}
+      if(sec.board_tip){lines.push("");lines.push("🎯 Board Tip: "+sec.board_tip)}
+      copyTextToClipboard(lines.join("\n"),"Section copied");
+    };
+  });
   // "See all N →" on the landing samples row now jumps into Library (samples merged in).
   var lmb=document.getElementById("landingMoreBtn");if(lmb)lmb.onclick=function(){S.showSaved=true;S.libTab="all";render()};
   // modeToggleBtn handler deleted — ID no longer rendered.
