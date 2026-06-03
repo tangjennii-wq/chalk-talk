@@ -5753,7 +5753,7 @@ function renderMain(){
     h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all '+SAMPLES.length+' →</button></div>';
     // Landing shows 4 hand-picked samples on desktop, first 2 (HFrEF + Hyponatremia) on mobile via CSS.
     h+='<div data-msample-grid class="msample-grid">';
-    var LANDING_SLUGS=["hfref","kidney-transplant","copd","gout"];
+    var LANDING_SLUGS=["hfref","hyponatremia","copd","gout"];
     var landingSamples=LANDING_SLUGS.map(function(sl){return SAMPLES.find(function(s){return s.slug===sl})}).filter(Boolean);
     for(var li=0;li<landingSamples.length;li++){
       var ls=landingSamples[li];
