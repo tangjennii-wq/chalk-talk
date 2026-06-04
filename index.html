@@ -4186,32 +4186,43 @@ function renderLibCard(x){
   var isSample = (x._source==="sample");
   var dateStr = x.savedAt ? new Date(x.savedAt).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "";
   var visuals = (t.savedVisuals && t.savedVisuals.length) ? t.savedVisuals : null;
-  var h = '<div style="background:#fff;border:1px solid var(--line);border-left:4px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:12px;padding:14px 16px;margin-bottom:10px">';
-  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:var(--plum-deep);line-height:1.3;display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap"><span style="flex:1;min-width:0">'+esc(t.title||x.topic||"Untitled")+'</span>'+(isSample?'':'<button class="libEditTitleBtn" data-id="'+x._id+'" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:12px;cursor:pointer;padding:2px 6px;border-radius:4px;flex-shrink:0">✎</button>')+'</div>';
-  if(t.subtitle) h += '<div style="font-size:12px;color:var(--ink-muted);margin-top:2px">'+esc(t.subtitle)+'</div>';
-  h += '<div style="display:flex;gap:6px;margin-top:6px;font-size:11px;color:var(--ink-muted);flex-wrap:wrap"><span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:2px 8px;border-radius:10px;font-weight:600">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
-  if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;border:1px solid #f0d8a0;padding:2px 8px;border-radius:10px;font-weight:600">✨ Sample</span>';
-  if(isSample && x._hasBoth) h += '<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid #d8cfe6;padding:2px 8px;border-radius:10px;font-weight:600">Concise · Detailed</span>';
-  if(visuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid #d8cfe6;padding:2px 8px;border-radius:10px;font-weight:600">🖼 '+visuals.length+' image'+(visuals.length===1?'':'s')+'</span>';
-  if(dateStr) h += '<span>'+dateStr+'</span>';
-  h += '</div></div>';
-  // Right-side: thumbnail of first saved visual (prominent on Visuals tab, smaller elsewhere)
-  if(visuals){
-    var isVisualsTab = (S.libTab === "visuals");
-    var thumbSize = isVisualsTab ? 72 : 48;
-    h += '<img src="data:image/png;base64,'+visuals[0].imgB64+'" alt="" style="width:'+thumbSize+'px;height:'+thumbSize+'px;object-fit:cover;border-radius:8px;border:1px solid var(--line);flex-shrink:0">';
+  // Compact single-row library card (Jenni 2026-06-04 — actions live next to the title).
+  // Open is the primary CTA (small filled button on the right); pencil/export/delete are tiny icon buttons.
+  // Sample cards skip pencil/export/delete (samples are immutable).
+  var openBtn = isSample
+    ? '<button class="libOpenBtn" data-source="sample" data-slug="'+esc(x._slug)+'" style="background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:7px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">Open</button>'
+    : '<button class="libOpenBtn" data-source="saved" data-id="'+x._id+'" style="background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:7px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">Open</button>';
+
+  var iconBtns = '';
+  if(!isSample){
+    iconBtns += '<button class="libEditTitleBtn" data-id="'+x._id+'" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1;flex-shrink:0">✎</button>';
+    iconBtns += '<button class="exportTalkBtn" data-id="'+x._id+'" title="Export JSON" style="background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1;flex-shrink:0">⬇</button>';
+    iconBtns += '<button class="delTalkBtn" data-id="'+x._id+'" title="Delete" style="background:none;border:none;color:#c0392b;font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1;flex-shrink:0;opacity:0.7">🗑</button>';
   }
+
+  var h = '<div style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">';
+
+  // Optional small thumbnail (only on Visuals tab — elsewhere the badge in the meta row indicates an image)
+  if(visuals && S.libTab === "visuals"){
+    h += '<img src="data:image/png;base64,'+visuals[0].imgB64+'" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1px solid var(--line);flex-shrink:0">';
+  }
+
+  // Title + meta in a single column, flex:1
+  h += '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">';
+  h += '<div style="font-size:13.5px;font-weight:700;color:var(--plum-deep);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(t.title||x.topic||"Untitled")+'">'+esc(t.title||x.topic||"Untitled")+'</div>';
+  // Compact meta row — type badge + sample/dual/visual badges + date in tiny font
+  h += '<div style="display:flex;gap:6px;font-size:10.5px;color:var(--ink-muted);align-items:center;flex-wrap:wrap">';
+  h += '<span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;letter-spacing:0.02em">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
+  if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">✨</span>';
+  if(visuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼 '+visuals.length+'</span>';
+  if(dateStr) h += '<span style="font-size:10.5px;color:var(--ink-soft)">'+dateStr+'</span>';
   h += '</div>';
-  // Action row
-  h += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';
-  if(isSample){
-    h += '<button class="libOpenBtn" data-source="sample" data-slug="'+esc(x._slug)+'" style="flex:1;min-width:90px;background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:9px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Open</button>';
-  } else {
-    h += '<button class="libOpenBtn" data-source="saved" data-id="'+x._id+'" style="flex:1;min-width:90px;background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:9px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Open</button>';
-    h += '<button class="exportTalkBtn" data-id="'+x._id+'" title="Export talk as JSON" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--ink-muted);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px"><span style="font-size:13px;line-height:1">⬇</span>Export</button>';
-    h += '<button class="delTalkBtn" data-id="'+x._id+'" style="background:#fff;border:1px solid #e8c8c0;border-radius:8px;padding:9px 12px;color:#c0392b;font-size:12px;font-weight:600;cursor:pointer">Delete</button>';
-  }
-  h += '</div></div>';
+  h += '</div>';
+
+  // Right side: icon buttons + Open
+  h += '<div style="display:flex;align-items:center;gap:2px;flex-shrink:0">' + iconBtns + openBtn + '</div>';
+
+  h += '</div>';
   return h;
 }
 
