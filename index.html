@@ -4186,7 +4186,7 @@ function renderLibCard(x){
   var dateStr = x.savedAt ? new Date(x.savedAt).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "";
   var visuals = (t.savedVisuals && t.savedVisuals.length) ? t.savedVisuals : null;
   var h = '<div style="background:#fff;border:1px solid var(--line);border-left:4px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:12px;padding:14px 16px;margin-bottom:10px">';
-  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:var(--plum-deep);line-height:1.3;display:inline">'+esc(t.title||x.topic||"Untitled")+(isSample?'':'<button class="libEditTitleBtn" data-id="'+x._id+'" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:12px;cursor:pointer;padding:0 6px;margin-left:4px;border-radius:4px;vertical-align:middle">✎</button>')+'</div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:var(--plum-deep);line-height:1.3;display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap"><span style="flex:1;min-width:0">'+esc(t.title||x.topic||"Untitled")+'</span>'+(isSample?'':'<button class="libEditTitleBtn" data-id="'+x._id+'" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:12px;cursor:pointer;padding:2px 6px;border-radius:4px;flex-shrink:0">✎</button>')+'</div>';
   if(t.subtitle) h += '<div style="font-size:12px;color:var(--ink-muted);margin-top:2px">'+esc(t.subtitle)+'</div>';
   h += '<div style="display:flex;gap:6px;margin-top:6px;font-size:11px;color:var(--ink-muted);flex-wrap:wrap"><span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:2px 8px;border-radius:10px;font-weight:600">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;border:1px solid #f0d8a0;padding:2px 8px;border-radius:10px;font-weight:600">✨ Sample</span>';
@@ -4595,9 +4595,12 @@ function _exportTalkBody(){
     html+='<h2>Lecture Outline</h2>';
     t.sections.forEach(function(sec,i){
       html+='<div class="section"><h3>'+(i+1)+'. '+escapeHtml(sec.heading||"")+' <span style="color:#9490a6;font-weight:normal;font-size:12px">('+escapeHtml(sec.minutes||"")+')</span></h3>';
+      // Support both shapes: legacy "content"+"bullets" AND the current schema "points" (array).
       if(sec.content)html+='<p>'+escapeHtml(sec.content).replace(/\n/g,"<br>")+'</p>';
-      if(sec.bullets&&sec.bullets.length){html+='<ul>';sec.bullets.forEach(function(b){html+='<li>'+escapeHtml(b)+'</li>'});html+='</ul>'}
-      if(sec.board_tip)html+='<div class="tip"><b>Board Tip:</b> '+escapeHtml(sec.board_tip)+'</div>';
+      var bulletSource = (sec.points && sec.points.length) ? sec.points : (sec.bullets || []);
+      if(bulletSource.length){html+='<ul>';bulletSource.forEach(function(b){html+='<li>'+escapeHtml(b)+'</li>'});html+='</ul>'}
+      if(sec.teaching_pearl)html+='<div class="pearl"><b>💡 Teaching Pearl:</b> '+escapeHtml(sec.teaching_pearl)+'</div>';
+      if(sec.board_tip)html+='<div class="tip"><b>🎯 Board Tip:</b> '+escapeHtml(sec.board_tip)+'</div>';
       html+='</div>';
     });
   }
@@ -6621,7 +6624,7 @@ function bindMain(){
   var gsb=document.getElementById("googleSignInBtn");if(gsb)gsb.onclick=async function(){S.authBusy=true;render();try{await signInWithGoogle()}catch(err){S.authMsg=err.message||"Google sign-in failed";S.authBusy=false;render()}};
   // J / account avatar click → open the full profile drawer (was: small dropdown)
   var acb=document.getElementById("accountBtn");if(acb)acb.onclick=function(e){e.stopPropagation();S.accountMenuOpen=false;S.profileEditOpen=true;S.profileForm=Object.assign({},S.profile||{});render()};
-  if(S.accountMenuOpen){document.body.onclick=function(e){if(!e.target.closest("#accountMenu")&&!e.target.closest("#accountBtn")){S.accountMenuOpen=false;render()}}}
+  if(S.accountMenuOpen){document.body.onclick=function(e){if(!e.target.closest("#accountMenu")&&!e.target.closest("#accountBtn")){S.accountMenuOpen=false;document.body.onclick=null;render()}}}
   var sob=document.getElementById("signOutBtn");if(sob)sob.onclick=function(){S.accountMenuOpen=false;signOut()};
   var peb=document.getElementById("profileEditBtn");if(peb)peb.onclick=function(){S.accountMenuOpen=false;S.profileEditOpen=true;S.profileForm=Object.assign({},S.profile||{});render()};
   // API key buttons in account menu — prompt for new key, save to localStorage.
