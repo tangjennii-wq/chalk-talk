@@ -6478,51 +6478,64 @@ function renderMain(){
     h+='<div class="drawer open" id="profileDrawer">';
     h+='<div class="drawer-handle"></div>';
     h+='<div class="drawer-head"><div class="drawer-title">Edit profile</div><button class="drawer-close" id="profileCloseBtn">×</button></div>';
-    h+='<div class="drawer-body">';
-    h+='<p style="font-size:11.5px;color:var(--ink-muted);margin:0 0 14px;line-height:1.45">All fields optional. Helps personalize content and lets us serve relevant guidelines.</p>';
-    // Email (readonly)
-    h+='<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Email</div><div style="background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--ink-muted)">'+esc(S.user.email||"")+'</div></div>';
-    // Name
-    h+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Name</div><input id="pfName" type="text" value="'+esc(pf.name||"")+'" placeholder="Jenni Tang" style="width:100%;background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;outline:none;font-family:inherit"></div>';
-    // Role
-    h+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Role</div><select id="pfRole" style="width:100%;background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;outline:none;font-family:inherit;color:var(--ink)"><option value="">—</option>';
+    h+='<div class="drawer-body" style="padding-bottom:18px">';
+    // Compact header — avatar + email together, no separate "Email" label needed
+    var _initialP = (pf.name||S.user.email||"").trim().charAt(0).toUpperCase() || "?";
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line-soft)">';
+    h+='<span style="background:var(--plum);color:#fff;width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">'+esc(_initialP)+'</span>';
+    h+='<div style="flex:1;min-width:0;overflow:hidden">';
+    h+='<div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.2;text-overflow:ellipsis;white-space:nowrap;overflow:hidden">'+esc(pf.name||"Set your name")+'</div>';
+    h+='<div style="font-size:11px;color:var(--ink-muted);line-height:1.3;text-overflow:ellipsis;white-space:nowrap;overflow:hidden">'+esc(S.user.email||"")+'</div>';
+    h+='</div></div>';
+
+    // Compact label helper. All fields use the same micro-label + tight input.
+    var _lab = function(t){return '<div style="font-size:10px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.07em;margin:0 0 3px 4px">'+t+'</div>'};
+    var _inpStyle = 'width:100%;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px;outline:none;font-family:inherit;color:var(--ink);box-sizing:border-box';
+
+    // Name (full-width)
+    h+='<div style="margin-bottom:8px">'+_lab("Name")+'<input id="pfName" type="text" value="'+esc(pf.name||"")+'" placeholder="Jenni Tang" style="'+_inpStyle+'"></div>';
+    // Role + Training year (2-col)
+    h+='<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">';
+    h+='<div>'+_lab("Role")+'<select id="pfRole" style="'+_inpStyle+'"><option value="">—</option>';
     ROLES.forEach(function(r){h+='<option value="'+r[0]+'"'+(pf.role===r[0]?" selected":"")+'>'+r[1]+'</option>'});
     h+='</select></div>';
-    // Specialty
-    h+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Specialty</div><select id="pfSpec" style="width:100%;background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;outline:none;font-family:inherit;color:var(--ink)"><option value="">—</option>';
+    h+='<div>'+_lab("Year")+'<input id="pfYear" type="number" min="0" max="15" value="'+esc(pf.training_year!=null?String(pf.training_year):"")+'" placeholder="2" style="'+_inpStyle+'"></div>';
+    h+='</div>';
+    // Specialty (full-width — long names)
+    h+='<div style="margin-bottom:8px">'+_lab("Specialty")+'<select id="pfSpec" style="'+_inpStyle+'"><option value="">—</option>';
     SPECIALTIES.forEach(function(s){h+='<option value="'+esc(s)+'"'+(pf.specialty===s?" selected":"")+'>'+esc(s)+'</option>'});
     h+='</select></div>';
-    // Training year
-    h+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Training year</div><input id="pfYear" type="number" min="0" max="15" value="'+esc(pf.training_year!=null?String(pf.training_year):"")+'" placeholder="e.g. 2" style="width:100%;background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;outline:none;font-family:inherit"></div>';
-    // Institution
-    h+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Institution</div><input id="pfInst" type="text" value="'+esc(pf.institution||"")+'" placeholder="NYU Langone" style="width:100%;background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;outline:none;font-family:inherit"></div>';
-    // Primary use
-    h+='<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Primary use</div><select id="pfUse" style="width:100%;background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;outline:none;font-family:inherit;color:var(--ink)"><option value="">—</option>';
+    // Institution + Primary use (2-col)
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
+    h+='<div>'+_lab("Institution")+'<input id="pfInst" type="text" value="'+esc(pf.institution||"")+'" placeholder="NYU Langone" style="'+_inpStyle+'"></div>';
+    h+='<div>'+_lab("Primary use")+'<select id="pfUse" style="'+_inpStyle+'"><option value="">—</option>';
     USES.forEach(function(u){h+='<option value="'+u[0]+'"'+(pf.primary_use===u[0]?" selected":"")+'>'+u[1]+'</option>'});
     h+='</select></div>';
-    // Save CTA for profile fields
-    h+='<button id="pfSaveBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:18px;padding:13px;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Save profile</button>';
+    h+='</div>';
+    // Compact Save profile CTA
+    h+='<button id="pfSaveBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Save profile</button>';
 
-    // === API KEYS section (lives inside the profile drawer per Jenni 2026-06-03) ===
+    // === API KEYS — compact list ===
     var _hasClaudeP = !!localStorage.getItem("claude_api_key");
     var _hasGemP = !!localStorage.getItem("gemini_api_key");
     var _hasOAP = !!localStorage.getItem("openai_api_key");
-    h+='<div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--line)">';
-    h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:6px">API Keys</div>';
-    h+='<p style="font-size:11.5px;color:var(--ink-muted);margin:0 0 14px;line-height:1.45">Your personal keys stay in this browser (never sent to our server). Anthropic powers all text generation; Gemini & OpenAI power image generation only.</p>';
+    h+='<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><span style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em">API Keys</span><span style="font-size:10px;color:var(--ink-soft)">Stored in your browser only</span></div>';
     function _keyRow(id,label,storageKey,isSet,placeholder,helperUrl){
-      var v="";
-      return '<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:baseline;margin:0 4px 6px"><span style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em">'+label+'</span><span style="font-size:10.5px;color:'+(isSet?"#2d6a2d":"var(--ink-soft)")+';font-weight:500">'+(isSet?"✓ set":"not set")+'</span></div><div style="display:flex;gap:6px;align-items:stretch"><input id="'+id+'_input" type="password" placeholder="'+placeholder+'" data-storage="'+storageKey+'" style="flex:1;min-width:0;background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;outline:none;font-family:inherit"><button class="pfSaveKeyBtn" data-input="'+id+'_input" data-storage="'+storageKey+'" data-label="'+esc(label)+'" style="background:var(--plum);border:none;border-radius:12px;padding:0 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Save</button>'+(isSet?'<button class="pfClearKeyBtn" data-storage="'+storageKey+'" data-label="'+esc(label)+'" title="Remove this key" style="background:#fff;border:1px solid #e8c8c0;border-radius:12px;padding:0 11px;color:#c0392b;font-size:13px;font-weight:600;cursor:pointer">×</button>':'')+'</div><div style="font-size:10.5px;color:var(--ink-soft);margin:5px 4px 0"><a href="'+helperUrl+'" target="_blank" style="color:var(--plum);text-decoration:none;border-bottom:1px dotted var(--plum)">Get a key →</a></div></div>';
+      return '<div style="display:flex;gap:6px;align-items:stretch;margin-bottom:6px">'+
+        '<div style="flex:0 0 auto;align-self:center;font-size:11.5px;font-weight:600;color:var(--ink);width:74px"><a href="'+helperUrl+'" target="_blank" title="Get a '+label+' key" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--ink-soft)">'+label+'</a></div>'+
+        '<input id="'+id+'_input" type="password" placeholder="'+placeholder+'" data-storage="'+storageKey+'" style="flex:1;min-width:0;background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;outline:none;font-family:inherit">'+
+        '<button class="pfSaveKeyBtn" data-input="'+id+'_input" data-storage="'+storageKey+'" data-label="'+esc(label)+'" title="Save key" style="background:var(--plum);border:none;border-radius:8px;padding:0 10px;color:#fff;font-size:11.5px;font-weight:600;cursor:pointer">Save</button>'+
+        (isSet?'<button class="pfClearKeyBtn" data-storage="'+storageKey+'" data-label="'+esc(label)+'" title="Remove key" style="background:#fff;border:1px solid #e8c8c0;border-radius:8px;padding:0 9px;color:#c0392b;font-size:13px;font-weight:600;cursor:pointer">×</button>':'<span style="display:inline-flex;align-items:center;font-size:10px;color:var(--ink-soft);padding:0 4px;flex-shrink:0">'+(isSet?"":"·")+'</span>')+
+        '</div>';
     }
-    h+=_keyRow("pfClaudeKey","Anthropic (Claude)","claude_api_key",_hasClaudeP,"sk-ant-…","https://console.anthropic.com/settings/keys");
+    h+=_keyRow("pfClaudeKey","Anthropic","claude_api_key",_hasClaudeP,"sk-ant-…","https://console.anthropic.com/settings/keys");
     h+=_keyRow("pfGeminiKey","Gemini","gemini_api_key",_hasGemP,"AIza… (optional)","https://aistudio.google.com/apikey");
     h+=_keyRow("pfOpenAIKey","OpenAI","openai_api_key",_hasOAP,"sk-… (optional)","https://platform.openai.com/api-keys");
     h+='</div>';
 
-    // === Sign out (bottom of drawer) ===
-    h+='<div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--line);text-align:center">';
-    h+='<button id="pfSignOutBtn" style="background:none;border:none;color:#c0392b;font-size:13px;font-weight:600;cursor:pointer;padding:8px 14px;border-radius:8px">↶ Sign out</button>';
-    h+='</div>';
+    // Compact sign-out at the bottom — small text link, no divider
+    h+='<div style="margin-top:14px;text-align:right"><button id="pfSignOutBtn" style="background:none;border:none;color:#c0392b;font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px">Sign out</button></div>';
 
     h+='</div></div>';
   }
