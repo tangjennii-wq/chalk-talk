@@ -4196,7 +4196,7 @@ function renderLibCard(x){
   var iconBtns = '';
   if(!isSample){
     iconBtns += '<button class="libEditTitleBtn" data-id="'+x._id+'" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1;flex-shrink:0">✎</button>';
-    iconBtns += '<button class="exportTalkBtn" data-id="'+x._id+'" title="Export JSON" style="background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1;flex-shrink:0">⬇</button>';
+    iconBtns += '<button class="libPdfBtn" data-id="'+x._id+'" title="Export as PDF" style="background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1;flex-shrink:0">📄</button>';
     iconBtns += '<button class="delTalkBtn" data-id="'+x._id+'" title="Delete" style="background:none;border:none;color:#c0392b;font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1;flex-shrink:0;opacity:0.7">🗑</button>';
   }
 
@@ -4595,10 +4595,12 @@ function _exportSharedCSS(){
     'img{max-width:100%;height:auto;border-radius:8px;margin:10px 0}';
 }
 
-// Shared body HTML for PDF + PNG export
-function _exportTalkBody(){
-  if(!S.talk)return"";
-  var t=S.talk;var isBQ=!!(t.question);var vm=t.visual_memory_card;
+// Shared body HTML for PDF + PNG export. Optionally takes a talk object so library cards can
+// export a saved talk without disturbing the currently-loaded one.
+function _exportTalkBody(talkOverride){
+  var t = talkOverride || (S.talk||null);
+  if(!t)return"";
+  var isBQ=!!(t.question);var vm=t.visual_memory_card;
   var html='';
   html+='<h1>'+escapeHtml(t.title||"")+'</h1>';
   if(t.subtitle)html+='<p class="subtitle">'+escapeHtml(t.subtitle)+'</p>';
@@ -4653,18 +4655,36 @@ function _exportTalkBody(){
   return html;
 }
 
-function exportTalkPDF(){
-  if(!S.talk)return;
-  var t=S.talk;
+function exportTalkPDF(talkOverride){
+  var t = talkOverride || S.talk;
+  if(!t)return;
   var w=window.open("","_blank","width=900,height=1100");
   if(!w){alert("Popup blocked. Allow popups for this page to export PDF.");return}
   var css='<style>@page{margin:0.6in}'+_exportSharedCSS()+'@media print{.noprint{display:none}}</style>';
   var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+escapeHtml(t.title||"Chalk Talk")+'</title>'+css+'</head><body>';
   html+='<div class="noprint" style="background:#eee6f3;padding:12px 16px;border-radius:8px;margin-bottom:20px;text-align:center"><b>Tip:</b> Use your browser\'s "Save as PDF" option in the print dialog. <button onclick="window.print()" style="margin-left:10px;background:#330662;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-weight:600">Print / Save as PDF</button></div>';
-  html+=_exportTalkBody();
+  html+=_exportTalkBody(t);
   html+='</body></html>';
   w.document.open();w.document.write(html);w.document.close();
   setTimeout(function(){try{w.focus();w.print()}catch(e){}},400);
+}
+
+// Library export: fetch a saved talk by id (cloud or local) and PDF it without disturbing current state.
+async function exportSavedTalkPDF(id){
+  if(!id)return;
+  var entry = null;
+  // Cloud path
+  if(S.user && window.sb && !String(id).startsWith("t_")){
+    var row = await cloudLoadTalk(id);
+    if(row) entry = { talk: row.talk_json };
+  }
+  // Local fallback
+  if(!entry){
+    var local = loadSavedTalks();
+    entry = local.find(function(e){return e.id===id});
+  }
+  if(!entry || !entry.talk){alert("Couldn't find that talk to export. Try reopening your library.");return}
+  exportTalkPDF(entry.talk);
 }
 
 // Save the current talk as a PNG image (one tall image, good for sharing).
@@ -5907,6 +5927,8 @@ function bindSaved(){
     else{loadSavedTalk(b.dataset.id)}
   }});
   document.querySelectorAll(".exportTalkBtn").forEach(function(b){b.onclick=function(){exportTalkJSON(b.dataset.id)}});
+  // New: library card PDF export icon (replaces the JSON export icon for saved cards).
+  document.querySelectorAll(".libPdfBtn").forEach(function(b){b.onclick=function(){exportSavedTalkPDF(b.dataset.id)}});
   document.querySelectorAll(".delTalkBtn").forEach(function(b){b.onclick=function(){deleteSavedTalk(b.dataset.id)}});
   // Per-library-card title rename
   document.querySelectorAll(".libEditTitleBtn").forEach(function(b){b.onclick=async function(e){
