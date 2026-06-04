@@ -4189,9 +4189,10 @@ function renderLibCard(x){
   // Compact single-row library card (Jenni 2026-06-04 — actions live next to the title).
   // Open is the primary CTA (small filled button on the right); pencil/export/delete are tiny icon buttons.
   // Sample cards skip pencil/export/delete (samples are immutable).
-  var openBtn = isSample
-    ? '<button class="libOpenBtn" data-source="sample" data-slug="'+esc(x._slug)+'" style="background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:7px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">Open</button>'
-    : '<button class="libOpenBtn" data-source="saved" data-id="'+x._id+'" style="background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:7px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">Open</button>';
+  // Open is an <a target="_blank"> so the talk loads in a NEW TAB — library stays open behind it.
+  // Middle-click and cmd-click still work natively. The hash carries the source so the new tab knows what to load.
+  var openHref = isSample ? ('#s='+encodeURIComponent(x._slug)) : ('#t='+encodeURIComponent(x._id));
+  var openBtn = '<a class="libOpenBtn" href="'+openHref+'" target="_blank" rel="noopener" style="background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:7px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;text-decoration:none;display:inline-flex;align-items:center;line-height:1">Open</a>';
 
   var iconBtns = '';
   if(!isSample){
@@ -5498,6 +5499,31 @@ function loadFromShareHash(){
   }catch(e){console.error("Failed to load shared talk:",e);return false}
 }
 
+// Library deep-link: when a new tab opens with #t=<id> or #s=<slug>, load that talk directly.
+// Triggered by the "Open" anchors in the library (which use target="_blank").
+function loadFromLibHash(){
+  try{
+    var hash = window.location.hash || "";
+    var mSaved = hash.match(/^#t=(.+)$/);
+    var mSample = hash.match(/^#s=(.+)$/);
+    if(mSaved){
+      // Clear hash so a refresh doesn't re-trigger; loadSavedTalk handles the async cloud/local lookup.
+      var id = decodeURIComponent(mSaved[1]);
+      history.replaceState(null,"",window.location.pathname+window.location.search);
+      // Defer to next tick so any pending Supabase init can resolve first
+      setTimeout(function(){ loadSavedTalk(id) }, 50);
+      return true;
+    }
+    if(mSample){
+      var slug = decodeURIComponent(mSample[1]);
+      history.replaceState(null,"",window.location.pathname+window.location.search);
+      setTimeout(function(){ loadSample(slug) }, 50);
+      return true;
+    }
+  }catch(e){console.error("loadFromLibHash failed:",e)}
+  return false;
+}
+
 async function downloadVMC(){
   if(!S.talk)return;
   // Auto-expand VMC if collapsed, then wait one frame for render
@@ -5928,10 +5954,8 @@ function bindSaved(){
   // Tab pills — All / Lectures / Boards
   document.querySelectorAll(".libTabBtn").forEach(function(b){b.onclick=function(){S.libTab=b.dataset.tab||"all";render()}});
   // Unified Open handler — routes to sample-load or saved-load based on data-source
-  document.querySelectorAll(".libOpenBtn").forEach(function(b){b.onclick=function(){
-    if(b.dataset.source==="sample"){loadSample(b.dataset.slug)}
-    else{loadSavedTalk(b.dataset.id)}
-  }});
+  // libOpenBtn is now an <a target="_blank"> — let the browser handle the click natively. No onclick.
+  // Loading from a hash (#t=… / #s=…) is handled on page load via the maybeLoadFromHash() helper below.
   document.querySelectorAll(".exportTalkBtn").forEach(function(b){b.onclick=function(){exportTalkJSON(b.dataset.id)}});
   // New: library card PDF export icon (replaces the JSON export icon for saved cards).
   document.querySelectorAll(".libPdfBtn").forEach(function(b){b.onclick=function(){exportSavedTalkPDF(b.dataset.id)}});
@@ -6157,7 +6181,13 @@ function renderMain(){
     // RIGHT: Save · Edit settings · ⋮  (horizontal)
     h+='<div class="cap-actions">';
     if(!S.isSampleTalk){
-      h+='<button id="saveTalkBtnTop" class="cap-save" title="Save to library">★ <span class="hide-mobile-text">Save</span></button>';
+      // Saved-state button: visually distinct + non-interactive so a returning user can SEE the talk
+      // is up-to-date in the library and won't tap Save again, creating duplicates.
+      if(S.talkIsSaved){
+        h+='<button id="saveTalkBtnTop" class="cap-save" title="No unsaved changes" disabled style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;box-shadow:none;cursor:default">✓ <span class="hide-mobile-text">Saved</span></button>';
+      } else {
+        h+='<button id="saveTalkBtnTop" class="cap-save" title="Save to library">★ <span class="hide-mobile-text">Save</span></button>';
+      }
     }
     h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit settings</span></button>';
     h+='<button id="overflowBtn" class="cap-more" title="More options" aria-label="More options">⋮</button>';
@@ -6167,7 +6197,7 @@ function renderMain(){
     // Overflow menu (rendered conditionally)
     if(S.overflowOpen){
       h+='<div class="overflow-menu" id="overflowMenu">';
-      h+='<button id="saveTalkBtn">★ Save</button>';
+      h+='<button id="saveTalkBtn"'+(S.talkIsSaved?' disabled style="color:#2d6a2d;opacity:0.75"':'')+'>'+(S.talkIsSaved?"✓ Saved (no changes)":"★ Save")+'</button>';
       h+='<button id="rebuildBtn">↻ Rebuild</button>';
       h+='<button id="shareTalkBtn">🔗 Share link</button>';
       h+='<button id="pdfTalkBtn">📄 Export PDF</button>';
@@ -6298,7 +6328,11 @@ function renderMain(){
       // For sample talks (no Save), surface PDF alone — still usable.
       h+='<div style="margin:18px 0 14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">';
       if(!S.isSampleTalk){
-        h+='<button id="saveTalkBtnBottom" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:18px;padding:13px 26px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 3px 12px rgba(75,17,111,0.28);display:inline-flex;align-items:center;gap:8px;transition:all .15s ease"><span style="font-size:16px">★</span>Save to library</button>';
+        if(S.talkIsSaved){
+          h+='<button id="saveTalkBtnBottom" disabled title="No unsaved changes" style="background:#f0f7f0;border:1px solid #c8e0c8;border-radius:18px;padding:13px 26px;color:#2d6a2d;font-size:14px;font-weight:600;cursor:default;display:inline-flex;align-items:center;gap:8px"><span style="font-size:16px">✓</span>Saved to library</button>';
+        } else {
+          h+='<button id="saveTalkBtnBottom" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:18px;padding:13px 26px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 3px 12px rgba(75,17,111,0.28);display:inline-flex;align-items:center;gap:8px;transition:all .15s ease"><span style="font-size:16px">★</span>Save to library</button>';
+        }
       }
       h+='<button id="pdfTalkBtnBottom" style="background:#fff;border:1.5px solid var(--plum);border-radius:18px;padding:11px 22px;color:var(--plum);font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .15s ease" title="Download this talk as a PDF"><span style="font-size:15px">📄</span>Export as PDF</button>';
       h+='</div>';
@@ -6896,6 +6930,9 @@ function bindMain(){
       }
       writeSavedTalks(local);
     }
+    // If the talk wasn't loaded from a saved record (e.g. user just generated it and is renaming
+    // before first save), the title change isn't persisted — flag as dirty so the Save button reactivates.
+    if(!S.loadedTalkId) S.talkIsSaved = false;
     render();
   };
   var cqb=document.getElementById("copyQBtn");if(cqb)cqb.onclick=function(){copyBoardsQuestion("stem")};
@@ -6940,6 +6977,7 @@ function bindMain(){
 
 // ═══════════ INIT ═══════════
 loadFromShareHash();
+loadFromLibHash();
 render();
 </script>
 </body>
