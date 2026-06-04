@@ -4014,6 +4014,7 @@ var S = {
   showLib:false, expCat:null, expSub:null, search:"",
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"all", libSpec:null,
   gldOpen:false, editSettings:false, overflowOpen:false,
+  talkHistory:[], editingSection:null, editingDraft:null,
   // — Auth + cloud
   user:null, session:null, profile:null, signInOpen:false, authBusy:false, authEmail:"", authMsg:"",
   accountMenuOpen:false, cloudTalks:[], cloudLoaded:false, profileEditOpen:false, profileForm:null,
@@ -5339,6 +5340,31 @@ function isRadicalRevision(msg){
 // Additive refinement \u2014 pass the EXISTING talk JSON to Claude + the user's add/change request.
 // Explicitly tells the model: preserve sections, pearls, citations, references. ONLY add new content
 // (new sections, new bullets, new references) unless the user explicitly asked to remove something.
+// Snapshot the current talk so a refine/edit can be undone.
+// Stores a deep clone — never mutate a snapshot in place. Caps history at 8 entries.
+function pushTalkHistory(label){
+  if(!S.talk)return;
+  try{
+    var snap = {
+      label: label || "edit",
+      at: Date.now(),
+      talk: JSON.parse(JSON.stringify(S.talk))
+    };
+    S.talkHistory.push(snap);
+    if(S.talkHistory.length > 8) S.talkHistory.shift();
+  }catch(e){console.warn("pushTalkHistory failed:",e)}
+}
+function undoLastEdit(){
+  if(!S.talkHistory.length)return;
+  var snap = S.talkHistory.pop();
+  S.talk = snap.talk;
+  S.talkIsSaved = false; // undoing puts us back at an unsaved state
+  // Clear visuals/podcast — they were tied to the post-refine version
+  S.dg = null; S.dgErr = ""; S.podScript = "";
+  S.editingSection = null; S.editingDraft = null;
+  render();
+}
+
 async function weaveRevision(userMsg){
   if(!S.talk) return;
   var existingJson = JSON.stringify(S.talk);
@@ -5393,6 +5419,7 @@ async function sendChat(){
   S.msgs.push({r:"u",t:msg});
   if(isRadicalRevision(msg)){
     // User signalled they want a fresh take \u2014 full regenerate path (RAG + peer review + everything).
+    pushTalkHistory("rewrite"); // snapshot for undo
     S.refineContext = (S.refineContext && S.refineContext.trim() ? S.refineContext.trim() + "\n\nAlso: " : "") + msg;
     S.msgs.push({r:"a",t:"Regenerating the lesson from scratch with your direction\u2026"});
     render();
@@ -5401,6 +5428,7 @@ async function sendChat(){
   }
 
   // Default \u2014 additive weave. Keep what's working, add the requested content.
+  pushTalkHistory("refine"); // snapshot for undo
   S.chatBusy=true;
   S.msgs.push({r:"a",t:"Weaving in your update (preserving the rest of the lesson)\u2026"});
   render();
@@ -6221,8 +6249,13 @@ function renderMain(){
     h+='<div class="tk-capsule">';
     // LEFT: + New talk only.
     h+='<div class="cap-meta" style="flex:1;min-width:0"><button id="resetBtn" title="Start a new talk" style="background:none;border:none;color:var(--plum);font:inherit;font-weight:600;font-size:12.5px;padding:4px 8px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px">+ New talk</button></div>';
-    // RIGHT: Save · Edit settings · ⋮  (horizontal)
+    // RIGHT: Undo · Save · Edit settings · ⋮  (horizontal)
     h+='<div class="cap-actions">';
+    // Undo button — only when there's edit history to revert (refine, regenerate, section edits)
+    if(S.talkHistory && S.talkHistory.length > 0){
+      var lastLabel = S.talkHistory[S.talkHistory.length-1].label;
+      h+='<button id="undoEditBtn" title="Undo last '+esc(lastLabel)+'" style="background:none;border:none;color:var(--plum);font-size:16px;cursor:pointer;padding:5px 8px;border-radius:7px;line-height:1">↶</button>';
+    }
     if(!S.isSampleTalk){
       // Saved-state button: visually distinct + non-interactive so a returning user can SEE the talk
       // is up-to-date in the library and won't tap Save again, creating duplicates.
@@ -6342,18 +6375,48 @@ function renderMain(){
         h+='</div>';
         for(var si2=0;si2<t.sections.length;si2++){
           var x=t.sections[si2];
-          // June 2026 per Jenni: allExpanded overrides single-section
-          // accordion. Default behavior preserved when allExpanded is false.
-          var open=S.allExpanded || (S.activeSection===si2);
+          var isEditing = (S.editingSection === si2);
+          var open=S.allExpanded || (S.activeSection===si2) || isEditing;
           h+='<div class="tk-acc '+(open?"open":"")+'">';
-          h+='<button class="tk-acc-head secBtn" data-i="'+si2+'"><span class="tk-acc-num">'+(si2+1)+'</span><span class="tk-acc-ttl">'+esc(x.heading)+'</span><span class="tk-acc-min">'+esc(x.minutes||"")+'</span><span class="tk-acc-chev">⌄</span></button>';
-          if(open){
+          // Section header — minutes replaced by ✎ edit pencil (Jenni 2026-06-04)
+          h+='<div style="display:flex;align-items:center;gap:0;position:relative">';
+          h+='<button class="tk-acc-head secBtn" data-i="'+si2+'" style="flex:1;min-width:0"><span class="tk-acc-num">'+(si2+1)+'</span><span class="tk-acc-ttl">'+esc(x.heading)+'</span><span class="tk-acc-chev" style="margin-left:auto">⌄</span></button>';
+          if(!isEditing){
+            h+='<button class="secEditBtn" data-i="'+si2+'" title="Edit this section" style="position:absolute;right:34px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1">✎</button>';
+          }
+          h+='</div>';
+          if(isEditing){
+            // ── Edit mode for this section ─────────────────────────────────
+            // Each bullet becomes editable inline. The bullet marker becomes an × delete button.
+            // S.editingDraft holds the working copy until Save (commit) or Cancel (discard).
+            var draft = S.editingDraft || {};
+            h+='<div class="tk-acc-body" style="background:#fdfcff;border:2px dashed var(--plum);border-radius:10px;padding:14px;margin-top:6px">';
+            h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:11px;font-weight:700;color:var(--plum);text-transform:uppercase;letter-spacing:0.06em">✎ Editing section</span><div style="display:flex;gap:6px"><button id="secEditCancelBtn" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;color:var(--ink-muted);font-size:12px;font-weight:600;cursor:pointer">Cancel</button><button id="secEditSaveBtn" style="background:var(--plum);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">✓ Save changes</button></div></div>';
+            // Heading
+            h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Heading</div>';
+            h+='<input id="secEditHeading" type="text" value="'+esc(draft.heading||"")+'" style="width:100%;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:14px;color:var(--ink);outline:none;font-family:inherit;margin-bottom:12px;box-sizing:border-box">';
+            // Bullets
+            h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Bullets</div>';
+            var pts = draft.points || [];
+            for(var bpi=0;bpi<pts.length;bpi++){
+              h+='<div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:6px"><button class="secEditDelBulletBtn" data-i="'+bpi+'" title="Remove this bullet" style="background:#fff;border:1px solid #e8c8c0;border-radius:50%;width:22px;height:22px;color:#c0392b;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;margin-top:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center">×</button><textarea class="secEditBulletTA" data-i="'+bpi+'" rows="2" style="flex:1;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--ink);outline:none;font-family:inherit;resize:vertical;line-height:1.45;min-height:36px">'+esc(pts[bpi]||"")+'</textarea></div>';
+            }
+            h+='<button id="secEditAddBulletBtn" style="background:var(--lavender-bg);border:1px dashed var(--plum);color:var(--plum);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-top:4px;width:100%">+ Add bullet</button>';
+            // Teaching pearl
+            h+='<div style="font-size:10.5px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.08em;margin:14px 0 4px">💡 Teaching Pearl</div>';
+            h+='<textarea id="secEditPearl" rows="2" placeholder="Optional…" style="width:100%;background:#fff;border:1px solid #c8e0c8;border-radius:8px;padding:8px 12px;font-size:12.5px;color:#2d6a2d;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.5">'+esc(draft.teaching_pearl||"")+'</textarea>';
+            // Board tip
+            h+='<div style="font-size:10.5px;font-weight:700;color:#8a3a2a;text-transform:uppercase;letter-spacing:0.08em;margin:14px 0 4px">🎯 Board Tip</div>';
+            h+='<textarea id="secEditTip" rows="2" placeholder="Optional…" style="width:100%;background:#fff;border:1px solid #e8c8c0;border-radius:8px;padding:8px 12px;font-size:12.5px;color:#8a3a2a;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.5">'+esc(draft.board_tip||"")+'</textarea>';
+            h+='</div>';
+          } else if(open){
+            // ── Read mode ─────────────────────────────────────────────────
             h+='<div class="tk-acc-body"><ul>';
             for(var pi2=0;pi2<(x.points||[]).length;pi2++)h+='<li>'+esc(x.points[pi2])+'</li>';
             h+='</ul>';
             if(x.teaching_pearl)h+='<div style="margin-top:11px;background:#f0f7f0;border:1px solid #c8e0c8;border-radius:10px;padding:10px 12px"><div style="font-size:10.5px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">💡 Teaching Pearl</div><div style="font-size:12px;color:#2d6a2d;line-height:1.5">'+renderCite(x.teaching_pearl,t.references)+'</div></div>';
             if(x.board_tip)h+='<div style="margin-top:8px;background:#fdf0ee;border:1px solid #e8c8c0;border-radius:10px;padding:10px 12px"><div style="font-size:10.5px;font-weight:700;color:#8a3a2a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">🎯 Board Tip</div><div style="font-size:12px;color:#8a3a2a;line-height:1.5">'+renderCite(x.board_tip,t.references)+'</div></div>';
-            // Section copy button — bottom-right of the body, doesn\'t overlap the "X min" header label.
+            // Section copy button — bottom-right of the body
             h+='<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="copySecBtn" data-i="'+si2+'" title="Copy this section to clipboard" style="background:none;border:1px solid var(--line-soft);color:var(--ink-soft);cursor:pointer;padding:4px 9px;border-radius:6px;line-height:0;display:inline-flex;align-items:center">'+COPY_ICON+'</button></div>';
             h+='</div>';
           }
@@ -6981,6 +7044,66 @@ function bindMain(){
   var cqb=document.getElementById("copyQBtn");if(cqb)cqb.onclick=function(){copyBoardsQuestion("stem")};
   var cqfb=document.getElementById("copyQFullBtn");if(cqfb)cqfb.onclick=function(){copyBoardsQuestion("full")};
   // Per-section copy buttons (lecture mode)
+  // Undo button (capsule)
+  var udb=document.getElementById("undoEditBtn");if(udb)udb.onclick=undoLastEdit;
+  // === Per-section edit mode handlers (Jenni 2026-06-04) ===
+  // Enter edit mode — clone the section into a working draft
+  document.querySelectorAll(".secEditBtn").forEach(function(b){b.onclick=function(e){
+    e.stopPropagation();
+    if(!S.talk||!S.talk.sections)return;
+    var idx=parseInt(b.dataset.i,10);var src=S.talk.sections[idx];if(!src)return;
+    S.editingSection = idx;
+    S.editingDraft = JSON.parse(JSON.stringify(src));
+    S.activeSection = idx; // open this section
+    render();
+  }});
+  var secCB=document.getElementById("secEditCancelBtn");if(secCB)secCB.onclick=function(){S.editingSection=null;S.editingDraft=null;render()};
+  var secSB=document.getElementById("secEditSaveBtn");if(secSB)secSB.onclick=function(){
+    if(S.editingSection==null||!S.editingDraft||!S.talk||!S.talk.sections)return;
+    // Read current input values into draft (in case some weren't synced via onchange)
+    var hEl=document.getElementById("secEditHeading");if(hEl)S.editingDraft.heading=hEl.value;
+    var pEl=document.getElementById("secEditPearl");if(pEl)S.editingDraft.teaching_pearl=pEl.value;
+    var tEl=document.getElementById("secEditTip");if(tEl)S.editingDraft.board_tip=tEl.value;
+    document.querySelectorAll(".secEditBulletTA").forEach(function(ta){
+      var i=parseInt(ta.dataset.i,10);
+      if(S.editingDraft.points && i>=0 && i<S.editingDraft.points.length){S.editingDraft.points[i]=ta.value}
+    });
+    // Drop empty bullets
+    S.editingDraft.points = (S.editingDraft.points||[]).map(function(p){return String(p||"").trim()}).filter(Boolean);
+    // Snapshot for undo, commit, exit edit mode
+    pushTalkHistory("section "+(S.editingSection+1)+" edit");
+    S.talk.sections[S.editingSection] = S.editingDraft;
+    S.talkIsSaved = false;
+    S.editingSection = null;
+    S.editingDraft = null;
+    render();
+  };
+  // Live-sync bullet textareas into the draft so we don't lose typing on re-render
+  document.querySelectorAll(".secEditBulletTA").forEach(function(ta){ta.oninput=function(e){
+    if(!S.editingDraft||!S.editingDraft.points)return;
+    var i=parseInt(ta.dataset.i,10);
+    if(i>=0 && i<S.editingDraft.points.length){S.editingDraft.points[i]=ta.value}
+  }});
+  // Heading + pearl + tip live sync
+  var seh=document.getElementById("secEditHeading");if(seh)seh.oninput=function(){if(S.editingDraft)S.editingDraft.heading=seh.value};
+  var sep=document.getElementById("secEditPearl");if(sep)sep.oninput=function(){if(S.editingDraft)S.editingDraft.teaching_pearl=sep.value};
+  var set=document.getElementById("secEditTip");if(set)set.oninput=function(){if(S.editingDraft)S.editingDraft.board_tip=set.value};
+  // Delete bullet
+  document.querySelectorAll(".secEditDelBulletBtn").forEach(function(b){b.onclick=function(){
+    if(!S.editingDraft||!S.editingDraft.points)return;
+    var i=parseInt(b.dataset.i,10);
+    if(i>=0 && i<S.editingDraft.points.length){S.editingDraft.points.splice(i,1);render()}
+  }});
+  // Add new bullet
+  var seab=document.getElementById("secEditAddBulletBtn");if(seab)seab.onclick=function(){
+    if(!S.editingDraft)return;
+    if(!S.editingDraft.points)S.editingDraft.points=[];
+    S.editingDraft.points.push("");
+    render();
+    // Focus the new textarea
+    setTimeout(function(){var ts=document.querySelectorAll(".secEditBulletTA");if(ts.length)ts[ts.length-1].focus()},50);
+  };
+
   document.querySelectorAll(".copySecBtn").forEach(function(b){
     b.onclick=function(e){
       e.stopPropagation();
