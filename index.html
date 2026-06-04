@@ -4033,6 +4033,8 @@ window.onSupabaseReady = function(client){
       loadProfile();
     }
     if(typeof render === "function") render();
+    // Auth state is now known — drain any pending #t=<cloud-id> hash load from a deep-link.
+    if(typeof drainPendingHashLoad === "function") drainPendingHashLoad();
   });
   client.auth.onAuthStateChange(function(event, session){
     var wasSignedIn = !!S.user;
@@ -5528,28 +5530,39 @@ function loadFromShareHash(){
 }
 
 // Library deep-link: when a new tab opens with #t=<id> or #s=<slug>, load that talk directly.
-// Triggered by the "Open" anchors in the library (which use target="_blank").
+// Samples load immediately. Saved-talk loads must wait for Supabase auth to restore (otherwise
+// the cloud lookup runs before S.user is populated and silently falls through to localStorage).
+window._pendingHashLoad = null; // {kind:"saved"|"sample", id} — drained when ready
 function loadFromLibHash(){
   try{
     var hash = window.location.hash || "";
     var mSaved = hash.match(/^#t=(.+)$/);
     var mSample = hash.match(/^#s=(.+)$/);
     if(mSaved){
-      // Clear hash so a refresh doesn't re-trigger; loadSavedTalk handles the async cloud/local lookup.
       var id = decodeURIComponent(mSaved[1]);
       history.replaceState(null,"",window.location.pathname+window.location.search);
-      // Defer to next tick so any pending Supabase init can resolve first
-      setTimeout(function(){ loadSavedTalk(id) }, 50);
+      window._pendingHashLoad = { kind:"saved", id:id };
+      // Local-only talks have a "t_" prefix and don't need auth — drain right away.
+      if(String(id).startsWith("t_")){ drainPendingHashLoad(); }
       return true;
     }
     if(mSample){
       var slug = decodeURIComponent(mSample[1]);
       history.replaceState(null,"",window.location.pathname+window.location.search);
+      // Samples are bundled JSON, no auth needed — load immediately.
       setTimeout(function(){ loadSample(slug) }, 50);
       return true;
     }
   }catch(e){console.error("loadFromLibHash failed:",e)}
   return false;
+}
+// Drain the pending hash load. Called: (a) immediately for local talks / no auth needed,
+// (b) after Supabase getSession() resolves (so S.user is populated for cloud talks).
+function drainPendingHashLoad(){
+  if(!window._pendingHashLoad)return;
+  var pending = window._pendingHashLoad;
+  window._pendingHashLoad = null;
+  if(pending.kind === "saved"){ loadSavedTalk(pending.id); }
 }
 
 async function downloadVMC(){
@@ -7145,6 +7158,9 @@ function bindMain(){
 loadFromShareHash();
 loadFromLibHash();
 render();
+// Safety net: if Supabase init never completes (e.g., user offline), still drain after 3s
+// so the deep-link at least tries the localStorage path. No-op if already drained.
+setTimeout(function(){ if(typeof drainPendingHashLoad==="function" && window._pendingHashLoad) drainPendingHashLoad(); }, 3000);
 </script>
 </body>
 </html>
