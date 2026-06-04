@@ -4012,7 +4012,7 @@ var S = {
   podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false,
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
-  showSaved:false, savedSearch:"", savedFlash:"", libTab:"all",
+  showSaved:false, savedSearch:"", savedFlash:"", libTab:"all", libSpec:null,
   gldOpen:false, editSettings:false, overflowOpen:false,
   // — Auth + cloud
   user:null, session:null, profile:null, signInOpen:false, authBusy:false, authEmail:"", authMsg:"",
@@ -5896,9 +5896,16 @@ function renderSaved(){
   var byTab = (tab==="all") ? all
             : (tab==="visuals") ? all.filter(function(x){return x._hasVisuals})
             : all.filter(function(x){return x._kind === (tab==="boards" ? "boards" : "lecture")});
+  // Specialty filter (applied after tab, before search)
+  var bySpec = S.libSpec ? byTab.filter(function(x){return x._spec===S.libSpec}) : byTab;
   // Search filter
-  var filtered=byTab;
-  if(S.savedSearch.trim()){var q=S.savedSearch.toLowerCase();filtered=byTab.filter(function(x){return(x.topic||"").toLowerCase().indexOf(q)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(q)>=0||(x.specialty||"").toLowerCase().indexOf(q)>=0})}
+  var filtered=bySpec;
+  if(S.savedSearch.trim()){var q=S.savedSearch.toLowerCase();filtered=bySpec.filter(function(x){return(x.topic||"").toLowerCase().indexOf(q)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(q)>=0||(x.specialty||"").toLowerCase().indexOf(q)>=0})}
+  // Counts per specialty (reflect current tab + search but ignore active spec filter so other counts stay meaningful)
+  var specSourceForCounts = byTab;
+  if(S.savedSearch.trim()){var qs=S.savedSearch.toLowerCase();specSourceForCounts=byTab.filter(function(x){return(x.topic||"").toLowerCase().indexOf(qs)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(qs)>=0||(x.specialty||"").toLowerCase().indexOf(qs)>=0})}
+  var specCounts = {};
+  for(var sci=0;sci<specSourceForCounts.length;sci++){var sk=specSourceForCounts[sci]._spec||"Other";specCounts[sk]=(specCounts[sk]||0)+1}
   // Counts per tab (after search, before tab) \u2014 used in the tab pills
   var searchOnly=all;
   if(S.savedSearch.trim()){var q2=S.savedSearch.toLowerCase();searchOnly=all.filter(function(x){return(x.topic||"").toLowerCase().indexOf(q2)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(q2)>=0||(x.specialty||"").toLowerCase().indexOf(q2)>=0})}
@@ -5913,6 +5920,35 @@ function renderSaved(){
   h+=tabBtn("boards","\uD83D\uDCCB Boards",cBrd);
   h+=tabBtn("visuals","\uD83D\uDDBC Visuals",cVis);
   h+='</div>';
+
+  // === Specialty pill strip (Jenni 2026-06-04) ===
+  // Lighter visual weight than the top tabs: ghost outline by default, filled when active.
+  // Horizontally scrollable on overflow. First pill = "All specialties" (clears the filter).
+  // Pills with 0 cards in the current tab are dimmed + disabled.
+  function specPill(specKey, label, count){
+    var active = (S.libSpec === specKey) || (specKey === null && !S.libSpec);
+    var disabled = (specKey !== null) && (count === 0);
+    var bg = active ? "var(--plum)" : "transparent";
+    var fg = active ? "#fff" : (disabled ? "var(--ink-soft)" : "var(--ink-muted)");
+    var br = active ? "var(--plum)" : "var(--line)";
+    var op = disabled ? "0.4" : "1";
+    var cursor = disabled ? "default" : "pointer";
+    return '<button class="libSpecBtn" data-spec="'+(specKey===null?"":esc(specKey))+'" '+(disabled?"disabled":"")+' style="background:'+bg+';color:'+fg+';border:1px solid '+br+';border-radius:14px;padding:5px 11px;font-size:11.5px;font-weight:'+(active?"600":"500")+';cursor:'+cursor+';opacity:'+op+';white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-family:inherit;line-height:1.3">'+esc(label)+(count!=null?' <span style="opacity:0.65;font-size:10.5px;font-weight:500">'+count+'</span>':'')+'</button>';
+  }
+  h+='<div class="libSpecStrip" style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding:2px 0;scrollbar-width:none;-ms-overflow-style:none;mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 24px),transparent 100%);-webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 24px),transparent 100%)">';
+  h+=specPill(null, "All", byTab.length);
+  for(var spi=0;spi<SPEC_ORDER.length;spi++){
+    var specOpt = SPEC_ORDER[spi];
+    h+=specPill(specOpt, (SPEC_ICONS[specOpt]||"") + " " + specOpt, specCounts[specOpt]||0);
+  }
+  h+='</div>';
+  // Hide scrollbar on webkit
+  h+='<style>.libSpecStrip::-webkit-scrollbar{display:none}</style>';
+  // "Showing X \u00B7 Clear" line when a filter is active
+  if(S.libSpec){
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding:6px 10px;background:var(--lavender-bg);border-radius:8px;font-size:11.5px"><span style="color:var(--ink)"><b style="color:var(--plum-deep)">Showing '+esc(S.libSpec)+'</b> \u00B7 '+filtered.length+' '+(filtered.length===1?"item":"items")+'</span><button id="libSpecClearBtn" style="background:none;border:none;color:var(--plum);font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 6px;border-radius:6px">\u00D7 Clear</button></div>';
+  }
+
   // Loading state (cloud)
   if(S.user && !S.cloudLoaded){
     h+='<div style="text-align:center;padding:14px 20px;color:var(--ink-muted);font-size:12.5px"><span class="spinner" style="margin-right:8px"></span>Loading your library\u2026</div>';
@@ -5926,21 +5962,24 @@ function renderSaved(){
     var emptySub = (S.savedSearch.trim()) ? "Try a different search term." : (tab==="boards" ? "Generate a Boards-style talk to add it here." : "Generate a chalk talk and click \u2605 Save to add it here.");
     h+='<div style="background:#fff;border:1px dashed #d0cce0;border-radius:12px;padding:40px 20px;text-align:center;color:#9490a6"><div style="font-size:42px;margin-bottom:10px">\uD83D\uDCD6</div><div style="font-size:14px;font-weight:600;color:#6b6780;margin-bottom:6px">'+emptyMsg+'</div><div style="font-size:12px">'+emptySub+'</div></div>';
   } else {
-    // Bucket by specialty
-    var bySpec={};
-    for(var fi=0;fi<filtered.length;fi++){var sp=filtered[fi]._spec||"Other";if(!bySpec[sp])bySpec[sp]=[];bySpec[sp].push(filtered[fi])}
-    // Render in canonical order (Cardiovascular \u2192 ... \u2192 Other); any unknown spec falls under "Other".
-    for(var oi=0;oi<SPEC_ORDER.length;oi++){
-      var specName=SPEC_ORDER[oi];var items=bySpec[specName];if(!items||items.length===0)continue;
-      var icon=SPEC_ICONS[specName]||"\uD83D\uDCDA";
-      // Section header
-      h+='<div style="display:flex;align-items:baseline;gap:8px;margin:18px 4px 8px;padding-bottom:6px;border-bottom:1px solid var(--line-soft)">';
-      h+='<span style="font-size:14px;color:var(--plum)">'+icon+'</span>';
-      h+='<span style="font-family:Georgia,serif;font-size:15px;font-weight:700;color:var(--plum-deep);letter-spacing:-0.005em">'+esc(specName)+'</span>';
-      h+='<span style="font-size:11px;color:var(--ink-muted);font-weight:500">'+items.length+'</span>';
-      h+='</div>';
-      // Cards under this section \u2014 delegated to renderLibCard helper
-      for(var ci=0;ci<items.length;ci++){ h += renderLibCard(items[ci]); }
+    if(S.libSpec){
+      // Specialty filter is active \u2014 flat list, no section headers (they'd just repeat the filter label).
+      for(var ci=0;ci<filtered.length;ci++){ h += renderLibCard(filtered[ci]); }
+    } else {
+      // No specialty filter \u2014 group + render section headers in canonical order.
+      var bySpecGroup={};
+      for(var fi=0;fi<filtered.length;fi++){var sp=filtered[fi]._spec||"Other";if(!bySpecGroup[sp])bySpecGroup[sp]=[];bySpecGroup[sp].push(filtered[fi])}
+      for(var oi=0;oi<SPEC_ORDER.length;oi++){
+        var specName=SPEC_ORDER[oi];var items=bySpecGroup[specName];if(!items||items.length===0)continue;
+        var icon=SPEC_ICONS[specName]||"\uD83D\uDCDA";
+        // Section header (also acts as a quick filter \u2014 tap to jump into that specialty)
+        h+='<button class="libSpecHeaderBtn" data-spec="'+esc(specName)+'" style="width:100%;display:flex;align-items:baseline;gap:8px;margin:18px 0 8px;padding:0 4px 6px;border:none;border-bottom:1px solid var(--line-soft);background:none;cursor:pointer;text-align:left">';
+        h+='<span style="font-size:14px;color:var(--plum)">'+icon+'</span>';
+        h+='<span style="font-family:Georgia,serif;font-size:15px;font-weight:700;color:var(--plum-deep);letter-spacing:-0.005em">'+esc(specName)+'</span>';
+        h+='<span style="font-size:11px;color:var(--ink-muted);font-weight:500">'+items.length+'</span>';
+        h+='</button>';
+        for(var ci=0;ci<items.length;ci++){ h += renderLibCard(items[ci]); }
+      }
     }
     // (The defensive "unknown specialty" branch was deleted \u2014 inferSpecialty now
     // canonicalizes to SPEC_ORDER, so the main loop above is exhaustive.)
@@ -5952,7 +5991,11 @@ function bindSaved(){
   document.getElementById("savedBack").onclick=function(){S.showSaved=false;render()};
   var ss=document.getElementById("savedSearchIn");if(ss)ss.oninput=function(e){S.savedSearch=e.target.value;render();var f=document.getElementById("savedSearchIn");if(f){f.focus();f.setSelectionRange(f.value.length,f.value.length)}};
   // Tab pills — All / Lectures / Boards
-  document.querySelectorAll(".libTabBtn").forEach(function(b){b.onclick=function(){S.libTab=b.dataset.tab||"all";render()}});
+  document.querySelectorAll(".libTabBtn").forEach(function(b){b.onclick=function(){S.libTab=b.dataset.tab||"all";S.libSpec=null;render()}});
+  // Specialty pill strip + clear + section-header shortcut
+  document.querySelectorAll(".libSpecBtn").forEach(function(b){b.onclick=function(){var v=b.dataset.spec||"";S.libSpec=v||null;render();window.scrollTo(0,0)}});
+  var lscb=document.getElementById("libSpecClearBtn");if(lscb)lscb.onclick=function(){S.libSpec=null;render();window.scrollTo(0,0)};
+  document.querySelectorAll(".libSpecHeaderBtn").forEach(function(b){b.onclick=function(){S.libSpec=b.dataset.spec||null;render();window.scrollTo(0,0)}});
   // Unified Open handler — routes to sample-load or saved-load based on data-source
   // libOpenBtn is now an <a target="_blank"> — let the browser handle the click natively. No onclick.
   // Loading from a hash (#t=… / #s=…) is handled on page load via the maybeLoadFromHash() helper below.
