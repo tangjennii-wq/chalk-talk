@@ -368,7 +368,8 @@ a.pmid-pill:hover { background:var(--lavender-soft); }
 </head>
 <body>
 <div class="app" id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- html2canvas: async so it doesn't block page parse / Supabase init. Only needed lazily when user clicks "Save as Image". -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" async></script>
 <script type="module">
   // Supabase SDK — initializes the client and exposes window.sb for the legacy script
   import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -4283,18 +4284,32 @@ async function saveProfileForm(){
   return true;
 }
 
+// Wait up to ~3s for Supabase to finish initializing. The module script that creates
+// window.sb is deferred — if the user clicks Sign in before it lands, we briefly poll
+// rather than throw a confusing "Supabase not ready" error.
+function _waitForSb(){
+  return new Promise(function(resolve,reject){
+    if(window.sb) return resolve(window.sb);
+    var tries=0;
+    var iv=setInterval(function(){
+      if(window.sb){clearInterval(iv);resolve(window.sb)}
+      else if(++tries>30){clearInterval(iv);reject(new Error("Sign-in service is loading — please refresh the page and try again."))}
+    },100);
+  });
+}
+
 async function signInWithMagicLink(email){
-  if(!window.sb) throw new Error("Supabase not ready");
+  var sb = await _waitForSb();
   var redirectTo = window.location.origin + window.location.pathname;
-  var r = await window.sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: redirectTo } });
+  var r = await sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: redirectTo } });
   if(r.error) throw r.error;
   return r;
 }
 
 async function signInWithGoogle(){
-  if(!window.sb) throw new Error("Supabase not ready");
+  var sb = await _waitForSb();
   var redirectTo = window.location.origin + window.location.pathname;
-  var r = await window.sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo } });
+  var r = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo } });
   if(r.error) throw r.error;
 }
 
@@ -6147,18 +6162,15 @@ function renderMain(){
           // accordion. Default behavior preserved when allExpanded is false.
           var open=S.allExpanded || (S.activeSection===si2);
           h+='<div class="tk-acc '+(open?"open":"")+'">';
-          h+='<div style="position:relative">';
           h+='<button class="tk-acc-head secBtn" data-i="'+si2+'"><span class="tk-acc-num">'+(si2+1)+'</span><span class="tk-acc-ttl">'+esc(x.heading)+'</span><span class="tk-acc-min">'+esc(x.minutes||"")+'</span><span class="tk-acc-chev">⌄</span></button>';
-          if(open){
-            h+='<button class="copySecBtn" data-i="'+si2+'" title="Copy this section to clipboard" style="position:absolute;top:10px;right:38px;background:rgba(255,255,255,0.7);border:1px solid var(--line-soft);color:var(--ink-soft);cursor:pointer;padding:3px 8px;font-size:13px;border-radius:6px;z-index:2;line-height:1">⎘</button>';
-          }
-          h+='</div>';
           if(open){
             h+='<div class="tk-acc-body"><ul>';
             for(var pi2=0;pi2<(x.points||[]).length;pi2++)h+='<li>'+esc(x.points[pi2])+'</li>';
             h+='</ul>';
             if(x.teaching_pearl)h+='<div style="margin-top:11px;background:#f0f7f0;border:1px solid #c8e0c8;border-radius:10px;padding:10px 12px"><div style="font-size:10.5px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">💡 Teaching Pearl</div><div style="font-size:12px;color:#2d6a2d;line-height:1.5">'+renderCite(x.teaching_pearl,t.references)+'</div></div>';
             if(x.board_tip)h+='<div style="margin-top:8px;background:#fdf0ee;border:1px solid #e8c8c0;border-radius:10px;padding:10px 12px"><div style="font-size:10.5px;font-weight:700;color:#8a3a2a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">🎯 Board Tip</div><div style="font-size:12px;color:#8a3a2a;line-height:1.5">'+renderCite(x.board_tip,t.references)+'</div></div>';
+            // Section copy button — bottom-right of the body, doesn\'t overlap the "X min" header label.
+            h+='<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="copySecBtn" data-i="'+si2+'" title="Copy this section to clipboard" style="background:none;border:1px solid var(--line-soft);color:var(--ink-soft);cursor:pointer;padding:4px 9px;font-size:13px;border-radius:6px;line-height:1">⎘</button></div>';
             h+='</div>';
           }
           h+='</div>';
