@@ -4071,8 +4071,10 @@ async function loadProfile(){
 async function refreshCloudTalks(){
   if(!window.sb || !S.user) return;
   try{
+    // talk_json->>subtitle projects just the subtitle text from the JSONB column (no quotes).
+    // Tiny bandwidth (~30-80 bytes/row) and restores the subtitle line on library cards.
     var r = await window.sb.from("talks")
-      .select("id, title, topic, style, depth, created_at, share_token, is_public")
+      .select("id, title, topic, style, depth, created_at, share_token, is_public, talk_json->>subtitle")
       .order("created_at", { ascending: false });
     if(r.error) throw r.error;
     S.cloudTalks = r.data || [];
@@ -4254,6 +4256,7 @@ function getDisplayLibrary(){
     // The full talk_json is fetched on Open via cloudLoadTalk(id).
     var miniTalk = {
       title: row.title,
+      subtitle: row.subtitle, // projected from talk_json->>subtitle in refreshCloudTalks
       // _kind detection uses talk.question — synthesize truthy/undefined from the style column.
       question: row.style === "boards" ? {} : undefined
       // savedVisuals deliberately omitted — Visuals tab will hide cloud talks without a fetch.
