@@ -4012,7 +4012,7 @@ var S = {
   podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false,
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
-  showSaved:false, savedSearch:"", savedFlash:"", libTab:"all", libSpec:null,
+  showSaved:false, savedSearch:"", savedFlash:"", libTab:"all", libSpec:null, libCardMenuId:null,
   gldOpen:false, editSettings:false, overflowOpen:false,
   talkHistory:[], editingSection:null, editingDraft:null,
   // — Auth + cloud
@@ -4197,11 +4197,22 @@ function renderLibCard(x){
   var openHref = isSample ? ('#s='+encodeURIComponent(x._slug)) : ('#t='+encodeURIComponent(x._id));
   var openBtn = '<a class="libOpenBtn" href="'+openHref+'" target="_blank" rel="noopener" style="background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:7px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;text-decoration:none;display:inline-flex;align-items:center;line-height:1">Open</a>';
 
+  // Kebab menu replaces the row of inline icons (Jenni 2026-06-04 — matches OpenEvidence-style action menu).
+  // One ⋮ button per card. Clicking it toggles a labeled dropdown: Rename / Export PDF / Delete.
+  // Only one menu is open at a time, tracked via S.libCardMenuId. Closes on outside click.
   var iconBtns = '';
   if(!isSample){
-    iconBtns += '<button class="libEditTitleBtn" data-id="'+x._id+'" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1;flex-shrink:0">✎</button>';
-    iconBtns += '<button class="libPdfBtn" data-id="'+x._id+'" title="Export as PDF" style="background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1;flex-shrink:0">📄</button>';
-    iconBtns += '<button class="delTalkBtn" data-id="'+x._id+'" title="Delete" style="background:none;border:none;color:#c0392b;font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1;flex-shrink:0;opacity:0.7">🗑</button>';
+    var menuOpen = (S.libCardMenuId === x._id);
+    iconBtns += '<div style="position:relative;flex-shrink:0">';
+    iconBtns += '<button class="libCardMenuBtn" data-id="'+x._id+'" title="More options" aria-label="More options" style="background:none;border:none;color:var(--ink-muted);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;font-weight:700">⋮</button>';
+    if(menuOpen){
+      iconBtns += '<div class="libCardMenu" style="position:absolute;right:0;top:32px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(20,10,28,0.14);min-width:170px;z-index:80;overflow:hidden">';
+      iconBtns += '<button class="libMenuItem libEditTitleBtn" data-id="'+x._id+'" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">✎</span>Rename</button>';
+      iconBtns += '<button class="libMenuItem libPdfBtn" data-id="'+x._id+'" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">↓</span>Export PDF</button>';
+      iconBtns += '<button class="libMenuItem delTalkBtn" data-id="'+x._id+'" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:#c0392b;text-align:left;font-family:inherit"><span style="font-size:14px;width:16px;display:inline-flex;justify-content:center">🗑</span>Delete</button>';
+      iconBtns += '</div>';
+    }
+    iconBtns += '</div>';
   }
 
   var h = '<div style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">';
@@ -6041,12 +6052,29 @@ function bindSaved(){
   // libOpenBtn is now an <a target="_blank"> — let the browser handle the click natively. No onclick.
   // Loading from a hash (#t=… / #s=…) is handled on page load via the maybeLoadFromHash() helper below.
   document.querySelectorAll(".exportTalkBtn").forEach(function(b){b.onclick=function(){exportTalkJSON(b.dataset.id)}});
-  // New: library card PDF export icon (replaces the JSON export icon for saved cards).
-  document.querySelectorAll(".libPdfBtn").forEach(function(b){b.onclick=function(){exportSavedTalkPDF(b.dataset.id)}});
-  document.querySelectorAll(".delTalkBtn").forEach(function(b){b.onclick=function(){deleteSavedTalk(b.dataset.id)}});
+  // Kebab menu toggle — opens that card's action menu, closes any other
+  document.querySelectorAll(".libCardMenuBtn").forEach(function(b){b.onclick=function(e){
+    e.stopPropagation();
+    var id=b.dataset.id;
+    S.libCardMenuId = (S.libCardMenuId===id) ? null : id;
+    render();
+  }});
+  // Outside-click closes the kebab menu
+  if(S.libCardMenuId){
+    document.body.onclick=function(e){
+      if(!e.target.closest(".libCardMenu") && !e.target.closest(".libCardMenuBtn")){
+        S.libCardMenuId=null;document.body.onclick=null;render();
+      }
+    };
+  }
+  // Menu items: PDF export + Delete (Rename binds below via libEditTitleBtn — already a class)
+  // Each closes the menu after firing
+  document.querySelectorAll(".libPdfBtn").forEach(function(b){b.onclick=function(){S.libCardMenuId=null;exportSavedTalkPDF(b.dataset.id)}});
+  document.querySelectorAll(".delTalkBtn").forEach(function(b){b.onclick=function(){S.libCardMenuId=null;deleteSavedTalk(b.dataset.id)}});
   // Per-library-card title rename
   document.querySelectorAll(".libEditTitleBtn").forEach(function(b){b.onclick=async function(e){
     e.stopPropagation();
+    S.libCardMenuId=null;
     var id = b.dataset.id;if(!id)return;
     var arr = getDisplayLibrary();var entry = arr.find(function(x){return x.id===id});if(!entry)return;
     var current = (entry.talk && entry.talk.title) || entry.topic || "";
