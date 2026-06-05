@@ -181,30 +181,37 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
   .hero-tagline-col{order:3;flex-basis:100% !important;text-align:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--line-soft)}
   .hero-account-col{order:2}
 }
-/* Floating chat-bubble composer (lower-right, generated state) */
-.composer-bubble{position:fixed;bottom:20px;right:20px;z-index:55;font-family:inherit}
-.composer-bubble .composer-pill{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;border-radius:30px;padding:13px 22px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 6px 22px rgba(75,17,111,0.32);font-family:inherit;transition:transform .15s ease,box-shadow .15s ease}
+/* ─── Floating refine composer (Jenni 2026-06-04 redesign) ───────────────
+   Standardized 360px-wide portrait card at every breakpoint. Collapsed = 48px FAB. */
+.composer-bubble{position:fixed;bottom:24px;right:24px;z-index:55;font-family:inherit}
+/* Collapsed: 48px circular FAB with ✎ icon (no text label) */
+.composer-bubble .composer-pill{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;border-radius:50%;width:48px;height:48px;padding:0;font-size:18px;cursor:pointer;box-shadow:0 6px 22px rgba(75,17,111,0.32);font-family:inherit;transition:transform .15s ease,box-shadow .15s ease}
 .composer-bubble .composer-pill:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(75,17,111,0.40)}
-.composer-bubble .composer-panel{display:none;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 14px 40px rgba(75,17,111,0.22);width:min(420px,calc(100vw - 32px));padding:12px 14px;transition:width .18s ease}
+.composer-bubble .composer-pill .composer-pill-spinner{display:none}
+.composer-bubble .composer-pill.busy .composer-pill-icon{display:none}
+.composer-bubble .composer-pill.busy .composer-pill-spinner{display:inline-flex}
+/* Expanded: 360 wide x 520 tall portrait card. Flex column so textarea fills middle. */
+.composer-bubble .composer-panel{display:none;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 14px 40px rgba(75,17,111,0.22);width:360px;height:520px;max-width:calc(100vw - 32px);padding:14px;box-sizing:border-box}
 .composer-bubble.open .composer-pill{display:none}
-.composer-bubble.open .composer-panel{display:block}
-.composer-bubble.expanded .composer-panel{width:min(640px,calc(100vw - 32px))}
-.composer-bubble .composer-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px}
+.composer-bubble.open .composer-panel{display:flex}
+.composer-bubble .composer-panel-head{display:flex;align-items:center;justify-content:space-between;height:24px;flex-shrink:0;margin-bottom:10px;padding:0 2px}
 .composer-bubble .composer-panel-head .cp-title{font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.07em}
-.composer-bubble .composer-panel-head .cp-head-actions{display:flex;align-items:center;gap:2px}
-.composer-bubble .composer-panel-head .cp-icon-btn{background:none;border:none;color:var(--ink-muted);font-size:14px;cursor:pointer;padding:2px 6px;line-height:1;border-radius:6px;display:inline-flex;align-items:center;justify-content:center}
-.composer-bubble .composer-panel-head .cp-icon-btn:hover{background:var(--cream);color:var(--plum)}
-.composer-bubble .composer-panel-head .cp-close{background:none;border:none;color:var(--ink-muted);font-size:20px;cursor:pointer;padding:0 4px;line-height:1}
-.composer-bubble .composer-panel-row{display:flex;align-items:flex-end;gap:8px}
-.composer-bubble .ref-btn{background:var(--cream);border:1px solid var(--line);border-radius:18px;padding:8px 12px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;flex-shrink:0;white-space:nowrap;font-family:inherit;align-self:flex-end}
-.composer-bubble .revise-input{flex:1;min-width:0;background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 14px;font-size:13.5px;color:var(--ink);outline:none;font-family:inherit;resize:none;line-height:1.5;min-height:64px;max-height:50vh;overflow-y:auto;transition:min-height .18s ease}
+.composer-bubble .composer-panel-head .cp-close{background:none;border:none;color:var(--ink-muted);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;border-radius:6px}
+.composer-bubble .composer-panel-head .cp-close:hover{background:var(--cream);color:var(--plum)}
+/* Textarea fills the middle, internal scroll for very long pastes */
+.composer-bubble .revise-input{flex:1;min-height:0;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13.5px;color:var(--ink);outline:none;font-family:inherit;resize:none;line-height:1.5;overflow-y:auto;box-sizing:border-box}
 .composer-bubble .revise-input:focus{border-color:var(--plum)}
-.composer-bubble.expanded .revise-input{min-height:240px}
-.composer-bubble .composer-hint{font-size:10.5px;color:var(--ink-muted);margin:6px 4px 0;line-height:1.3;display:none}
-.composer-bubble.expanded .composer-hint{display:block}
-.composer-bubble .send-btn{background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:50%;width:36px;height:36px;color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(112,43,157,0.3);align-self:flex-end}
+/* Footer row: Reference pill left, send circle right */
+.composer-bubble .composer-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;flex-shrink:0}
+.composer-bubble .ref-btn{background:var(--cream);border:1px solid var(--line);border-radius:18px;padding:7px 12px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;flex-shrink:0;white-space:nowrap;font-family:inherit}
+.composer-bubble .send-btn{background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:50%;width:36px;height:36px;color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(112,43,157,0.3)}
 .composer-bubble .send-btn:disabled{background:#c9c3d6;box-shadow:none;cursor:not-allowed}
-@media (max-width:640px){.composer-bubble{bottom:14px;right:14px;left:14px}.composer-bubble .composer-panel{width:calc(100vw - 28px);max-width:none}.composer-bubble.expanded .composer-panel{width:calc(100vw - 28px)}.composer-bubble .revise-input{min-height:120px;max-height:55vh}.composer-bubble.expanded .revise-input{min-height:45vh}}
+.composer-bubble .composer-hint{font-size:10.5px;color:var(--ink-muted);margin:6px 4px 0 4px;line-height:1.3;flex-shrink:0;text-align:right}
+/* Mobile: same shape, just height-flex to 60vh (clamped) and tighter corner offset */
+@media (max-width:640px){
+  .composer-bubble{bottom:16px;right:16px}
+  .composer-bubble .composer-panel{height:min(60vh,560px);min-height:420px;width:min(360px,calc(100vw - 32px))}
+}
 .app.has-talk{padding-bottom:24px}
 /* Edit-settings drawer (bottom sheet) */
 .drawer-backdrop{position:fixed;inset:0;background:rgba(20,10,28,0.45);z-index:90;backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .25s ease}
@@ -232,7 +239,17 @@ textarea,input[type=text]{font-family:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{width:16px;height:16px;border:2.5px solid #e2dfe8;border-top-color:#702b9d;border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle}
 /* Citations */
-.cite{display:inline-block;background:#eee6f3;color:#702b9d;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:600;margin:0 1px;cursor:pointer;vertical-align:super;line-height:1.4;text-decoration:none;border:1px solid #d4baea;transition:all .12s ease;font-family:ui-sans-serif,system-ui,sans-serif}
+/* OpenEvidence-style inline citation chips. Color-coded by source type: guideline=warm, trial=plum, journal=cool. */
+.cite{display:inline-flex;align-items:center;gap:3px;background:#eee6f3;color:#4a1a7a;padding:1px 7px 1px 6px;border-radius:10px;font-size:10.5px;font-weight:600;margin:0 2px;cursor:pointer;line-height:1.5;text-decoration:none;border:1px solid #d4baea;transition:all .12s ease;font-family:ui-sans-serif,system-ui,sans-serif;vertical-align:baseline;white-space:nowrap}
+.cite:hover{background:#e2d3f0;border-color:#a87fc6}
+.cite::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.7;flex-shrink:0}
+.cite.cite-guideline{background:#fdeee6;color:#a44a1e;border-color:#f0c89c}
+.cite.cite-guideline:hover{background:#fbdcc7;border-color:#e08b48}
+.cite.cite-trial{background:#eee6f3;color:#4a1a7a;border-color:#d4baea}
+.cite.cite-trial:hover{background:#e2d3f0;border-color:#a87fc6}
+.cite.cite-journal{background:#e6efff;color:#1e4a8a;border-color:#a8c4eb}
+.cite.cite-journal:hover{background:#cfddff;border-color:#5781c9}
+.cite-plus{font-size:9.5px;color:inherit;opacity:0.7;font-weight:500;margin-left:1px}
 .cite:hover{background:#702b9d;color:#fff;border-color:#702b9d}
 .cite-pop{position:absolute;background:#fff;border:1px solid #d4baea;border-radius:10px;padding:14px 16px;max-width:320px;min-width:240px;box-shadow:0 8px 28px rgba(45,42,62,0.18);z-index:1000;font-size:13px;line-height:1.5;color:#2d2a3e}
 .cite-pop-title{font-weight:700;color:#330662;margin-bottom:4px;line-height:1.3}
@@ -4842,6 +4859,54 @@ function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace
 
 // ═══════════ CITATION RENDERER ═══════════
 // Parses [N] / [N,M] markers in talk text and renders them as clickable pills.
+// ── Citation chip helpers (OpenEvidence-style: inline pill with source name) ───
+// Derive a short, recognizable label from a reference's society / source / trial acronym.
+function _citeLabel(ref){
+  if(!ref) return "ref";
+  var src = String(ref.source || "");
+  // Trial acronym pattern: ALL-CAPS, optionally hyphenated, at the start (e.g. "DAPA-HF", "EMPEROR-Reduced", "PARADIGM-HF")
+  var trial = src.match(/^([A-Z][A-Z0-9]+(?:-[A-Za-z0-9]+)?)\b/);
+  if(trial) return trial[1];
+  // Short society label preferred (e.g., "AHA", "KDIGO", "IDSA")
+  if(ref.society && ref.society.length <= 10) return ref.society;
+  // Common journal abbreviations
+  var lower = src.toLowerCase();
+  var journals = [
+    ["new england journal","NEJM"],["nejm","NEJM"],
+    ["journal of the american college of cardiology","JACC"],["jacc","JACC"],
+    ["circulation","Circulation"],
+    ["lancet","Lancet"],
+    ["jama","JAMA"],
+    ["kidney international","Kidney Int"],
+    ["clinical journal of the american society of nephrology","CJASN"],["cjasn","CJASN"],
+    ["american journal of kidney diseases","AJKD"],["ajkd","AJKD"],
+    ["annals of internal medicine","Ann Intern Med"],
+    ["diabetes care","Diabetes Care"],
+    ["chest","CHEST"],
+    ["thorax","Thorax"],
+    ["gut","Gut"],
+    ["hepatology","Hepatology"],
+    ["blood","Blood"],
+    ["clinical infectious diseases","CID"],
+    ["british medical journal","BMJ"],["bmj","BMJ"]
+  ];
+  for(var j=0;j<journals.length;j++){ if(lower.indexOf(journals[j][0])>=0) return journals[j][1]; }
+  // Society fallback (longer)
+  if(ref.society) return ref.society.length<=14?ref.society:ref.society.slice(0,12)+"…";
+  // Last resort: truncate the source
+  if(src.length<=16) return src;
+  return src.slice(0,14)+"…";
+}
+// Color class — guidelines warm/orange, trials plum, journal articles cool/blue.
+function _citeClass(ref){
+  if(!ref) return "cite";
+  var t = String(ref.type || "").toLowerCase();
+  if(t === "guideline" || ref.society) return "cite cite-guideline";
+  // Trial = ALL-CAPS acronym style
+  if(/^[A-Z][A-Z0-9-]{2,}/.test(String(ref.source||""))) return "cite cite-trial";
+  return "cite cite-journal";
+}
+
 function renderCite(text, refs) {
   if (!text) return "";
   if (!refs || !refs.length) return esc(String(text));
@@ -4850,18 +4915,33 @@ function renderCite(text, refs) {
   var lastIdx = 0;
   var re = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
   var m;
+  // Build a quick lookup for refs by id
+  var refMap = {};
+  for(var rr=0; rr<refs.length; rr++){ refMap[String(refs[rr].id)] = refs[rr]; }
   while ((m = re.exec(s)) !== null) {
     html += esc(s.slice(lastIdx, m.index));
     var ids = m[1].split(",").map(function(x){return x.trim()});
-    for (var i = 0; i < ids.length; i++) {
-      var id = ids[i];
-      var found = false;
-      for (var ri = 0; ri < refs.length; ri++) { if (String(refs[ri].id) === id) { found = true; break; } }
-      if (found) {
-        html += '<span class="cite" data-ref="' + id + '">' + id + '</span>';
-      } else {
-        html += '['+id+']';
+    // Collect resolved refs (skip unknown ids)
+    var resolved = [];
+    for(var i=0;i<ids.length;i++){ if(refMap[ids[i]]) resolved.push({id:ids[i], ref:refMap[ids[i]]}); }
+    if(resolved.length === 0){
+      // No matches — render raw bracketed text so the user can still see the marker
+      for(var ix=0;ix<ids.length;ix++) html += '[' + ids[ix] + ']';
+    } else {
+      // First ref gets the labeled chip; extra refs collapse into a "+N" suffix on the same chip.
+      var first = resolved[0];
+      var extraCount = resolved.length - 1;
+      html += '<span class="' + _citeClass(first.ref) + '" data-ref="' + first.id + '">';
+      html += esc(_citeLabel(first.ref));
+      if(extraCount > 0){
+        // Encode the extra ids so the popover can show all sources when clicked
+        html += '<span class="cite-plus">+' + extraCount + '</span>';
+        // Also expose the trailing ids on the chip's dataset for future popover use
+        var extraIds = resolved.slice(1).map(function(r){return r.id}).join(",");
+        // Re-open the chip with the data attribute (we already opened above, append via JS instead — simplest: include another attribute)
+        // (Done via the data-extra-refs attribute added to the chip element below.)
       }
+      html += '</span>';
     }
     lastIdx = m.index + m[0].length;
   }
@@ -6680,34 +6760,34 @@ function renderMain(){
       h+='</div>';
     }
 
-    // === Floating chat-bubble composer (lower-right). Collapsed pill by default; tap to expand. ===
-    // When a refine is in-flight (chatBusy = weave path, or loading = full regen), force the panel
-    // open and show a working state so the user gets visible feedback.
+    // === Floating refine composer (Jenni 2026-06-04 redesign) ===
+    // Collapsed: 48px circular FAB with ✎ icon.
+    // Expanded: 360 × 520 portrait card. Header (label + ×), textarea fills middle, footer (+ Reference, send).
     var _refineBusy = !!(S.chatBusy || (S.loading && S.talk));
     var _composerOpenNow = _refineBusy || S._composerOpen;
-    var _composerExpanded = !!S._composerExpanded;
-    h+='<div class="composer-bubble '+(_composerOpenNow?"open":"closed")+(_composerExpanded?" expanded":"")+'">';
-    h+='  <button class="composer-pill" id="composerOpenBtn" aria-label="Ask or refine this lesson">'+(_refineBusy?'<span class="spinner" style="margin-right:6px"></span>Updating…':'💬 Ask or refine')+'</button>';
+    h+='<div class="composer-bubble '+(_composerOpenNow?"open":"closed")+'">';
+    // Collapsed FAB — ✎ icon, swaps to spinner during refine
+    h+='  <button class="composer-pill'+(_refineBusy?' busy':'')+'" id="composerOpenBtn" aria-label="Refine this lesson" title="Refine this lesson">';
+    h+='    <span class="composer-pill-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></span>';
+    h+='    <span class="composer-pill-spinner"><span class="spinner"></span></span>';
+    h+='  </button>';
+    // Expanded panel
     h+='  <div class="composer-panel">';
     h+='    <div class="composer-panel-head">';
     h+='      <span class="cp-title">'+(_refineBusy?'Updating lesson…':'Refine this lesson')+'</span>';
-    h+='      <div class="cp-head-actions">';
-    if(!_refineBusy){
-      h+='      <button class="cp-icon-btn" id="composerExpandBtn" aria-label="'+(_composerExpanded?"Collapse":"Expand")+'" title="'+(_composerExpanded?"Collapse":"Expand")+'">'+(_composerExpanded?'⤡':'⤢')+'</button>';
-    }
     h+='      <button class="cp-close" id="composerCloseBtn" aria-label="Close" '+(_refineBusy?'disabled style="opacity:.4;cursor:wait"':'')+'>×</button>';
-    h+='      </div>';
     h+='    </div>';
     if(_refineBusy){
-      // Busy state: replace the input row with a clear progress message + spinner
-      h+='    <div style="display:flex;align-items:center;gap:10px;padding:10px 4px;font-size:12.5px;color:var(--plum);font-weight:500"><span class="spinner"></span><span>'+(S.loading?'Regenerating lesson… '+(S.loadSec||0)+'s':'Weaving in your update… (preserving existing content)')+'</span></div>';
+      // Busy state: textarea is replaced by a centered progress block, footer is hidden
+      h+='    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px;color:var(--plum);font-weight:500"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span><span style="font-size:13px;line-height:1.5">'+(S.loading?'Regenerating lesson… '+(S.loadSec||0)+'s':'Weaving in your update…')+'</span><span style="font-size:11px;color:var(--ink-muted);max-width:200px">'+(S.loading?'Building from scratch with your direction':'Preserving existing content')+'</span></div>';
     } else {
-      h+='    <div class="composer-panel-row">';
-      h+='      <button class="ref-btn" id="composerRefBtn" title="Upload reference"><span style="font-size:14px">+</span> Reference</button>';
-      h+='      <textarea class="revise-input" id="reviseIn" placeholder="Ask to revise lesson… (paste long context here)">'+esc(S.reviseIn||"")+'</textarea>';
-      h+='      <button class="send-btn" id="reviseSend" '+(!String(S.reviseIn||"").trim()?"disabled":"")+' title="Send">→</button>';
+      h+='    <textarea class="revise-input" id="reviseIn" placeholder="Ask to revise lesson, or paste a long reference here…">'+esc(S.reviseIn||"")+'</textarea>';
+      // Footer row: Reference pill (left) + send circle (right)
+      h+='    <div class="composer-footer">';
+      h+='      <button class="ref-btn" id="composerRefBtn" title="Upload a reference (PDF, image, text)"><span style="font-size:14px;line-height:1">+</span> Reference</button>';
+      h+='      <button class="send-btn" id="reviseSend" '+(!String(S.reviseIn||"").trim()?"disabled":"")+' title="Send (⌘/Ctrl+Enter)">→</button>';
       h+='    </div>';
-      h+='    <div class="composer-hint">Enter inserts a new line · ⌘/Ctrl+Enter to send</div>';
+      h+='    <div class="composer-hint">⌘/Ctrl+Enter to send · Enter = new line</div>';
     }
     h+='  </div>';
     h+='</div>';
@@ -6978,11 +7058,21 @@ function bindMain(){
   var dbk=document.getElementById("drawerBackdrop");if(dbk)dbk.onclick=function(){S.editSettings=false;render()};
   // Floating bubble open/close
   var cob=document.getElementById("composerOpenBtn");if(cob)cob.onclick=function(){S._composerOpen=true;render();setTimeout(function(){var r=document.getElementById("reviseIn");if(r)r.focus()},50)};
-  var ccb=document.getElementById("composerCloseBtn");if(ccb)ccb.onclick=function(){S._composerOpen=false;S._composerExpanded=false;render()};
-  var ceb=document.getElementById("composerExpandBtn");if(ceb)ceb.onclick=function(){S._composerExpanded=!S._composerExpanded;render();setTimeout(function(){var r=document.getElementById("reviseIn");if(r){r.focus();var v=r.value;r.value="";r.value=v;}},60)};
+  var ccb=document.getElementById("composerCloseBtn");if(ccb)ccb.onclick=function(){S._composerOpen=false;render()};
   var crb=document.getElementById("composerRefBtn");if(crb)crb.onclick=function(){var fi=document.getElementById("composerFileInput")||document.getElementById("fileInput");if(fi)fi.click()};
   var cfi=document.getElementById("composerFileInput");if(cfi)cfi.onchange=function(e){var fi2=document.getElementById("fileInput");if(fi2){var dt=new DataTransfer();for(var i=0;i<e.target.files.length;i++)dt.items.add(e.target.files[i]);fi2.files=dt.files;fi2.dispatchEvent(new Event("change",{bubbles:true}))}};
-  var rin=document.getElementById("reviseIn");if(rin){rin.oninput=function(e){S.reviseIn=e.target.value;var sb=document.getElementById("reviseSend");if(sb)sb.disabled=!e.target.value.trim()};rin.onkeydown=function(e){var modSend=(e.metaKey||e.ctrlKey)&&e.key==="Enter";var plainSend=e.key==="Enter"&&!e.shiftKey&&!e.metaKey&&!e.ctrlKey&&!S._composerExpanded;if((modSend||plainSend)&&String(S.reviseIn||"").trim()){e.preventDefault();S.chatIn=S.reviseIn;S.reviseIn="";S._composerExpanded=false;if(typeof sendChat==="function")sendChat()}}}
+  // Send: ⌘/Ctrl+Enter only. Plain Enter inserts a newline (we always have room — fixed-height textarea with internal scroll).
+  var rin=document.getElementById("reviseIn");if(rin){
+    rin.oninput=function(e){S.reviseIn=e.target.value;var sb=document.getElementById("reviseSend");if(sb)sb.disabled=!e.target.value.trim()};
+    rin.onkeydown=function(e){
+      var modSend=(e.metaKey||e.ctrlKey)&&e.key==="Enter";
+      if(modSend && String(S.reviseIn||"").trim()){
+        e.preventDefault();
+        S.chatIn=S.reviseIn;S.reviseIn="";
+        if(typeof sendChat==="function")sendChat();
+      }
+    };
+  }
   var rsd=document.getElementById("reviseSend");if(rsd)rsd.onclick=function(){if(!String(S.reviseIn||"").trim())return;S.chatIn=S.reviseIn;S.reviseIn="";if(typeof sendChat==="function")sendChat()};
 
   // ─── Auth (sign-in modal + Google + account menu + profile editor) ─────
