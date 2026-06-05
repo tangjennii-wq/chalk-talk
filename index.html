@@ -239,6 +239,11 @@ textarea,input[type=text]{font-family:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{width:16px;height:16px;border:2.5px solid #e2dfe8;border-top-color:#702b9d;border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle}
 /* Citations */
+/* Slides poster — flow band stacks vertically on mobile (4 cards crushed too tight otherwise) */
+@media (max-width:720px){
+  .slides-flow{flex-direction:column !important;gap:8px !important}
+  .slides-flow > div[aria-hidden="true"]{transform:rotate(90deg);padding:2px 0 !important}
+}
 /* OpenEvidence-style inline citation chips. Color-coded by source type: guideline=warm, trial=plum, journal=cool. */
 .cite{display:inline-flex;align-items:center;gap:3px;background:#eee6f3;color:#4a1a7a;padding:1px 7px 1px 6px;border-radius:10px;font-size:10.5px;font-weight:600;margin:0 2px;cursor:pointer;line-height:1.5;text-decoration:none;border:1px solid #d4baea;transition:all .12s ease;font-family:ui-sans-serif,system-ui,sans-serif;vertical-align:baseline;white-space:nowrap}
 .cite:hover{background:#e2d3f0;border-color:#a87fc6}
@@ -1180,7 +1185,7 @@ function getGuidelinesForTopic(topic) {
   return result;
 }
 
-var LECTURE_PROMPT = 'You are a senior Internal Medicine educator (general IM across all subspecialties: cardiology, pulmonary, GI/hepatology, endocrine, ID, heme/onc, rheum, neuro, nephrology, critical care, allergy, derm, psych, geriatrics, palliative). Identify the relevant specialty from the topic and teach from that field. Default to general IM reasoning unless a specialty is explicitly stated; do NOT default to nephrology.\n\nINTERNAL REASONING PROCESS (think through this BEFORE writing the JSON, do not include in output):\n1. What is the precise mechanism at the cellular/molecular level?\n2. What is the organ-level physiology that follows from that mechanism?\n3. What is the pathophysiology — how does the disease disrupt normal physiology?\n4. What clinical findings logically follow from the pathophysiology?\n5. What is the workup strategy and why does each test answer a specific question?\n6. What is the current first-line treatment per the relevant society guideline, AND what is the mechanism by which it works?\n7. What landmark trials established this approach?\n8. Verify each step is internally consistent — does the treatment section logically follow from the mechanism section? Are there any contradictions?\n\nOnly after completing this reasoning, write the chalk talk. The physiology section MUST be deep and mechanistic, not superficial. Every clinical recommendation MUST trace back to a mechanistic rationale.\n\n10-min chalk talk. Physiology FIRST and DEEP. CRITICAL: When GUIDELINE REFERENCE CONTEXT is provided below, you MUST anchor your treatment recommendations and board tips to those specific guideline recommendations and cite the specific guideline name and year (e.g., "per KDIGO 2024" or "per 2022 AHA/ACC/HFSA"). Also cite the landmark trials listed. If the user has uploaded reference documents, use those as PRIMARY sources. If web search is available and the topic involves recent treatment standards, search for the most current guideline recommendations before writing.\n\nInclude treatment per the guideline society appropriate to the topic (AHA/ACC cardio, ATS/ERS pulm, ACG/AASLD GI/liver, ADA endo, IDSA ID, ASH heme, ASCO/NCCN onc, ACR rheum, AAN neuro, KDIGO nephro, SCCM ICU, AAAAI allergy, AAD derm, APA psych, AGS geriatrics, ACOG/NAMS women\'s health, USPSTF prevention, AAHPM palliative). 3-4 sections.\n\n\nCITATIONS: Output a \"references\" array of {id,source,year,society,url,type}. After every clinical claim, drug/dose, or trial mention, append inline marker(s) like [1] or [1][2]. Reuse IDs across sections. Cite trials and guidelines from the GUIDELINE REFERENCE CONTEXT above; do NOT fabricate URLs (omit the url field if unknown).\n\nVMC QUADRANTS (visual_memory_card): top_left = MECHANISM (cellular/molecular driver, 1 line); top_right = FINDINGS (key clinical/lab features, 1 line); bottom_left = WORKUP (the diagnostic move that locks it in, 1 line); bottom_right = TREATMENT (the first-line intervention with mechanism, 1 line). center = leave empty (deprecated). Each <=8 words. These exact 4 categories - do not deviate. ALL FOUR QUADRANTS ARE REQUIRED — never leave any blank.\nSUMMARY_POINTS (REQUIRED): 4-6 high-yield take-home statements that a resident should remember after this 10-min talk. Each 1-2 sentences. Cover mechanism, key finding, first-line treatment, and the most common pitfall. NEVER return an empty summary_points array.\nONLY JSON:\n{"title":"","subtitle":"","guideline_sources":[""],"references":[{"id":1,"source":"","year":2024,"society":"","url":"","type":"guideline"}],"sections":[{"heading":"","minutes":"2-3 min","points":[""],"teaching_pearl":"","board_tip":""}],"summary_points":[""],"visual_memory_card":{"top_left":"","top_right":"","bottom_left":"","bottom_right":"","center":""}}';
+var LECTURE_PROMPT = 'You are a senior Internal Medicine educator (general IM across all subspecialties: cardiology, pulmonary, GI/hepatology, endocrine, ID, heme/onc, rheum, neuro, nephrology, critical care, allergy, derm, psych, geriatrics, palliative). Identify the relevant specialty from the topic and teach from that field. Default to general IM reasoning unless a specialty is explicitly stated; do NOT default to nephrology.\n\nINTERNAL REASONING PROCESS (think through this BEFORE writing the JSON, do not include in output):\n1. What is the precise mechanism at the cellular/molecular level?\n2. What is the organ-level physiology that follows from that mechanism?\n3. What is the pathophysiology — how does the disease disrupt normal physiology?\n4. What clinical findings logically follow from the pathophysiology?\n5. What is the workup strategy and why does each test answer a specific question?\n6. What is the current first-line treatment per the relevant society guideline, AND what is the mechanism by which it works?\n7. What landmark trials established this approach?\n8. Verify each step is internally consistent — does the treatment section logically follow from the mechanism section? Are there any contradictions?\n\nOnly after completing this reasoning, write the chalk talk. The physiology section MUST be deep and mechanistic, not superficial. Every clinical recommendation MUST trace back to a mechanistic rationale.\n\n10-min chalk talk. Physiology FIRST and DEEP. CRITICAL: When GUIDELINE REFERENCE CONTEXT is provided below, you MUST anchor your treatment recommendations and board tips to those specific guideline recommendations and cite the specific guideline name and year (e.g., "per KDIGO 2024" or "per 2022 AHA/ACC/HFSA"). Also cite the landmark trials listed. If the user has uploaded reference documents, use those as PRIMARY sources. If web search is available and the topic involves recent treatment standards, search for the most current guideline recommendations before writing.\n\nInclude treatment per the guideline society appropriate to the topic (AHA/ACC cardio, ATS/ERS pulm, ACG/AASLD GI/liver, ADA endo, IDSA ID, ASH heme, ASCO/NCCN onc, ACR rheum, AAN neuro, KDIGO nephro, SCCM ICU, AAAAI allergy, AAD derm, APA psych, AGS geriatrics, ACOG/NAMS women\'s health, USPSTF prevention, AAHPM palliative). 3-4 sections.\n\n\nCITATIONS: Output a \"references\" array of {id,source,year,society,url,type}. After every clinical claim, drug/dose, or trial mention, append inline marker(s) like [1] or [1][2]. Reuse IDs across sections. Cite trials and guidelines from the GUIDELINE REFERENCE CONTEXT above; do NOT fabricate URLs (omit the url field if unknown).\n\nVMC QUADRANTS (visual_memory_card): top_left = MECHANISM (cellular/molecular driver, 1 line); top_right = FINDINGS (key clinical/lab features, 1 line); bottom_left = WORKUP (the diagnostic move that locks it in, 1 line); bottom_right = TREATMENT (the first-line intervention with mechanism, 1 line). center = leave empty (deprecated). Each <=8 words. These exact 4 categories - do not deviate. ALL FOUR QUADRANTS ARE REQUIRED — never leave any blank.\nSUMMARY_POINTS (REQUIRED): 4-6 high-yield take-home statements that a resident should remember after this 10-min talk. Each 1-2 sentences. Cover mechanism, key finding, first-line treatment, and the most common pitfall. NEVER return an empty summary_points array.\nONLY JSON:\n{"title":"","subtitle":"","guideline_sources":[""],"references":[{"id":1,"source":"","year":2024,"society":"","url":"","type":"guideline"}],"sections":[{"heading":"","minutes":"2-3 min","points":[""],"mechanism":"","teaching_pearl":"","board_tip":""}],"summary_points":[""],"visual_memory_card":{"top_left":"","top_right":"","bottom_left":"","bottom_right":"","center":""}}\n\nMECHANISM FIELD (NEW, optional but encouraged): For sections where the bullets discuss drugs, pathways, or treatment choices, populate sec.mechanism with a 1-2 sentence "why this works" explanation rooted in pathophysiology — the cellular/molecular reason the bullets are true. This renders as a "Why this works" expander under the section. Skip mechanism for sections that are purely epidemiology/screening/criteria.';
 
 var BOARDS_PROMPT = 'You are an ABIM board-question writer for general Internal Medicine (all subspecialties). Match the question to whatever specialty the topic belongs to; do NOT default to nephrology unless the topic is clearly renal.\n\nINTERNAL REASONING PROCESS (think through this BEFORE writing the JSON, do not include in output):\n1. What is the highest-yield, board-relevant teaching point on this topic?\n2. What clinical scenario would discriminate someone who knows the concept from someone who doesn\'t?\n3. What are the classic distractors that test common misconceptions or competing diagnoses?\n4. What is the unambiguously correct answer per current guidelines, and why is it correct?\n5. For each wrong answer, what specific reasoning error or knowledge gap would lead to picking it?\n6. Is there ANY ambiguity in the answer? If yes, revise so the correct answer is unambiguously best.\n\nOnly after completing this reasoning, write the question. The vignette MUST be clinically realistic. The correct answer MUST be clearly best per current guidelines, not just defensible.\n\nCRITICAL: When GUIDELINE REFERENCE CONTEXT is provided below, anchor the correct answer, explanation, and board pearls to those specific guideline recommendations. Cite guideline name and year in the explanation. UWorld/AMBOSS-style vignette with stem, 5 choices A-E (one correct), explanation, why wrong answers wrong, 5 board pearls, teaching points.\n\n\nCITATIONS: Output a \"references\" array of {id,source,year,society,url,type}. After every clinical claim, drug/dose, or trial mention, append inline marker(s) like [1] or [1][2]. Reuse IDs across sections. Cite trials and guidelines from the GUIDELINE REFERENCE CONTEXT above; do NOT fabricate URLs (omit the url field if unknown).\n\nVMC QUADRANTS (visual_memory_card): top_left = VIGNETTE KEY (the discriminating clue in the stem, <=8 words); top_right = MECHANISM (1-line pathophys behind the answer); bottom_left = PEARL (the high-yield take-home); bottom_right = PITFALL (the most common wrong-answer trap). center = leave empty (deprecated). Each <=8 words. These exact 4 categories - do not deviate.\nBOARD PEARLS REQUIREMENT: Each of the 5 board_pearls MUST be a high-yield fact directly tied to THIS specific clinical scenario (not generic disease facts). Cover, in order: (1) the mechanism behind the correct answer, (2) a specific guideline/year recommendation that supports the correct answer, (3) a discriminating feature that separates the correct answer from the most popular distractor, (4) a related landmark trial or named criterion the question tests, (5) the most common wrong-answer trap and why the trap is incorrect. Pearls should make a resident MORE LIKELY to get the next variant of this question right.\nEXPLANATION REQUIREMENTS: The explanation field must be \u2264 300 words, concise, and explicitly DERIVED from the relevant society guideline (KDIGO, AHA/ACC, ADA, IDSA, etc.) \u2014 not a paraphrase of common knowledge. Quote or directly reference the specific guideline statement that supports the answer (for example: per KDIGO 2024, RASi should be continued unless eGFR drops by greater than 30 percent from baseline). No filler. Lead with the guideline-derived rationale, then briefly explain why this clinical scenario satisfies that recommendation. wrong_explanations.why fields each \u2264 60 words.\nABIM CLASSIFICATION (REQUIRED for boards): Output an abim_classification object identifying which ABIM Internal Medicine Blueprint section this question maps to. Categories include: Cardiovascular, Pulmonary, Gastroenterology/Hepatology, Endocrinology, Infectious Disease, Hematology, Oncology, Nephrology, Rheumatology, Neurology, Allergy/Immunology, Dermatology, Psychiatry, Geriatrics, General Internal Medicine. Subcategories follow the standard blueprint nomenclature (e.g., Sodium & Water; Coronary Artery Disease; Heart Failure; Obstructive Lung Disease; Hepatology; Diabetes; Sepsis & Bloodstream Infection). specific_topic = the most precise topic name (for example: Hyponatremia: SIADH & Furst ratio). blueprint_weight = the approximate percent weight on the ABIM IM exam (for example: 6%, 14%, 9%). If unsure, leave blueprint_weight blank rather than guessing.\nSTEM STRUCTURE (UWorld / MKSAP style, MANDATORY):\nLENGTH CAP: Stem MUST be 120-170 words. NO long pertinent-negative lists unless one negative is discriminating. Be ruthless about cutting — every sentence must either set the scene, drop a discriminating clue, or rule out a key alternative.\nPARAGRAPH FORMAT (CRITICAL — separate each block with a single blank line, written as a literal \\n\\n character in the JSON string):\n  Paragraph 1 (HPI): demographics + chief complaint + symptom pattern (with quantitative timing) + 1-2 truly discriminating positives or negatives + brief PMH/SH/FH if relevant. ~50-70 words.\n  Paragraph 2 (Exam): vitals as one line ("Temperature 36.8 C, BP 118/72 mm Hg, HR 68/min, RR 14/min, SpO2 99% on room air"), then physical findings. ~25-40 words.\n  Paragraph 3 (Studies): labs and/or imaging as concise enumerated values with units (e.g., "Sodium 132 mEq/L, creatinine 1.4 mg/dL, troponin 0.02 ng/mL"). Skip if not needed. ~20-40 words.\n  Final line (Question): standalone short sentence — "Which of the following is the most likely [diagnosis / next step / etc]?"\nSTYLE: Mirror UWorld/MKSAP exactly — compact, telegraphic-but-grammatical, no filler. Drop "He has no prior medical history" type filler unless absent history IS the point. No paragraph >70 words.\n\nDISTRACTOR DESIGN:\n- 5 choices, single best answer.\n- Each choice 2 to 8 words. Parallel grammatical structure across choices (e.g., all are diagnoses, OR all are treatments, OR all are tests \u2014 do not mix categories within one question).\n- All 5 must be plausible alternatives in this clinical context. Avoid obvious throwaway distractors.\n- Mix common misdiagnoses, alternative treatments, and related conditions. Use specific named entities (drug names, diagnoses, named criteria) \u2014 not categories.\n- NO all of the above, NO none of the above, NO vague options.\n\nEXAMPLE STEM (style reference only \u2014 do not copy content):\nA 46-year-old man comes to the physician because of recurrent abdominal discomfort. He describes episodes of moderate, dull, epigastric pain lasting 2-3 days that have occurred 1-2 times per month over the last 2 years. He also describes occasional nausea but denies any vomiting, diarrhea, black stools, blood in the stool, abdominal distention, or weight loss. He takes ibuprofen for chronic low back pain. He drinks 8-10 beers over the weekends and frequently throughout the week. His vital signs are within normal limits and his BMI is 28 kg/m2. Physical examination is unremarkable. Fasting blood glucose is 127 mg/dL. Abdominal x-ray shows focal calcifications anterior to the spine over the epigastric area. Upper GI endoscopy reveals a normal esophagus, gastric varices in the fundus of the stomach, and a normal duodenum. Which of the following is the most likely diagnosis?\nExample choices: 1. Alcoholic liver cirrhosis  2. Gastroparesis  3. Helicobacter pylori infection  4. Non-ulcer dyspepsia  5. Splenic vein thrombosis\nONLY JSON:\n{"title":"","subtitle":"","guideline_sources":[""],"references":[{"id":1,"source":"","year":2024,"society":"","url":"","type":"guideline"}],"question":{"stem":"","choices":[{"letter":"A","text":"","correct":false},{"letter":"B","text":"","correct":true},{"letter":"C","text":"","correct":false},{"letter":"D","text":"","correct":false},{"letter":"E","text":"","correct":false}],"correct_letter":"B","explanation":"","wrong_explanations":[{"letter":"A","why":""},{"letter":"C","why":""},{"letter":"D","why":""},{"letter":"E","why":""}]},"abim_classification":{"category":"","subcategory":"","specific_topic":"","blueprint_weight":""},"board_pearls":["","","","",""],"teaching_points":["","",""],"summary_points":[""],"visual_memory_card":{"top_left":"","top_right":"","bottom_left":"","bottom_right":"","center":""}}';
 
@@ -6647,8 +6652,24 @@ function renderMain(){
             h+='<div class="tk-acc-body"><ul>';
             for(var pi2=0;pi2<(x.points||[]).length;pi2++)h+='<li>'+esc(x.points[pi2])+'</li>';
             h+='</ul>';
-            if(x.teaching_pearl)h+='<div style="margin-top:11px;background:#f0f7f0;border:1px solid #c8e0c8;border-radius:10px;padding:10px 12px"><div style="font-size:10.5px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">💡 Teaching Pearl</div><div style="font-size:12px;color:#2d6a2d;line-height:1.5">'+renderCite(x.teaching_pearl,t.references)+'</div></div>';
-            if(x.board_tip)h+='<div style="margin-top:8px;background:#fdf0ee;border:1px solid #e8c8c0;border-radius:10px;padding:10px 12px"><div style="font-size:10.5px;font-weight:700;color:#8a3a2a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">🎯 Board Tip</div><div style="font-size:12px;color:#8a3a2a;line-height:1.5">'+renderCite(x.board_tip,t.references)+'</div></div>';
+            // Teaching Pearl as textbook callout (indented italic + tall plum/green left bar — leans away from "another colored box")
+            if(x.teaching_pearl){
+              h+='<div style="margin-top:14px;padding:4px 0 4px 16px;border-left:4px solid #2d6a2d;background:linear-gradient(90deg,rgba(45,106,45,0.06) 0,rgba(45,106,45,0) 100%)">';
+              h+='<div style="font-size:9.5px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;display:flex;align-items:center;gap:5px"><span style="font-size:13px">💡</span>Teaching Pearl</div>';
+              h+='<div style="font-size:13px;color:#2d4a2d;line-height:1.55;font-style:italic;font-family:Georgia,serif">'+renderCite(x.teaching_pearl,t.references)+'</div>';
+              h+='</div>';
+            }
+            // Board Tip — orange "exam ready" treatment, same callout pattern
+            if(x.board_tip){
+              h+='<div style="margin-top:10px;padding:4px 0 4px 16px;border-left:4px solid #a44a1e;background:linear-gradient(90deg,rgba(164,74,30,0.06) 0,rgba(164,74,30,0) 100%)">';
+              h+='<div style="font-size:9.5px;font-weight:700;color:#a44a1e;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;display:flex;align-items:center;gap:5px"><span style="font-size:13px">🎯</span>Board Tip · memorize</div>';
+              h+='<div style="font-size:13px;color:#6e3214;line-height:1.55;font-family:Georgia,serif">'+renderCite(x.board_tip,t.references)+'</div>';
+              h+='</div>';
+            }
+            // Optional mechanism / why this works expander — only renders if the talk JSON has a `mechanism` field on the section
+            if(x.mechanism){
+              h+='<details style="margin-top:10px;padding:6px 12px;background:#fafafa;border:1px solid var(--line-soft);border-radius:8px"><summary style="font-size:11px;font-weight:600;color:var(--plum);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:5px;font-family:inherit"><span style="display:inline-block;width:0;height:0;border-left:5px solid var(--plum);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s ease"></span>Why this works</summary><div style="font-size:12px;color:var(--ink-muted);line-height:1.55;margin-top:6px;padding-left:12px;border-left:2px solid var(--line-soft);font-family:Georgia,serif;font-style:italic">'+renderCite(x.mechanism,t.references)+'</div></details>';
+            }
             // Section copy button — bottom-right of the body
             h+='<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="copySecBtn" data-i="'+si2+'" title="Copy this section to clipboard" style="background:none;border:1px solid var(--line-soft);color:var(--ink-soft);cursor:pointer;padding:4px 9px;border-radius:6px;line-height:0;display:inline-flex;align-items:center">'+COPY_ICON+'</button></div>';
             h+='</div>';
@@ -6717,34 +6738,88 @@ function renderMain(){
       h+=renderRAGSources();
     }
 
-    // ---------------- SLIDES TAB ----------------
+    // ---------------- SLIDES TAB (poster / visual abstract redesign — Jenni 2026-06-04) ----------------
     if(S.tab==="slides"&&!isBQ){
       // Save-as-image button row (positioned above the slides so it doesn't end up in the screenshot)
       h+='<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button id="saveSlidesImgBtn" title="Save these slides as a PNG image" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px">📸 Save as image</button></div>';
       // Slides content — wrapped in #slidesCapture so html2canvas can target just this region
-      h+='<div id="slidesCapture">';
-      // Header card with title
-      h+='<div style="background:linear-gradient(145deg,var(--plum-deep) 0%,#4a1a7a 50%,var(--plum-rich) 100%);border-radius:16px;padding:18px;color:#fff;margin-bottom:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--lavender);margin-bottom:6px">Slide Summary</div><div style="font-size:16px;font-weight:700;text-align:center;margin-bottom:14px">'+esc(t.title)+'</div>';
-      // Build the 4 quadrants. Use VMC if populated; otherwise fall back to first 4 section headings + teaching pearls.
-      var vmcQuads = [];
-      if(vm && (vm.top_left || vm.top_right || vm.bottom_left || vm.bottom_right)){
-        vmcQuads = [["Mechanism",vm.top_left],["Findings",vm.top_right],["Workup",vm.bottom_left],["Treatment",vm.bottom_right]];
-      } else if(t.sections && t.sections.length){
-        // Derive from sections — use section heading as quadrant label, teaching_pearl (or first bullet) as content.
-        vmcQuads = t.sections.slice(0,4).map(function(sec){
-          var content = sec.teaching_pearl || sec.board_tip || (sec.points && sec.points[0]) || "";
-          // Strip citation markers like [1] for a cleaner card
-          content = String(content).replace(/\[\d+(?:[,\s]+\d+)*\]/g,"").trim();
-          return [sec.heading || "Section", content];
-        });
+      h+='<div id="slidesCapture" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(75,17,111,0.08);border:1px solid var(--line)">';
+
+      // ─── Hero band (poster header) ───
+      h+='<div style="background:linear-gradient(145deg,var(--plum-deep) 0%,#4a1a7a 55%,var(--plum-rich) 100%);color:#fff;padding:18px 20px;text-align:center">';
+      h+='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.16em;color:#c4a3da;margin-bottom:6px">Visual Summary · Chalk Talk</div>';
+      h+='<div style="font-family:Georgia,serif;font-size:18px;font-weight:700;line-height:1.25;letter-spacing:-0.005em">'+esc(t.title||"")+'</div>';
+      if(t.subtitle)h+='<div style="font-size:12px;color:rgba(255,255,255,0.78);font-style:italic;margin-top:4px;line-height:1.4">'+esc(t.subtitle)+'</div>';
+      h+='</div>';
+
+      // ─── Flow band — clinical reasoning sequence with arrows ───
+      // Card icons + labels — clinical reasoning order: Pathophysiology → Workup → Treatment → Key Points
+      var flowSrc = {};
+      if(vm){
+        flowSrc.pathophys = vm.top_left;
+        flowSrc.findings  = vm.top_right;
+        flowSrc.workup    = vm.bottom_left;
+        flowSrc.treatment = vm.bottom_right;
       }
-      if(vmcQuads.length){
-        h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-        vmcQuads.forEach(function(q2){if(!q2[1])return;h+='<div style="background:rgba(255,255,255,.07);border-radius:10px;padding:11px 12px;border:1px solid rgba(255,255,255,.13)"><div style="font-size:9.5px;font-weight:700;color:#c4a3da;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px">'+esc(q2[0])+'</div><div style="font-size:12.5px;color:rgba(255,255,255,.92);line-height:1.45">'+esc(q2[1])+'</div></div>'});
+      // Fall back to section pearls if vmc is empty
+      if(!flowSrc.pathophys && t.sections && t.sections[0]) flowSrc.pathophys = (t.sections[0].teaching_pearl || (t.sections[0].points||[])[0] || "").replace(/\[\d+(?:[,\s]+\d+)*\]/g,"").trim();
+      if(!flowSrc.workup && t.sections){
+        var wkSec = t.sections.find(function(s){return /work|diagnos|test|labs|exam|imaging/i.test(s.heading||"")}); if(wkSec) flowSrc.workup = (wkSec.teaching_pearl || (wkSec.points||[])[0] || "").replace(/\[\d+(?:[,\s]+\d+)*\]/g,"").trim();
+      }
+      if(!flowSrc.treatment && t.sections){
+        var txSec = t.sections.find(function(s){return /treat|manage|therapy|drug|intervention/i.test(s.heading||"")}); if(txSec) flowSrc.treatment = (txSec.teaching_pearl || (txSec.points||[])[0] || "").replace(/\[\d+(?:[,\s]+\d+)*\]/g,"").trim();
+      }
+      var flowCards = [
+        {key:"pathophys",  icon:"🧬", label:"Pathophysiology", body:flowSrc.pathophys, color:"#702b9d", bg:"#f5edfa"},
+        {key:"workup",     icon:"🔍", label:"Workup",          body:flowSrc.workup,    color:"#0f6f8a", bg:"#e6f4f7"},
+        {key:"treatment",  icon:"💊", label:"Treatment",       body:flowSrc.treatment, color:"#2d6a2d", bg:"#eef7ee"},
+        {key:"findings",   icon:"🎯", label:"Key Point",       body:flowSrc.findings,  color:"#a44a1e", bg:"#fdeee6"}
+      ].filter(function(c){return c.body && String(c.body).trim().length});
+
+      if(flowCards.length){
+        h+='<div style="padding:16px 14px;background:#fafafa;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">';
+        h+='<div class="slides-flow" style="display:flex;gap:6px;align-items:stretch">';
+        flowCards.forEach(function(c, i){
+          h+='<div style="flex:1;min-width:0;background:#fff;border:1px solid var(--line);border-top:3px solid '+c.color+';border-radius:10px;padding:10px 11px;display:flex;flex-direction:column">';
+          h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px"><span style="background:'+c.bg+';color:'+c.color+';width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">'+c.icon+'</span><span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:'+c.color+'">'+esc(c.label)+'</span></div>';
+          h+='<div style="font-size:11.5px;color:var(--ink);line-height:1.4;flex:1">'+esc(c.body)+'</div>';
+          h+='</div>';
+          if(i < flowCards.length - 1){
+            // Arrow between cards
+            h+='<div style="display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:14px;flex-shrink:0;padding:0 2px" aria-hidden="true">→</div>';
+          }
+        });
+        h+='</div>';
         h+='</div>';
       }
-      h+='</div><div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow-soft)"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Key Takeaways</div>';
-      // Use summary_points if populated; otherwise fall back to one teaching_pearl/board_tip per section.
+
+      // ─── Teaching Pearls + Board Tips callouts (poster sidebars) ───
+      var allPearls  = (t.sections||[]).map(function(s){return s.teaching_pearl}).filter(Boolean);
+      var allTips    = (t.sections||[]).map(function(s){return s.board_tip}).filter(Boolean);
+      if(allPearls.length || allTips.length){
+        h+='<div style="display:grid;grid-template-columns:'+((allPearls.length && allTips.length)?'1fr 1fr':'1fr')+';gap:10px;padding:14px">';
+        if(allPearls.length){
+          h+='<div style="background:#f0f7f0;border-left:4px solid #2d6a2d;border-radius:0 10px 10px 0;padding:12px 14px">';
+          h+='<div style="font-size:10.5px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="font-size:13px">💡</span>Teaching Pearls</div>';
+          for(var pp=0;pp<allPearls.length;pp++){
+            h+='<div style="font-size:11.5px;color:#2d6a2d;line-height:1.5;margin-bottom:7px;padding-left:10px;border-left:2px solid rgba(45,106,45,0.25);font-style:italic">'+renderCite(allPearls[pp], t.references)+'</div>';
+          }
+          h+='</div>';
+        }
+        if(allTips.length){
+          h+='<div style="background:#fdeee6;border-left:4px solid #a44a1e;border-radius:0 10px 10px 0;padding:12px 14px">';
+          h+='<div style="font-size:10.5px;font-weight:700;color:#a44a1e;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="font-size:13px">🎯</span>Board Tips</div>';
+          for(var tt=0;tt<allTips.length;tt++){
+            h+='<div style="font-size:11.5px;color:#a44a1e;line-height:1.5;margin-bottom:7px;padding-left:10px;border-left:2px solid rgba(164,74,30,0.25);font-style:italic">'+renderCite(allTips[tt], t.references)+'</div>';
+          }
+          h+='</div>';
+        }
+        h+='</div>';
+      }
+
+      // ─── Key Takeaways ───
+      h+='<div style="background:var(--cream);border-top:1px solid var(--line);padding:14px 16px">';
+      h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:10px">Key Takeaways</div>';
       var keyTakeaways = (t.summary_points && t.summary_points.length) ? t.summary_points :
         (t.sections || []).map(function(sec){ return sec.teaching_pearl || sec.board_tip || ""; }).filter(function(x){return x});
       if(keyTakeaways.length===0){
@@ -6753,6 +6828,7 @@ function renderMain(){
         for(var ki=0;ki<keyTakeaways.length;ki++)h+='<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:8px;font-size:12.5px;color:var(--ink);line-height:1.5"><span style="background:var(--lavender-bg);color:var(--plum);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex-shrink:0">'+(ki+1)+'</span><span style="flex:1">'+renderCite(keyTakeaways[ki],t.references)+'</span></div>';
       }
       h+='</div>';
+
       h+='</div>'; // close #slidesCapture
     }
 
