@@ -4046,7 +4046,7 @@ var S = {
   podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false,
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
-  showSaved:false, savedSearch:"", savedFlash:"", libTab:"all", libSpec:null, libCardMenuId:null,
+  showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libCardMenuId:null,
   gldOpen:false, editSettings:false, overflowOpen:false,
   talkHistory:[], editingSection:null, editingDraft:null,
   loadingFromHash:false,
@@ -6140,10 +6140,10 @@ function renderSaved(){
   // Mark items that have saved visuals (for the Visuals tab + thumbnail rendering)
   // _hasVisuals fuels the Visuals tab filter — works for local (real savedVisuals array) and cloud (boolean) sources.
   all.forEach(function(x){ x._hasVisuals = !!(x.talk && (x.talk._hasCloudVisuals || (x.talk.savedVisuals && x.talk.savedVisuals.length))); });
-  // Tab filter \u2014 All | Lectures | Boards | Visuals
-  var tab=S.libTab||"all";
-  var byTab = (tab==="all") ? all
-            : (tab==="visuals") ? all.filter(function(x){return x._hasVisuals})
+  // Tab filter \u2014 Lectures | Boards | Visuals (Jenni 2026-06-04 \u2014 removed "All", default to Lectures).
+  // Legacy state with libTab="all" coerces to "lectures" so existing users land in the new default.
+  var tab=S.libTab||"lectures"; if(tab==="all") tab="lectures";
+  var byTab = (tab==="visuals") ? all.filter(function(x){return x._hasVisuals})
             : all.filter(function(x){return x._kind === (tab==="boards" ? "boards" : "lecture")});
   // Specialty filter (applied after tab, before search)
   var bySpec = S.libSpec ? byTab.filter(function(x){return x._spec===S.libSpec}) : byTab;
@@ -6161,10 +6161,9 @@ function renderSaved(){
   var cAll=searchOnly.length, cLec=searchOnly.filter(function(x){return x._kind==="lecture"}).length, cBrd=searchOnly.filter(function(x){return x._kind==="boards"}).length, cVis=searchOnly.filter(function(x){return x._hasVisuals}).length;
   // Header
   var h='<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px"><button id="savedBack" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:8px 14px;color:#6b6780;font-size:13px;cursor:pointer">\u2190 Back</button><h2 style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:var(--plum-deep);margin:0;flex:1;letter-spacing:-0.01em">\uD83D\uDCDA Library</h2></div>';
-  // Tab strip \u2014 All | Lectures | Boards (segmented)
+  // Tab strip \u2014 Lectures | Boards | Visuals (segmented, no All \u2014 Jenni 2026-06-04)
   function tabBtn(key,label,count){var on=(tab===key);return '<button class="libTabBtn" data-tab="'+key+'" style="flex:1;min-width:0;background:'+(on?"#fff":"transparent")+';color:'+(on?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(on?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 10px;font-size:13px;font-weight:'+(on?"600":"500")+';cursor:pointer;box-shadow:'+(on?"var(--shadow-soft)":"none")+';display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .15s ease">'+label+' <span style="color:'+(on?"var(--ink-muted)":"var(--ink-soft)")+';font-size:11px;font-weight:500">'+count+'</span></button>'}
   h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft);margin-bottom:14px">';
-  h+=tabBtn("all","All",cAll);
   h+=tabBtn("lectures","\uD83C\uDF93 Lectures",cLec);
   h+=tabBtn("boards","\uD83D\uDCCB Boards",cBrd);
   h+=tabBtn("visuals","\uD83D\uDDBC Visuals",cVis);
@@ -6240,7 +6239,7 @@ function bindSaved(){
   document.getElementById("savedBack").onclick=function(){S.showSaved=false;render()};
   var ss=document.getElementById("savedSearchIn");if(ss)ss.oninput=function(e){S.savedSearch=e.target.value;render();var f=document.getElementById("savedSearchIn");if(f){f.focus();f.setSelectionRange(f.value.length,f.value.length)}};
   // Tab pills — All / Lectures / Boards
-  document.querySelectorAll(".libTabBtn").forEach(function(b){b.onclick=function(){S.libTab=b.dataset.tab||"all";S.libSpec=null;render()}});
+  document.querySelectorAll(".libTabBtn").forEach(function(b){b.onclick=function(){S.libTab=b.dataset.tab||"lectures";S.libSpec=null;render()}});
   // Specialty pill strip + clear + section-header shortcut
   document.querySelectorAll(".libSpecBtn").forEach(function(b){b.onclick=function(){var v=b.dataset.spec||"";S.libSpec=v||null;render();window.scrollTo(0,0)}});
   var lscb=document.getElementById("libSpecClearBtn");if(lscb)lscb.onclick=function(){S.libSpec=null;render();window.scrollTo(0,0)};
@@ -7437,7 +7436,7 @@ function bindMain(){
     };
   });
   // "See all N →" on the landing samples row now jumps into Library (samples merged in).
-  var lmb=document.getElementById("landingMoreBtn");if(lmb)lmb.onclick=function(){S.showSaved=true;S.libTab="all";render()};
+  var lmb=document.getElementById("landingMoreBtn");if(lmb)lmb.onclick=function(){S.showSaved=true;S.libTab="lectures";render()};
   // modeToggleBtn handler deleted — ID no longer rendered.
   // ─── Save / export / share current talk ────────────────────────────────
   // Note: overflow-menu buttons use the unsuffixed IDs (saveTalkBtn, pdfTalkBtn, ...).
