@@ -32,9 +32,8 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  /* Academic aubergine palette — Jenni 2026-06-04 (post-ChatGPT critique). Saved palette doc: .claude/design/color-palette-academic-plum.md */
-  --plum:#5B357A;--plum-deep:#43215A;--plum-rich:#7A4FA3;
-  --lavender:#b99ad8;--lavender-soft:#F2EBF8;--lavender-bg:#F7F4FB;
+  --plum:#4b116f;--plum-deep:#330662;--plum-rich:#5b1685;
+  --lavender:#b99ad8;--lavender-soft:#e8defc;--lavender-bg:#efeaf8;
   --cream:#fffdfc;--paper:#f8f6fb;
   --ink:#24122f;--ink-muted:#7e788b;--ink-soft:#a8a3b8;
   --line:#e5dfeb;--line-soft:#ece9f1;
@@ -6616,13 +6615,25 @@ function renderMain(){
 
       // LECTURE — accordion lesson outline (hero content)
       if(!isBQ&&(t.sections||[]).length>0){
-        // Expand/Collapse all moved here from the capsule (Jenni 2026-06-03 — replaces "Total ~X min" display).
         var hasMultiSec = (t.sections||[]).length>1;
-        var allExpLbl2 = S.allExpanded ? '⌃ Collapse all' : '⌄ Expand all';
+        var allExpLbl2 = S.allExpanded ? 'Collapse all' : 'Expand all'; // no chevron — Jenni 2026-06-04
         h+='<div class="outline-head"><span>Lesson outline</span>';
+        // Right-side controls: Concise/Detailed toggle + Expand all (toggle reuses existing depthToggleBtn handler)
+        h+='<div style="display:flex;align-items:center;gap:10px">';
+        if(S.style==="lecture"){
+          // Show a small two-button segmented control. Active depth highlighted; click the other to switch.
+          // For samples with the other depth cached, swap is instant. For user talks, click triggers regenerate.
+          var dC = (S.depth==="concise");
+          var dD = (S.depth==="detailed");
+          h+='<div style="display:inline-flex;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:2px;font-size:10.5px;font-weight:600;text-transform:none;letter-spacing:0">';
+          h+='<button id="depthToggleBtnConcise"  title="Switch to Concise (~5 min)" style="background:'+(dC?"#fff":"transparent")+';color:'+(dC?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(dC?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:3px 9px;cursor:'+(dC?"default":"pointer")+';font-family:inherit;font-size:10.5px;font-weight:'+(dC?"700":"500")+'">Concise</button>';
+          h+='<button id="depthToggleBtnDetailed" title="Switch to Detailed (~10 min)" style="background:'+(dD?"#fff":"transparent")+';color:'+(dD?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(dD?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:3px 9px;cursor:'+(dD?"default":"pointer")+';font-family:inherit;font-size:10.5px;font-weight:'+(dD?"700":"500")+'">Detailed</button>';
+          h+='</div>';
+        }
         if(hasMultiSec){
           h+='<button id="expandAllBtn" title="'+(S.allExpanded?"Collapse all sections":"Expand all sections at once")+'" style="background:none;border:none;padding:2px 8px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;border-radius:6px">'+allExpLbl2+'</button>';
         }
+        h+='</div>';
         h+='</div>';
         for(var si2=0;si2<t.sections.length;si2++){
           var x=t.sections[si2];
@@ -6672,11 +6683,11 @@ function renderMain(){
               h+='<div style="font-size:13px;color:#3a1564;line-height:1.55;font-style:italic;font-family:Georgia,serif">'+renderCite(x.teaching_pearl,t.references)+'</div>';
               h+='</div>';
             }
-            // Board Tip — deeper plum "exam ready" treatment with ⚠ icon
+            // Board Tip — orange "highlighter" treatment (post-UX critique: pops next to plum Pearl, matches Anki/USMLE highlight semantics)
             if(x.board_tip){
-              h+='<div style="margin-top:10px;padding:4px 0 4px 16px;border-left:4px solid #4a1a7a;background:linear-gradient(90deg,rgba(74,26,122,0.08) 0,rgba(74,26,122,0) 100%)">';
-              h+='<div style="font-size:9.5px;font-weight:700;color:#330662;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;display:flex;align-items:center;gap:5px"><span style="font-size:13px">⚠️</span>Board Tip · memorize</div>';
-              h+='<div style="font-size:13px;color:#2a0552;line-height:1.55;font-family:Georgia,serif">'+renderCite(x.board_tip,t.references)+'</div>';
+              h+='<div style="margin-top:10px;padding:4px 0 4px 16px;border-left:4px solid #e67e22;background:linear-gradient(90deg,rgba(230,126,34,0.08) 0,rgba(230,126,34,0) 100%)">';
+              h+='<div style="font-size:9.5px;font-weight:700;color:#a44a1e;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;display:flex;align-items:center;gap:5px"><span style="font-size:13px">🎯</span>Board Tip · memorize</div>';
+              h+='<div style="font-size:13px;color:#6e3214;line-height:1.55;font-family:Georgia,serif">'+renderCite(x.board_tip,t.references)+'</div>';
               h+='</div>';
             }
             // Optional mechanism / why this works expander — only renders if the talk JSON has a `mechanism` field on the section
@@ -7177,20 +7188,25 @@ function bindMain(){
   var rb=document.getElementById("resetBtn");if(rb)rb.onclick=safeResetAll;
   // One-tap depth flip in the capsule header. Concise ⇄ Detailed.
   // For samples: swap to the other CACHED version (no API call). For fresh generations: rebuild.
-  var dtb=document.getElementById("depthToggleBtn");if(dtb)dtb.onclick=function(){
-    if(S.style==="boards")return; // depth doesn't apply
-    var newDepth = (S.depth==="detailed") ? "concise" : "detailed";
+  // Depth toggle — both buttons (Concise + Detailed) share the same flip handler.
+  // For samples with the other depth cached: swap instantly (no API). For user talks: triggers regen.
+  function _flipDepthTo(newDepth){
+    if(S.style==="boards")return;
+    if(newDepth === S.depth) return; // no-op on active button
     if(S.isSampleTalk && S.sampleSlug){
-      // Look up the sample; if the other depth is cached on it, swap instantly.
       var s=null; for(var i=0;i<SAMPLES.length;i++){if(SAMPLES[i].slug===S.sampleSlug){s=SAMPLES[i];break}}
       var otherTalk = s && (newDepth==="detailed" ? s.talk_detailed : s.talk_concise);
       if(otherTalk){ loadSample(S.sampleSlug, newDepth); return; }
-      // Cached other-depth not available — silently no-op rather than burning an API call on a sample.
+      // Sample doesn't have the other depth cached — silently no-op (don't burn API on a sample).
       return;
     }
     S.depth = newDepth;
     generate();
-  };
+  }
+  var dtbC=document.getElementById("depthToggleBtnConcise");if(dtbC)dtbC.onclick=function(){_flipDepthTo("concise")};
+  var dtbD=document.getElementById("depthToggleBtnDetailed");if(dtbD)dtbD.onclick=function(){_flipDepthTo("detailed")};
+  // Legacy capsule depth toggle (if it ever renders) — same handler
+  var dtb=document.getElementById("depthToggleBtn");if(dtb)dtb.onclick=function(){_flipDepthTo(S.depth==="detailed"?"concise":"detailed")};
   document.querySelectorAll(".secBtn").forEach(function(b){b.onclick=function(){var idx=+b.dataset.i;S.activeSection=(S.activeSection===idx?-1:idx);S.sec=idx;render()}});
   // Tab switching (top + bottom nav)
   document.querySelectorAll(".tk-tab,.bntab").forEach(function(b){b.onclick=function(){if(b.dataset.tab&&S.tab!==b.dataset.tab){S.tab=b.dataset.tab;render()}}});
