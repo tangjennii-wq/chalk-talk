@@ -4073,8 +4073,10 @@ async function refreshCloudTalks(){
   try{
     // talk_json->>subtitle projects just the subtitle text from the JSONB column (no quotes).
     // Tiny bandwidth (~30-80 bytes/row) and restores the subtitle line on library cards.
+    // has_visuals is a denormalized boolean column maintained by the sync_has_visuals trigger
+    // (see supabase/migrations/add_has_visuals.sql). Lets us show the 🖼 badge without fetching the heavy talk_json.
     var r = await window.sb.from("talks")
-      .select("id, title, topic, style, depth, created_at, share_token, is_public, talk_json->>subtitle")
+      .select("id, title, topic, style, depth, created_at, share_token, is_public, has_visuals, talk_json->>subtitle")
       .order("created_at", { ascending: false });
     if(r.error) throw r.error;
     S.cloudTalks = r.data || [];
@@ -4237,7 +4239,9 @@ function renderLibCard(x){
   h += '<div style="display:flex;gap:6px;font-size:10.5px;color:var(--ink-muted);align-items:center;flex-wrap:wrap">';
   h += '<span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;letter-spacing:0.02em">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">✨</span>';
+  // Visuals badge: prefer exact count (local talks with full savedVisuals data); else just show 🖼 (cloud cards).
   if(visuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼 '+visuals.length+'</span>';
+  else if(t._hasCloudVisuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼</span>';
   if(dateStr) h += '<span style="font-size:10.5px;color:var(--ink-soft)">'+dateStr+'</span>';
   h += '</div>';
   h += '</div>';
@@ -4254,12 +4258,15 @@ function getDisplayLibrary(){
     // talk_json is intentionally NOT fetched in the lightweight list query — synthesize a minimal
     // talk object from columns so renderLibCard + the renderSaved _kind detection still work.
     // The full talk_json is fetched on Open via cloudLoadTalk(id).
+    // Defensive: handle both lightweight rows (just-fetched) and full rows (just-saved, still in cache).
+    var hasVis = (row.has_visuals === true) || !!(row.talk_json && row.talk_json.savedVisuals && row.talk_json.savedVisuals.length);
+    var subtitle = row.subtitle || (row.talk_json && row.talk_json.subtitle) || "";
     var miniTalk = {
       title: row.title,
-      subtitle: row.subtitle, // projected from talk_json->>subtitle in refreshCloudTalks
-      // _kind detection uses talk.question — synthesize truthy/undefined from the style column.
-      question: row.style === "boards" ? {} : undefined
-      // savedVisuals deliberately omitted — Visuals tab will hide cloud talks without a fetch.
+      subtitle: subtitle,
+      question: row.style === "boards" ? {} : undefined,
+      // _hasCloudVisuals signals the badge should render even without the full savedVisuals array.
+      _hasCloudVisuals: hasVis
     };
     return {
       id: row.id,
@@ -5982,7 +5989,8 @@ function renderSaved(){
       topic:e.topic||"",talk:et,savedAt:e.savedAt,specialty:"",generated_at:""});
   }
   // Mark items that have saved visuals (for the Visuals tab + thumbnail rendering)
-  all.forEach(function(x){ x._hasVisuals = !!(x.talk && x.talk.savedVisuals && x.talk.savedVisuals.length); });
+  // _hasVisuals fuels the Visuals tab filter — works for local (real savedVisuals array) and cloud (boolean) sources.
+  all.forEach(function(x){ x._hasVisuals = !!(x.talk && (x.talk._hasCloudVisuals || (x.talk.savedVisuals && x.talk.savedVisuals.length))); });
   // Tab filter \u2014 All | Lectures | Boards | Visuals
   var tab=S.libTab||"all";
   var byTab = (tab==="all") ? all
