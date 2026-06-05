@@ -4015,6 +4015,7 @@ var S = {
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"all", libSpec:null, libCardMenuId:null,
   gldOpen:false, editSettings:false, overflowOpen:false,
   talkHistory:[], editingSection:null, editingDraft:null,
+  loadingFromHash:false,
   // — Auth + cloud
   user:null, session:null, profile:null, signInOpen:false, authBusy:false, authEmail:"", authMsg:"",
   accountMenuOpen:false, cloudTalks:[], cloudLoaded:false, profileEditOpen:false, profileForm:null,
@@ -4064,10 +4065,15 @@ async function loadProfile(){
 }
 
 // === Cloud talks (Supabase-backed library) ===
+// LIGHTWEIGHT list fetch — pulls only the columns the library cards need (no talk_json,
+// which can be MBs per row with base64 visuals). The full talk_json is fetched on-demand
+// by cloudLoadTalk(id) when the user clicks Open.
 async function refreshCloudTalks(){
   if(!window.sb || !S.user) return;
   try{
-    var r = await window.sb.from("talks").select("*").order("created_at", { ascending: false });
+    var r = await window.sb.from("talks")
+      .select("id, title, topic, style, depth, created_at, share_token, is_public")
+      .order("created_at", { ascending: false });
     if(r.error) throw r.error;
     S.cloudTalks = r.data || [];
     S.cloudLoaded = true;
@@ -4243,15 +4249,24 @@ function renderLibCard(x){
 
 function getDisplayLibrary(){
   if(S.user) return (S.cloudTalks || []).map(function(row){
+    // talk_json is intentionally NOT fetched in the lightweight list query — synthesize a minimal
+    // talk object from columns so renderLibCard + the renderSaved _kind detection still work.
+    // The full talk_json is fetched on Open via cloudLoadTalk(id).
+    var miniTalk = {
+      title: row.title,
+      // _kind detection uses talk.question — synthesize truthy/undefined from the style column.
+      question: row.style === "boards" ? {} : undefined
+      // savedVisuals deliberately omitted — Visuals tab will hide cloud talks without a fetch.
+    };
     return {
       id: row.id,
       savedAt: row.created_at,
       topic: row.topic,
       style: row.style,
-      talk: row.talk_json,
-      podScript: "", // not stored
+      talk: miniTalk,
+      podScript: "",
       dg: null,
-      glRef: { sources: (row.talk_json && row.talk_json.guideline_sources) || [], specialties: [], context: "", trials: [] }
+      glRef: { sources: [], specialties: [], context: "", trials: [] }
     };
   });
   return loadSavedTalks();
@@ -4514,9 +4529,16 @@ async function loadSavedTalk(id){
   if(!entry){
     var arr=loadSavedTalks();entry=arr.find(function(e){return e.id===id});
   }
-  if(!entry)return;
+  if(!entry){
+    S.loadingFromHash = false;
+    if(typeof render === "function") render();
+    // Toast/alert so user knows why nothing loaded (silent failure is the worst UX)
+    setTimeout(function(){ alert("Couldn't open that talk — it may have been deleted, or you may need to sign in first."); }, 50);
+    return;
+  }
   S.topic=entry.topic||"";S.style=entry.style||"lecture";S.talk=entry.talk;S.podScript=entry.podScript||"";S.dg=entry.dg||null;S.glRef=entry.glRef||null;
   S.sec=0;S.showAns=false;S.userPick="";S.msgs=[];S.error="";S.podShow=false;S.podPlaying=false;S.showSaved=false;S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;
+  S.loadingFromHash = false; // clear before render so the loading screen disappears
   // Track which saved-talk this is so Save can prompt "update existing vs save as new" when user refines.
   S.loadedTalkId = entry.id || null;
   S.talkIsSaved = true;
@@ -5573,7 +5595,11 @@ function drainPendingHashLoad(){
   if(!window._pendingHashLoad)return;
   var pending = window._pendingHashLoad;
   window._pendingHashLoad = null;
-  if(pending.kind === "saved"){ loadSavedTalk(pending.id); }
+  if(pending.kind === "saved"){
+    S.loadingFromHash = true;
+    if(typeof render === "function") render();
+    loadSavedTalk(pending.id);
+  }
 }
 
 async function downloadVMC(){
@@ -5867,6 +5893,17 @@ var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
 
 function render(){
   var root=document.getElementById("root");
+  // Full-page loading state while a deep-link (#t=<id>) is fetching from Supabase.
+  // Without this the user briefly sees the compose form before the talk loads — confusing.
+  if(S.loadingFromHash && !S.talk){
+    root.innerHTML =
+      '<div style="min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px">'+
+      '<div style="background:var(--lavender-bg);width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span></div>'+
+      '<div style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:var(--plum-deep);margin-bottom:6px">Opening your talk…</div>'+
+      '<div style="font-size:12.5px;color:var(--ink-muted);max-width:280px;line-height:1.5">Pulling the full lesson from your library</div>'+
+      '</div>';
+    return;
+  }
   // S.showExamples + renderExamples() / bindExamples() were removed when samples
   // were merged into the Library view. Library is the unified entry point.
   if(S.showSaved){root.innerHTML=renderSaved();bindSaved();return}
