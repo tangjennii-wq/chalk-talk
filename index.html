@@ -4052,7 +4052,7 @@ var S = {
   loadingFromHash:false,
   // — Auth + cloud
   user:null, session:null, profile:null, signInOpen:false, authBusy:false, authEmail:"", authMsg:"",
-  accountMenuOpen:false, cloudTalks:[], cloudLoaded:false, profileEditOpen:false, profileForm:null,
+  accountMenuOpen:false, cloudTalks:[], cloudLoaded:false, profileEditOpen:false, profileForm:null, profileKeyEditing:null,
   favorites:{},
   // — BYOK / billing
   useByok: !(PROXY_CONFIG.enabled&&PROXY_CONFIG.url), rateRemaining:null
@@ -6760,19 +6760,19 @@ function renderMain(){
         flowSrc.workup    = vm.bottom_left;
         flowSrc.treatment = vm.bottom_right;
       }
-      // Fall back to section pearls if vmc is empty
-      if(!flowSrc.pathophys && t.sections && t.sections[0]) flowSrc.pathophys = (t.sections[0].teaching_pearl || (t.sections[0].points||[])[0] || "").replace(/\[\d+(?:[,\s]+\d+)*\]/g,"").trim();
+      // Fall back to section pearls if vmc is empty. Keep [N] citation markers so renderCite can chip them.
+      if(!flowSrc.pathophys && t.sections && t.sections[0]) flowSrc.pathophys = (t.sections[0].teaching_pearl || (t.sections[0].points||[])[0] || "").trim();
       if(!flowSrc.workup && t.sections){
-        var wkSec = t.sections.find(function(s){return /work|diagnos|test|labs|exam|imaging/i.test(s.heading||"")}); if(wkSec) flowSrc.workup = (wkSec.teaching_pearl || (wkSec.points||[])[0] || "").replace(/\[\d+(?:[,\s]+\d+)*\]/g,"").trim();
+        var wkSec = t.sections.find(function(s){return /work|diagnos|test|labs|exam|imaging/i.test(s.heading||"")}); if(wkSec) flowSrc.workup = (wkSec.teaching_pearl || (wkSec.points||[])[0] || "").trim();
       }
       if(!flowSrc.treatment && t.sections){
-        var txSec = t.sections.find(function(s){return /treat|manage|therapy|drug|intervention/i.test(s.heading||"")}); if(txSec) flowSrc.treatment = (txSec.teaching_pearl || (txSec.points||[])[0] || "").replace(/\[\d+(?:[,\s]+\d+)*\]/g,"").trim();
+        var txSec = t.sections.find(function(s){return /treat|manage|therapy|drug|intervention/i.test(s.heading||"")}); if(txSec) flowSrc.treatment = (txSec.teaching_pearl || (txSec.points||[])[0] || "").trim();
       }
       var flowCards = [
-        {key:"pathophys",  icon:"🧬", label:"Pathophysiology", body:flowSrc.pathophys, color:"#702b9d", bg:"#f5edfa"},
-        {key:"workup",     icon:"🔍", label:"Workup",          body:flowSrc.workup,    color:"#0f6f8a", bg:"#e6f4f7"},
-        {key:"treatment",  icon:"💊", label:"Treatment",       body:flowSrc.treatment, color:"#2d6a2d", bg:"#eef7ee"},
-        {key:"findings",   icon:"🎯", label:"Key Point",       body:flowSrc.findings,  color:"#a44a1e", bg:"#fdeee6"}
+        {key:"pathophys",  icon:"🧬", label:"Pathophys",  body:flowSrc.pathophys, color:"#702b9d", bg:"#f5edfa"},
+        {key:"workup",     icon:"🔍", label:"Workup",     body:flowSrc.workup,    color:"#0f6f8a", bg:"#e6f4f7"},
+        {key:"treatment",  icon:"💊", label:"Treatment",  body:flowSrc.treatment, color:"#2d6a2d", bg:"#eef7ee"},
+        {key:"findings",   icon:"🎯", label:"Key Point",  body:flowSrc.findings,  color:"#a44a1e", bg:"#fdeee6"}
       ].filter(function(c){return c.body && String(c.body).trim().length});
 
       if(flowCards.length){
@@ -6781,7 +6781,8 @@ function renderMain(){
         flowCards.forEach(function(c, i){
           h+='<div style="flex:1;min-width:0;background:#fff;border:1px solid var(--line);border-top:3px solid '+c.color+';border-radius:10px;padding:10px 11px;display:flex;flex-direction:column">';
           h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px"><span style="background:'+c.bg+';color:'+c.color+';width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">'+c.icon+'</span><span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:'+c.color+'">'+esc(c.label)+'</span></div>';
-          h+='<div style="font-size:11.5px;color:var(--ink);line-height:1.4;flex:1">'+esc(c.body)+'</div>';
+          // renderCite so any [N] markers become hoverable citation chips matching the Overview tab
+          h+='<div style="font-size:11.5px;color:var(--ink);line-height:1.4;flex:1">'+renderCite(c.body, t.references)+'</div>';
           h+='</div>';
           if(i < flowCards.length - 1){
             // Arrow between cards
@@ -7058,13 +7059,10 @@ function renderMain(){
 
     // Name (full-width)
     h+='<div style="margin-bottom:8px">'+_lab("Name")+'<input id="pfName" type="text" value="'+esc(pf.name||"")+'" placeholder="Jenni Tang" style="'+_inpStyle+'"></div>';
-    // Role + Training year (2-col)
-    h+='<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">';
-    h+='<div>'+_lab("Role")+'<select id="pfRole" style="'+_inpStyle+'"><option value="">—</option>';
+    // Role (Year removed per Jenni 2026-06-04)
+    h+='<div style="margin-bottom:8px">'+_lab("Role")+'<select id="pfRole" style="'+_inpStyle+'"><option value="">—</option>';
     ROLES.forEach(function(r){h+='<option value="'+r[0]+'"'+(pf.role===r[0]?" selected":"")+'>'+r[1]+'</option>'});
     h+='</select></div>';
-    h+='<div>'+_lab("Year")+'<input id="pfYear" type="number" min="0" max="15" value="'+esc(pf.training_year!=null?String(pf.training_year):"")+'" placeholder="2" style="'+_inpStyle+'"></div>';
-    h+='</div>';
     // Specialty (full-width — long names)
     h+='<div style="margin-bottom:8px">'+_lab("Specialty")+'<select id="pfSpec" style="'+_inpStyle+'"><option value="">—</option>';
     SPECIALTIES.forEach(function(s){h+='<option value="'+esc(s)+'"'+(pf.specialty===s?" selected":"")+'>'+esc(s)+'</option>'});
@@ -7085,12 +7083,25 @@ function renderMain(){
     var _hasOAP = !!localStorage.getItem("openai_api_key");
     h+='<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">';
     h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><span style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em">API Keys</span><span style="font-size:10px;color:var(--ink-soft)">Stored in your browser only</span></div>';
+    // Key row: when a key is stored, show "✓ Saved" + Edit (toggles edit-mode for that one row via S.profileKeyEditing).
+    // Edit-mode shows the input + Save + Cancel. Cancel returns to "✓ Saved" without losing the stored key.
     function _keyRow(id,label,storageKey,isSet,placeholder,helperUrl){
+      var editing = (S.profileKeyEditing === storageKey);
+      var labelCell = '<div style="flex:0 0 auto;align-self:center;font-size:11.5px;font-weight:600;color:var(--ink);width:74px"><a href="'+helperUrl+'" target="_blank" title="Get a '+label+' key" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--ink-soft)">'+label+'</a></div>';
+      if(isSet && !editing){
+        // Compact "Saved" pill with an Edit button — replaces input row
+        return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">'+
+          labelCell+
+          '<div style="flex:1;display:inline-flex;align-items:center;gap:5px;background:#f0f7f0;border:1px solid #c8e0c8;border-radius:8px;padding:6px 10px;font-size:11.5px;color:#2d6a2d;font-weight:600"><span style="font-size:12px">✓</span>Saved</div>'+
+          '<button class="pfEditKeyBtn" data-storage="'+esc(storageKey)+'" title="Replace this key" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;color:var(--plum);font-size:11.5px;font-weight:600;cursor:pointer">Edit</button>'+
+          '</div>';
+      }
+      // Not set, OR editing — show input + Save + (Cancel if editing)
       return '<div style="display:flex;gap:6px;align-items:stretch;margin-bottom:6px">'+
-        '<div style="flex:0 0 auto;align-self:center;font-size:11.5px;font-weight:600;color:var(--ink);width:74px"><a href="'+helperUrl+'" target="_blank" title="Get a '+label+' key" style="color:inherit;text-decoration:none;border-bottom:1px dotted var(--ink-soft)">'+label+'</a></div>'+
-        '<input id="'+id+'_input" type="password" placeholder="'+placeholder+'" data-storage="'+storageKey+'" style="flex:1;min-width:0;background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;outline:none;font-family:inherit">'+
+        labelCell+
+        '<input id="'+id+'_input" type="password" placeholder="'+placeholder+'" data-storage="'+storageKey+'" style="flex:1;min-width:0;background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;outline:none;font-family:inherit" '+(editing?'autofocus':'')+'>'+
         '<button class="pfSaveKeyBtn" data-input="'+id+'_input" data-storage="'+storageKey+'" data-label="'+esc(label)+'" title="Save key" style="background:var(--plum);border:none;border-radius:8px;padding:0 10px;color:#fff;font-size:11.5px;font-weight:600;cursor:pointer">Save</button>'+
-        (isSet?'<button class="pfClearKeyBtn" data-storage="'+storageKey+'" data-label="'+esc(label)+'" title="Remove key" style="background:#fff;border:1px solid #e8c8c0;border-radius:8px;padding:0 9px;color:#c0392b;font-size:13px;font-weight:600;cursor:pointer">×</button>':'<span style="display:inline-flex;align-items:center;font-size:10px;color:var(--ink-soft);padding:0 4px;flex-shrink:0">'+(isSet?"":"·")+'</span>')+
+        (editing?'<button class="pfCancelKeyBtn" title="Cancel — keep existing key" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:0 9px;color:var(--ink-muted);font-size:13px;font-weight:600;cursor:pointer">×</button>':'')+
         '</div>';
     }
     h+=_keyRow("pfClaudeKey","Anthropic","claude_api_key",_hasClaudeP,"sk-ant-…","https://console.anthropic.com/settings/keys");
@@ -7255,22 +7266,27 @@ function bindMain(){
   // pfYear is type="number" — coerce to Number (or null if blank) so Supabase stores int.
   var toNumOrNull=function(v){var s=String(v||"").trim();if(!s)return null;var n=Number(s);return isFinite(n)?n:null};
   _pfBind("pfName","name"); _pfBind("pfRole","role"); _pfBind("pfSpec","specialty");
-  _pfBind("pfYear","training_year",toNumOrNull); _pfBind("pfInst","institution"); _pfBind("pfUse","primary_use");
+  _pfBind("pfInst","institution"); _pfBind("pfUse","primary_use");
   var pfs=document.getElementById("pfSaveBtn");if(pfs)pfs.onclick=function(){saveProfileForm()};
-  // API-key save / clear (rendered inside the profile drawer)
+  // API-key save / edit / cancel (rendered inside the profile drawer)
   document.querySelectorAll(".pfSaveKeyBtn").forEach(function(b){b.onclick=function(){
     var inp=document.getElementById(b.dataset.input);if(!inp)return;
     var v=(inp.value||"").trim();
     if(!v){alert("Paste a key first.");return}
     localStorage.setItem(b.dataset.storage, v);
+    S.profileKeyEditing = null; // collapse back to "✓ Saved" state
     S.savedFlash="✓ "+b.dataset.label+" key saved";render();
     setTimeout(function(){S.savedFlash="";render()},2000);
   }});
-  document.querySelectorAll(".pfClearKeyBtn").forEach(function(b){b.onclick=function(){
-    if(!confirm("Remove your "+b.dataset.label+" key from this browser?")) return;
-    localStorage.removeItem(b.dataset.storage);
-    S.savedFlash="✓ "+b.dataset.label+" key removed";render();
-    setTimeout(function(){S.savedFlash="";render()},2000);
+  // Edit: flips that row to input-mode so the user can paste a new key (without losing the existing one until Save)
+  document.querySelectorAll(".pfEditKeyBtn").forEach(function(b){b.onclick=function(){
+    S.profileKeyEditing = b.dataset.storage;
+    render();
+  }});
+  // Cancel: leave edit-mode without touching the stored key
+  document.querySelectorAll(".pfCancelKeyBtn").forEach(function(b){b.onclick=function(){
+    S.profileKeyEditing = null;
+    render();
   }});
   var pfso=document.getElementById("pfSignOutBtn");if(pfso)pfso.onclick=function(){if(confirm("Sign out of Chalk Talk?"))signOut()};
 
