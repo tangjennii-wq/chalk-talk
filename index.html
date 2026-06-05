@@ -6292,10 +6292,10 @@ function renderMain(){
     h+='<div class="cap-meta" style="flex:1;min-width:0"><button id="resetBtn" title="Start a new talk" style="background:none;border:none;color:var(--plum);font:inherit;font-weight:600;font-size:12.5px;padding:4px 8px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px">+ New talk</button></div>';
     // RIGHT: Undo · Save · Edit settings · ⋮  (horizontal)
     h+='<div class="cap-actions">';
-    // Undo button — only when there's edit history to revert (refine, regenerate, section edits)
+    // Undo button — standard inline SVG (curved arrow looping back), matches what every app uses.
     if(S.talkHistory && S.talkHistory.length > 0){
       var lastLabel = S.talkHistory[S.talkHistory.length-1].label;
-      h+='<button id="undoEditBtn" title="Undo last '+esc(lastLabel)+'" style="background:none;border:none;color:var(--plum);font-size:16px;cursor:pointer;padding:5px 8px;border-radius:7px;line-height:1">↶</button>';
+      h+='<button id="undoEditBtn" title="Undo last '+esc(lastLabel)+'" style="background:none;border:none;color:var(--plum);cursor:pointer;padding:5px 8px;border-radius:7px;line-height:0;display:inline-flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg></button>';
     }
     if(!S.isSampleTalk){
       // Saved-state button: visually distinct + non-interactive so a returning user can SEE the talk
