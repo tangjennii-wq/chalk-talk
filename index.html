@@ -4137,7 +4137,7 @@ var S = {
   // the toggle pill in the capsule header flips this.
   allExpanded:false,
   showAns:false, userPick:"", reviseIn:"", chatIn:"", chatBusy:false, msgs:[],
-  isSampleTalk:false, sampleSlug:"", sharedTalk:false, talkIsSaved:false,
+  isSampleTalk:false, sampleSlug:"", sharedTalk:false, sharedAuthor:null, shareModalOpen:false, shareModalToken:null, talkIsSaved:false,
   // — RAG retrieval
   glRef:null, ragOpen:false, ragChunks:[],
   // — Diagram / visual aid
@@ -4281,6 +4281,67 @@ async function cloudUpdateTalkTitle(id, newTitle){
   return true;
 }
 
+// Publish / unpublish a talk. Toggles is_public; Supabase trigger scrubs sensitive fields
+// (refine_context, savedVisuals.imgB64) when publishing. Returns the updated row including share_token.
+async function cloudSetTalkPublic(id, makePublic){
+  if(!window.sb || !S.user || !id) return null;
+  var r = await window.sb.from("talks")
+    .update({is_public: !!makePublic})
+    .eq("id", id)
+    .select("id,is_public,share_token")
+    .maybeSingle();
+  if(r.error){ console.warn(r.error); return null }
+  // Refresh cached row's is_public + share_token
+  S.cloudTalks = (S.cloudTalks || []).map(function(x){
+    if(x.id !== id) return x;
+    return Object.assign({}, x, {is_public: r.data.is_public, share_token: r.data.share_token});
+  });
+  return r.data;
+}
+
+// Build the public share URL for a talk
+function publicShareURL(token){
+  if(!token) return "";
+  return window.location.origin + window.location.pathname + "#share/" + token;
+}
+
+// Load a public talk via the Worker /share/:token route (works without sign-in)
+async function loadPublicTalkByToken(token){
+  if(!token) return false;
+  S.loadingFromHash = true;
+  if(typeof render === "function") render();
+  try{
+    var workerUrl = (RAG_CONFIG && RAG_CONFIG.url) ? (RAG_CONFIG.url.replace(/\/$/, "") + "/share/" + encodeURIComponent(token)) : null;
+    if(!workerUrl) throw new Error("Worker URL not configured");
+    var res = await fetch(workerUrl, { headers: {"Accept": "application/json"} });
+    if(!res.ok){
+      var body = await res.text();
+      throw new Error("HTTP "+res.status+": "+body.slice(0,200));
+    }
+    var data = await res.json();
+    if(!data || !data.talk_json) throw new Error("Empty talk payload");
+    S.talk = data.talk_json;
+    S.topic = data.topic || data.title || "";
+    S.style = data.style || "lecture";
+    S.depth = data.depth || "concise";
+    S.sharedTalk = true;
+    S.sharedAuthor = data.author || null;
+    S.isSampleTalk = false; S.sampleSlug = "";
+    S.loadedTalkId = null; S.talkIsSaved = true; // public viewer is read-only
+    S.sec = 0; S.showAns = false; S.userPick = "";
+    S.loadingFromHash = false;
+    if(typeof render === "function") render();
+    window.scrollTo(0,0);
+    return true;
+  }catch(e){
+    console.error("loadPublicTalkByToken failed:", e);
+    S.loadingFromHash = false;
+    if(typeof render === "function") render();
+    alert("Couldn't open that shared talk — it may have been unpublished, or the link is wrong.");
+    return false;
+  }
+}
+
 async function cloudLoadTalk(id){
   if(!window.sb || !S.user) return null;
   var r = await window.sb.from("talks").select("*").eq("id", id).maybeSingle();
@@ -4378,6 +4439,8 @@ function renderLibCard(x){
   h += '<div style="display:flex;gap:6px;font-size:10.5px;color:var(--ink-muted);align-items:center;flex-wrap:wrap">';
   h += '<span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;letter-spacing:0.02em">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">✨</span>';
+  // Public badge — talk has is_public=true (sharing feature Jenni 2026-06-04)
+  if(x._isPublic) h += '<span style="background:#e6f4ea;color:#2d6a2d;border:1px solid #c8e0c8;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Public — anyone with the link can view">🌐 Public</span>';
   // Visuals badge: prefer exact count (local talks with full savedVisuals data); else just show 🖼 (cloud cards).
   if(visuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼 '+visuals.length+'</span>';
   else if(t._hasCloudVisuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼</span>';
@@ -4415,7 +4478,9 @@ function getDisplayLibrary(){
       talk: miniTalk,
       podScript: "",
       dg: null,
-      glRef: { sources: [], specialties: [], context: "", trials: [] }
+      glRef: { sources: [], specialties: [], context: "", trials: [] },
+      _isPublic: !!row.is_public,
+      _shareToken: row.share_token || null
     };
   });
   return loadSavedTalks();
@@ -5911,6 +5976,20 @@ function loadFromShareHash(){
   }catch(e){console.error("Failed to load shared talk:",e);return false}
 }
 
+// Public share deep-link — when URL is #share/<token>, fetch from Worker /share/:token and render
+// as a read-only viewer. Works for anonymous visitors (no sign-in required).
+function loadFromPublicShareHash(){
+  try{
+    var m = (window.location.hash||"").match(/^#share\/([a-f0-9-]{36})/i);
+    if(!m) return false;
+    var token = m[1];
+    history.replaceState(null,"",window.location.pathname+window.location.search);
+    setTimeout(function(){ loadPublicTalkByToken(token) }, 30);
+    return true;
+  }catch(e){console.error("loadFromPublicShareHash failed:",e)}
+  return false;
+}
+
 // Library deep-link: when a new tab opens with #t=<id> or #s=<slug>, load that talk directly.
 // Samples load immediately. Saved-talk loads must wait for Supabase auth to restore (otherwise
 // the cloud lookup runs before S.user is populated and silently falls through to localStorage).
@@ -6327,6 +6406,7 @@ function renderSaved(){
     var e=saved[di];var et=e.talk||{};
     all.push({_source:"saved",_kind:et.question?"boards":"lecture",_slug:null,_id:e.id,
       _spec:inferSpecialty(e.topic, et, null),
+      _isPublic: !!e._isPublic, _shareToken: e._shareToken || null,
       topic:e.topic||"",talk:et,savedAt:e.savedAt,specialty:"",generated_at:""});
   }
   // Mark items that have saved visuals (for the Visuals tab + thumbnail rendering)
@@ -6737,6 +6817,16 @@ function renderMain(){
     if(t.sections){for(var smi=0;smi<t.sections.length;smi++){var mm=String(t.sections[smi].minutes||"").match(/(\d+(?:\.\d+)?)/);if(mm)totalMin+=parseFloat(mm[1])}}
     if(!totalMin)totalMin=isBQ?5:(S.depth==="detailed"?10:5);
 
+    // Public viewer banner — shown when S.sharedTalk = true (loaded via #share/<token>)
+    if(S.sharedTalk && !S.isSampleTalk){
+      var _authorName = (S.sharedAuthor && S.sharedAuthor.name) ? S.sharedAuthor.name : "a Chalk Talk author";
+      h+='<div style="background:linear-gradient(135deg,#f5edfa,#ede6f5);border:1px solid #d4baea;border-radius:14px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+      h+='<span style="font-size:18px">🌐</span>';
+      h+='<div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--plum-deep);font-weight:600;line-height:1.3">Shared by '+esc(_authorName)+'</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px">Public chalk talk · Review for accuracy · Not medical advice</div></div>';
+      h+='<a href="'+esc(window.location.pathname)+'" style="background:var(--plum);color:#fff;border:none;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;flex-shrink:0">Make your own →</a>';
+      h+='</div>';
+    }
+
     // === Capsule header (Jenni 2026-06-03: stripped — left=New talk only, right=Save/Edit/⋮ horizontal) ===
     // Removed from capsule: Lecture pill, depth toggle, refs count, Expand all
     // (Lecture/Concise/refs still shown in the title-block badges below. Depth toggle accessible
@@ -6752,17 +6842,18 @@ function renderMain(){
       var lastLabel = S.talkHistory[S.talkHistory.length-1].label;
       h+='<button id="undoEditBtn" title="Undo last '+esc(lastLabel)+'" style="background:none;border:none;color:var(--plum);cursor:pointer;padding:5px 8px;border-radius:7px;line-height:0;display:inline-flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg></button>';
     }
-    if(!S.isSampleTalk){
-      // Saved-state button: visually distinct + non-interactive so a returning user can SEE the talk
-      // is up-to-date in the library and won't tap Save again, creating duplicates.
+    // Public viewer (sharedTalk) is read-only — hide Save/Edit settings/⋮ for anonymous viewers
+    if(!S.isSampleTalk && !S.sharedTalk){
       if(S.talkIsSaved){
         h+='<button id="saveTalkBtnTop" class="cap-save" title="No unsaved changes" disabled style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;box-shadow:none;cursor:default">✓ <span class="hide-mobile-text">Saved</span></button>';
       } else {
         h+='<button id="saveTalkBtnTop" class="cap-save" title="Save to library">★ <span class="hide-mobile-text">Save</span></button>';
       }
     }
-    h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit settings</span></button>';
-    h+='<button id="overflowBtn" class="cap-more" title="More options" aria-label="More options">⋮</button>';
+    if(!S.sharedTalk){
+      h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit settings</span></button>';
+      h+='<button id="overflowBtn" class="cap-more" title="More options" aria-label="More options">⋮</button>';
+    }
     h+='</div>';
     h+='</div>';
 
@@ -6773,7 +6864,19 @@ function renderMain(){
     // Overflow now focuses on EXPORT + SHARE actions only.
     if(S.overflowOpen){
       h+='<div class="overflow-menu" id="overflowMenu">';
-      h+='<button id="shareTalkBtn">🔗 Share link</button>';
+      // Public/private toggle — only for saved cloud talks (need an ID + user)
+      if(S.user && S.loadedTalkId && !String(S.loadedTalkId).startsWith("t_") && !S.isSampleTalk && !S.sharedTalk){
+        // Check current cloud row's is_public status
+        var _row = (S.cloudTalks||[]).find(function(x){return x.id===S.loadedTalkId});
+        var _isPub = !!(_row && _row.is_public);
+        if(_isPub){
+          h+='<button id="unpublishTalkBtn">🌐 Make private</button>';
+          h+='<button id="copyShareUrlBtn">🔗 Copy share link</button>';
+        } else {
+          h+='<button id="publishTalkBtn">🌐 Publish to web</button>';
+        }
+      }
+      h+='<button id="shareTalkBtn">🔗 Share link (private)</button>';
       h+='<button id="pdfTalkBtn">📄 Export PDF</button>';
       h+='<button id="pngTalkBtn">📸 Save as image</button>';
       h+='<button id="jsonTalkBtn">{} Export JSON</button>';
@@ -7242,6 +7345,20 @@ function renderMain(){
   h+='</div>';
 
   // === Sign-in modal (bottom-sheet drawer style) ===
+  // ── Share modal — shows the public URL after publishing ────────────────────
+  if(S.shareModalOpen && S.shareModalToken){
+    var _url = publicShareURL(S.shareModalToken);
+    h+='<div class="drawer-backdrop open" id="shareModalBackdrop" style="z-index:120"></div>';
+    h+='<div class="drawer open" id="shareModal" style="z-index:121;max-width:480px;margin:0 auto;left:50%;transform:translateX(-50%);bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
+    h+='<div class="drawer-head" style="padding:18px 20px 12px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🌐</span> Published to web</div><button class="drawer-close" id="shareModalCloseBtn">×</button></div>';
+    h+='<div class="drawer-body" style="padding:0 20px 20px">';
+    h+='<p style="font-size:13px;color:var(--ink-muted);margin:0 0 14px;line-height:1.5">Anyone with this link can view your talk. Make it private anytime from the ⋮ menu.</p>';
+    h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--ink);word-break:break-all;margin-bottom:10px">'+esc(_url)+'</div>';
+    h+='<button id="shareModalCopyBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Copy link</button>';
+    h+='<div style="font-size:11px;color:var(--ink-soft);margin-top:10px;line-height:1.5"><b>Note:</b> Your name from your profile is shown as author. Private context (uploaded references, refine notes) was automatically scrubbed before publishing.</div>';
+    h+='</div></div>';
+  }
+
   if(S.signInOpen){
     h+='<div class="drawer-backdrop open" id="signInBackdrop"></div>';
     h+='<div class="drawer open" style="max-height:auto" id="signInDrawer">';
@@ -7734,6 +7851,46 @@ function bindMain(){
   var sib=document.getElementById("saveSlidesImgBtn");if(sib)sib.onclick=exportSlidesImage;
   var jtb=document.getElementById("jsonTalkBtn");if(jtb)jtb.onclick=function(){exportTalkJSON(null)};
   var shr=document.getElementById("shareTalkBtn");if(shr)shr.onclick=function(){shareTalk()};
+  // ── Public sharing handlers ─────────────────────────────────────────────
+  var pubBtn=document.getElementById("publishTalkBtn");if(pubBtn)pubBtn.onclick=async function(){
+    if(!S.loadedTalkId){ alert("Save the talk first before publishing."); return }
+    if(!confirm("Publish this talk to the public web?\n\n• Anyone with the link can view it\n• Your name (from profile) will be shown as author\n• Private notes (refine context, uploaded references) will be stripped\n• You can make it private again anytime")) return;
+    S.overflowOpen=false;render();
+    var data = await cloudSetTalkPublic(S.loadedTalkId, true);
+    if(!data){ alert("Couldn't publish — check connection and try again."); return }
+    S.shareModalToken = data.share_token;
+    S.shareModalOpen = true;
+    render();
+  };
+  var unpubBtn=document.getElementById("unpublishTalkBtn");if(unpubBtn)unpubBtn.onclick=async function(){
+    if(!S.loadedTalkId)return;
+    if(!confirm("Make this talk private?\n\nThe share link will stop working immediately. Anyone with the link saved will see an error.")) return;
+    S.overflowOpen=false;render();
+    var data = await cloudSetTalkPublic(S.loadedTalkId, false);
+    if(!data){ alert("Couldn't unpublish — check connection."); return }
+    S.savedFlash="🔒 Made private";render();
+    setTimeout(function(){S.savedFlash="";render()},2000);
+  };
+  var csu=document.getElementById("copyShareUrlBtn");if(csu)csu.onclick=function(){
+    var _row=(S.cloudTalks||[]).find(function(x){return x.id===S.loadedTalkId});
+    if(!_row||!_row.share_token){alert("No share link available.");return}
+    S.shareModalToken = _row.share_token;
+    S.shareModalOpen = true;
+    S.overflowOpen = false;
+    render();
+  };
+  // Share modal handlers
+  var smc=document.getElementById("shareModalCloseBtn");if(smc)smc.onclick=function(){S.shareModalOpen=false;render()};
+  var smb=document.getElementById("shareModalBackdrop");if(smb)smb.onclick=function(){S.shareModalOpen=false;render()};
+  var smcp=document.getElementById("shareModalCopyBtn");if(smcp)smcp.onclick=function(){
+    var url=publicShareURL(S.shareModalToken);
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){
+        var b=document.getElementById("shareModalCopyBtn");
+        if(b){var orig=b.textContent;b.textContent="✓ Copied!";setTimeout(function(){b.textContent=orig},1800)}
+      });
+    }
+  };
   var ptbE=document.getElementById("pdfTalkBtnExport");if(ptbE)ptbE.onclick=exportTalkPDF;
   var jtbE=document.getElementById("jsonTalkBtnExport");if(jtbE)jtbE.onclick=function(){exportTalkJSON(null)};
   var shrE=document.getElementById("shareTalkBtnExport");if(shrE)shrE.onclick=function(){shareTalk()};
@@ -7741,6 +7898,7 @@ function bindMain(){
 
 // ═══════════ INIT ═══════════
 loadFromShareHash();
+loadFromPublicShareHash();
 loadFromLibHash();
 render();
 // Safety net: if Supabase init never completes (e.g., user offline), still drain after 3s

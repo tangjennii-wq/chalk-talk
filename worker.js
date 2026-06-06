@@ -32,10 +32,18 @@ export default {
     const origin = request.headers.get("Origin") || "";
     const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS);
     if (request.method === "OPTIONS") return corsPreflight(origin, allowedOrigins);
-    if (!isOriginAllowed(origin, allowedOrigins))
-      return jsonError(403, "origin_not_allowed", `Origin '${origin}' is not on this proxy's allowlist.`, "*");
 
     const url = new URL(request.url);
+
+    // ── Public endpoints (no Origin allowlist) ─────────────────────────────
+    // Share viewing must work from any origin: direct browser visits (no Origin
+    // header), curl, embeds on other sites, social-card previewers, etc.
+    if (request.method === "GET" && url.pathname.startsWith("/share/")) {
+      return handleShareGet(request, env, ctx, "*", url);
+    }
+
+    if (!isOriginAllowed(origin, allowedOrigins))
+      return jsonError(403, "origin_not_allowed", `Origin '${origin}' is not on this proxy's allowlist.`, "*");
 
     if (request.method === "GET" && url.pathname === "/health") {
       const ip = request.headers.get("CF-Connecting-IP") || "unknown";
@@ -57,13 +65,8 @@ export default {
       return handleImageGeneration(request, env, ctx, origin);
     }
 
-    // ── Sharing: public talk by share_token (Jenni 2026-06-04) ───────────────
-    // GET /share/:token returns the public talk JSON for anonymous viewers.
-    // Reads via Supabase REST using the anon key — RLS allows any public-read.
-    // Edge-cached 5 min via Cloudflare Cache-Control header.
-    if (request.method === "GET" && url.pathname.startsWith("/share/")) {
-      return handleShareGet(request, env, ctx, origin, url);
-    }
+    // Sharing route is handled above (before Origin allowlist) since public viewers
+    // legitimately have no Origin header (direct visits, curl, embeds).
 
     if (request.method !== "POST" || url.pathname !== "/v1/messages")
       return jsonError(404, "not_found", `Unknown endpoint ${request.method} ${url.pathname}`, origin);
