@@ -4881,11 +4881,21 @@ function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace
 function _citeLabel(ref){
   if(!ref) return "ref";
   var src = String(ref.source || "");
+  var type = String(ref.type || "").toLowerCase();
+  // User-uploaded reference — distinct label so the reader sees "this came from your reference, not corpus"
+  if(type === "user-upload" || type === "user_upload" || type === "upload"){
+    // Strip extension + truncate
+    var clean = src.replace(/\.(pdf|txt|docx?|md|jpe?g|png)$/i,"");
+    if(clean.length > 14) clean = clean.slice(0,12)+"…";
+    return "📎 " + clean;
+  }
   // Trial acronym pattern: ALL-CAPS, optionally hyphenated, at the start (e.g. "DAPA-HF", "EMPEROR-Reduced", "PARADIGM-HF")
   var trial = src.match(/^([A-Z][A-Z0-9]+(?:-[A-Za-z0-9]+)?)\b/);
   if(trial) return trial[1];
-  // Short society label preferred (e.g., "AHA", "KDIGO", "IDSA")
-  if(ref.society && ref.society.length <= 10) return ref.society;
+  // Society label preferred for guidelines (e.g., "AHA", "KDIGO", "IDSA")
+  if((type === "guideline" || ref.society) && ref.society && ref.society.length <= 12) return ref.society;
+  // (Recognized journal abbreviations are checked further down — NEJM, JAMA, CJASN, JACC, etc.
+  //  Only fall back to "PMID N" if the journal name doesn't match any of those.)
   // Common journal abbreviations
   var lower = src.toLowerCase();
   var journals = [
@@ -4910,6 +4920,9 @@ function _citeLabel(ref){
   for(var j=0;j<journals.length;j++){ if(lower.indexOf(journals[j][0])>=0) return journals[j][1]; }
   // Society fallback (longer)
   if(ref.society) return ref.society.length<=14?ref.society:ref.society.slice(0,12)+"…";
+  // PMID fallback for original journal articles when no recognizable journal name (Jenni 2026-06-04)
+  var pmidMatch = String(ref.url||"").match(/pubmed\.ncbi\.nlm\.nih\.gov\/(\d{6,9})/);
+  if(pmidMatch) return "PMID " + pmidMatch[1];
   // Last resort: truncate the source
   if(src.length<=16) return src;
   return src.slice(0,14)+"…";
@@ -5101,12 +5114,59 @@ function pruneFakeReferences(talk) {
   }
   talk.references = talk.references.filter(function(r) {
     if (!r) return false;
-    // Keep if Claude cited it in body text (by source name or year mention) OR it's in retrieved RAG chunks
     var isRetrieved = r.pmid && retrievedPmids[String(r.pmid)];
     var bodyMentions = r.source && bodyText.indexOf(r.source) !== -1;
-    return isRetrieved || bodyMentions;
+    // User uploads are trusted by definition — the user explicitly handed us this source
+    var isUserUpload = r.type === "user-upload" || r.type === "user_upload" || r.type === "upload";
+    return isRetrieved || bodyMentions || isUserUpload;
   });
-  return talk;
+  // ── NEW: audit inline PMIDs in the body prose. If Claude wrote "PMID 12345678" but that PMID is
+  // neither in the retrieved RAG chunks nor in the (now-pruned) references array, strip the PMID
+  // and replace with a generic [unverified] tag so the user sees the claim was not source-grounded.
+  // Closes the biggest credibility hole flagged in the 2026-06-04 RAG audit.
+  var trustedPmids = {};
+  for (var rk in retrievedPmids) trustedPmids[rk] = true;
+  (talk.references || []).forEach(function(r){ if (r && r.pmid) trustedPmids[String(r.pmid)] = true; });
+  function auditInlinePmids(str) {
+    if (typeof str !== "string") return str;
+    var out = str;
+    // First pass: strip parenthetical PMID mentions where the WHOLE parenthetical is unverified PMIDs
+    //   "lower CV mortality (PMID 12345)" → "lower CV mortality"
+    //   "lower CV mortality (PMID 12345, 67890)" → "lower CV mortality" if both unverified
+    out = out.replace(/\s*\(\s*PMID\s*[:\-]?\s*[\d,;\s]+\)/gi, function(paren){
+      var pmids = paren.match(/\d{6,9}/g) || [];
+      var anyVerified = pmids.some(function(p){ return trustedPmids[p]; });
+      if (anyVerified) {
+        // keep verified PMIDs only inside the parenthetical
+        var keep = pmids.filter(function(p){ return trustedPmids[p]; });
+        return " (PMID " + keep.join(", ") + ")";
+      }
+      return ""; // all unverified — drop the whole parenthetical
+    });
+    // Second pass: bare "PMID 12345" tokens not inside parens
+    out = out.replace(/\s*,?\s*PMID\s*[:\-]?\s*(\d{6,9})/gi, function(match, pmid){
+      if (trustedPmids[pmid]) return " (PMID " + pmid + ")"; // keep verified
+      return ""; // silently drop
+    });
+    // Cleanup: collapse double spaces, fix orphaned commas
+    out = out.replace(/\s+([,.;])/g, "$1").replace(/\s{2,}/g, " ").trim();
+    return out;
+  }
+  function walk(node) {
+    if (typeof node === "string") return auditInlinePmids(node);
+    if (Array.isArray(node)) return node.map(walk);
+    if (node && typeof node === "object") {
+      var out = {};
+      for (var key in node) {
+        // Don't audit inside the references array itself — those PMIDs are already pruned above
+        if (key === "references") { out[key] = node[key]; continue; }
+        out[key] = walk(node[key]);
+      }
+      return out;
+    }
+    return node;
+  }
+  return walk(talk);
 }
 
 function deepCleanCitations(obj) {
@@ -5286,7 +5346,7 @@ function buildReferenceParts(files) {
   if (!files || !files.length) return parts;
   parts.push({
     type: "text",
-    text: "\n\n═══ USER-UPLOADED REFERENCE MATERIALS ═══\nUse the following uploaded reference materials as primary source context when they are relevant. Prefer them over general model knowledge when there is a conflict, but flag uncertainty rather than inventing missing details."
+    text: "\n\n═══ USER-UPLOADED REFERENCE MATERIALS ═══\nUse the following uploaded reference materials as PRIMARY source context. Prefer them over general model knowledge when there is a conflict. If you draw a clinical claim from one of these uploaded references, ADD it to the references array as a new entry with type:\"user-upload\", source:\"<the filename>\", year:null, society:null, url:null, AND cite it inline with [N] just like any other reference. Treat user uploads as evidence-grounded — they're material the user explicitly trusts. Flag uncertainty rather than inventing details for content not in the uploaded source."
   });
   for (var i = 0; i < files.length; i++) {
     var f = files[i] || {};
