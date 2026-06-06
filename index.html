@@ -230,6 +230,10 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 .overflow-menu button:last-child{border-bottom:none}
 .overflow-menu button:hover{background:var(--lavender-bg)}
 .overflow-menu button.danger{color:#c0392b}
+/* Library card kebab — faint at rest, brightens into a circular hit-state on hover so the affordance reads as a button. */
+.libCardMenuBtn{opacity:0.5;transition:opacity .12s ease,background .12s ease}
+.libCardMenuBtn:hover,.libCardMenuBtn:focus-visible{opacity:1;background:var(--lavender-bg) !important;color:var(--plum) !important;outline:none}
+.libCardMenu button:hover{background:var(--lavender-bg)}
 /* Sticky compose CTA */
 .compose-cta{position:sticky;bottom:0;left:0;right:0;background:linear-gradient(to top,var(--paper) 60%,rgba(248,246,251,0.7) 90%,transparent 100%);padding:14px 0 calc(8px + env(safe-area-inset-bottom));margin:18px -16px 0;z-index:10}
 .compose-cta-inner{padding:0 16px}
@@ -4309,22 +4313,24 @@ function renderLibCard(x){
   var openBtn = '<a class="libOpenBtn" href="'+openHref+'" target="_blank" rel="noopener" style="background:linear-gradient(135deg,var(--plum-deep),var(--plum));border:none;border-radius:8px;padding:7px 14px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;text-decoration:none;display:inline-flex;align-items:center;line-height:1">Open</a>';
 
   // Kebab menu replaces the row of inline icons (Jenni 2026-06-04 — matches OpenEvidence-style action menu).
-  // One ⋮ button per card. Clicking it toggles a labeled dropdown: Rename / Export PDF / Delete.
-  // Only one menu is open at a time, tracked via S.libCardMenuId. Closes on outside click.
+  // One ⋮ button per card — on EVERY card type incl. samples, so the action affordance is consistent
+  // (Jenni 2026-06-06). Samples are keyed by slug ("sample:<slug>"); rename/delete persist as local
+  // overrides (immutable seed data is never mutated). Clicking toggles a labeled dropdown:
+  // Rename / Export PDF / Delete. Only one menu open at a time, tracked via S.libCardMenuId; closes on outside click.
+  var menuKey = isSample ? ('sample:'+x._slug) : x._id;
+  var dataAttr = isSample ? ('data-slug="'+esc(x._slug)+'"') : ('data-id="'+esc(x._id)+'"');
+  var menuOpen = (S.libCardMenuId === menuKey);
   var iconBtns = '';
-  if(!isSample){
-    var menuOpen = (S.libCardMenuId === x._id);
-    iconBtns += '<div style="position:relative;flex-shrink:0">';
-    iconBtns += '<button class="libCardMenuBtn" data-id="'+x._id+'" title="More options" aria-label="More options" style="background:none;border:none;color:var(--ink-muted);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;font-weight:700">⋮</button>';
-    if(menuOpen){
-      iconBtns += '<div class="libCardMenu" style="position:absolute;right:0;top:32px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(20,10,28,0.14);min-width:170px;z-index:80;overflow:hidden">';
-      iconBtns += '<button class="libMenuItem libEditTitleBtn" data-id="'+x._id+'" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">✎</span>Rename</button>';
-      iconBtns += '<button class="libMenuItem libPdfBtn" data-id="'+x._id+'" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">↓</span>Export PDF</button>';
-      iconBtns += '<button class="libMenuItem delTalkBtn" data-id="'+x._id+'" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:#c0392b;text-align:left;font-family:inherit"><span style="font-size:14px;width:16px;display:inline-flex;justify-content:center">🗑</span>Delete</button>';
-      iconBtns += '</div>';
-    }
+  iconBtns += '<div style="position:relative;flex-shrink:0">';
+  iconBtns += '<button class="libCardMenuBtn" data-key="'+esc(menuKey)+'" title="More actions" aria-label="More actions" aria-haspopup="true" style="background:none;border:none;color:var(--ink-muted);font-size:18px;cursor:pointer;padding:5px 8px;border-radius:50%;line-height:1;font-weight:700">⋮</button>';
+  if(menuOpen){
+    iconBtns += '<div class="libCardMenu" style="position:absolute;right:0;top:34px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(20,10,28,0.14);min-width:170px;z-index:80;overflow:hidden">';
+    iconBtns += '<button class="libMenuItem libEditTitleBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">✎</span>Rename</button>';
+    iconBtns += '<button class="libMenuItem libPdfBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">↓</span>Export PDF</button>';
+    iconBtns += '<button class="libMenuItem delTalkBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:#c0392b;text-align:left;font-family:inherit"><span style="font-size:14px;width:16px;display:inline-flex;justify-content:center">🗑</span>Delete</button>';
     iconBtns += '</div>';
   }
+  iconBtns += '</div>';
 
   var h = '<div style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">';
 
@@ -4334,8 +4340,11 @@ function renderLibCard(x){
   }
 
   // Title + meta in a single column, flex:1
+  // Samples can carry a local rename override (keyed by slug) since the seed title is immutable.
+  var _ovr = isSample ? (loadSampleTitleOverrides()[x._slug]||"") : "";
+  var displayTitle = _ovr || t.title || x.topic || "Untitled";
   h += '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">';
-  h += '<div style="font-size:13.5px;font-weight:700;color:var(--plum-deep);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(t.title||x.topic||"Untitled")+'">'+esc(t.title||x.topic||"Untitled")+'</div>';
+  h += '<div style="font-size:13.5px;font-weight:700;color:var(--plum-deep);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(displayTitle)+'">'+esc(displayTitle)+'</div>';
   // Compact meta row — type badge + sample/dual/visual badges + date in tiny font
   h += '<div style="display:flex;gap:6px;font-size:10.5px;color:var(--ink-muted);align-items:center;flex-wrap:wrap">';
   h += '<span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;letter-spacing:0.02em">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
@@ -4347,8 +4356,8 @@ function renderLibCard(x){
   h += '</div>';
   h += '</div>';
 
-  // Right side: icon buttons + Open
-  h += '<div style="display:flex;align-items:center;gap:2px;flex-shrink:0">' + iconBtns + openBtn + '</div>';
+  // Right side: kebab + clear gap + Open. The gap separates the secondary overflow menu from the primary CTA.
+  h += '<div style="display:flex;align-items:center;gap:12px;flex-shrink:0">' + iconBtns + openBtn + '</div>';
 
   h += '</div>';
   return h;
@@ -4520,6 +4529,14 @@ async function migrateLocalToCloud(localTalks){
 
 // ═══════════ SAVED LIBRARY (localStorage) ═══════════
 function loadSavedTalks(){try{return JSON.parse(localStorage.getItem("ct_saved_talks")||"[]")}catch(e){return[]}}
+// --- Sample card local overrides ---
+// Samples are immutable shared seed content, so rename/delete can't persist server-side.
+// Instead we keep per-user local overrides: a title map and a hidden-slug set, both in localStorage.
+// renderLibCard applies the title override; renderSaved filters out hidden slugs.
+function loadSampleTitleOverrides(){try{return JSON.parse(localStorage.getItem("ct_sample_titles")||"{}")}catch(e){return{}}}
+function setSampleTitleOverride(slug,title){try{var m=loadSampleTitleOverrides();if(title)m[slug]=title;else delete m[slug];localStorage.setItem("ct_sample_titles",JSON.stringify(m));return true}catch(e){return false}}
+function loadHiddenSampleSlugs(){try{return JSON.parse(localStorage.getItem("ct_sample_hidden")||"[]")}catch(e){return[]}}
+function hideSampleSlug(slug){try{var a=loadHiddenSampleSlugs();if(a.indexOf(slug)<0){a.push(slug);localStorage.setItem("ct_sample_hidden",JSON.stringify(a))}return true}catch(e){return false}}
 function writeSavedTalks(arr){try{localStorage.setItem("ct_saved_talks",JSON.stringify(arr));return true}catch(e){
   var n=arr.length;
   alert("Storage limit reached ("+n+" talks saved). Options:\n\n\u2022 Export your library to JSON as a backup, then delete some older talks\n\u2022 Or clear browser data for this site and re-import from the backup\n\nEach talk now averages ~15 KB, so this shouldn't happen under normal use.");
@@ -6266,8 +6283,10 @@ function renderSaved(){
   // Normalize both into a single shape with _kind ("lecture"|"boards"), _source ("sample"|"saved"),
   // _spec (specialty), and _hasBoth (true if sample has both concise+detailed cached versions).
   var all=[];
+  var _hiddenSamples=loadHiddenSampleSlugs();
   for(var si=0;si<samples.length;si++){
     var s=samples[si];
+    if(_hiddenSamples.indexOf(s.slug)>=0) continue;
     var st = s.talk_concise || s.talk || s.talk_detailed || {};
     var hasBoth = !!(s.talk_concise && s.talk_detailed);
     all.push({_source:"sample",_kind:st.question?"boards":"lecture",_slug:s.slug,_id:null,
@@ -6392,11 +6411,12 @@ function bindSaved(){
   // libOpenBtn is now an <a target="_blank"> — let the browser handle the click natively. No onclick.
   // Loading from a hash (#t=… / #s=…) is handled on page load via the maybeLoadFromHash() helper below.
   document.querySelectorAll(".exportTalkBtn").forEach(function(b){b.onclick=function(){exportTalkJSON(b.dataset.id)}});
-  // Kebab menu toggle — opens that card's action menu, closes any other
+  // Kebab menu toggle — opens that card's action menu, closes any other. Keyed by data-key
+  // ("sample:<slug>" for samples, the talk id otherwise) so samples and saved talks both work.
   document.querySelectorAll(".libCardMenuBtn").forEach(function(b){b.onclick=function(e){
     e.stopPropagation();
-    var id=b.dataset.id;
-    S.libCardMenuId = (S.libCardMenuId===id) ? null : id;
+    var key=b.dataset.key;
+    S.libCardMenuId = (S.libCardMenuId===key) ? null : key;
     render();
   }});
   // Outside-click closes the kebab menu
@@ -6407,14 +6427,47 @@ function bindSaved(){
       }
     };
   }
-  // Menu items: PDF export + Delete (Rename binds below via libEditTitleBtn — already a class)
-  // Each closes the menu after firing
-  document.querySelectorAll(".libPdfBtn").forEach(function(b){b.onclick=function(){S.libCardMenuId=null;exportSavedTalkPDF(b.dataset.id)}});
-  document.querySelectorAll(".delTalkBtn").forEach(function(b){b.onclick=function(){S.libCardMenuId=null;deleteSavedTalk(b.dataset.id)}});
+  // Menu items: PDF export + Delete (Rename binds below via libEditTitleBtn — already a class).
+  // Each closes the menu after firing. Samples carry data-slug; saved talks carry data-id.
+  document.querySelectorAll(".libPdfBtn").forEach(function(b){b.onclick=function(){
+    S.libCardMenuId=null;
+    var slug=b.dataset.slug;
+    if(slug){
+      // Sample: export straight from the seed talk object (no saved id to look up).
+      var samp=(typeof SAMPLES!=="undefined"&&SAMPLES?SAMPLES:[]).find(function(s){return s.slug===slug});
+      var st=samp&&(samp.talk_concise||samp.talk||samp.talk_detailed);
+      if(st)exportTalkPDF(st);else alert("Couldn't find that sample to export.");
+    } else {
+      exportSavedTalkPDF(b.dataset.id);
+    }
+  }});
+  document.querySelectorAll(".delTalkBtn").forEach(function(b){b.onclick=function(){
+    S.libCardMenuId=null;
+    var slug=b.dataset.slug;
+    if(slug){
+      // Sample: can't delete shared seed content, so hide it locally for this user.
+      if(confirm("Remove this sample from your library? You can restore it by clearing site data."))
+        { hideSampleSlug(slug); render(); }
+    } else {
+      deleteSavedTalk(b.dataset.id);
+    }
+  }});
   // Per-library-card title rename
   document.querySelectorAll(".libEditTitleBtn").forEach(function(b){b.onclick=async function(e){
     e.stopPropagation();
     S.libCardMenuId=null;
+    var slug=b.dataset.slug;
+    if(slug){
+      // Sample: store a local title override (seed title stays untouched).
+      var samp=(typeof SAMPLES!=="undefined"&&SAMPLES?SAMPLES:[]).find(function(s){return s.slug===slug});
+      var sst=samp&&(samp.talk_concise||samp.talk||samp.talk_detailed);
+      var scur=(loadSampleTitleOverrides()[slug])||(sst&&sst.title)||(samp&&samp.topic)||"";
+      var sfresh=prompt("Edit talk title:",scur);
+      if(!sfresh||sfresh===scur)return;
+      setSampleTitleOverride(slug,sfresh);
+      render();
+      return;
+    }
     var id = b.dataset.id;if(!id)return;
     var arr = getDisplayLibrary();var entry = arr.find(function(x){return x.id===id});if(!entry)return;
     var current = (entry.talk && entry.talk.title) || entry.topic || "";
@@ -6651,16 +6704,17 @@ function renderMain(){
     h+='</div>';
     h+='</div>';
 
-    // Overflow menu (rendered conditionally)
+    // Overflow menu — cleanup 2026-06-04:
+    //   • Save removed (canonical Save lives in capsule top-right)
+    //   • Rebuild removed (Edit settings drawer's "Rebuild lesson" button handles this; composer's "rewrite" keyword too)
+    //   • New talk removed (capsule's + New talk left-side handles this)
+    // Overflow now focuses on EXPORT + SHARE actions only.
     if(S.overflowOpen){
       h+='<div class="overflow-menu" id="overflowMenu">';
-      h+='<button id="saveTalkBtn"'+(S.talkIsSaved?' disabled style="color:#2d6a2d;opacity:0.75"':'')+'>'+(S.talkIsSaved?"✓ Saved (no changes)":"★ Save")+'</button>';
-      h+='<button id="rebuildBtn">↻ Rebuild</button>';
       h+='<button id="shareTalkBtn">🔗 Share link</button>';
       h+='<button id="pdfTalkBtn">📄 Export PDF</button>';
-      h+='<button id="pngTalkBtn">📸 Save as Image</button>';
+      h+='<button id="pngTalkBtn">📸 Save as image</button>';
       h+='<button id="jsonTalkBtn">{} Export JSON</button>';
-      h+='<button id="newTalkBtn" class="danger">✕ New talk</button>';
       h+='</div>';
     }
     if(S.savedFlash)h+='<div style="margin-bottom:10px;padding:8px 12px;background:#f0f7f0;border:1px solid #b8d8b8;border-radius:8px;color:#2d6a2d;font-size:12px;font-weight:600;text-align:center">'+esc(S.savedFlash)+'</div>';
@@ -6680,7 +6734,7 @@ function renderMain(){
     h+='</div>';
 
     // === 2x2 mode grid ===
-    var MODES=isBQ?[["overview","📄","Overview"],["audio","🔉","Audio"],["export","⬆","Export"]]:[["overview","📄","Overview"],["slides","📊","Slides"],["visual","🖼","Visual"],["audio","🔉","Audio"]];
+    var MODES=isBQ?[["overview","📄","Overview"],["audio","🔉","Audio"]]:[["overview","📄","Overview"],["slides","📊","Slides"],["visual","🖼","Visual"],["audio","🔉","Audio"]];
     h+='<div class="mode-grid">';
     for(var mi=0;mi<MODES.length;mi++){
       var m2=MODES[mi];
@@ -6841,16 +6895,8 @@ function renderMain(){
       // as the canonical "I'm done — what next?" pair. PDF is a secondary
       // outlined button so Save remains the primary CTA visually.
       // For sample talks (no Save), surface PDF alone — still usable.
-      h+='<div style="margin:18px 0 14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">';
-      if(!S.isSampleTalk){
-        if(S.talkIsSaved){
-          h+='<button id="saveTalkBtnBottom" disabled title="No unsaved changes" style="background:#f0f7f0;border:1px solid #c8e0c8;border-radius:18px;padding:13px 26px;color:#2d6a2d;font-size:14px;font-weight:600;cursor:default;display:inline-flex;align-items:center;gap:8px"><span style="font-size:16px">✓</span>Saved to library</button>';
-        } else {
-          h+='<button id="saveTalkBtnBottom" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:18px;padding:13px 26px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 3px 12px rgba(75,17,111,0.28);display:inline-flex;align-items:center;gap:8px;transition:all .15s ease"><span style="font-size:16px">★</span>Save to library</button>';
-        }
-      }
-      h+='<button id="pdfTalkBtnBottom" style="background:#fff;border:1.5px solid var(--plum);border-radius:18px;padding:11px 22px;color:var(--plum);font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .15s ease" title="Download this talk as a PDF"><span style="font-size:15px">📄</span>Export as PDF</button>';
-      h+='</div>';
+      // Bottom Save + PDF CTA row removed 2026-06-04 (UI critique #1: three Save buttons + three PDF surfaces).
+      // Canonical Save lives in the capsule top-right (follows scroll). PDF/Image/JSON in the ⋮ overflow menu.
 
       // References inline (compact, collapsible). Show first 3 by default; rest hidden behind <details> toggle.
       if(t.references&&t.references.length){
@@ -7047,13 +7093,7 @@ function renderMain(){
         h+='<button id="shareTwitterBtn" style="width:100%;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--ink);font-size:13.5px;font-weight:600;cursor:pointer">🐦 Share to Twitter</button>';
         h+='</div>';
       }
-      h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column">';
-      // Suffixed IDs so we don't collide with the overflow-menu buttons (which use the unsuffixed IDs).
-      // bindMain binds shareTalkBtnExport/pdfTalkBtnExport/jsonTalkBtnExport to the same handlers.
-      h+='<button id="pdfTalkBtnExport" style="background:none;border:none;border-bottom:1px solid var(--line-soft);padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left"><span style="color:var(--plum);font-size:14px">📄</span><span style="flex:1;font-size:13px;font-weight:600;color:var(--ink)">Export as PDF</span><span style="color:var(--ink-soft)">›</span></button>';
-      h+='<button id="shareTalkBtnExport" style="background:none;border:none;border-bottom:1px solid var(--line-soft);padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left"><span style="color:var(--plum);font-size:14px">🔗</span><span style="flex:1;font-size:13px;font-weight:600;color:var(--ink)">Share link</span><span style="color:var(--ink-soft)">›</span></button>';
-      h+='<button id="jsonTalkBtnExport" style="background:none;border:none;padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;text-align:left"><span style="color:var(--plum);font-size:14px;font-family:ui-monospace,Menlo,monospace">{}</span><span style="flex:1;font-size:13px;font-weight:600;color:var(--ink)">Export JSON</span><span style="color:var(--ink-soft)">›</span></button>';
-      h+='</div>';
+      // Export action list removed 2026-06-04 — duplicates of the overflow menu (⋮). VMC poster export above stays.
     }
 
     // === Floating refine composer (Jenni 2026-06-04 redesign) ===

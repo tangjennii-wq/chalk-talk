@@ -4,9 +4,10 @@
     "legal_posture": "All entries are factual restatements in our own words. NephJC content is CC-BY licensed (attribution required, already included in sources). No copyrighted prose copied. Trial findings are facts (not copyrightable under Feist v. Rural).",
     "schema": "trial_name → {trial, primary_finding, population, critique, followup, guideline_impact, nephjc_takeaway|expert_takeaway, sources[]}",
     "created": "2026-06-04",
-    "first_batch": "8 nephro + 8 cards = 16 of 95 landmark trials in landmark_trials.json. Continue batch-by-batch (ID, endo, GI, heme/onc, pulm, neuro)."
+    "first_batch": "8 nephro + 8 cards = 16 of 95 landmark trials in landmark_trials.json. Continue batch-by-batch (ID, endo, GI, heme/onc, pulm, neuro).",
+    "total_trials": 98,
+    "updated": "2026-06-04 (full landmark coverage)"
   },
-
   "DAPA-CKD": {
     "trial": "DAPA-CKD (NEJM 2020)",
     "primary_finding": "Dapagliflozin 10mg cut composite of >=50% eGFR decline, ESKD, or renal/CV death from 14.5% to 9.2% (HR 0.61, 95% CI 0.51-0.72); NNT ~19 over 2.4 years. All-cause mortality also reduced (HR 0.69).",
@@ -15,7 +16,10 @@
     "followup": "Prespecified analyses confirmed benefit across CKD etiologies and KDIGO risk strata; informed SMART-C pooled meta-analyses.",
     "guideline_impact": "Anchored KDIGO 2024 Grade 1A recommendation for SGLT2i in CKD with eGFR >=20 and albuminuria, including non-diabetic CKD.",
     "nephjc_takeaway": "Safe and effective use down to eGFR 25 challenges 'renalism' (reflex to withhold therapies in advanced CKD) and extends flozin benefit beyond diabetes.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/32970396/", "http://www.nephjc.com/news/dapa-ckd"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/32970396/",
+      "http://www.nephjc.com/news/dapa-ckd"
+    ]
   },
   "EMPA-KIDNEY": {
     "trial": "EMPA-KIDNEY (NEJM 2023)",
@@ -25,7 +29,10 @@
     "followup": "2024 long-term post-trial follow-up (NEJM) showed persistence of kidney benefit but attenuation after drug discontinuation, supporting indefinite therapy.",
     "guideline_impact": "Cemented SGLT2i as standard of care in non-diabetic CKD in KDIGO 2024 and broadened the eligible eGFR floor.",
     "nephjc_takeaway": "Extended flozin benefit to lower eGFR and lower albuminuria than DAPA-CKD; benefit is real but smaller without heavy albuminuria.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/36331190/", "http://www.nephjc.com/news/empa-kidney"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/36331190/",
+      "http://www.nephjc.com/news/empa-kidney"
+    ]
   },
   "CREDENCE": {
     "trial": "CREDENCE (NEJM 2019)",
@@ -35,7 +42,10 @@
     "followup": "Subgroup analyses showed benefit preserved even when canagliflozin continued below eGFR 30; informed FDA label expansion and the SMART-C pooled meta-analysis.",
     "guideline_impact": "Triggered 2019-2020 ADA and KDIGO updates recommending SGLT2i as first-line add-on to RASi in diabetic CKD with albuminuria.",
     "nephjc_takeaway": "Proof-of-concept that SGLT2 inhibition slows kidney disease independent of glycemic effect - the trial that opened the cardiorenal era.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/30990260/", "http://www.nephjc.com/news/credence"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/30990260/",
+      "http://www.nephjc.com/news/credence"
+    ]
   },
   "FIDELIO-DKD": {
     "trial": "FIDELIO-DKD (NEJM 2020)",
@@ -45,7 +55,10 @@
     "followup": "FIDELITY pooled analysis with FIGARO-DKD (>13,000 patients) and 2024 FINEARTS-HF + CONFIDENCE clarified additive effect with SGLT2i and HFpEF benefit.",
     "guideline_impact": "Established finerenone as KDIGO 2024 'pillar three' for albuminuric diabetic CKD alongside RASi and SGLT2i.",
     "nephjc_takeaway": "First MRA with hard renal endpoint benefit in diabetic CKD; hyperkalemia is manageable with the trial's monitoring protocol, not prohibitive.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/33069326/", "http://www.nephjc.com/news/fidelio"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/33069326/",
+      "http://www.nephjc.com/news/fidelio"
+    ]
   },
   "FIGARO-DKD": {
     "trial": "FIGARO-DKD (NEJM 2021)",
@@ -55,7 +68,9 @@
     "followup": "FIDELITY pooled analysis (FIDELIO+FIGARO) confirmed consistent cardiorenal benefit across the CKD-T2DM spectrum and informed FINEHEART meta-analysis.",
     "guideline_impact": "Broadened ADA and KDIGO 2024 finerenone recommendation to include T2DM patients with milder albuminuria and preserved eGFR.",
     "nephjc_takeaway": null,
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/34449189/"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/34449189/"
+    ]
   },
   "FLOW": {
     "trial": "FLOW (NEJM 2024)",
@@ -65,7 +80,10 @@
     "followup": "Prespecified subgroup analyses (2024-2025) showed consistent benefit irrespective of baseline SGLT2i use and across CKD severity strata.",
     "guideline_impact": "Expected to enter KDIGO and ADA guidance as a fourth pillar for diabetic CKD; FDA expanded the semaglutide label for CKD risk reduction in 2025.",
     "nephjc_takeaway": "First GLP-1RA trial with a primary kidney composite endpoint - shifts GLP-1s from glycemic/weight drugs to bona fide cardiorenal protective therapy.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/38785209/", "http://www.nephjc.com/news/flow"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/38785209/",
+      "http://www.nephjc.com/news/flow"
+    ]
   },
   "SPRINT": {
     "trial": "SPRINT (NEJM 2015)",
@@ -75,7 +93,10 @@
     "followup": "2021 final report confirmed sustained CV/mortality benefit. SPRINT-MIND showed reduced mild cognitive impairment. STEP (2021) and ESPRIT (2024) replicated intensive-BP benefit including in diabetes.",
     "guideline_impact": "Drove 2017 ACC/AHA redefinition of hypertension (>=130/80) and KDIGO 2021 BP guideline recommending SBP <120 in most CKD patients using standardized measurement.",
     "nephjc_takeaway": "The eGFR dip with intensive control is hemodynamic, not injury - don't abandon the target over a small creatinine bump, but BP measurement technique matters enormously.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/26551272/", "http://www.nephjc.com/sprint"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/26551272/",
+      "http://www.nephjc.com/sprint"
+    ]
   },
   "PROTECT": {
     "trial": "PROTECT (Lancet 2023)",
@@ -85,9 +106,11 @@
     "followup": "2-year results (Lancet 2023) confirmed sustained proteinuria reduction and modest eGFR slope advantage; ongoing open-label extension and post-marketing studies tracking ESKD endpoints.",
     "guideline_impact": "FDA accelerated approval (2023) and full approval (2024) for IgAN with proteinuria; incorporated into KDIGO 2024 IgAN guideline update as an option for high-risk proteinuria.",
     "nephjc_takeaway": "Validates endothelin-receptor blockade as a non-immunosuppressive lever in IgAN; how it stacks with SGLT2i and targeted-release budesonide remains the practical question.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/37015244/", "http://www.nephjc.com/news/sparsentan-protect"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/37015244/",
+      "http://www.nephjc.com/news/sparsentan-protect"
+    ]
   },
-
   "DAPA-HF": {
     "trial": "DAPA-HF (NEJM 2019)",
     "primary_finding": "Dapagliflozin reduced CV death or worsening HF vs placebo (16.3% vs 21.2%; HR 0.74, 95% CI 0.65-0.85) over median 18.2 months; NNT ~21.",
@@ -96,7 +119,10 @@
     "followup": "Pooled patient-level meta-analysis with DELIVER (Nature Med 2022) confirmed benefit across full EF spectrum with HR 0.78 for CV death/HF hospitalization.",
     "guideline_impact": "Foundational evidence for 2022 AHA/ACC/HFSA Class 1a recommendation for SGLT2i as pillar of GDMT in HFrEF regardless of diabetes status.",
     "expert_takeaway": "Benefit emerged within weeks and was independent of diabetes, decisively reframing SGLT2 inhibitors as heart failure drugs rather than glucose-lowering agents.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/31535829/", "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2019/09/01/16/13/DAPA-HF"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/31535829/",
+      "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2019/09/01/16/13/DAPA-HF"
+    ]
   },
   "EMPEROR-Reduced": {
     "trial": "EMPEROR-Reduced (NEJM 2020)",
@@ -106,7 +132,10 @@
     "followup": "EMPEROR-Pooled (Lancet 2020) meta-analysis with EMPEROR-Preserved confirmed renal protection with reduced eGFR decline; mortality benefit remained class-uncertain.",
     "guideline_impact": "Co-anchors 2022 AHA/ACC/HFSA Class 1a SGLT2i recommendation for HFrEF; specifically validated benefit in the sickest, lowest-EF subgroup.",
     "expert_takeaway": "Replicated DAPA-HF's HF hospitalization signal in a sicker cohort, cementing SGLT2i benefit as a class effect even when individual mortality endpoints differ.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/32865377/", "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2020/08/28/22/03/EMPEROR-Reduced"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/32865377/",
+      "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2020/08/28/22/03/EMPEROR-Reduced"
+    ]
   },
   "PARADIGM-HF": {
     "trial": "PARADIGM-HF (NEJM 2014)",
@@ -116,7 +145,10 @@
     "followup": "PIONEER-HF (NEJM 2019) extended use to acute decompensated HF; PARADIGM-HF stopped early at median 27 months for overwhelming efficacy.",
     "guideline_impact": "Changed practice: 2022 AHA/ACC/HFSA elevated ARNI to Class 1a as preferred RAS inhibitor in chronic symptomatic HFrEF, displacing ACEi as first-line.",
     "expert_takeaway": "First trial in two decades to show a new agent beats a proven ACEi head-to-head on mortality in HFrEF, ending the era of enalapril as standard.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/25176015/", "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2014/08/30/12/22/PARADIGM-HF"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/25176015/",
+      "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2014/08/30/12/22/PARADIGM-HF"
+    ]
   },
   "ISCHEMIA": {
     "trial": "ISCHEMIA (NEJM 2020)",
@@ -126,7 +158,10 @@
     "followup": "ISCHEMIA-EXTEND (Circulation 2023) at median 5.7 years showed no all-cause mortality difference but lower CV mortality offset by higher non-CV mortality with invasive strategy.",
     "guideline_impact": "2021 ACC/AHA chest pain guideline downgraded routine revascularization for stable angina; medical optimization is now first-line for moderate-severe ischemia without left main disease.",
     "expert_takeaway": "For stable CAD, revascularization is for angina relief, not prognosis; the symptom benefit is real but does not translate to fewer hard cardiac events.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/32227755/", "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2019/11/15/17/27/ISCHEMIA"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/32227755/",
+      "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2019/11/15/17/27/ISCHEMIA"
+    ]
   },
   "AFFIRM": {
     "trial": "AFFIRM (NEJM 2002)",
@@ -136,7 +171,9 @@
     "followup": "RACE confirmed equivalence; EAST-AFNET 4 (2020) later overturned the 'rate-equals-rhythm' dogma in newly diagnosed AF using safer modern rhythm tools.",
     "guideline_impact": "Confirmed practice: established rate-control as acceptable default in chronic AF, and that anticoagulation must continue regardless of rhythm status, a tenet still in 2023 ACC/AHA AF guidelines.",
     "expert_takeaway": null,
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/12466506/"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/12466506/"
+    ]
   },
   "EAST-AFNET 4": {
     "trial": "EAST-AFNET 4 (NEJM 2020)",
@@ -146,7 +183,10 @@
     "followup": "EAST-AFNET 4 subanalyses (Eur Heart J 2022) showed benefit was mediated by sinus rhythm at 12 months; AHA/ACC 2023 cited as practice-changing.",
     "guideline_impact": "Changed practice: 2023 ACC/AHA/ACCP/HRS AF guideline gave new recommendation that rhythm control is useful within 1 year of AF diagnosis to reduce hospitalization, stroke, and mortality.",
     "expert_takeaway": "Timing matters: AFFIRM's neutral result reflected late, sick AF populations; treating AF early with modern tools changes the trajectory.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/32865375/", "https://www.nejm.org/doi/full/10.1056/NEJMe2027180"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/32865375/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMe2027180"
+    ]
   },
   "PARTNER 3": {
     "trial": "PARTNER 3 (NEJM 2019)",
@@ -156,7 +196,10 @@
     "followup": "5-year (NEJM 2023) and 7-year follow-up showed sustained composite equivalence, similar bioprosthetic valve failure rates (~3.3% vs 3.8%), but higher subclinical valve thrombosis with TAVR.",
     "guideline_impact": "Changed practice: 2020 ACC/AHA valve guideline made TAVR a Class 1 option for patients >=65 with low surgical risk, ending surgery's exclusive claim on younger AS patients.",
     "expert_takeaway": "Extended TAVR from a salvage option into first-line therapy for most symptomatic AS, but durability data through 10 years remains the key unsettled question for patients in their 60s.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/30883058/", "https://www.cardionerds.com/181-aortic-stenosis-and-the-story-of-tavr-historical-perspective-future-directions-with-dr-jon-resar/"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/30883058/",
+      "https://www.cardionerds.com/181-aortic-stenosis-and-the-story-of-tavr-historical-perspective-future-directions-with-dr-jon-resar/"
+    ]
   },
   "EMPEROR-Preserved / DELIVER": {
     "trial": "EMPEROR-Preserved (NEJM 2021) and DELIVER (NEJM 2022)",
@@ -166,33 +209,1075 @@
     "followup": "Patient-level pooled analysis (Lancet 2022) of DELIVER+DAPA-HF and meta-analysis of all four SGLT2i HF trials confirmed consistent ~20% reduction in HF hospitalization across the full EF range.",
     "guideline_impact": "Changed practice: 2023 AHA/ACC/HFSA focused update elevated SGLT2i to Class 2a for HFpEF/HFmrEF, the first agents with mortality+morbidity signal in HFpEF.",
     "expert_takeaway": "Ended decades of HFpEF therapeutic nihilism; SGLT2 inhibitors are the first drugs to convincingly reduce HF events across all ejection fractions, making them universal HF therapy.",
-    "sources": ["https://pubmed.ncbi.nlm.nih.gov/34449189/", "https://pubmed.ncbi.nlm.nih.gov/36027570/"]
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/34449189/",
+      "https://pubmed.ncbi.nlm.nih.gov/36027570/"
+    ]
   },
-
-  "UKPDS 33": {"trial":"UKPDS 33 (Lancet 1998)","primary_finding":"Intensive glycemic control (sulfonylurea/insulin, median HbA1c 7.0% vs 7.9%) reduced any diabetes-related endpoint by 12% (RR 0.88, 95% CI 0.79-0.99) over 10 years, driven by 25% microvascular reduction; no significant MI or mortality effect during trial.","population":"n=3,867 newly diagnosed T2DM patients (mean age 54), recruited 1977-1991 across 23 UK centers.","critique":"Macrovascular benefit was not significant during the trial (MI RR 0.84, p=0.052); hypoglycemia and weight gain were substantially higher in the intensive arm.","followup":"UKPDS 80 (NEJM 2008) 10-year post-trial follow-up showed 'legacy effect': 15% MI reduction and 13% all-cause mortality reduction despite HbA1c convergence within 1 year of trial end.","guideline_impact":"Anchored ADA HbA1c <7% target for most adults with T2DM; established intensive glycemic control as standard for newly diagnosed disease.","expert_takeaway":null,"sources":["https://pubmed.ncbi.nlm.nih.gov/9742976/","https://www.nejm.org/doi/full/10.1056/NEJMoa0806470"]},
-  "ACCORD": {"trial":"ACCORD (NEJM 2008)","primary_finding":"Intensive glycemic control (HbA1c target <6.0%) increased all-cause mortality vs standard (5.0% vs 4.0%; HR 1.22, 95% CI 1.01-1.46) and CV mortality (HR 1.35); glycemia arm stopped at 3.5 years.","population":"n=10,251 with T2DM, mean age 62, median HbA1c 8.1%, with established CVD or >=2 CV risk factors; mean diabetes duration 10 years.","critique":"Excess mortality was NOT explained by severe hypoglycemia in mediation analyses; tracked instead with rapid HbA1c lowering and treatment resistance, with multidrug insulin intensification as a candidate mechanism.","followup":"ACCORDION (Diabetes Care 2016) 9-year follow-up showed CV mortality signal attenuated (HR 1.20) but persisted; sustained retinopathy benefit preserved.","guideline_impact":"Drove ADA Standards of Care to abandon universal near-normal HbA1c targets; established individualized targets (7-8%) for older patients with long-standing diabetes and high CV risk.","expert_takeaway":"Riddle/Boyko in Diabetes Care: the lesson is not to fear tight control, but that aggressive multidrug intensification in patients resistant to control may itself be harmful — target the patient, not the number.","sources":["https://pubmed.ncbi.nlm.nih.gov/18539917/","https://diabetesjournals.org/care/article/33/12/2722/39250/"]},
-  "EMPA-REG OUTCOME": {"trial":"EMPA-REG OUTCOME (NEJM 2015)","primary_finding":"Empagliflozin reduced 3-point MACE from 12.1% to 10.5% (HR 0.86, 95% CI 0.74-0.99); driven entirely by 38% CV mortality reduction (HR 0.62, NNT 45 over 3.1 years); HF hospitalization fell 35%.","population":"n=7,020 with T2DM and established ASCVD; HbA1c 7-10%, eGFR >=30; ~25% had prior HF.","critique":"CV mortality benefit emerged within months - too fast for atherosclerosis modification - and stroke trended nonsignificantly higher (HR 1.18); editorialists raised the 'diuretic hypothesis' that hemodynamic, not metabolic, effects drove the signal.","followup":"EMPEROR-Reduced/Preserved and DAPA-HF extended HF benefit to non-diabetics; EMPA-KIDNEY confirmed renal protection independent of diabetes.","guideline_impact":"Triggered 2018 ADA/EASD consensus making SGLT2i first-line add-on to metformin in T2DM with established ASCVD or HF, displacing the glucocentric paradigm.","expert_takeaway":"Inzucchi and others argued the rapid mortality curve separation pointed to hemodynamic/cardiorenal mechanisms rather than glycemic effects, fundamentally reframing SGLT2i as cardiorenal drugs.","sources":["https://pubmed.ncbi.nlm.nih.gov/26378978/","https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2015/09/17/13/29/EMPA-REG-OUTCOME"]},
-  "STEP-1": {"trial":"STEP-1 (NEJM 2021)","primary_finding":"Semaglutide 2.4 mg weekly produced -14.9% body weight change vs -2.4% with placebo (-12.4 pp, 95% CI -13.4 to -11.5); 86% achieved >=5% loss, 50% >=15% loss at 68 weeks.","population":"n=1,961 adults with BMI >=30 (or >=27 with comorbidity), no diabetes; mean BMI 38, ~74% women; all received intensive lifestyle counseling.","critique":"Substantial GI adverse events drove 7% discontinuation; STEP-4/extension data showed two-thirds of weight regained within 1 year of stopping — raises chronic-therapy and cost-sustainability concerns.","followup":"STEP-4 (JAMA 2021) demonstrated weight regain on discontinuation; STEP-5 (Nat Med 2022) showed sustained -15.2% loss at 2 years on continued therapy.","guideline_impact":"FDA approval June 2021 as Wegovy; incorporated into 2023 AACE obesity algorithm and 2024 ADA Standards as preferred pharmacotherapy for obesity with weight-related comorbidity.","expert_takeaway":"Curbsiders Obesity Medicine: GLP-1s reframe obesity as a chronic relapsing disease requiring indefinite therapy, not a willpower failure - but cost and access remain the bottleneck.","sources":["https://pubmed.ncbi.nlm.nih.gov/33567185/","https://thecurbsiders.com/curbsiders-podcast/324"]},
-  "SELECT": {"trial":"SELECT (NEJM 2023)","primary_finding":"Semaglutide 2.4 mg weekly reduced composite of CV death, nonfatal MI, or nonfatal stroke from 8.0% to 6.5% (HR 0.80, 95% CI 0.72-0.90); NNT 67 over mean 34 months in non-diabetic patients with obesity and CVD.","population":"n=17,604 adults >=45yo with BMI >=27 and established CVD (prior MI, stroke, or symptomatic PAD), no diabetes (HbA1c <6.5%).","critique":"Prespecified mediation analyses (Lancet 2024-2025) showed the MACE benefit was NOT fully explained by weight loss - separation occurred too early - leaving the mechanism (anti-inflammatory? direct vascular?) unresolved.","followup":"Lancet 2024 analyses showed benefit in HF subgroup, independent of weight loss magnitude, and across BMI/waist circumference strata.","guideline_impact":"FDA expanded semaglutide 2.4 mg label in 2024 to include CV risk reduction in obesity without diabetes; 2024 AHA scientific statement positioned GLP-1RA as CV-preventive therapy in obesity.","expert_takeaway":"Krumholz (JACC editorial 2024): GLP-1RAs are poised to revolutionize CV care because benefit appears partially weight-loss-independent, opening a new pharmacologic lever distinct from statins or antihypertensives.","sources":["https://pubmed.ncbi.nlm.nih.gov/37952131/","https://www.acc.org/About-ACC/Press-Releases/2024/08/30/11/41/Semaglutide-Improves-Heart-Health-Outcomes"]},
-  "EINSTEIN / RE-COVER": {"trial":"EINSTEIN-DVT/PE (NEJM 2010, 2012) and RE-COVER (NEJM 2009)","primary_finding":"Rivaroxaban noninferior to enoxaparin/VKA for VTE recurrence (DVT 2.1% vs 3.0%; PE 2.1% vs 1.8%); dabigatran noninferior to warfarin (2.4% vs 2.1%, HR 1.10). Major bleeding similar or lower (rivaroxaban PE 1.1% vs 2.2%, HR 0.49).","population":"EINSTEIN-DVT n=3,449; EINSTEIN-PE n=4,832; RE-COVER n=2,539 acute VTE - all required parenteral lead-in for dabigatran, single-drug oral for rivaroxaban.","critique":"Active-cancer and severe-renal-impairment patients underrepresented; dabigatran arm required 5-10 day parenteral lead-in (unlike rivaroxaban's single-drug approach), complicating real-world DOAC equivalence claims.","followup":"Pooled EINSTEIN analysis (Blood 2014) and Hokusai-VTE (edoxaban) + AMPLIFY (apixaban) confirmed DOAC class noninferiority; AMPLIFY uniquely showed reduced major bleeding without lead-in.","guideline_impact":"Anchored 2016 CHEST and 2020 ASH VTE guidelines recommending DOACs over VKA as first-line for VTE without cancer; rivaroxaban/apixaban preferred for single-drug convenience.","expert_takeaway":"ASH 2020 VTE guidelines: DOACs end the era of warfarin bridging for uncomplicated VTE - the practical question is now drug selection by comorbidity (renal, cancer, antiphospholipid), not whether to use a DOAC.","sources":["https://pubmed.ncbi.nlm.nih.gov/22449293/","https://ashpublications.org/bloodadvances/article/4/19/4693/463998/"]},
-  "CARAVAGGIO": {"trial":"CARAVAGGIO (NEJM 2020)","primary_finding":"Apixaban noninferior to dalteparin for recurrent VTE in cancer (5.6% vs 7.9%; HR 0.63, 95% CI 0.37-1.07; p<0.001 for noninferiority) over 6 months; major bleeding similar (3.8% vs 4.0%).","population":"n=1,170 adults with active cancer (any site except primary brain) and acute symptomatic or incidental proximal DVT/PE; 20% GI cancer, 32% lung, ~67% metastatic.","critique":"ASH/ASCO commentators noted GI cancer subgroup was the key novelty (HOKUSAI-VTE-CANCER and SELECT-D had shown excess GI bleeding with edoxaban/rivaroxaban) - CARAVAGGIO did not show that excess, but primary brain tumors and luminal GI cancers with intact tumors were excluded, leaving the highest-bleeding subsets untested.","followup":"CARAVAGGIO subgroup analyses (J Thromb Haemost 2021) confirmed consistent benefit across cancer types including GI; informed ISTH 2024 cancer-VTE guidance.","guideline_impact":"ASH 2021 cancer-VTE guidelines elevated apixaban, edoxaban, and rivaroxaban over LMWH as first-line for cancer-associated VTE; ASCO 2023 update concordant.","expert_takeaway":"ASH 2021 guideline panel (Lyman et al, Blood Advances): CARAVAGGIO's GI-bleeding safety signal made apixaban the preferred DOAC for cancer-VTE patients with luminal GI malignancy.","sources":["https://pubmed.ncbi.nlm.nih.gov/32223112/","https://ashpublications.org/bloodadvances/article/5/4/927/475194/"]},
-  "KEYNOTE-189": {"trial":"KEYNOTE-189 (NEJM 2018)","primary_finding":"Pembrolizumab + pemetrexed/platinum vs chemo alone improved 12-month OS from 49.4% to 69.2% (HR 0.49, 95% CI 0.38-0.64) and median PFS from 4.9 to 8.8 months; OS benefit consistent across all PD-L1 strata including TPS <1%.","population":"n=616 with previously untreated metastatic nonsquamous NSCLC without EGFR or ALK alterations; any PD-L1 expression; ECOG 0-1.","critique":"ASCO Post noted ~50% placebo-arm crossover to pembrolizumab confounds long-term OS interpretation; immune-related AEs (pneumonitis, nephritis, colitis) added new toxicity burden, and PD-L1 negative subgroup benefit (HR 0.59) was real but smaller than PD-L1 high.","followup":"5-year update (JCO 2023) confirmed sustained OS benefit (19.4% vs 11.3% at 5 years); KEYNOTE-407 replicated in squamous NSCLC; KEYNOTE-024 established monotherapy in PD-L1 >=50%.","guideline_impact":"FDA approved August 2018; NCCN and ESMO immediately made pembrolizumab + chemo Category 1 first-line for nonsquamous NSCLC regardless of PD-L1, establishing the chemo-immunotherapy paradigm now standard across solid tumors.","expert_takeaway":"ASCO Post: KEYNOTE-189 ended single-agent cytotoxic chemo as first-line standard in metastatic NSCLC and proved PD-L1 expression alone does not predict who benefits from ICI+chemo combinations.","sources":["https://pubmed.ncbi.nlm.nih.gov/29658856/","https://ascopost.com/news/march-2023/addition-of-pembrolizumab-to-pemetrexedplatinum-in-the-first-line-treatment-of-metastatic-nonsquamous-nsclc-5-year-outcomes-in-the-keynote-189-study/"]},
-
-  "POET": {"trial":"POET (NEJM 2019)","primary_finding":"After >=10d IV antibiotics, switch to oral therapy noninferior to continued IV for 6-month composite of death, unplanned cardiac surgery, embolic events, or relapse (9.0% vs 12.1%; -3.1%, 95% CI -8.2 to 1.9).","population":"n=400 Danish adults with stable left-sided IE due to streptococci, E. faecalis, S. aureus, or CoNS, after median 17d of IV therapy.","critique":"Highly selected, mostly streptococcal, native-valve, low-MRSA Danish cohort with TEE-confirmed stabilization and twice-weekly clinic follow-up; outcomes hinge on that intensive monitoring, not the pills.","followup":"5-year POET (NEJM 2022) showed sustained noninferiority (composite 32.8% oral vs 45.2% IV); no late relapses attributable to oral therapy.","guideline_impact":"Cited in 2023 ESC and 2024 AHA/IDSA infective endocarditis updates endorsing partial oral step-down in carefully selected stable patients after initial IV therapy.","expert_takeaway":"Curbsiders #312 (Serota): comfortable finishing courses orally when benefit outweighs IV risk, but oral regimens are complex and require MORE follow-up, not less.","sources":["https://pubmed.ncbi.nlm.nih.gov/30152252/","https://thecurbsiders.com/curbsiders-podcast/312"]},
-  "Study 31": {"trial":"TBTC Study 31 / ACTG A5349 (NEJM 2021)","primary_finding":"4-month rifapentine-moxifloxacin regimen noninferior to standard 6-month therapy for unfavorable outcome at 12 months (15.5% vs 14.6%; difference 1.0%, 95% CI -2.6 to 4.5); rifapentine-without-moxi arm failed noninferiority.","population":"n=2,516 adolescents/adults with drug-susceptible pulmonary TB across 13 countries; ~8% with HIV (CD4 >=100).","critique":"Excluded children <12, pregnant patients, and CD4 <100; moxifloxacin's QT effects and rifapentine cost/supply limit scale-up in high-burden low-resource settings.","followup":"2024 risk-stratified post-hoc analysis (Nat Commun) showed low-risk patients (smear-neg, non-cavitary) may do well on even shorter regimens, informing trial 31-PRIME.","guideline_impact":"Basis for 2022 CDC MMWR interim guidance and 2022 WHO update recommending 4-month rifapentine-moxifloxacin as alternative first-line for drug-susceptible pulmonary TB age >=12.","expert_takeaway":null,"sources":["https://pubmed.ncbi.nlm.nih.gov/33951360/","https://www.cdc.gov/mmwr/volumes/71/wr/mm7108a1.htm"]},
-  "ANDROMEDA-SHOCK": {"trial":"ANDROMEDA-SHOCK (JAMA 2019)","primary_finding":"Capillary refill time-targeted resuscitation did not significantly reduce 28-day mortality vs lactate-targeted (34.9% vs 43.4%; HR 0.75, 95% CI 0.55-1.02; p=0.06) but yielded less organ dysfunction at 72h and less fluid given.","population":"n=424 adults with septic shock within 4 hours of vasopressor initiation across 28 ICUs in 5 Latin American countries.","critique":"Underpowered for hard mortality endpoint; EM:RAP/REBEL EM editorialists flagged the open-label CRT exam's subjectivity and the unblinded protocol's potential to bias secondary outcomes.","followup":"2020 Bayesian reanalysis (AJRCCM) showed >90% posterior probability of mortality benefit across all priors; ANDROMEDA-SHOCK-2 launched 2022 to confirm.","guideline_impact":"Surviving Sepsis 2021 added a weak recommendation to use capillary refill time in addition to or instead of lactate to guide resuscitation in septic shock.","expert_takeaway":"REBEL EM (Rezaie): a borderline-positive frequentist trial with a robust Bayesian signal; CRT is cheap, bedside, and reasonable to add alongside (not replace) lactate clearance.","sources":["https://pubmed.ncbi.nlm.nih.gov/30772908/","https://rebelem.com/andromeda-shock-peripheral-perfusion-vs-serum-lactate-in-septic-shock/"]},
-  "REPRIEVE": {"trial":"REPRIEVE (NEJM 2023)","primary_finding":"Pitavastatin 4mg reduced MACE (4.81 vs 7.32 per 1000 person-years; HR 0.65, 95% CI 0.48-0.90) in PWH at low-to-moderate ASCVD risk; stopped early for efficacy at median 5.1y. NNT ~21 over 5y.","population":"n=7,769 PWH age 40-75 on ART with CD4 >=100, baseline 10-yr ASCVD risk ~4.5%, median LDL 108 mg/dL.","critique":"Stopped early (can inflate effect); modest absolute risk reduction in a low-risk cohort and pitavastatin's higher cost vs generic statins challenge cost-effectiveness, though pitavastatin avoids the PI-statin interaction problem.","followup":"2024 NEJM trial update confirmed durable benefit; secondary analyses showed effect partly independent of LDL lowering, hinting at anti-inflammatory mechanism.","guideline_impact":"Drove 2024 DHHS ARV guidelines and 2025 ESC/EAS focused update recommending moderate-intensity statin for primary prevention in PWH >=40 with ASCVD risk >=5%.","expert_takeaway":"Curbsiders #418: practice-changing for PWH at low-moderate risk, but real-world uptake hinges on access to a statin without protease-inhibitor interaction.","sources":["https://pubmed.ncbi.nlm.nih.gov/37486775/","https://thecurbsiders.com/curbsiders-podcast/418-digest-tofurkey-edition-semaglutide-for-hfpef-tcas-for-ibs-aspirin-vs-clopidogrel-after-pci-pitavastatin-for-hiv-starchy-vegetables-weight-gain-heavy-metals-in-cannabis"]},
-  "PROSEVA": {"trial":"PROSEVA (NEJM 2013)","primary_finding":"Prone positioning >=16h/day cut 28-day mortality from 32.8% to 16.0% (HR 0.39, 95% CI 0.25-0.63; NNT ~6) and 90-day mortality from 41.0% to 23.6% in severe ARDS (P/F <150 on FiO2 >=0.6, PEEP >=5).","population":"n=466 adults with severe ARDS after 12-24h stabilization on lung-protective ventilation, across 27 French and 1 Spanish ICUs.","critique":"All participating ICUs had >5 years of proning experience and used strict eligibility/stabilization window; PulmPEEPs and ATS commentators noted the unusually large effect may not transport to less experienced units.","followup":"COVID-era observational data plus PROFLO and 2024 PROSEVA-style meta-analyses confirmed mortality benefit holds in moderate-to-severe ARDS when proning is early and prolonged.","guideline_impact":"Anchors ATS/ESICM/SCCM 2023 ARDS guideline strong recommendation for >=16h/day prone positioning in moderate-to-severe ARDS (P/F <150).","expert_takeaway":"PulmPEEPs RFJC: dose matters - the trial's effect required early initiation, >=16h sessions, and protocolized criteria for stopping; intermittent or rescue proning is not the same intervention.","sources":["https://pubmed.ncbi.nlm.nih.gov/23688302/","https://www.pulmpeeps.com/2024/08/14/81-rfjc-12-ards-series-proseva/"]},
-  "PROWESS-SHOCK": {"trial":"PROWESS-SHOCK (NEJM 2012)","primary_finding":"Drotrecogin alfa did not reduce 28-day mortality vs placebo in septic shock (26.4% vs 24.2%; RR 1.09, 95% CI 0.92-1.28; p=0.31) or 90-day mortality (34.1% vs 32.7%).","population":"n=1,696 adults with septic shock on vasopressors for >=4h despite fluid resuscitation, across 208 ICUs in 26 countries.","critique":"Wenzel/Edmond (NEJM 2012) noted placebo mortality (24%) was far lower than in original PROWESS (~31%), reflecting improved baseline sepsis care - the apparent 2001 benefit likely never existed once modern bundles arrived.","followup":"Led to global market withdrawal of Xigris by Eli Lilly (Oct 2011) and FDA approval withdrawal; reshaped sepsis trial methodology around standardized care bundles.","guideline_impact":"Removed activated protein C from Surviving Sepsis Campaign guidelines; cautionary tale anchoring SSC's evidence-thresholds for adjunctive sepsis therapies.","expert_takeaway":"Wenzel/Edmond editorial: the original PROWESS benefit was likely an artifact of suboptimal control-arm care; rigorous replication killed a billion-dollar drug.","sources":["https://pubmed.ncbi.nlm.nih.gov/22616830/","https://pubmed.ncbi.nlm.nih.gov/22616829/"]},
-  "ARMA": {"trial":"ARMA / ARDSNet (NEJM 2000)","primary_finding":"Low tidal volume ventilation (6 mL/kg PBW, plateau <=30) cut hospital mortality from 39.8% to 31.0% (absolute reduction 8.8%, p=0.007; NNT ~11) and increased ventilator-free days (12 vs 10).","population":"n=861 adults with ALI/ARDS (P/F <=300, bilateral infiltrates, no LA hypertension) at 10 ARDSNet centers.","critique":"Stopped early at 4th interim analysis; control arm of 12 mL/kg with plateau allowance up to 50 cmH2O was higher than contemporary practice surveys suggested, prompting persistent 'straw-man comparator' debate.","followup":"Subsequent meta-analyses (Petrucci 2013 Cochrane) and 2018 LUNG SAFE observational study confirmed survival benefit but showed real-world adherence to 6 mL/kg remains <60%.","guideline_impact":"Established 4-8 mL/kg PBW with plateau <=30 cmH2O as ATS/ESICM/SCCM standard of care for all ARDS, strongest recommendation in 2023 ARDS guideline.","expert_takeaway":"ATS Reading Series: the lasting lesson isn't '6 vs 12' - it's that ventilator settings themselves cause organ injury, opening the entire field of VILI and lung-protective ventilation.","sources":["https://pubmed.ncbi.nlm.nih.gov/10793162/","https://www.atsjournals.org/doi/10.1164/rccm.200208-956OC"]},
-  "RECOVERY-DEX": {"trial":"RECOVERY Dexamethasone (NEJM 2020)","primary_finding":"Dexamethasone 6mg x10d reduced 28-day mortality in hospitalized COVID-19 (22.9% vs 25.7%; RR 0.83, 95% CI 0.75-0.93). Benefit confined to those on oxygen (RR 0.82, NNT ~35) or invasive ventilation (RR 0.64, NNT ~8); none on room air.","population":"n=6,425 hospitalized UK adults with COVID-19, randomized 2:1 within RECOVERY platform.","critique":"Open-label, no placebo, mortality-only primary outcome; CHEST and IDSA noted unclear effect modifiers (age, symptom duration, immunocompromise) and the no-oxygen subgroup showed possible harm (RR 1.19).","followup":"COVID STEROID 2 (2021) tested higher 12mg dose with mixed results; REMAP-CAP confirmed steroid benefit in critical COVID; debate continues over dose and duration in 2024-2025 variants.","guideline_impact":"Drove NIH, WHO, and IDSA COVID-19 guidelines (Sept 2020) to recommend dexamethasone for hospitalized COVID requiring supplemental O2 or ventilation - within weeks of preprint.","expert_takeaway":"CIDRAP/IDSA: a platform-trial triumph showing pragmatic RCTs can change global practice in months; the no-oxygen subgroup is a reminder that 'all comers' steroid use is not supported.","sources":["https://pubmed.ncbi.nlm.nih.gov/32678530/","https://www.cidrap.umn.edu/covid-19/trial-data-support-dexamethasone-not-hydroxychloroquine-covid-19"]},
-
-  "NINDS": {"trial":"NINDS (NEJM 1995)","primary_finding":"IV alteplase within 3h of ischemic stroke onset increased favorable outcome at 90d (mRS 0-1) by ~11-13% absolute (39% vs 26%); OR 1.7; NNT ~8 for one extra functionally independent patient.","population":"n=624 with acute ischemic stroke treated within 3 hours of symptom onset; excluded recent surgery, hemorrhage on CT, SBP >185, INR >1.7.","critique":"Symptomatic ICH rose 10-fold (6.4% vs 0.6%) with no mortality reduction; 2004 reanalysis flagged baseline NIHSS imbalance favoring tPA arm, and EM critics argue the benefit shrinks once stroke severity is controlled.","followup":"1-year follow-up (NEJM 1999) confirmed durable benefit; ECASS III (2008) extended window to 4.5h, and pooled IST-3/ECASS analyses sustained the time-dependent benefit gradient.","guideline_impact":"Basis for FDA approval (1996) of alteplase and AHA/ASA Class I recommendation for IV thrombolysis within 3h (later 4.5h) of ischemic stroke onset.","expert_takeaway":"EM:RAP and First10EM remain split: stroke neurology accepts NIHSS imbalance as random, while EM commentators view tPA's benefit as fragile once baseline severity is matched.","sources":["https://pubmed.ncbi.nlm.nih.gov/7477192/","https://first10em.com/thrombolytics-for-stoke/"]},
-  "DAWN": {"trial":"DAWN (NEJM 2018)","primary_finding":"Thrombectomy 6-24h after LKW with clinical-core mismatch raised 90d functional independence (mRS 0-2) from 13% to 49% (adjusted difference 33%); NNT ~2.8 for independence.","population":"n=206 with anterior LVO (ICA/MCA-M1), LKW 6-24h prior, clinical-imaging mismatch (NIHSS >=10 with small core on CTP/MRI-DWI by age-stratified criteria).","critique":"Selection was extreme: only ~1 in 100 screened patients qualified, with very small infarct cores in elderly patients - generalizability to typical late-window strokes with larger cores is uncertain. Stopped early for efficacy, inflating effect size.","followup":"AURORA pooled analysis (Lancet 2022) with 6 late-window trials confirmed benefit across mismatch criteria; MR CLEAN-LATE and SELECT2 extended thrombectomy to larger cores and CTA-only selection.","guideline_impact":"Drove 2018 AHA/ASA Class I recommendation for thrombectomy 6-16h (DAWN/DEFUSE 3) and Class IIa for 16-24h with perfusion or DWI selection.","expert_takeaway":"Neurology Podcast and stroke editorials frame DAWN as proof that 'time is brain' is too crude - tissue, not time, defines the window in well-selected patients.","sources":["https://pubmed.ncbi.nlm.nih.gov/29129157/","https://www.thebottomline.org.uk/summaries/dawn/"]},
-  "DEFUSE 3": {"trial":"DEFUSE 3 (NEJM 2018)","primary_finding":"Thrombectomy 6-16h after LKW with perfusion mismatch (core <70 mL, mismatch ratio >=1.8) shifted mRS toward independence (OR 2.77); functional independence 45% vs 17%; NNT ~3.6.","population":"n=182 with anterior LVO, 6-16h from LKW, core <70 mL with target mismatch on RAPID-processed CTP/MRI; broader severity (NIHSS >=6) than DAWN.","critique":"Stopped early after DAWN's positive readout - only 182 of planned 476 enrolled, leaving subgroups underpowered. RAPID-processed perfusion software was effectively mandated, limiting transportability.","followup":"Subgroup analyses (Stroke 2018-2019) showed benefit even in DAWN-ineligible patients, motivating SELECT2 and ANGEL-ASPECT to extend thrombectomy to large-core (ASPECTS 3-5) infarcts.","guideline_impact":"Cornerstone of 2018 AHA/ASA Class I recommendation for 6-16h thrombectomy; informed Joint Commission Comprehensive Stroke Center metrics.","expert_takeaway":"Stroke editorialists emphasize DEFUSE 3 and DAWN are complementary - DEFUSE 3's penumbra-based selection captures patients DAWN's strict clinical-core criteria miss.","sources":["https://pubmed.ncbi.nlm.nih.gov/29364767/","https://www.ahajournals.org/doi/10.1161/STROKEAHA.118.023310"]},
-  "CLARITY-AD": {"trial":"CLARITY-AD (NEJM 2023)","primary_finding":"Lecanemab slowed 18-month CDR-SB decline by 0.45 points (1.21 vs 1.66; 27% relative reduction, p<0.001) and reduced brain amyloid by ~59 centiloids; absolute benefit small.","population":"n=1,795 adults 50-90 with early Alzheimer's (MCI or mild dementia) and amyloid confirmed by PET or CSF; ~70% ApoE4 carriers.","critique":"Lancet editorial noted 0.45-point CDR-SB delta sits well below proposed MCID (~0.98 in MCI, ~1.63 in mild AD); ARIA-E 13% / ARIA-H 17% (homozygous ApoE4 ARIA-E ~35%), with deaths in extension phase linked to anticoagulation.","followup":"Open-label extension (2024-2025) suggests sustained separation of curves; ongoing AHEAD 3-45 tests lecanemab in preclinical/pre-symptomatic amyloid-positive adults.","guideline_impact":"Drove FDA full approval (July 2023), CMS coverage with required registry, and AAN/Alzheimer's Association appropriate use recommendations mandating MRI surveillance and ApoE genotyping.","expert_takeaway":"Neurology Podcast: 'statistically clean but clinically modest' - a proof of mechanism whose real-world value depends on infusion logistics, ARIA monitoring, and patient selection.","sources":["https://pubmed.ncbi.nlm.nih.gov/36449413/","https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)02480-1/fulltext"]},
-  "WAKE-UP": {"trial":"WAKE-UP (NEJM 2018)","primary_finding":"MRI-guided alteplase in unknown-onset stroke with DWI-positive/FLAIR-negative mismatch increased favorable 90d outcome (mRS 0-1) from 41.8% to 53.3% (OR 1.61; adjusted absolute difference ~11.5%); NNT ~9.","population":"n=503 adults with ischemic stroke of unknown onset (mostly wake-up), DWI/FLAIR mismatch on MRI suggesting onset <4.5h, otherwise eligible for thrombolysis.","critique":"Stopped early for funding loss after 503 of planned 800 enrolled, leaving safety underpowered - numerically higher mortality (4.1% vs 1.2%) and sICH (2.0% vs 0.4%) in alteplase arm could become significant. MRI selection is logistically demanding outside academic centers.","followup":"EXTEND (NEJM 2019) replicated benefit using CT perfusion mismatch up to 9h; individual-patient meta-analyses (Lancet 2020) confirmed benefit across imaging-selected unknown-onset and late-window patients.","guideline_impact":"AHA/ASA 2019 update added Class IIa recommendation for alteplase in wake-up/unknown-onset stroke with DWI-FLAIR mismatch within 4.5h of symptom recognition.","expert_takeaway":"Neurology Podcast frames WAKE-UP as the death of 'last-known-well as gatekeeper' - imaging biomarkers replace the clock for thrombolysis eligibility in selected patients.","sources":["https://pubmed.ncbi.nlm.nih.gov/29766770/","https://www.wikijournalclub.org/wiki/WAKE-UP"]},
-  "ACCENT I": {"trial":"ACCENT I (Lancet 2002)","primary_finding":"Maintenance infliximab (5 or 10 mg/kg every 8 weeks) sustained remission at week 30 in 39-45% vs 21% with placebo (OR 2.7, 95% CI 1.6-4.6); median time to loss of response 38-54+ weeks vs 19 weeks.","population":"n=573 adults with moderate-to-severe Crohn's disease (CDAI >=220) who responded at week 2 to a single 5 mg/kg infliximab induction infusion.","critique":"Only week-2 responders were randomized, so the trial answers a conditional question (maintenance in responders) and overstates the population-level benefit; ~28% lost response by week 54 and antibodies-to-infliximab predicted failure, foreshadowing the immunogenicity problem.","followup":"ACCENT II (NEJM 2004) confirmed maintenance benefit in fistulizing disease; SONIC (NEJM 2010) showed combination with azathioprine outperformed monotherapy, addressing the immunogenicity gap.","guideline_impact":"Established scheduled (not episodic) anti-TNF dosing as the standard in AGA, ACG, and ECCO Crohn's guidelines; underpins current AGA 2025 living guideline on moderate-to-severe Crohn's.","expert_takeaway":"AGA editorialists framed ACCENT I as proof that scheduled dosing prevents immunogenicity and maintenance failure - episodic infliximab is now considered substandard care.","sources":["https://pubmed.ncbi.nlm.nih.gov/12047962/","https://www.gastrojournal.org/article/S0016-5085(25)06091-3/fulltext"]},
-  "ANSWER": {"trial":"ANSWER (Lancet 2018)","primary_finding":"Long-term IV albumin (40 g twice weekly x2 wk, then weekly) plus standard care reduced 18-month all-cause mortality from 22% to 17% (HR 0.62, 95% CI 0.40-0.95); NNT ~7 to prevent one death.","population":"n=431 Italian adults with cirrhosis and uncomplicated ascites on stable diuretics (spironolactone >=200 mg + furosemide >=25 mg).","critique":"Open-label, unblinded design with secondary endpoints at risk of detection bias; cost (~10,000 euro/patient-year) and infusion logistics led AASLD and Lancet correspondence to question generalizability beyond Italian healthcare context.","followup":"MACHT (J Hepatol 2018) showed midodrine-albumin had no mortality benefit pre-transplant; ATTIRE (NEJM 2021) found no benefit of targeted albumin infusion in hospitalized decompensated cirrhosis, narrowing the indication.","guideline_impact":"EASL 2018 cirrhosis guideline added long-term albumin as conditional recommendation in uncomplicated ascites; AASLD 2021 declined to endorse, citing cost-effectiveness and ATTIRE's neutral hospitalized data.","expert_takeaway":"AASLD commentators view ANSWER as hypothesis-generating - the outpatient ascites signal is real but ATTIRE's inpatient null result means albumin is not a universal disease-modifier.","sources":["https://pubmed.ncbi.nlm.nih.gov/29861076/","https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(18)30948-6/abstract"]},
-  "STOPAH": {"trial":"STOPAH (NEJM 2015)","primary_finding":"In severe alcoholic hepatitis (Maddrey DF >=32), prednisolone showed nonsignificant 28-day mortality reduction (14% vs 17%, OR 0.72, 95% CI 0.52-1.01, p=0.06); pentoxifylline had no effect; no benefit at 90d or 1yr for either drug.","population":"n=1,103 adults with clinical severe alcoholic hepatitis (bilirubin >80 umol/L, DF >=32) at 65 UK hospitals; 2x2 factorial design.","critique":"Primary endpoint missed conventional significance, but multivariate adjustment shifted prednisolone OR to 0.61 (p=0.015) - editorialists split on whether to trust the unadjusted null or the post-hoc adjusted positive. Serious infections doubled (13% vs 7%) with steroids.","followup":"Individual patient-data meta-analysis (Gastroenterology 2018) combining STOPAH with prior trials confirmed ~20% relative short-term mortality reduction with steroids; Lille score still recommended at day 7 to identify nonresponders.","guideline_impact":"AASLD 2019/2024 alcohol-associated liver disease guidance retains prednisolone for severe AH (DF >=32 or MELD >20) without infection, with mandatory Lille reassessment at day 7 and stop-rules.","expert_takeaway":"AASLD editorials and GI podcasts converge on a nuanced read: prednisolone buys ~28-day survival in carefully selected, infection-free severe AH, but is not disease-modifying and demands early Lille-guided withdrawal.","sources":["https://pubmed.ncbi.nlm.nih.gov/25901427/","https://www.wikijournalclub.org/wiki/STOPAH"]}
+  "UKPDS 33": {
+    "trial": "UKPDS 33 (Lancet 1998)",
+    "primary_finding": "Intensive glycemic control (sulfonylurea/insulin, median HbA1c 7.0% vs 7.9%) reduced any diabetes-related endpoint by 12% (RR 0.88, 95% CI 0.79-0.99) over 10 years, driven by 25% microvascular reduction; no significant MI or mortality effect during trial.",
+    "population": "n=3,867 newly diagnosed T2DM patients (mean age 54), recruited 1977-1991 across 23 UK centers.",
+    "critique": "Macrovascular benefit was not significant during the trial (MI RR 0.84, p=0.052); hypoglycemia and weight gain were substantially higher in the intensive arm.",
+    "followup": "UKPDS 80 (NEJM 2008) 10-year post-trial follow-up showed 'legacy effect': 15% MI reduction and 13% all-cause mortality reduction despite HbA1c convergence within 1 year of trial end.",
+    "guideline_impact": "Anchored ADA HbA1c <7% target for most adults with T2DM; established intensive glycemic control as standard for newly diagnosed disease.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/9742976/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa0806470"
+    ]
+  },
+  "ACCORD": {
+    "trial": "ACCORD (NEJM 2008)",
+    "primary_finding": "Intensive glycemic control (HbA1c target <6.0%) increased all-cause mortality vs standard (5.0% vs 4.0%; HR 1.22, 95% CI 1.01-1.46) and CV mortality (HR 1.35); glycemia arm stopped at 3.5 years.",
+    "population": "n=10,251 with T2DM, mean age 62, median HbA1c 8.1%, with established CVD or >=2 CV risk factors; mean diabetes duration 10 years.",
+    "critique": "Excess mortality was NOT explained by severe hypoglycemia in mediation analyses; tracked instead with rapid HbA1c lowering and treatment resistance, with multidrug insulin intensification as a candidate mechanism.",
+    "followup": "ACCORDION (Diabetes Care 2016) 9-year follow-up showed CV mortality signal attenuated (HR 1.20) but persisted; sustained retinopathy benefit preserved.",
+    "guideline_impact": "Drove ADA Standards of Care to abandon universal near-normal HbA1c targets; established individualized targets (7-8%) for older patients with long-standing diabetes and high CV risk.",
+    "expert_takeaway": "Riddle/Boyko in Diabetes Care: the lesson is not to fear tight control, but that aggressive multidrug intensification in patients resistant to control may itself be harmful — target the patient, not the number.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/18539917/",
+      "https://diabetesjournals.org/care/article/33/12/2722/39250/"
+    ]
+  },
+  "EMPA-REG OUTCOME": {
+    "trial": "EMPA-REG OUTCOME (NEJM 2015)",
+    "primary_finding": "Empagliflozin reduced 3-point MACE from 12.1% to 10.5% (HR 0.86, 95% CI 0.74-0.99); driven entirely by 38% CV mortality reduction (HR 0.62, NNT 45 over 3.1 years); HF hospitalization fell 35%.",
+    "population": "n=7,020 with T2DM and established ASCVD; HbA1c 7-10%, eGFR >=30; ~25% had prior HF.",
+    "critique": "CV mortality benefit emerged within months - too fast for atherosclerosis modification - and stroke trended nonsignificantly higher (HR 1.18); editorialists raised the 'diuretic hypothesis' that hemodynamic, not metabolic, effects drove the signal.",
+    "followup": "EMPEROR-Reduced/Preserved and DAPA-HF extended HF benefit to non-diabetics; EMPA-KIDNEY confirmed renal protection independent of diabetes.",
+    "guideline_impact": "Triggered 2018 ADA/EASD consensus making SGLT2i first-line add-on to metformin in T2DM with established ASCVD or HF, displacing the glucocentric paradigm.",
+    "expert_takeaway": "Inzucchi and others argued the rapid mortality curve separation pointed to hemodynamic/cardiorenal mechanisms rather than glycemic effects, fundamentally reframing SGLT2i as cardiorenal drugs.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/26378978/",
+      "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2015/09/17/13/29/EMPA-REG-OUTCOME"
+    ]
+  },
+  "STEP-1": {
+    "trial": "STEP-1 (NEJM 2021)",
+    "primary_finding": "Semaglutide 2.4 mg weekly produced -14.9% body weight change vs -2.4% with placebo (-12.4 pp, 95% CI -13.4 to -11.5); 86% achieved >=5% loss, 50% >=15% loss at 68 weeks.",
+    "population": "n=1,961 adults with BMI >=30 (or >=27 with comorbidity), no diabetes; mean BMI 38, ~74% women; all received intensive lifestyle counseling.",
+    "critique": "Substantial GI adverse events drove 7% discontinuation; STEP-4/extension data showed two-thirds of weight regained within 1 year of stopping — raises chronic-therapy and cost-sustainability concerns.",
+    "followup": "STEP-4 (JAMA 2021) demonstrated weight regain on discontinuation; STEP-5 (Nat Med 2022) showed sustained -15.2% loss at 2 years on continued therapy.",
+    "guideline_impact": "FDA approval June 2021 as Wegovy; incorporated into 2023 AACE obesity algorithm and 2024 ADA Standards as preferred pharmacotherapy for obesity with weight-related comorbidity.",
+    "expert_takeaway": "Curbsiders Obesity Medicine: GLP-1s reframe obesity as a chronic relapsing disease requiring indefinite therapy, not a willpower failure - but cost and access remain the bottleneck.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/33567185/",
+      "https://thecurbsiders.com/curbsiders-podcast/324"
+    ]
+  },
+  "SELECT": {
+    "trial": "SELECT (NEJM 2023)",
+    "primary_finding": "Semaglutide 2.4 mg weekly reduced composite of CV death, nonfatal MI, or nonfatal stroke from 8.0% to 6.5% (HR 0.80, 95% CI 0.72-0.90); NNT 67 over mean 34 months in non-diabetic patients with obesity and CVD.",
+    "population": "n=17,604 adults >=45yo with BMI >=27 and established CVD (prior MI, stroke, or symptomatic PAD), no diabetes (HbA1c <6.5%).",
+    "critique": "Prespecified mediation analyses (Lancet 2024-2025) showed the MACE benefit was NOT fully explained by weight loss - separation occurred too early - leaving the mechanism (anti-inflammatory? direct vascular?) unresolved.",
+    "followup": "Lancet 2024 analyses showed benefit in HF subgroup, independent of weight loss magnitude, and across BMI/waist circumference strata.",
+    "guideline_impact": "FDA expanded semaglutide 2.4 mg label in 2024 to include CV risk reduction in obesity without diabetes; 2024 AHA scientific statement positioned GLP-1RA as CV-preventive therapy in obesity.",
+    "expert_takeaway": "Krumholz (JACC editorial 2024): GLP-1RAs are poised to revolutionize CV care because benefit appears partially weight-loss-independent, opening a new pharmacologic lever distinct from statins or antihypertensives.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/37952131/",
+      "https://www.acc.org/About-ACC/Press-Releases/2024/08/30/11/41/Semaglutide-Improves-Heart-Health-Outcomes"
+    ]
+  },
+  "EINSTEIN / RE-COVER": {
+    "trial": "EINSTEIN-DVT/PE (NEJM 2010, 2012) and RE-COVER (NEJM 2009)",
+    "primary_finding": "Rivaroxaban noninferior to enoxaparin/VKA for VTE recurrence (DVT 2.1% vs 3.0%; PE 2.1% vs 1.8%); dabigatran noninferior to warfarin (2.4% vs 2.1%, HR 1.10). Major bleeding similar or lower (rivaroxaban PE 1.1% vs 2.2%, HR 0.49).",
+    "population": "EINSTEIN-DVT n=3,449; EINSTEIN-PE n=4,832; RE-COVER n=2,539 acute VTE - all required parenteral lead-in for dabigatran, single-drug oral for rivaroxaban.",
+    "critique": "Active-cancer and severe-renal-impairment patients underrepresented; dabigatran arm required 5-10 day parenteral lead-in (unlike rivaroxaban's single-drug approach), complicating real-world DOAC equivalence claims.",
+    "followup": "Pooled EINSTEIN analysis (Blood 2014) and Hokusai-VTE (edoxaban) + AMPLIFY (apixaban) confirmed DOAC class noninferiority; AMPLIFY uniquely showed reduced major bleeding without lead-in.",
+    "guideline_impact": "Anchored 2016 CHEST and 2020 ASH VTE guidelines recommending DOACs over VKA as first-line for VTE without cancer; rivaroxaban/apixaban preferred for single-drug convenience.",
+    "expert_takeaway": "ASH 2020 VTE guidelines: DOACs end the era of warfarin bridging for uncomplicated VTE - the practical question is now drug selection by comorbidity (renal, cancer, antiphospholipid), not whether to use a DOAC.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/22449293/",
+      "https://ashpublications.org/bloodadvances/article/4/19/4693/463998/"
+    ]
+  },
+  "CARAVAGGIO": {
+    "trial": "CARAVAGGIO (NEJM 2020)",
+    "primary_finding": "Apixaban noninferior to dalteparin for recurrent VTE in cancer (5.6% vs 7.9%; HR 0.63, 95% CI 0.37-1.07; p<0.001 for noninferiority) over 6 months; major bleeding similar (3.8% vs 4.0%).",
+    "population": "n=1,170 adults with active cancer (any site except primary brain) and acute symptomatic or incidental proximal DVT/PE; 20% GI cancer, 32% lung, ~67% metastatic.",
+    "critique": "ASH/ASCO commentators noted GI cancer subgroup was the key novelty (HOKUSAI-VTE-CANCER and SELECT-D had shown excess GI bleeding with edoxaban/rivaroxaban) - CARAVAGGIO did not show that excess, but primary brain tumors and luminal GI cancers with intact tumors were excluded, leaving the highest-bleeding subsets untested.",
+    "followup": "CARAVAGGIO subgroup analyses (J Thromb Haemost 2021) confirmed consistent benefit across cancer types including GI; informed ISTH 2024 cancer-VTE guidance.",
+    "guideline_impact": "ASH 2021 cancer-VTE guidelines elevated apixaban, edoxaban, and rivaroxaban over LMWH as first-line for cancer-associated VTE; ASCO 2023 update concordant.",
+    "expert_takeaway": "ASH 2021 guideline panel (Lyman et al, Blood Advances): CARAVAGGIO's GI-bleeding safety signal made apixaban the preferred DOAC for cancer-VTE patients with luminal GI malignancy.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/32223112/",
+      "https://ashpublications.org/bloodadvances/article/5/4/927/475194/"
+    ]
+  },
+  "KEYNOTE-189": {
+    "trial": "KEYNOTE-189 (NEJM 2018)",
+    "primary_finding": "Pembrolizumab + pemetrexed/platinum vs chemo alone improved 12-month OS from 49.4% to 69.2% (HR 0.49, 95% CI 0.38-0.64) and median PFS from 4.9 to 8.8 months; OS benefit consistent across all PD-L1 strata including TPS <1%.",
+    "population": "n=616 with previously untreated metastatic nonsquamous NSCLC without EGFR or ALK alterations; any PD-L1 expression; ECOG 0-1.",
+    "critique": "ASCO Post noted ~50% placebo-arm crossover to pembrolizumab confounds long-term OS interpretation; immune-related AEs (pneumonitis, nephritis, colitis) added new toxicity burden, and PD-L1 negative subgroup benefit (HR 0.59) was real but smaller than PD-L1 high.",
+    "followup": "5-year update (JCO 2023) confirmed sustained OS benefit (19.4% vs 11.3% at 5 years); KEYNOTE-407 replicated in squamous NSCLC; KEYNOTE-024 established monotherapy in PD-L1 >=50%.",
+    "guideline_impact": "FDA approved August 2018; NCCN and ESMO immediately made pembrolizumab + chemo Category 1 first-line for nonsquamous NSCLC regardless of PD-L1, establishing the chemo-immunotherapy paradigm now standard across solid tumors.",
+    "expert_takeaway": "ASCO Post: KEYNOTE-189 ended single-agent cytotoxic chemo as first-line standard in metastatic NSCLC and proved PD-L1 expression alone does not predict who benefits from ICI+chemo combinations.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/29658856/",
+      "https://ascopost.com/news/march-2023/addition-of-pembrolizumab-to-pemetrexedplatinum-in-the-first-line-treatment-of-metastatic-nonsquamous-nsclc-5-year-outcomes-in-the-keynote-189-study/"
+    ]
+  },
+  "POET": {
+    "trial": "POET (NEJM 2019)",
+    "primary_finding": "After >=10d IV antibiotics, switch to oral therapy noninferior to continued IV for 6-month composite of death, unplanned cardiac surgery, embolic events, or relapse (9.0% vs 12.1%; -3.1%, 95% CI -8.2 to 1.9).",
+    "population": "n=400 Danish adults with stable left-sided IE due to streptococci, E. faecalis, S. aureus, or CoNS, after median 17d of IV therapy.",
+    "critique": "Highly selected, mostly streptococcal, native-valve, low-MRSA Danish cohort with TEE-confirmed stabilization and twice-weekly clinic follow-up; outcomes hinge on that intensive monitoring, not the pills.",
+    "followup": "5-year POET (NEJM 2022) showed sustained noninferiority (composite 32.8% oral vs 45.2% IV); no late relapses attributable to oral therapy.",
+    "guideline_impact": "Cited in 2023 ESC and 2024 AHA/IDSA infective endocarditis updates endorsing partial oral step-down in carefully selected stable patients after initial IV therapy.",
+    "expert_takeaway": "Curbsiders #312 (Serota): comfortable finishing courses orally when benefit outweighs IV risk, but oral regimens are complex and require MORE follow-up, not less.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/30152252/",
+      "https://thecurbsiders.com/curbsiders-podcast/312"
+    ]
+  },
+  "Study 31": {
+    "trial": "TBTC Study 31 / ACTG A5349 (NEJM 2021)",
+    "primary_finding": "4-month rifapentine-moxifloxacin regimen noninferior to standard 6-month therapy for unfavorable outcome at 12 months (15.5% vs 14.6%; difference 1.0%, 95% CI -2.6 to 4.5); rifapentine-without-moxi arm failed noninferiority.",
+    "population": "n=2,516 adolescents/adults with drug-susceptible pulmonary TB across 13 countries; ~8% with HIV (CD4 >=100).",
+    "critique": "Excluded children <12, pregnant patients, and CD4 <100; moxifloxacin's QT effects and rifapentine cost/supply limit scale-up in high-burden low-resource settings.",
+    "followup": "2024 risk-stratified post-hoc analysis (Nat Commun) showed low-risk patients (smear-neg, non-cavitary) may do well on even shorter regimens, informing trial 31-PRIME.",
+    "guideline_impact": "Basis for 2022 CDC MMWR interim guidance and 2022 WHO update recommending 4-month rifapentine-moxifloxacin as alternative first-line for drug-susceptible pulmonary TB age >=12.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/33951360/",
+      "https://www.cdc.gov/mmwr/volumes/71/wr/mm7108a1.htm"
+    ]
+  },
+  "ANDROMEDA-SHOCK": {
+    "trial": "ANDROMEDA-SHOCK (JAMA 2019)",
+    "primary_finding": "Capillary refill time-targeted resuscitation did not significantly reduce 28-day mortality vs lactate-targeted (34.9% vs 43.4%; HR 0.75, 95% CI 0.55-1.02; p=0.06) but yielded less organ dysfunction at 72h and less fluid given.",
+    "population": "n=424 adults with septic shock within 4 hours of vasopressor initiation across 28 ICUs in 5 Latin American countries.",
+    "critique": "Underpowered for hard mortality endpoint; EM:RAP/REBEL EM editorialists flagged the open-label CRT exam's subjectivity and the unblinded protocol's potential to bias secondary outcomes.",
+    "followup": "2020 Bayesian reanalysis (AJRCCM) showed >90% posterior probability of mortality benefit across all priors; ANDROMEDA-SHOCK-2 launched 2022 to confirm.",
+    "guideline_impact": "Surviving Sepsis 2021 added a weak recommendation to use capillary refill time in addition to or instead of lactate to guide resuscitation in septic shock.",
+    "expert_takeaway": "REBEL EM (Rezaie): a borderline-positive frequentist trial with a robust Bayesian signal; CRT is cheap, bedside, and reasonable to add alongside (not replace) lactate clearance.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/30772908/",
+      "https://rebelem.com/andromeda-shock-peripheral-perfusion-vs-serum-lactate-in-septic-shock/"
+    ]
+  },
+  "REPRIEVE": {
+    "trial": "REPRIEVE (NEJM 2023)",
+    "primary_finding": "Pitavastatin 4mg reduced MACE (4.81 vs 7.32 per 1000 person-years; HR 0.65, 95% CI 0.48-0.90) in PWH at low-to-moderate ASCVD risk; stopped early for efficacy at median 5.1y. NNT ~21 over 5y.",
+    "population": "n=7,769 PWH age 40-75 on ART with CD4 >=100, baseline 10-yr ASCVD risk ~4.5%, median LDL 108 mg/dL.",
+    "critique": "Stopped early (can inflate effect); modest absolute risk reduction in a low-risk cohort and pitavastatin's higher cost vs generic statins challenge cost-effectiveness, though pitavastatin avoids the PI-statin interaction problem.",
+    "followup": "2024 NEJM trial update confirmed durable benefit; secondary analyses showed effect partly independent of LDL lowering, hinting at anti-inflammatory mechanism.",
+    "guideline_impact": "Drove 2024 DHHS ARV guidelines and 2025 ESC/EAS focused update recommending moderate-intensity statin for primary prevention in PWH >=40 with ASCVD risk >=5%.",
+    "expert_takeaway": "Curbsiders #418: practice-changing for PWH at low-moderate risk, but real-world uptake hinges on access to a statin without protease-inhibitor interaction.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/37486775/",
+      "https://thecurbsiders.com/curbsiders-podcast/418-digest-tofurkey-edition-semaglutide-for-hfpef-tcas-for-ibs-aspirin-vs-clopidogrel-after-pci-pitavastatin-for-hiv-starchy-vegetables-weight-gain-heavy-metals-in-cannabis"
+    ]
+  },
+  "PROSEVA": {
+    "trial": "PROSEVA (NEJM 2013)",
+    "primary_finding": "Prone positioning >=16h/day cut 28-day mortality from 32.8% to 16.0% (HR 0.39, 95% CI 0.25-0.63; NNT ~6) and 90-day mortality from 41.0% to 23.6% in severe ARDS (P/F <150 on FiO2 >=0.6, PEEP >=5).",
+    "population": "n=466 adults with severe ARDS after 12-24h stabilization on lung-protective ventilation, across 27 French and 1 Spanish ICUs.",
+    "critique": "All participating ICUs had >5 years of proning experience and used strict eligibility/stabilization window; PulmPEEPs and ATS commentators noted the unusually large effect may not transport to less experienced units.",
+    "followup": "COVID-era observational data plus PROFLO and 2024 PROSEVA-style meta-analyses confirmed mortality benefit holds in moderate-to-severe ARDS when proning is early and prolonged.",
+    "guideline_impact": "Anchors ATS/ESICM/SCCM 2023 ARDS guideline strong recommendation for >=16h/day prone positioning in moderate-to-severe ARDS (P/F <150).",
+    "expert_takeaway": "PulmPEEPs RFJC: dose matters - the trial's effect required early initiation, >=16h sessions, and protocolized criteria for stopping; intermittent or rescue proning is not the same intervention.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/23688302/",
+      "https://www.pulmpeeps.com/2024/08/14/81-rfjc-12-ards-series-proseva/"
+    ]
+  },
+  "PROWESS-SHOCK": {
+    "trial": "PROWESS-SHOCK (NEJM 2012)",
+    "primary_finding": "Drotrecogin alfa did not reduce 28-day mortality vs placebo in septic shock (26.4% vs 24.2%; RR 1.09, 95% CI 0.92-1.28; p=0.31) or 90-day mortality (34.1% vs 32.7%).",
+    "population": "n=1,696 adults with septic shock on vasopressors for >=4h despite fluid resuscitation, across 208 ICUs in 26 countries.",
+    "critique": "Wenzel/Edmond (NEJM 2012) noted placebo mortality (24%) was far lower than in original PROWESS (~31%), reflecting improved baseline sepsis care - the apparent 2001 benefit likely never existed once modern bundles arrived.",
+    "followup": "Led to global market withdrawal of Xigris by Eli Lilly (Oct 2011) and FDA approval withdrawal; reshaped sepsis trial methodology around standardized care bundles.",
+    "guideline_impact": "Removed activated protein C from Surviving Sepsis Campaign guidelines; cautionary tale anchoring SSC's evidence-thresholds for adjunctive sepsis therapies.",
+    "expert_takeaway": "Wenzel/Edmond editorial: the original PROWESS benefit was likely an artifact of suboptimal control-arm care; rigorous replication killed a billion-dollar drug.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/22616830/",
+      "https://pubmed.ncbi.nlm.nih.gov/22616829/"
+    ]
+  },
+  "ARMA": {
+    "trial": "ARMA / ARDSNet (NEJM 2000)",
+    "primary_finding": "Low tidal volume ventilation (6 mL/kg PBW, plateau <=30) cut hospital mortality from 39.8% to 31.0% (absolute reduction 8.8%, p=0.007; NNT ~11) and increased ventilator-free days (12 vs 10).",
+    "population": "n=861 adults with ALI/ARDS (P/F <=300, bilateral infiltrates, no LA hypertension) at 10 ARDSNet centers.",
+    "critique": "Stopped early at 4th interim analysis; control arm of 12 mL/kg with plateau allowance up to 50 cmH2O was higher than contemporary practice surveys suggested, prompting persistent 'straw-man comparator' debate.",
+    "followup": "Subsequent meta-analyses (Petrucci 2013 Cochrane) and 2018 LUNG SAFE observational study confirmed survival benefit but showed real-world adherence to 6 mL/kg remains <60%.",
+    "guideline_impact": "Established 4-8 mL/kg PBW with plateau <=30 cmH2O as ATS/ESICM/SCCM standard of care for all ARDS, strongest recommendation in 2023 ARDS guideline.",
+    "expert_takeaway": "ATS Reading Series: the lasting lesson isn't '6 vs 12' - it's that ventilator settings themselves cause organ injury, opening the entire field of VILI and lung-protective ventilation.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/10793162/",
+      "https://www.atsjournals.org/doi/10.1164/rccm.200208-956OC"
+    ]
+  },
+  "RECOVERY-DEX": {
+    "trial": "RECOVERY Dexamethasone (NEJM 2020)",
+    "primary_finding": "Dexamethasone 6mg x10d reduced 28-day mortality in hospitalized COVID-19 (22.9% vs 25.7%; RR 0.83, 95% CI 0.75-0.93). Benefit confined to those on oxygen (RR 0.82, NNT ~35) or invasive ventilation (RR 0.64, NNT ~8); none on room air.",
+    "population": "n=6,425 hospitalized UK adults with COVID-19, randomized 2:1 within RECOVERY platform.",
+    "critique": "Open-label, no placebo, mortality-only primary outcome; CHEST and IDSA noted unclear effect modifiers (age, symptom duration, immunocompromise) and the no-oxygen subgroup showed possible harm (RR 1.19).",
+    "followup": "COVID STEROID 2 (2021) tested higher 12mg dose with mixed results; REMAP-CAP confirmed steroid benefit in critical COVID; debate continues over dose and duration in 2024-2025 variants.",
+    "guideline_impact": "Drove NIH, WHO, and IDSA COVID-19 guidelines (Sept 2020) to recommend dexamethasone for hospitalized COVID requiring supplemental O2 or ventilation - within weeks of preprint.",
+    "expert_takeaway": "CIDRAP/IDSA: a platform-trial triumph showing pragmatic RCTs can change global practice in months; the no-oxygen subgroup is a reminder that 'all comers' steroid use is not supported.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/32678530/",
+      "https://www.cidrap.umn.edu/covid-19/trial-data-support-dexamethasone-not-hydroxychloroquine-covid-19"
+    ]
+  },
+  "NINDS": {
+    "trial": "NINDS (NEJM 1995)",
+    "primary_finding": "IV alteplase within 3h of ischemic stroke onset increased favorable outcome at 90d (mRS 0-1) by ~11-13% absolute (39% vs 26%); OR 1.7; NNT ~8 for one extra functionally independent patient.",
+    "population": "n=624 with acute ischemic stroke treated within 3 hours of symptom onset; excluded recent surgery, hemorrhage on CT, SBP >185, INR >1.7.",
+    "critique": "Symptomatic ICH rose 10-fold (6.4% vs 0.6%) with no mortality reduction; 2004 reanalysis flagged baseline NIHSS imbalance favoring tPA arm, and EM critics argue the benefit shrinks once stroke severity is controlled.",
+    "followup": "1-year follow-up (NEJM 1999) confirmed durable benefit; ECASS III (2008) extended window to 4.5h, and pooled IST-3/ECASS analyses sustained the time-dependent benefit gradient.",
+    "guideline_impact": "Basis for FDA approval (1996) of alteplase and AHA/ASA Class I recommendation for IV thrombolysis within 3h (later 4.5h) of ischemic stroke onset.",
+    "expert_takeaway": "EM:RAP and First10EM remain split: stroke neurology accepts NIHSS imbalance as random, while EM commentators view tPA's benefit as fragile once baseline severity is matched.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/7477192/",
+      "https://first10em.com/thrombolytics-for-stoke/"
+    ]
+  },
+  "DAWN": {
+    "trial": "DAWN (NEJM 2018)",
+    "primary_finding": "Thrombectomy 6-24h after LKW with clinical-core mismatch raised 90d functional independence (mRS 0-2) from 13% to 49% (adjusted difference 33%); NNT ~2.8 for independence.",
+    "population": "n=206 with anterior LVO (ICA/MCA-M1), LKW 6-24h prior, clinical-imaging mismatch (NIHSS >=10 with small core on CTP/MRI-DWI by age-stratified criteria).",
+    "critique": "Selection was extreme: only ~1 in 100 screened patients qualified, with very small infarct cores in elderly patients - generalizability to typical late-window strokes with larger cores is uncertain. Stopped early for efficacy, inflating effect size.",
+    "followup": "AURORA pooled analysis (Lancet 2022) with 6 late-window trials confirmed benefit across mismatch criteria; MR CLEAN-LATE and SELECT2 extended thrombectomy to larger cores and CTA-only selection.",
+    "guideline_impact": "Drove 2018 AHA/ASA Class I recommendation for thrombectomy 6-16h (DAWN/DEFUSE 3) and Class IIa for 16-24h with perfusion or DWI selection.",
+    "expert_takeaway": "Neurology Podcast and stroke editorials frame DAWN as proof that 'time is brain' is too crude - tissue, not time, defines the window in well-selected patients.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/29129157/",
+      "https://www.thebottomline.org.uk/summaries/dawn/"
+    ]
+  },
+  "DEFUSE 3": {
+    "trial": "DEFUSE 3 (NEJM 2018)",
+    "primary_finding": "Thrombectomy 6-16h after LKW with perfusion mismatch (core <70 mL, mismatch ratio >=1.8) shifted mRS toward independence (OR 2.77); functional independence 45% vs 17%; NNT ~3.6.",
+    "population": "n=182 with anterior LVO, 6-16h from LKW, core <70 mL with target mismatch on RAPID-processed CTP/MRI; broader severity (NIHSS >=6) than DAWN.",
+    "critique": "Stopped early after DAWN's positive readout - only 182 of planned 476 enrolled, leaving subgroups underpowered. RAPID-processed perfusion software was effectively mandated, limiting transportability.",
+    "followup": "Subgroup analyses (Stroke 2018-2019) showed benefit even in DAWN-ineligible patients, motivating SELECT2 and ANGEL-ASPECT to extend thrombectomy to large-core (ASPECTS 3-5) infarcts.",
+    "guideline_impact": "Cornerstone of 2018 AHA/ASA Class I recommendation for 6-16h thrombectomy; informed Joint Commission Comprehensive Stroke Center metrics.",
+    "expert_takeaway": "Stroke editorialists emphasize DEFUSE 3 and DAWN are complementary - DEFUSE 3's penumbra-based selection captures patients DAWN's strict clinical-core criteria miss.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/29364767/",
+      "https://www.ahajournals.org/doi/10.1161/STROKEAHA.118.023310"
+    ]
+  },
+  "CLARITY-AD": {
+    "trial": "CLARITY-AD (NEJM 2023)",
+    "primary_finding": "Lecanemab slowed 18-month CDR-SB decline by 0.45 points (1.21 vs 1.66; 27% relative reduction, p<0.001) and reduced brain amyloid by ~59 centiloids; absolute benefit small.",
+    "population": "n=1,795 adults 50-90 with early Alzheimer's (MCI or mild dementia) and amyloid confirmed by PET or CSF; ~70% ApoE4 carriers.",
+    "critique": "Lancet editorial noted 0.45-point CDR-SB delta sits well below proposed MCID (~0.98 in MCI, ~1.63 in mild AD); ARIA-E 13% / ARIA-H 17% (homozygous ApoE4 ARIA-E ~35%), with deaths in extension phase linked to anticoagulation.",
+    "followup": "Open-label extension (2024-2025) suggests sustained separation of curves; ongoing AHEAD 3-45 tests lecanemab in preclinical/pre-symptomatic amyloid-positive adults.",
+    "guideline_impact": "Drove FDA full approval (July 2023), CMS coverage with required registry, and AAN/Alzheimer's Association appropriate use recommendations mandating MRI surveillance and ApoE genotyping.",
+    "expert_takeaway": "Neurology Podcast: 'statistically clean but clinically modest' - a proof of mechanism whose real-world value depends on infusion logistics, ARIA monitoring, and patient selection.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/36449413/",
+      "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)02480-1/fulltext"
+    ]
+  },
+  "WAKE-UP": {
+    "trial": "WAKE-UP (NEJM 2018)",
+    "primary_finding": "MRI-guided alteplase in unknown-onset stroke with DWI-positive/FLAIR-negative mismatch increased favorable 90d outcome (mRS 0-1) from 41.8% to 53.3% (OR 1.61; adjusted absolute difference ~11.5%); NNT ~9.",
+    "population": "n=503 adults with ischemic stroke of unknown onset (mostly wake-up), DWI/FLAIR mismatch on MRI suggesting onset <4.5h, otherwise eligible for thrombolysis.",
+    "critique": "Stopped early for funding loss after 503 of planned 800 enrolled, leaving safety underpowered - numerically higher mortality (4.1% vs 1.2%) and sICH (2.0% vs 0.4%) in alteplase arm could become significant. MRI selection is logistically demanding outside academic centers.",
+    "followup": "EXTEND (NEJM 2019) replicated benefit using CT perfusion mismatch up to 9h; individual-patient meta-analyses (Lancet 2020) confirmed benefit across imaging-selected unknown-onset and late-window patients.",
+    "guideline_impact": "AHA/ASA 2019 update added Class IIa recommendation for alteplase in wake-up/unknown-onset stroke with DWI-FLAIR mismatch within 4.5h of symptom recognition.",
+    "expert_takeaway": "Neurology Podcast frames WAKE-UP as the death of 'last-known-well as gatekeeper' - imaging biomarkers replace the clock for thrombolysis eligibility in selected patients.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/29766770/",
+      "https://www.wikijournalclub.org/wiki/WAKE-UP"
+    ]
+  },
+  "ACCENT I": {
+    "trial": "ACCENT I (Lancet 2002)",
+    "primary_finding": "Maintenance infliximab (5 or 10 mg/kg every 8 weeks) sustained remission at week 30 in 39-45% vs 21% with placebo (OR 2.7, 95% CI 1.6-4.6); median time to loss of response 38-54+ weeks vs 19 weeks.",
+    "population": "n=573 adults with moderate-to-severe Crohn's disease (CDAI >=220) who responded at week 2 to a single 5 mg/kg infliximab induction infusion.",
+    "critique": "Only week-2 responders were randomized, so the trial answers a conditional question (maintenance in responders) and overstates the population-level benefit; ~28% lost response by week 54 and antibodies-to-infliximab predicted failure, foreshadowing the immunogenicity problem.",
+    "followup": "ACCENT II (NEJM 2004) confirmed maintenance benefit in fistulizing disease; SONIC (NEJM 2010) showed combination with azathioprine outperformed monotherapy, addressing the immunogenicity gap.",
+    "guideline_impact": "Established scheduled (not episodic) anti-TNF dosing as the standard in AGA, ACG, and ECCO Crohn's guidelines; underpins current AGA 2025 living guideline on moderate-to-severe Crohn's.",
+    "expert_takeaway": "AGA editorialists framed ACCENT I as proof that scheduled dosing prevents immunogenicity and maintenance failure - episodic infliximab is now considered substandard care.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/12047962/",
+      "https://www.gastrojournal.org/article/S0016-5085(25)06091-3/fulltext"
+    ]
+  },
+  "ANSWER": {
+    "trial": "ANSWER (Lancet 2018)",
+    "primary_finding": "Long-term IV albumin (40 g twice weekly x2 wk, then weekly) plus standard care reduced 18-month all-cause mortality from 22% to 17% (HR 0.62, 95% CI 0.40-0.95); NNT ~7 to prevent one death.",
+    "population": "n=431 Italian adults with cirrhosis and uncomplicated ascites on stable diuretics (spironolactone >=200 mg + furosemide >=25 mg).",
+    "critique": "Open-label, unblinded design with secondary endpoints at risk of detection bias; cost (~10,000 euro/patient-year) and infusion logistics led AASLD and Lancet correspondence to question generalizability beyond Italian healthcare context.",
+    "followup": "MACHT (J Hepatol 2018) showed midodrine-albumin had no mortality benefit pre-transplant; ATTIRE (NEJM 2021) found no benefit of targeted albumin infusion in hospitalized decompensated cirrhosis, narrowing the indication.",
+    "guideline_impact": "EASL 2018 cirrhosis guideline added long-term albumin as conditional recommendation in uncomplicated ascites; AASLD 2021 declined to endorse, citing cost-effectiveness and ATTIRE's neutral hospitalized data.",
+    "expert_takeaway": "AASLD commentators view ANSWER as hypothesis-generating - the outpatient ascites signal is real but ATTIRE's inpatient null result means albumin is not a universal disease-modifier.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/29861076/",
+      "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(18)30948-6/abstract"
+    ]
+  },
+  "STOPAH": {
+    "trial": "STOPAH (NEJM 2015)",
+    "primary_finding": "In severe alcoholic hepatitis (Maddrey DF >=32), prednisolone showed nonsignificant 28-day mortality reduction (14% vs 17%, OR 0.72, 95% CI 0.52-1.01, p=0.06); pentoxifylline had no effect; no benefit at 90d or 1yr for either drug.",
+    "population": "n=1,103 adults with clinical severe alcoholic hepatitis (bilirubin >80 umol/L, DF >=32) at 65 UK hospitals; 2x2 factorial design.",
+    "critique": "Primary endpoint missed conventional significance, but multivariate adjustment shifted prednisolone OR to 0.61 (p=0.015) - editorialists split on whether to trust the unadjusted null or the post-hoc adjusted positive. Serious infections doubled (13% vs 7%) with steroids.",
+    "followup": "Individual patient-data meta-analysis (Gastroenterology 2018) combining STOPAH with prior trials confirmed ~20% relative short-term mortality reduction with steroids; Lille score still recommended at day 7 to identify nonresponders.",
+    "guideline_impact": "AASLD 2019/2024 alcohol-associated liver disease guidance retains prednisolone for severe AH (DF >=32 or MELD >20) without infection, with mandatory Lille reassessment at day 7 and stop-rules.",
+    "expert_takeaway": "AASLD editorials and GI podcasts converge on a nuanced read: prednisolone buys ~28-day survival in carefully selected, infection-free severe AH, but is not disease-modifying and demands early Lille-guided withdrawal.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/25901427/",
+      "https://www.wikijournalclub.org/wiki/STOPAH"
+    ]
+  },
+  "ISIS-2": {
+    "trial": "ISIS-2 (Lancet 1988)",
+    "primary_finding": "Aspirin reduced 5-week vascular mortality 23%, streptokinase 25%, combination 42% (combined ARR ~5.2%, NNT ~19).",
+    "population": "n=17,187 patients within 24 hours of suspected acute MI, 2x2 factorial randomization.",
+    "critique": "Streptokinase era predates primary PCI; no head-to-head vs fibrin-specific lytics; minor excess of cerebral hemorrhage with streptokinase.",
+    "followup": "10-year follow-up (Lancet 1998) confirmed persistent mortality benefit of 23 fewer deaths per 1000 treated.",
+    "guideline_impact": "Established aspirin as a permanent Class I recommendation in ACS in ACC/AHA and ESC guidelines.",
+    "expert_takeaway": "ACC Cardiology Hall of Fame cites ISIS-2 as the trial that proved a cheap pill could rival reperfusion in saving lives.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/2903874/",
+      "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(15)61505-7/fulltext"
+    ]
+  },
+  "4S": {
+    "trial": "4S (Lancet 1994)",
+    "primary_finding": "Simvastatin reduced all-cause mortality 30% (11.5% vs 8.2%; ARR 3.3%, NNT 30) over 5.4 years.",
+    "population": "n=4,444 patients with prior MI/angina and total cholesterol 5.5-8.0 mmol/L.",
+    "critique": "Enrolled mostly middle-aged men with high baseline cholesterol; only 19% women; no diabetic or elderly subgroup powered.",
+    "followup": "10-year follow-up (Lancet 2004) showed sustained 15% mortality reduction with no excess cancer.",
+    "guideline_impact": "First trial to make statins a Class I recommendation for secondary prevention in NCEP ATP-II/III and ESC dyslipidemia guidelines.",
+    "expert_takeaway": "ACC dubbed 4S the trial that ended the 'cholesterol controversy' and launched the statin era.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/7968073/",
+      "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(94)90566-5/fulltext"
+    ]
+  },
+  "CARE": {
+    "trial": "CARE (NEJM 1996)",
+    "primary_finding": "Pravastatin reduced fatal CHD or nonfatal MI by 24% (13.2% vs 10.2%; ARR 3%, NNT 33) over 5 years.",
+    "population": "n=4,159 post-MI patients with average cholesterol (<240 mg/dL, mean LDL 139 mg/dL).",
+    "critique": "No benefit when baseline LDL <125 mg/dL, raising concern of a 'floor effect'; unexpected breast cancer signal in women later unconfirmed.",
+    "followup": "Pooled CARE/LIPID/WOSCOPS analyses confirmed benefit extended to lower LDL strata.",
+    "guideline_impact": "Extended NCEP/AHA statin recommendations to post-MI patients without overt hypercholesterolemia.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/8801446/",
+      "https://www.nejm.org/doi/full/10.1056/nejm199610033351401"
+    ]
+  },
+  "HPS": {
+    "trial": "HPS (Lancet 2002)",
+    "primary_finding": "Simvastatin 40 mg reduced major vascular events 24% (25.2% vs 19.8%; ARR 5.4%, NNT 19) over 5 years.",
+    "population": "n=20,536 UK adults aged 40-80 with vascular disease or diabetes, any baseline LDL.",
+    "critique": "Used fixed 40 mg dose; only ~25% of eligible UK patients enrolled, raising selection concerns; modest LDL reductions (~38 mg/dL).",
+    "followup": "11-year follow-up (Lancet 2011) showed persistent benefit with no late hazards.",
+    "guideline_impact": "Drove ACC/AHA and ESC to recommend statins for diabetics and high-risk patients regardless of baseline LDL.",
+    "expert_takeaway": "ACC Clinical Trials review called HPS the trial that severed statin benefit from baseline LDL level.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/12114036/",
+      "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(02)09327-3/abstract"
+    ]
+  },
+  "JUPITER": {
+    "trial": "JUPITER (NEJM 2008)",
+    "primary_finding": "Rosuvastatin reduced primary CV endpoint 44% (HR 0.56; ARR 1.2%, NNT 95 over 1.9 years) in low-LDL/high-CRP adults.",
+    "population": "n=17,802 adults LDL <130 mg/dL and hsCRP >=2.0 mg/L, no known CVD.",
+    "critique": "Stopped early at 1.9 years; absolute event rates low; new-onset diabetes increased 27%; criticized for industry funding and CRP threshold.",
+    "followup": "Subgroup analyses confirmed benefit even at LDL <50 mg/dL; CRP-guided strategy never formally adopted.",
+    "guideline_impact": "Prompted 2013 ACC/AHA inclusion of hsCRP as risk-enhancing factor and broadened primary prevention statin indications.",
+    "expert_takeaway": "JACC editorial (Hlatky 2008) cautioned the modest absolute benefit didn't justify universal CRP screening.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/18997196/",
+      "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2014/03/20/16/15/JUPITER"
+    ]
+  },
+  "IMPROVE-IT": {
+    "trial": "IMPROVE-IT (NEJM 2015)",
+    "primary_finding": "Ezetimibe+simvastatin reduced composite CV events 6.4% relatively (34.7% vs 32.7%; ARR 2.0%, NNT 50) over 6 years.",
+    "population": "n=18,144 post-ACS patients with LDL 50-100 mg/dL on simvastatin background.",
+    "critique": "Modest 2% absolute benefit; required 7-year follow-up to reach significance; no mortality reduction; simvastatin (not high-intensity) as comparator.",
+    "followup": "Total-event analyses (JACC 2016) showed 9% reduction in recurrent events, strengthening benefit.",
+    "guideline_impact": "2018 ACC/AHA lipid guideline added ezetimibe as Class IIa add-on when LDL >=70 mg/dL on max statin in very-high-risk ASCVD.",
+    "expert_takeaway": "ACC's Cannon called IMPROVE-IT the trial that confirmed 'LDL hypothesis' applies beyond statins.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/26039521/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa1410489"
+    ]
+  },
+  "FOURIER": {
+    "trial": "FOURIER (NEJM 2017)",
+    "primary_finding": "Evolocumab reduced primary composite 15% (HR 0.85; 9.8% vs 11.3%; ARR 1.5%, NNT 67) at median 2.2 years; LDL median 30 mg/dL.",
+    "population": "n=27,564 ASCVD patients on statin with LDL >=70 mg/dL.",
+    "critique": "No cardiovascular or all-cause mortality benefit; short follow-up; cost-effectiveness widely questioned; 2022 reanalysis alleged miscounted deaths.",
+    "followup": "FOURIER-OLE (Circulation 2022) showed continued reduction in CV death/MI/stroke over 5 additional years of open-label evolocumab.",
+    "guideline_impact": "2018 ACC/AHA cholesterol guidelines added PCSK9 inhibitors as Class IIa for very-high-risk ASCVD with LDL >=70 mg/dL despite max statin/ezetimibe.",
+    "expert_takeaway": "JACC editorial (Stone/Lloyd-Jones) called FOURIER definitive proof 'lower LDL is better' without safety floor.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/28304224/",
+      "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2017/03/16/00/46/FOURIER"
+    ]
+  },
+  "ODYSSEY OUTCOMES": {
+    "trial": "ODYSSEY OUTCOMES (NEJM 2018)",
+    "primary_finding": "Alirocumab reduced MACE 15% (HR 0.85; 9.5% vs 11.1%; ARR 1.6%, NNT 63) at median 2.8 years post-ACS.",
+    "population": "n=18,924 patients 1-12 months post-ACS with LDL >=70 mg/dL on high-intensity statin.",
+    "critique": "All-cause mortality benefit driven by post-hoc subgroup with LDL >=100 mg/dL; cost-effectiveness marginal at list price.",
+    "followup": "Long-term subanalyses showed durable benefit in polyvascular disease and prior MI subgroups.",
+    "guideline_impact": "Supported 2018 ACC/AHA Class IIa recommendation for PCSK9 inhibitors in very-high-risk ASCVD; ESC 2019 endorsed post-ACS use.",
+    "expert_takeaway": "ACC's Schwartz emphasized mortality signal as first for the class, distinguishing it from FOURIER.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/30403574/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa1801174"
+    ]
+  },
+  "HOPE": {
+    "trial": "HOPE (NEJM 2000)",
+    "primary_finding": "Ramipril 10 mg reduced composite CV death/MI/stroke 22% (17.8% vs 14.0%; ARR 3.8%, NNT 26) over 5 years.",
+    "population": "n=9,297 high-risk patients >=55 years with vascular disease or diabetes plus one risk factor, EF >40%.",
+    "critique": "BP measured only at trough, possibly underestimating BP-lowering contribution; questioned whether benefit was BP-mediated rather than pleiotropic.",
+    "followup": "HOPE-TOO (Circulation 2005) extended open-label follow-up showed durable reduction in MI and new diabetes.",
+    "guideline_impact": "ACC/AHA and ESC added ACE inhibitors as Class I for stable CAD, diabetes with risk factors, and high-risk vascular disease.",
+    "expert_takeaway": "ACC Clinical Trials archive credits HOPE with establishing ACE inhibition as vasculoprotective beyond BP control.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/10639539/",
+      "https://www.nejm.org/doi/full/10.1056/NEJM200001203420301"
+    ]
+  },
+  "ALLHAT": {
+    "trial": "ALLHAT (JAMA 2002)",
+    "primary_finding": "Chlorthalidone equivalent to amlodipine/lisinopril for primary CHD outcome; lisinopril had higher combined CVD (33.3% vs 30.9%) and heart failure (8.7% vs 7.7%).",
+    "population": "n=33,357 hypertensive patients >=55 years with >=1 additional CHD risk factor.",
+    "critique": "Lisinopril arm disadvantaged in Black patients and by lack of permitted add-on diuretic; doxazosin arm stopped early for heart failure excess.",
+    "followup": "ALLHAT-LLT extension (2017) confirmed durability; subgroup analyses by race informed JNC 8 differential recommendations.",
+    "guideline_impact": "JNC 7 and JNC 8 endorsed thiazide-type diuretics as first-line antihypertensive; influenced ACC/AHA 2017 BP guideline.",
+    "expert_takeaway": "ACC's Furberg defended ALLHAT as proof that 'older, cheaper diuretics remain unsurpassed' for initial therapy.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/12479763/",
+      "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2014/04/22/22/45/ALLHAT"
+    ]
+  },
+  "CONSENSUS": {
+    "trial": "CONSENSUS (NEJM 1987)",
+    "primary_finding": "Enalapril reduced 6-mo mortality 40% vs placebo (26% vs 44%) and 1-yr mortality 31% in NYHA IV HF; NNT ~6 at 6 months.",
+    "population": "n=253 patients with severe (NYHA IV) congestive heart failure on digoxin/diuretics, randomized to enalapril vs placebo.",
+    "critique": "Small trial limited to NYHA IV; no beta-blocker background (pre-modern GDMT); high early mortality made benefit easy to detect but generalizability narrow.",
+    "followup": "10-year follow-up (Eur Heart J 1999) showed sustained mortality benefit with 30% relative reduction maintained.",
+    "guideline_impact": "Established ACE inhibitors as Class I therapy for symptomatic HFrEF in all subsequent AHA/ACC/ESC HF guidelines.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/2883575/",
+      "https://pubmed.ncbi.nlm.nih.gov/10406843/"
+    ]
+  },
+  "SOLVD": {
+    "trial": "SOLVD-Treatment (NEJM 1991)",
+    "primary_finding": "Enalapril reduced all-cause mortality 16% (35.2% vs 39.7%, p=0.0036) and HF hospitalization 26% over mean 41 months; NNT ~22 for mortality.",
+    "population": "n=2,569 patients with EF <=35% and symptomatic HF (mostly NYHA II-III) on conventional therapy, randomized to enalapril vs placebo.",
+    "critique": "Pre-beta-blocker era; ischemic etiology predominant (~70%) limiting applicability to nonischemic CM; modest absolute benefit in less-sick patients vs CONSENSUS.",
+    "followup": "X-SOLVD extended follow-up (Circulation 2003) confirmed durable mortality benefit out to 12 years.",
+    "guideline_impact": "Extended ACEi Class I indication to all symptomatic HFrEF (NYHA II-IV), and via SOLVD-Prevention arm to asymptomatic LV dysfunction.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/2057034/",
+      "https://pubmed.ncbi.nlm.nih.gov/14581281/"
+    ]
+  },
+  "MERIT-HF": {
+    "trial": "MERIT-HF (Lancet 1999)",
+    "primary_finding": "Metoprolol succinate reduced all-cause mortality 34% (7.2% vs 11.0%/yr, p=0.00009) and sudden death 41%; trial stopped early; NNT ~26/year.",
+    "population": "n=3,991 patients with NYHA II-IV HF, EF <=40%, on optimal background therapy.",
+    "critique": "Underrepresented NYHA IV (only 4%); US subgroup showed nonsignificant mortality trend, raising concern about generalizability to sicker American patients.",
+    "followup": "Subgroup analyses (JAMA 2000) confirmed benefit across age, sex, EF, and etiology; effect consistent regardless of baseline heart rate.",
+    "guideline_impact": "Cemented beta-blockers (metoprolol succinate, carvedilol, bisoprolol) as Class I therapy for all stable HFrEF.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/10376614/",
+      "https://pubmed.ncbi.nlm.nih.gov/10732933/"
+    ]
+  },
+  "COPERNICUS": {
+    "trial": "COPERNICUS (NEJM 2001)",
+    "primary_finding": "Carvedilol reduced all-cause mortality 35% (11.4% vs 18.5%, p=0.00013) in severe HF; trial stopped early for benefit; NNT ~14 at 10.4 months.",
+    "population": "n=2,289 patients with severe HF (EF <25%, symptoms at rest or minimal exertion), euvolemic, on ACEi + diuretic.",
+    "critique": "Excluded recently decompensated/IV inotrope patients and those needing ICU care, leaving question of safety in true acute decompensation unanswered.",
+    "followup": "Pre-discharge initiation substudies (Krum, JAMA 2003) showed safety and benefit when started before hospital discharge.",
+    "guideline_impact": "Extended beta-blocker Class I recommendation to severe (NYHA IIIb-IV) HFrEF, dispelling prior contraindication.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/11386263/",
+      "https://pubmed.ncbi.nlm.nih.gov/12588269/"
+    ]
+  },
+  "EMPHASIS-HF": {
+    "trial": "EMPHASIS-HF (NEJM 2011)",
+    "primary_finding": "Eplerenone reduced CV death/HF hospitalization 37% (18.3% vs 25.9%, HR 0.63) and all-cause mortality 24% in mild HF; NNT ~19 over 21 months.",
+    "population": "n=2,737 patients with NYHA II HF, EF <=35%, age >=55, on ACEi/ARB + beta-blocker; required recent CV hospitalization or elevated BNP.",
+    "critique": "Hyperkalemia (>5.5) doubled (11.8% vs 7.2%); enriched enrollment may overestimate benefit in stable outpatients.",
+    "followup": "Pooled MRA analyses and EPHESUS extension confirmed mortality benefit; real-world registries show persistent underuse and higher hyperkalemia rates.",
+    "guideline_impact": "Extended MRA Class I recommendation from NYHA III-IV (RALES) to NYHA II HFrEF in 2013 ACCF/AHA and 2012 ESC HF guidelines.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/21073363/",
+      "https://www.acc.org/latest-in-cardiology/clinical-trials/2010/11/19/19/41/emphasis-hf"
+    ]
+  },
+  "RACE II": {
+    "trial": "RACE II (NEJM 2010)",
+    "primary_finding": "Lenient rate control (HR <110) noninferior to strict (HR <80) for CV death/hospitalization/stroke at 3 years (12.9% vs 14.9%, HR 0.84, p<0.001 noninferiority).",
+    "population": "n=614 patients with permanent AFib <12 months, age <80, randomized to lenient vs strict rate-control strategy.",
+    "critique": "Underpowered for hard endpoints; permanent AFib only (not paroxysmal); short follow-up may miss tachycardia-mediated cardiomyopathy in lenient arm.",
+    "followup": "RACE II 3-year extension confirmed no difference in symptoms, QoL, or LV function between strategies.",
+    "guideline_impact": "2014 AHA/ACC/HRS and 2016 ESC AFib guidelines endorsed lenient rate control (resting HR <110) as initial strategy for asymptomatic patients with preserved LV function.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/20231232/",
+      "https://www.acc.org/latest-in-cardiology/clinical-trials/2010/03/30/20/55/race-ii"
+    ]
+  },
+  "RE-LY": {
+    "trial": "RE-LY (NEJM 2009)",
+    "primary_finding": "Dabigatran 150mg reduced stroke/systemic embolism 35% vs warfarin (1.11% vs 1.69%/yr, p<0.001 superiority); 110mg noninferior; both reduced hemorrhagic stroke ~70%.",
+    "population": "n=18,113 patients with nonvalvular AFib and >=1 stroke risk factor, randomized to dabigatran 110mg, 150mg, or warfarin (open-label).",
+    "critique": "Open-label design (warfarin unblinded); mean TTR only 64%; higher GI bleeding with 150mg dose; MI signal (HR 1.38, p=0.048) raised concern.",
+    "followup": "RELY-ABLE 2.3-year extension (Circulation 2013) confirmed sustained efficacy; meta-analyses found no significant MI excess.",
+    "guideline_impact": "First DOAC approved for AFib; 2014 AHA/ACC/HRS guidelines added dabigatran as Class I alternative to warfarin for nonvalvular AFib.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/19717844/",
+      "https://www.acc.org/latest-in-cardiology/clinical-trials/2010/02/23/18/29/re-ly"
+    ]
+  },
+  "ARISTOTLE": {
+    "trial": "ARISTOTLE (NEJM 2011)",
+    "primary_finding": "Apixaban reduced stroke/SE 21% (1.27% vs 1.60%/yr, p=0.01), major bleeding 31%, and all-cause mortality 11% vs warfarin; NNT 303/yr for stroke.",
+    "population": "n=18,201 patients with nonvalvular AFib and >=1 stroke risk factor (mean CHADS2 2.1), randomized to apixaban 5mg BID vs dose-adjusted warfarin.",
+    "critique": "Mean TTR 62% lower than ideal; relatively low-risk population (CHADS2 ~2); limited representation of very elderly (>80) and severe CKD patients.",
+    "followup": "Post-hoc analyses confirmed benefit across CHA2DS2-VASc strata and frailty; real-world ARISTOPHANES study replicated findings.",
+    "guideline_impact": "Apixaban became preferred DOAC in 2019 AHA/ACC/HRS focused update given best efficacy/safety profile; Class I for nonvalvular AFib.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/21870978/",
+      "https://www.acc.org/latest-in-cardiology/clinical-trials/2011/08/29/19/24/aristotle"
+    ]
+  },
+  "ROCKET AF": {
+    "trial": "ROCKET AF (NEJM 2011)",
+    "primary_finding": "Rivaroxaban noninferior to warfarin for stroke/SE (1.7% vs 2.2%/yr, HR 0.88, p<0.001 noninferiority); similar major bleeding; fewer ICH (0.5% vs 0.7%).",
+    "population": "n=14,264 patients with nonvalvular AFib at moderate-high stroke risk (mean CHADS2 3.5), randomized to rivaroxaban 20mg daily vs warfarin.",
+    "critique": "Warfarin TTR only 55% (lowest among DOAC trials); INR device recall raised concerns about warfarin arm management; higher-risk population than other DOAC trials.",
+    "followup": "XANTUS and real-world registries confirmed effectiveness; subgroup analyses showed consistent benefit across renal function and age strata.",
+    "guideline_impact": "Approved as alternative to warfarin in 2014 AHA/ACC/HRS AFib guidelines; Class I for nonvalvular AFib with moderate-high stroke risk.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/21830957/",
+      "https://www.acc.org/latest-in-cardiology/clinical-trials/2010/11/19/18/24/rocket-af"
+    ]
+  },
+  "ENGAGE AF": {
+    "trial": "ENGAGE AF-TIMI 48 (NEJM 2013)",
+    "primary_finding": "Edoxaban 60mg noninferior to warfarin for stroke/SE (1.18% vs 1.50%/yr, HR 0.79); 20% less major bleeding; 30mg dose had higher ischemic stroke.",
+    "population": "n=21,105 patients with nonvalvular AFib, CHADS2 >=2, randomized to edoxaban 60mg, 30mg, or warfarin; dose halved for CrCl 30-50, weight <=60kg, or P-gp inhibitors.",
+    "critique": "FDA noted reduced efficacy in patients with normal renal function (CrCl >95); 30mg dose inferior for stroke prevention; not approved in patients with preserved renal function.",
+    "followup": "Subgroup analyses confirmed benefit across age, renal function (CrCl 30-95), and prior VKA use; supported edoxaban use in elderly.",
+    "guideline_impact": "Added to 2019 AHA/ACC/HRS focused update as Class I DOAC option for nonvalvular AFib with CrCl 15-95 mL/min.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/24251359/",
+      "https://www.acc.org/latest-in-cardiology/clinical-trials/2013/11/18/16/56/engage-af-timi-48"
+    ]
+  },
+  "CABANA": {
+    "trial": "CABANA (JAMA 2019)",
+    "primary_finding": "Ablation did not reduce composite of death/disabling stroke/serious bleeding/cardiac arrest vs drug therapy (8.0% vs 9.2%, HR 0.86, p=0.30) in ITT analysis.",
+    "population": "n=2,204 patients with new-onset or undertreated AFib, age >=65 or <65 with >=1 stroke risk factor, randomized to catheter ablation vs rate/rhythm drugs.",
+    "critique": "27.5% crossover from drug to ablation arm diluted ITT effect; per-protocol and as-treated analyses showed significant benefit; underpowered after event-rate reduction.",
+    "followup": "CABANA QoL substudy (JAMA 2019) showed significant improvement in AF-specific QoL with ablation; CASTLE-AF replicated mortality benefit in HF subgroup.",
+    "guideline_impact": "2019 AHA/ACC/HRS focused update upgraded ablation to Class IIa for symptomatic AFib refractory to antiarrhythmics; Class IIb as first-line.",
+    "expert_takeaway": "ACC commentary: CABANA showed ablation is at least as good as drugs; per-protocol analysis and the HF subgroup (CASTLE-AF replication) make a strong case for ablation in selected patients.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/30874766/",
+      "https://www.acc.org/latest-in-cardiology/clinical-trials/2018/05/10/15/57/cabana"
+    ]
+  },
+  "COURAGE": {
+    "trial": "COURAGE (NEJM 2007)",
+    "primary_finding": "PCI + OMT did not reduce death/MI vs OMT alone in stable CAD (19.0% vs 18.5% at 4.6 yrs, HR 1.05, p=0.62); PCI provided faster but not durable angina relief.",
+    "population": "n=2,287 patients with stable angina, >=70% stenosis in >=1 vessel with objective ischemia, randomized to PCI + OMT vs OMT alone; predominantly bare-metal stents.",
+    "critique": "Used predominantly bare-metal stents (pre-DES era); 32% crossover from OMT to PCI; excluded left main and severe symptoms; FFR-guided PCI not used.",
+    "followup": "COURAGE 15-year extended follow-up (NEJM 2015) confirmed no mortality difference; ISCHEMIA trial (2020) reinforced findings with modern PCI and broader ischemia.",
+    "guideline_impact": "2012 ACC/AHA stable IHD guideline endorsed OMT as initial strategy for stable CAD; PCI reserved for refractory symptoms or high-risk anatomy.",
+    "expert_takeaway": "CardioNerds/ACC: COURAGE changed the conversation from 'open the artery' to 'treat the patient'; OMT first, PCI for symptoms not prognosis in stable CAD.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/17387127/",
+      "https://www.acc.org/latest-in-cardiology/clinical-trials/2010/02/23/18/26/courage"
+    ]
+  },
+  "COMPASS": {
+    "trial": "COMPASS (NEJM 2017)",
+    "primary_finding": "Rivaroxaban 2.5mg BID + aspirin reduced CV death/stroke/MI 24% vs aspirin alone (4.1% vs 5.4%, HR 0.76, p<0.001); major bleeding increased (3.1% vs 1.9%); net benefit favored combination.",
+    "population": "n=27,395 patients with stable atherosclerotic disease (CAD or PAD), randomized to rivaroxaban 2.5mg BID + ASA, rivaroxaban 5mg BID alone, or ASA alone.",
+    "critique": "Trial stopped early for efficacy (mean follow-up 23 months) may overestimate benefit; excluded high bleeding risk patients; absolute risk reduction modest (1.3%).",
+    "followup": "COMPASS PAD substudy showed benefit specifically in PAD patients; VOYAGER PAD extended findings to post-revascularization PAD setting.",
+    "guideline_impact": "2019 ESC chronic coronary syndrome guidelines and 2021 ACC/AHA chest pain guidelines added low-dose rivaroxaban + aspirin as Class IIa option for high-ischemic-risk stable CAD/PAD.",
+    "expert_takeaway": "ACC: COMPASS established 'dual pathway inhibition' as a new strategy for high-risk stable atherosclerosis — modest absolute benefit but consistent across CAD and PAD.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/28844192/",
+      "https://www.acc.org/latest-in-cardiology/clinical-trials/2017/08/26/09/02/compass"
+    ]
+  },
+  "DCCT": {
+    "trial": "DCCT (NEJM 1993)",
+    "primary_finding": "Intensive insulin (HbA1c 7.2% vs 9.0%) reduced retinopathy progression 54%, microalbuminuria 39%, neuropathy 60%; 3-fold higher severe hypoglycemia.",
+    "population": "n=1,441 T1DM patients age 13-39, baseline 1-15yr disease duration, followed mean 6.5 years.",
+    "critique": "Excluded patients >39yo, CV-disease, advanced complications; couldn't power CV endpoints due to young cohort.",
+    "followup": "EDIC (NEJM 2005) showed legacy effect: 57% reduction in nonfatal MI/stroke/CV death at 17yr despite HbA1c convergence.",
+    "guideline_impact": "ADA adopted HbA1c <7% target for T1DM and established intensive therapy as standard of care for all T1DM.",
+    "expert_takeaway": "Defined 'metabolic memory' — early tight control pays dividends decades later.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/8366922/",
+      "https://pubmed.ncbi.nlm.nih.gov/16371630/"
+    ]
+  },
+  "UKPDS 34": {
+    "trial": "UKPDS 34 (Lancet 1998)",
+    "primary_finding": "Metformin reduced any diabetes-related endpoint 32% (NNT~14), all-cause mortality 36%, MI 39% vs diet alone over 10.7yr.",
+    "population": "n=1,704 newly diagnosed overweight (>120% IBW) T2DM patients, mean age 53, randomized to metformin vs diet vs sulfonylurea/insulin.",
+    "critique": "Small metformin arm (n=342), unexplained excess mortality when metformin added to sulfonylurea subgroup.",
+    "followup": "UKPDS 10-year post-trial follow-up (NEJM 2008) confirmed sustained 33% MI and 27% mortality reduction despite glycemic convergence.",
+    "guideline_impact": "Established metformin as first-line T2DM therapy in ADA/EASD guidelines, position retained through 2026.",
+    "expert_takeaway": "Drug-specific benefit beyond glucose lowering — likely the most important T2DM trial ever conducted.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/9742977/",
+      "https://pubmed.ncbi.nlm.nih.gov/18784090/"
+    ]
+  },
+  "ADVANCE": {
+    "trial": "ADVANCE (NEJM 2008)",
+    "primary_finding": "Intensive control (HbA1c 6.5% vs 7.3%) reduced combined macro/microvascular events 10% (HR 0.90), driven entirely by 21% nephropathy reduction; no CV benefit.",
+    "population": "n=11,140 T2DM patients with CV risk factors or established disease, mean age 66, randomized to gliclazide-based intensive vs standard.",
+    "critique": "Lower hypoglycemia/mortality vs ACCORD suggested gradual A1c lowering was safer than aggressive titration.",
+    "followup": "ADVANCE-ON (NEJM 2014) found no legacy benefit on CV/mortality at 5.4yr post-trial, but persistent renal benefit.",
+    "guideline_impact": "ADA shifted toward individualized A1c targets, tempering universal <7% recommendation post-ACCORD/ADVANCE/VADT.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/18539916/",
+      "https://pubmed.ncbi.nlm.nih.gov/18539918/"
+    ]
+  },
+  "VADT": {
+    "trial": "VADT (NEJM 2009)",
+    "primary_finding": "Intensive control (HbA1c 6.9% vs 8.4%) showed no significant CV benefit (HR 0.88, p=0.14) over 5.6yr; doubled severe hypoglycemia.",
+    "population": "n=1,791 mostly male veterans with poorly controlled T2DM (baseline A1c 9.4%), mean age 60, 40% with prior CV event.",
+    "critique": "Advanced disease duration (~11.5yr) and existing complications limited capacity for benefit — too late to intervene.",
+    "followup": "VADT 10-year follow-up (NEJM 2015) found modest CV benefit (HR 0.83) emerging late; 15-year (NEJM 2019) showed benefit lost.",
+    "guideline_impact": "Reinforced ADA's individualized targets — less stringent A1c (~8%) acceptable in elderly with long-standing disease and comorbidities.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/19092145/",
+      "https://pubmed.ncbi.nlm.nih.gov/26630143/"
+    ]
+  },
+  "LEADER": {
+    "trial": "LEADER (NEJM 2016)",
+    "primary_finding": "Liraglutide reduced 3-point MACE 13% (13.0% vs 14.9%, HR 0.87, NNT=53), CV death 22%, all-cause mortality 15% over 3.8yr.",
+    "population": "n=9,340 T2DM with established CVD (81%) or high CV risk, mean age 64, baseline A1c 8.7%.",
+    "critique": "Modest absolute benefit (1.9%); unclear mechanism beyond glycemia/weight; exclusion of younger primary-prevention patients.",
+    "followup": "Pooled GLP-1 meta-analyses (Lancet D&E 2021) confirmed class effect; LEADER renal substudy showed 22% reduction in nephropathy.",
+    "guideline_impact": "ADA elevated GLP-1 RAs to preferred second-line after metformin for T2DM with established ASCVD (2018 update).",
+    "expert_takeaway": "First GLP-1 RA to show definitive CV mortality benefit, opening the era of outcome-driven T2DM therapy.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/27295427/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMe1607413"
+    ]
+  },
+  "SUSTAIN-6": {
+    "trial": "SUSTAIN-6 (NEJM 2016)",
+    "primary_finding": "Semaglutide reduced MACE 26% (6.6% vs 8.9%, HR 0.74, NNT=44), driven by 39% nonfatal stroke reduction; increased retinopathy complications (HR 1.76).",
+    "population": "n=3,297 T2DM with CVD/CKD/high CV risk, mean age 65, randomized to weekly semaglutide vs placebo for 104 weeks.",
+    "critique": "Pre-marketing non-inferiority (underpowered for superiority); retinopathy signal unexplained and worrying.",
+    "followup": "PIONEER 6 (oral semaglutide, NEJM 2019) confirmed CV safety; SELECT (NEJM 2023) showed MACE benefit in non-diabetic obesity.",
+    "guideline_impact": "Contributed to ADA preferred GLP-1 RA designation; FDA approved semaglutide CV indication in 2020.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/27633186/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa1607141"
+    ]
+  },
+  "REWIND": {
+    "trial": "REWIND (Lancet 2019)",
+    "primary_finding": "Dulaglutide reduced MACE 12% (12.0% vs 13.4%, HR 0.88, NNT=60) over 5.4yr — longest GLP-1 CVOT.",
+    "population": "n=9,901 T2DM, only 31% with established CVD (majority primary prevention), mean age 66, baseline A1c 7.2%.",
+    "critique": "Modest absolute risk reduction over 5+ years; whether benefit extends to truly low-risk primary-prevention patients remains uncertain.",
+    "followup": "Subgroup analysis (Lancet 2019) confirmed consistent benefit regardless of prior CVD; cognitive substudy showed reduced cognitive decline.",
+    "guideline_impact": "Expanded ADA recommendation for GLP-1 RA to T2DM with multiple CV risk factors, not just established ASCVD.",
+    "expert_takeaway": "First CVOT to demonstrate benefit predominantly in primary prevention population.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/31189511/",
+      "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(19)31149-3/"
+    ]
+  },
+  "DECLARE-TIMI 58": {
+    "trial": "DECLARE-TIMI 58 (NEJM 2019)",
+    "primary_finding": "Dapagliflozin did not reduce MACE (HR 0.93, p=0.17) but reduced CV death/HF hospitalization 17% (HR 0.83, NNT=125) over 4.2yr.",
+    "population": "n=17,160 T2DM, 40% with established ASCVD, 60% with multiple risk factors, baseline A1c 8.3%.",
+    "critique": "Failure of MACE primary endpoint; HF benefit driven by hospitalization (subjective), not CV death.",
+    "followup": "DAPA-HF (NEJM 2019) confirmed HF benefit independent of diabetes; DAPA-CKD (NEJM 2020) extended to kidney outcomes.",
+    "guideline_impact": "ADA/ACC now recommend SGLT2 inhibitors for T2DM with HF or CKD regardless of glycemic control.",
+    "expert_takeaway": "Reframed SGLT2 inhibitors as primarily cardiorenal — not glucose — drugs.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/30415602/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa1812389"
+    ]
+  },
+  "SURMOUNT-1": {
+    "trial": "SURMOUNT-1 (NEJM 2022)",
+    "primary_finding": "Tirzepatide 15mg achieved 20.9% mean weight loss vs 3.1% placebo at 72wk; 91% achieved >=5% loss (NNT~1.1).",
+    "population": "n=2,539 adults with obesity (BMI>=30) or BMI>=27 with comorbidity, without diabetes, mean BMI 38.",
+    "critique": "Absent long-term CV/mortality data; history of obesity drugs (fen-phen, lorcaserin) later withdrawn.",
+    "followup": "SURMOUNT-4 (JAMA 2024) showed regain after discontinuation; SURMOUNT-MMO (2026) cardiovascular outcomes trial pending.",
+    "guideline_impact": "Led to FDA approval of tirzepatide for obesity (Zepbound, 2023); AACE 2024 endorsed as preferred pharmacotherapy.",
+    "expert_takeaway": "Bariatric-surgery-level weight loss from an injection — but durability and CV outcomes still unproven.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/35658024/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMe2206939"
+    ]
+  },
+  "CHECKMATE 067": {
+    "trial": "CheckMate 067 (NEJM 2015)",
+    "primary_finding": "Nivo+ipi median PFS 11.5mo vs nivo 6.9mo vs ipi 2.9mo; 10-year OS 43% (combo) vs 37% (nivo) vs 19% (ipi).",
+    "population": "n=945 previously untreated unresectable stage III/IV melanoma, randomized 1:1:1 to nivo+ipi, nivo, or ipi.",
+    "critique": "Combo's 55% grade 3-4 toxicity; lack of direct nivo+ipi vs nivo statistical comparison in initial design.",
+    "followup": "10-year follow-up (NEJM 2025) confirmed durable plateau in OS curves, with median OS 71.9mo (combo) vs 36.9mo (nivo) vs 19.9mo (ipi).",
+    "guideline_impact": "NCCN designated nivo+ipi category 1 first-line for advanced melanoma; established dual checkpoint blockade paradigm.",
+    "expert_takeaway": "Transformed metastatic melanoma from uniformly fatal to potentially curable for ~40% of patients.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/26027431/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa1504030"
+    ]
+  },
+  "KEYNOTE-024": {
+    "trial": "KEYNOTE-024 (NEJM 2016)",
+    "primary_finding": "Pembrolizumab improved median PFS 10.3mo vs 6.0mo (HR 0.50), 5-year OS 31.9% vs 16.3% despite 66% crossover.",
+    "population": "n=305 untreated stage IV NSCLC with PD-L1 TPS >=50%, no EGFR/ALK alterations.",
+    "critique": "Exclusion of EGFR/ALK and PD-L1<50% patients (~70% of NSCLC), limiting generalizability.",
+    "followup": "5-year update (JCO 2021, Brahmer) confirmed sustained benefit; KEYNOTE-042 extended to PD-L1>=1% with attenuated benefit.",
+    "guideline_impact": "NCCN established pembrolizumab monotherapy as preferred first-line for PD-L1>=50% advanced NSCLC; mandated PD-L1 testing.",
+    "expert_takeaway": "Made chemo-free first-line therapy the standard for high PD-L1 NSCLC.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/27718847/",
+      "https://pubmed.ncbi.nlm.nih.gov/33872070/"
+    ]
+  },
+  "CLL14": {
+    "trial": "CLL14 (NEJM 2019)",
+    "primary_finding": "Fixed 12-mo venetoclax+obinutuzumab improved 2-yr PFS 88% vs 64% (HR 0.35, NNT=4) vs chlorambucil+obinutuzumab; deeper MRD-negative responses.",
+    "population": "n=432 untreated CLL with comorbidities (CIRS>6 or CrCl<70), median age 72.",
+    "critique": "Chlorambucil-based comparator (already outdated by 2019); absence of head-to-head vs BTK inhibitors.",
+    "followup": "6-year follow-up (Blood 2024, Al-Sawaf): sustained PFS benefit (53% vs 21.7%), TTNT 65%, supporting fixed-duration paradigm.",
+    "guideline_impact": "NCCN/iwCLL endorsed venetoclax+obinutuzumab as preferred fixed-duration first-line CLL therapy in 2020.",
+    "expert_takeaway": "Established chemo-free, time-limited therapy as new CLL standard, sparing patients indefinite BTK inhibitor exposure.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/31141632/",
+      "https://pubmed.ncbi.nlm.nih.gov/39082668/"
+    ]
+  },
+  "MAIA": {
+    "trial": "MAIA (NEJM 2019)",
+    "primary_finding": "Daratumumab+Rd reduced progression/death 44% (HR 0.56) vs Rd; 30-mo PFS 71% vs 56% (NNT=7); higher MRD-negativity (24% vs 7%).",
+    "population": "n=737 newly diagnosed transplant-ineligible multiple myeloma, median age 73.",
+    "critique": "Higher pneumonia/neutropenia rates; indefinite daratumumab duration (cost/burden); no OS benefit at primary analysis.",
+    "followup": "Final OS analysis (Lancet Oncol 2021) confirmed median OS not reached vs 65.5mo with Rd (HR 0.68); benefit sustained beyond 5 years.",
+    "guideline_impact": "NCCN designated D-Rd preferred first-line for transplant-ineligible MM; reshaped induction paradigm for elderly patients.",
+    "expert_takeaway": "Triplet therapy now expected standard even for frail/elderly MM patients.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/31141632/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa1817249"
+    ]
+  },
+  "ALCYONE": {
+    "trial": "ALCYONE (NEJM 2018)",
+    "primary_finding": "Daratumumab+VMP reduced progression/death 50% (HR 0.50); 18-mo PFS 71.6% vs 50.2% (NNT=5); doubled CR rate (43% vs 24%).",
+    "population": "n=706 newly diagnosed transplant-ineligible multiple myeloma, median age 71.",
+    "critique": "VMP backbone (declining use in US in favor of Rd); 9-cycle bortezomib limit; peripheral neuropathy concern.",
+    "followup": "Final analysis (Lancet 2020) showed sustained OS benefit (HR 0.60, median OS not reached vs 53.6mo) at median 40.1mo.",
+    "guideline_impact": "Supported FDA approval of daratumumab in newly diagnosed transplant-ineligible MM (2018); NCCN added D-VMP as option.",
+    "expert_takeaway": null,
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/29231133/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa1714678"
+    ]
+  },
+  "ARDS Network": {
+    "trial": "FACTT / ARDS Network (NEJM 2006)",
+    "primary_finding": "Conservative fluid strategy did not change 60-day mortality (25.5% vs 28.4%, p=0.30) but improved ventilator-free days (14.6 vs 12.1, p<0.001).",
+    "population": "n=1000 adults with acute lung injury/ARDS on mechanical ventilation without shock, randomized within 48h of intubation.",
+    "critique": "Excluded patients in shock; near-zero net fluid balance hard to replicate; protocol complex and rarely operationalized at bedside.",
+    "followup": "Long-term cognitive follow-up suggested conservative arm had more cognitive impairment at 12 months.",
+    "guideline_impact": "ATS/ESICM/SCCM ARDS guidelines recommend conservative fluid strategy in ARDS without shock after initial resuscitation.",
+    "expert_takeaway": "PulmCrit: dry lungs are happy lungs, but only after resuscitation; aim for even fluid balance, not aggressive diuresis in shock.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/16714767/",
+      "https://www.thebottomline.org.uk/summaries/icm/factt/"
+    ]
+  },
+  "EOLIA": {
+    "trial": "EOLIA (NEJM 2018)",
+    "primary_finding": "VV-ECMO did not significantly reduce 60-day mortality vs conventional ventilation (35% vs 46%, RR 0.76, p=0.09); 28% crossover to rescue ECMO.",
+    "population": "n=249 adults with very severe ARDS (P/F<50 for 3h, <80 for 6h, or pH<7.25 with PaCO2>=60).",
+    "critique": "Stopped early for futility despite trend; high crossover diluted effect; post-hoc Bayesian analysis showed >96% probability of benefit.",
+    "followup": "2018 Bayesian reanalysis and 2020 IPD meta-analysis with CESAR showed significant mortality benefit of ECMO.",
+    "guideline_impact": "ELSO and ATS 2023 guidelines recommend ECMO referral for severe ARDS meeting EOLIA criteria at experienced centers.",
+    "expert_takeaway": "PulmCrit (Farkas): EOLIA is a positive trial mislabeled negative; Bayesian framing reveals near-certain benefit in selected patients.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/29791822/",
+      "https://emcrit.org/pulmcrit/eolia/"
+    ]
+  },
+  "CESAR": {
+    "trial": "CESAR (Lancet 2009)",
+    "primary_finding": "Referral to ECMO center reduced death or severe disability at 6 months (37% vs 53%, RR 0.69, p=0.03; NNT 6).",
+    "population": "n=180 UK adults aged 18-65 with severe but reversible respiratory failure (Murray>3.0 or pH<7.20).",
+    "critique": "Pragmatic trial of referral not ECMO itself; 24% of referred patients never received ECMO; control arm lacked standardized lung-protective ventilation.",
+    "followup": "Long-term UK cost-effectiveness analysis supported ECMO referral; informed H1N1 ECMO triage in 2009 pandemic.",
+    "guideline_impact": "Established ECMO referral pathway for severe ARDS in UK and influenced ELSO international referral criteria.",
+    "expert_takeaway": "REBEL EM: tests a system not a device; benefit may reflect protocolized care at ECMO centers as much as ECMO itself.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/19762075/",
+      "https://rebelem.com/cesar-trial/"
+    ]
+  },
+  "ADRENAL": {
+    "trial": "ADRENAL (NEJM 2018)",
+    "primary_finding": "Hydrocortisone did not reduce 90-day mortality vs placebo in septic shock (27.9% vs 28.8%, OR 0.95, p=0.50) but faster shock resolution (3 vs 4 days).",
+    "population": "n=3800 adults with septic shock requiring vasopressors and mechanical ventilation across 69 ICUs in 5 countries.",
+    "critique": "Lower baseline severity than APROCCHSS (mortality ~28% vs 49%); no fludrocortisone; bolus dosing in APROCCHSS may have differed pharmacodynamically.",
+    "followup": "2020 6-month follow-up confirmed no mortality benefit; 2023 individual patient meta-analysis showed modest mortality benefit pooled across trials.",
+    "guideline_impact": "SSC 2021 weakly recommends hydrocortisone in septic shock with ongoing vasopressor requirement, citing ADRENAL+APROCCHSS together.",
+    "expert_takeaway": "REBEL EM: steroids speed shock resolution but don't save lives; reasonable in refractory shock, not mandatory.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/29347874/",
+      "https://rebelem.com/the-adrenal-trial-steroids-in-septic-shock/"
+    ]
+  },
+  "APROCCHSS": {
+    "trial": "APROCCHSS (NEJM 2018)",
+    "primary_finding": "Hydrocortisone+fludrocortisone reduced 90-day mortality vs placebo (43.0% vs 49.1%, RR 0.88, p=0.03; NNT 17).",
+    "population": "n=1241 French adults with septic shock for >=6h on vasopressors with SOFA>=3 in >=2 organs.",
+    "critique": "Sicker cohort than ADRENAL; protocol switched mid-trial after drotrecogin withdrawal; bolus hydrocortisone plus enteral fludrocortisone hard to compare across studies.",
+    "followup": "2024 Lancet Respiratory subgroup analysis showed largest benefit in community-acquired pneumonia septic shock.",
+    "guideline_impact": "SSC 2021 supports hydrocortisone in septic shock; debate continues over adding fludrocortisone.",
+    "expert_takeaway": "PulmCrit: fludrocortisone is the secret sauce; consider adding 50 mcg daily to hydrocortisone in refractory shock.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/29490185/",
+      "https://emcrit.org/pulmcrit/fludrocortisone/"
+    ]
+  },
+  "VASST": {
+    "trial": "VASST (NEJM 2008)",
+    "primary_finding": "Low-dose vasopressin vs norepinephrine did not reduce 28-day mortality in septic shock (35.4% vs 39.3%, RR 0.90, p=0.26).",
+    "population": "n=778 adults with septic shock on >=5 mcg/min norepinephrine equivalents across 27 ICUs.",
+    "critique": "Underpowered; subgroup of less-severe shock (NE 5-15 mcg/min) showed mortality benefit driving guideline use; open-label catecholamine titration.",
+    "followup": "VANISH (2016) showed no mortality benefit of vasopressin-first vs norepinephrine-first but less AKI requiring RRT.",
+    "guideline_impact": "SSC 2021 recommends adding vasopressin to norepinephrine when MAP target unmet, citing VASST+VANISH.",
+    "expert_takeaway": "EMCrit: vasopressin as second-line catecholamine-sparer is reasonable; routine first-line use not supported.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/18305265/",
+      "https://www.thebottomline.org.uk/summaries/icm/vasst/"
+    ]
+  },
+  "SMART": {
+    "trial": "SMART (NEJM 2018)",
+    "primary_finding": "Balanced crystalloids reduced MAKE30 (death, RRT, persistent renal dysfunction) vs saline (14.3% vs 15.4%, OR 0.91, p=0.04; NNT 94).",
+    "population": "n=15,802 critically ill adults in 5 Vanderbilt ICUs in cluster-crossover trial.",
+    "critique": "Single-center, unblinded, cluster-crossover; small absolute difference; composite driven by death not RRT; baseline imbalances between months.",
+    "followup": "2019 sepsis subgroup analysis showed larger benefit in sepsis (33.8% vs 38.9% MAKE30); BaSICS and PLUS later showed no benefit.",
+    "guideline_impact": "SSC 2021 weakly recommends balanced crystalloids over saline for resuscitation in sepsis.",
+    "expert_takeaway": "PulmCrit: ditch saline by default; the signal across SMART+meta-analysis favors balanced even if individual mega-trials are null.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/29485925/",
+      "https://emcrit.org/pulmcrit/smart/"
+    ]
+  },
+  "BaSICS": {
+    "trial": "BaSICS (JAMA 2021)",
+    "primary_finding": "Balanced solution did not reduce 90-day mortality vs saline (26.4% vs 27.2%, HR 0.97, p=0.47) in critically ill patients.",
+    "population": "n=10,520 ICU patients at 75 Brazilian ICUs with >=1 risk factor and expected >24h ICU stay; factorial with slow/fast infusion.",
+    "critique": "Mostly elective surgical, low-severity patients with small fluid volumes (median ~1.5L); modest median exposure limited ability to detect difference.",
+    "followup": "TBI subgroup post hoc showed potential harm with balanced solution; informed PLUS interpretation.",
+    "guideline_impact": "Tempered SSC enthusiasm for balanced fluids; recommendations remain weak/conditional pending IPD meta-analyses.",
+    "expert_takeaway": "First10EM: saline is fine in average ICU patients; balanced may still matter when large volumes are needed.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/34375394/",
+      "https://first10em.com/the-basics-trial-normal-saline-has-been-fine-all-along/"
+    ]
+  },
+  "PLUS": {
+    "trial": "PLUS (NEJM 2022)",
+    "primary_finding": "Plasma-Lyte 148 did not reduce 90-day mortality vs saline (21.8% vs 22.0%, OR 0.99, p=0.90) or new RRT in ICU patients.",
+    "population": "n=5037 critically ill adults in 53 Australia/New Zealand ICUs expected to need fluid and >=48h ICU stay.",
+    "critique": "Median exposure only ~3.9L; high pre-randomization fluid exposure may have diluted effect; lower-severity than expected.",
+    "followup": "2022 PLUS+BaSICS IPD meta-analysis with SMART suggested possible small benefit in sepsis but null overall.",
+    "guideline_impact": "SSC kept balanced crystalloids as weak recommendation; equipoise reopened for general ICU population.",
+    "expert_takeaway": "REBEL EM: in unselected ICU patients, fluid choice probably doesn't matter much; reserve balanced for large-volume sepsis resuscitation.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/35041780/",
+      "https://rebelem.com/rebel-cast-ep108-the-plus-trial-balanced-vs-unbalanced-fluids-in-the-critically-ill/"
+    ]
+  },
+  "LOVIT": {
+    "trial": "LOVIT (NEJM 2022)",
+    "primary_finding": "High-dose IV vitamin C increased 28-day death or persistent organ dysfunction vs placebo (44.5% vs 38.5%, RR 1.21, p=0.01; NNH 17).",
+    "population": "n=872 ICU adults with sepsis on vasopressors, randomized within 24h of vasopressor start to vitamin C 50 mg/kg q6h x 96h vs placebo.",
+    "critique": "Abrupt vitamin C cessation may have caused rebound oxidative stress; no metabolic cofactor co-administration; composite endpoint driven by mortality signal.",
+    "followup": "2022 secondary analysis suggested abrupt vitamin C withdrawal contributed to harm; LOVIT-COVID also null/harmful.",
+    "guideline_impact": "SSC 2021 recommends against IV vitamin C in sepsis; effectively closed the Marik metabolic cocktail era.",
+    "expert_takeaway": "PulmCrit (Farkas): vitamin C in sepsis is dead; LOVIT was the nail in the coffin after CITRIS-ALI and VICTAS.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/35704292/",
+      "https://emcrit.org/pulmcrit/lovit/"
+    ]
+  },
+  "PALISADE": {
+    "trial": "PALISADE (NEJM 2018)",
+    "primary_finding": "67% of AR101 vs 4% placebo tolerated 600mg peanut protein at exit challenge; ARR 63%, NNT 2 for desensitization.",
+    "population": "n=496 peanut-allergic children/adolescents ages 4-17 reactive to <=100mg peanut protein at baseline.",
+    "critique": "14% required epinephrine during therapy; high withdrawal (~20%) from adverse events; desensitization, not tolerance.",
+    "followup": "Chu PACE meta-analysis (Lancet 2019) showed OIT tripled anaphylaxis risk vs avoidance despite desensitization.",
+    "guideline_impact": "FDA approved Palforzia (AR101) Jan 2020; AAAAI/EAACI cautiously endorse OIT in select pediatric patients in specialty centers.",
+    "expert_takeaway": "Desensitization is real but trades bite-protection for more frequent reactions during build-up — informed shared decision essential.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/30449234/",
+      "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(19)30420-9/abstract"
+    ]
+  },
+  "OUtMATCH": {
+    "trial": "OUtMATCH (NEJM 2024)",
+    "primary_finding": "67% omalizumab vs 7% placebo tolerated >=600mg peanut without dose-limiting symptoms; ARR 60%, NNT ~2.",
+    "population": "n=177 children/adults (1-55y) with peanut allergy plus >=2 other food allergies (cashew, milk, egg, walnut).",
+    "critique": "No oral tolerance induced — requires continuous dosing; Stage 2 showed no benefit over OIT alone for sustained tolerance.",
+    "followup": "Stage 2 (NEJM 2025) compared omalizumab-facilitated multi-allergen OIT vs OIT alone; longer-term real-world registries ongoing.",
+    "guideline_impact": "FDA approved omalizumab (Xolair) Feb 2024 as first drug for IgE-mediated food allergy; AAAAI 2024 practice parameter incorporated.",
+    "expert_takeaway": "Game-changer for multi-food allergic patients but requires indefinite injections — practical and cost barriers remain.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/38407394/",
+      "https://pubmed.ncbi.nlm.nih.gov/39293782/"
+    ]
+  },
+  "ION-1": {
+    "trial": "ION-1 (NEJM 2014)",
+    "primary_finding": "SVR12 of 97-99% with ledipasvir/sofosbuvir +/-ribavirin for 12 or 24 weeks in treatment-naive HCV genotype 1; NNT ~2 vs historical IFN.",
+    "population": "n=865 previously untreated chronic HCV genotype 1 adults; 16% with compensated cirrhosis.",
+    "critique": "Gilead-sponsored, no active comparator; cirrhotic and Black subgroups underpowered; SVR12 not validated against clinical outcomes.",
+    "followup": "Real-world cohorts (HCV-TARGET, TRIO) confirmed >95% SVR; long-term registries show HCC risk reduced but not eliminated post-SVR.",
+    "guideline_impact": "AASLD/IDSA HCV guidance (2014->) made LDV/SOF first-line for genotype 1; interferon abandoned.",
+    "expert_takeaway": "Ushered in the interferon-free era — HCV became a curable disease in 12 weeks of oral therapy.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/24725239/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa1402454"
+    ]
+  },
+  "ASTRAL-1": {
+    "trial": "ASTRAL-1 (NEJM 2015)",
+    "primary_finding": "SVR12 99% (618/624) with sofosbuvir/velpatasvir vs 0% placebo across HCV genotypes 1,2,4,5,6; NNT 1.",
+    "population": "n=740 chronic HCV genotypes 1,2,4,5,6 (including 19% cirrhotic, 32% treatment-experienced); randomized 5:1 to SOF/VEL vs placebo.",
+    "critique": "Placebo (not active) comparator — ethically unusual; genotype 3 evaluated separately in ASTRAL-3; limited decompensated cirrhosis data.",
+    "followup": "ASTRAL-4 (decompensated cirrhosis) and ASTRAL-5 (HIV coinfection) extended applicability; long-term SVR durability >99%.",
+    "guideline_impact": "AASLD/IDSA and EASL endorsed SOF/VEL (Epclusa) as pan-genotypic first-line; simplified pretreatment genotyping.",
+    "expert_takeaway": "Made genotype testing largely irrelevant — one pill, all genotypes, near-universal cure.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/26571066/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa1512610"
+    ]
+  },
+  "ACTT-1": {
+    "trial": "ACTT-1 (NEJM 2020)",
+    "primary_finding": "Remdesivir shortened recovery from 15 to 10 days (RR 1.29, p<0.001); mortality 11.4% vs 15.2% (HR 0.73, NS); NNT for recovery ~5.",
+    "population": "n=1062 hospitalized adults with COVID-19 and lower respiratory tract involvement; double-blind, placebo-controlled.",
+    "critique": "Baseline imbalance favored remdesivir arm (more good-prognosis patients); no mortality benefit; primary endpoint changed mid-trial.",
+    "followup": "WHO Solidarity (Lancet 2022) and meta-analyses showed no mortality benefit overall; modest benefit possibly in non-ventilated oxygen-requiring patients.",
+    "guideline_impact": "FDA full approval Oct 2020; IDSA/NIH guidelines recommend in hospitalized patients needing supplemental but not invasive ventilation.",
+    "expert_takeaway": "Modest recovery benefit only — overshadowed by dexamethasone and IL-6 antagonists for sicker patients.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/32445440/",
+      "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(22)00519-0/fulltext"
+    ]
+  },
+  "REMAP-CAP": {
+    "trial": "REMAP-CAP (NEJM 2021)",
+    "primary_finding": "Tocilizumab/sarilumab improved organ-support-free days (median 10 vs 0) and reduced in-hospital mortality 28% vs 36%; NNT ~12.",
+    "population": "n=803 critically ill COVID-19 adults within 24h of ICU organ support; Bayesian adaptive platform trial.",
+    "critique": "Open-label; concurrent steroid use evolved during enrollment confounding effect estimate; anakinra arm dropped for futility.",
+    "followup": "RECOVERY (Lancet 2021) confirmed tocilizumab mortality benefit in hospitalized hypoxic patients; meta-analyses support IL-6 blockade with steroids.",
+    "guideline_impact": "WHO, NIH, IDSA recommend tocilizumab (or sarilumab) added to steroids in rapidly progressing severe/critical COVID-19.",
+    "expert_takeaway": "Adaptive platform design itself became a model — demonstrated how to learn during a pandemic.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/33631065/",
+      "https://www.nejm.org/doi/full/10.1056/NEJMoa2100433"
+    ]
+  },
+  "STOP-IgAN": {
+    "trial": "STOP-IgAN (NEJM 2015)",
+    "primary_finding": "Adding immunosuppression to supportive care did not reduce eGFR loss (no difference at 3y); full remission 17% vs 5% but no renal protection.",
+    "population": "n=162 adults with IgAN and persistent proteinuria >0.75g/d despite 6-month optimized supportive care run-in (RAS blockade).",
+    "critique": "Excluded eGFR<30; mostly Caucasian; short 3-year primary endpoint; underpowered for hard endpoints like ESKD.",
+    "followup": "10-year follow-up (KI 2020) confirmed no benefit on death/ESKD/eGFR loss >40% (HR 1.20, 95% CI 0.75-1.92).",
+    "guideline_impact": "KDIGO 2021 IgAN guidelines downgraded routine corticosteroids; emphasized optimized supportive care first.",
+    "expert_takeaway": "Reframed IgAN management — optimize supportive care exhaustively before considering immunosuppression's harms.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/26630142/",
+      "https://pubmed.ncbi.nlm.nih.gov/32998815/"
+    ]
+  },
+  "TESTING": {
+    "trial": "TESTING (JAMA 2022)",
+    "primary_finding": "Methylprednisolone reduced composite kidney failure/eGFR decline/renal death by 47% (HR 0.53, 95% CI 0.39-0.72); NNT ~7 over 4.2y.",
+    "population": "n=503 adults with IgAN, proteinuria >=1g/d and eGFR 20-120 despite RAS blockade; ~75% Asian.",
+    "critique": "Original full-dose arm halted early for serious infections (8.1% vs 0%, including 2 deaths); reduced-dose arm safer but trial heterogeneous.",
+    "followup": "Reduced-dose extension (KI Reports 2024) confirmed efficacy with lower infection rate; long-term follow-up ongoing.",
+    "guideline_impact": "KDIGO 2024 update conditionally recommends reduced-dose steroids for high-risk IgAN after optimized supportive care, with infection prophylaxis.",
+    "expert_takeaway": "Steroids work in IgAN — but harm is real; weigh against newer agents (sparsentan, targeted-release budesonide).",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/35579642/",
+      "http://www.nephjc.com/news/2022/6/5/re-testing"
+    ]
+  },
+  "ECASS-III": {
+    "trial": "ECASS-III (NEJM 2008)",
+    "primary_finding": "Alteplase 3-4.5h improved mRS 0-1 at 90 days 52.4% vs 45.2% (OR 1.34); ARR 7.2%, NNT 14; symptomatic ICH 2.4% vs 0.2%.",
+    "population": "n=821 adults with acute ischemic stroke 3-4.5h from onset; excluded NIHSS>25, prior stroke+diabetes, anticoagulation.",
+    "critique": "Baseline imbalance — placebo arm had higher NIHSS and more prior stroke; Alper 2020 reanalysis showed no significant benefit after adjustment.",
+    "followup": "IST-3 (Lancet 2012) and pooled Emberson meta-analysis (Lancet 2014) supported benefit up to 4.5h; benefit time-dependent.",
+    "guideline_impact": "AHA/ASA 2009->2019 guidelines extended tPA window to 4.5h for eligible patients; ESO follows similar.",
+    "expert_takeaway": "Time-window extension still debated by EM physicians — emphasizes 'time is brain' over absolute hour cutoff.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/18815396/",
+      "https://pubmed.ncbi.nlm.nih.gov/32430395/"
+    ]
+  },
+  "MR CLEAN": {
+    "trial": "MR CLEAN (NEJM 2015)",
+    "primary_finding": "Endovascular thrombectomy +IV tPA improved functional independence (mRS 0-2) 32.6% vs 19.1%; ARR 13.5%, NNT 7; no mortality difference.",
+    "population": "n=500 adults with acute ischemic stroke from proximal anterior circulation occlusion, treatable within 6h of onset.",
+    "critique": "Only 1.4% used latest-generation stent retrievers initially; control group recovery rate lower than other contemporary trials.",
+    "followup": "HERMES pooled analysis (Lancet 2016, n=1287) confirmed benefit across 5 trials (cOR 2.49); DAWN/DEFUSE-3 extended window to 24h.",
+    "guideline_impact": "AHA/ASA 2015 emergency update made mechanical thrombectomy standard of care for LVO stroke; restructured stroke systems globally.",
+    "expert_takeaway": "Single most impactful stroke trial of the decade — made stroke a true endovascular emergency.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/25517348/",
+      "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(16)00163-X/abstract"
+    ]
+  },
+  "TEMEL": {
+    "trial": "TEMEL (NEJM 2010)",
+    "primary_finding": "Early palliative care improved QoL (FACT-L 98 vs 91.5, p=0.03), reduced depression, and extended median survival 11.6 vs 8.9mo (NNT ~7 for 1y survival).",
+    "population": "n=151 adults with newly diagnosed metastatic NSCLC; single-center MGH; randomized within 8 weeks of diagnosis.",
+    "critique": "Single-center, unblinded, predominantly white well-resourced cohort; less aggressive end-of-life care may confound survival.",
+    "followup": "ENABLE III (JCO 2015) and Bakitas trials confirmed QoL/mood benefits; mortality benefit not consistently replicated across cancer types.",
+    "guideline_impact": "ASCO 2012/2017/2024 guidelines recommend early palliative care concurrent with oncology care for advanced cancer within 8 weeks.",
+    "expert_takeaway": "Counterintuitive but reproducible — less aggressive care may extend life; reframed palliative care from end-of-life to early integration.",
+    "sources": [
+      "https://pubmed.ncbi.nlm.nih.gov/20818875/",
+      "https://ascopubs.org/doi/10.1200/JCO.2016.70.1474"
+    ]
+  }
 }
