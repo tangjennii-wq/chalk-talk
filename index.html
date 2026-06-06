@@ -1210,6 +1210,67 @@ var RAG_CONFIG = {
   url: "https://chalk-talk-proxy.chalktalk.workers.dev"
 };
 
+// ═══════════ TRIAL EXPANSIONS ═══════════
+// Loaded from rag/trial_expansions.json at boot. Used in generate() to inject richer trial
+// context (NEJM/NephJC/CardioNerds-grounded primary finding, critique, guideline impact)
+// into the system prompt when the topic / refine text references a curated landmark trial.
+var TRIAL_EXPANSIONS = {};
+(function loadTrialExpansions(){
+  // Fetch is relative to the HTML's directory. Works on github.io + localhost.
+  fetch("rag/trial_expansions.json", { cache: "no-cache" })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if(!data) return;
+      // Drop the _meta key — keep only trial entries
+      var out = {};
+      for(var k in data){ if(k !== "_meta") out[k] = data[k]; }
+      TRIAL_EXPANSIONS = out;
+      console.log("Loaded", Object.keys(out).length, "trial expansions");
+    })
+    .catch(function(e){ console.warn("trial_expansions.json not loaded:", e); });
+})();
+
+// Scan a body of text for trial names. Returns the matched expansion objects.
+// Case-insensitive substring match, longest names first so "PARTNER 3" beats "PARTNER".
+function getMatchingTrialExpansions(text){
+  if(!text || !TRIAL_EXPANSIONS) return [];
+  var lower = String(text).toLowerCase();
+  var names = Object.keys(TRIAL_EXPANSIONS).sort(function(a,b){ return b.length - a.length; });
+  var matches = [];
+  var seen = {};
+  for(var i=0;i<names.length;i++){
+    var n = names[i];
+    if(seen[n]) continue;
+    if(lower.indexOf(n.toLowerCase()) >= 0){
+      matches.push({ name: n, exp: TRIAL_EXPANSIONS[n] });
+      seen[n] = true;
+    }
+  }
+  return matches;
+}
+
+// Build the TRIAL CONTEXT block that gets injected into the prompt.
+function buildTrialExpansionContext(topic, refineContext){
+  var haystack = (topic||"") + "\n" + (refineContext||"");
+  var matches = getMatchingTrialExpansions(haystack);
+  if(!matches.length) return "";
+  var out = "\n\n═══ TRIAL CONTEXT (use these expert-curated summaries to anchor trial discussion) ═══";
+  matches.forEach(function(m){
+    var e = m.exp;
+    out += "\n\n[" + e.trial + "]";
+    if(e.primary_finding)   out += "\n  Primary finding: " + e.primary_finding;
+    if(e.population)        out += "\n  Population: " + e.population;
+    if(e.critique)          out += "\n  Critique/limitation: " + e.critique;
+    if(e.followup)          out += "\n  Long-term follow-up: " + e.followup;
+    if(e.guideline_impact)  out += "\n  Guideline impact: " + e.guideline_impact;
+    if(e.nephjc_takeaway)   out += "\n  NephJC takeaway: " + e.nephjc_takeaway;
+    if(e.expert_takeaway)   out += "\n  Expert takeaway: " + e.expert_takeaway;
+    if(e.sources && e.sources.length) out += "\n  Cite as: " + e.sources.join(" | ");
+  });
+  out += "\n═══ END TRIAL CONTEXT ═══";
+  return out;
+}
+
 // ═══════════ SUPABASE CONFIG ═══════════
 // Public URL + publishable (anon) key. Safe to commit — RLS enforces security.
 var SUPABASE_CONFIG = {
@@ -5398,7 +5459,9 @@ async function generate(){
       ? '\n\nDEPTH: CONCISE (~5-min summary). Keep this TIGHT. Same overall structure, but cut depth ~50%.\n- Each section: 3-4 BRIEF bullets (<=15 words each), not 5-7 long ones\n- Subtitle: <=10 words\n- Teaching pearl: 1 sentence, <=20 words\n- Board tip: 1 sentence, <=15 words\n- Visual memory card quadrants: <=8 words each, center: <=6 words\n- Summary points: <=20 words each, max 4 points\n- For boards style: vignette <=80 words, explanation 3-5 sentences, wrong explanations 1 sentence each, 3-4 board pearls (not 5), 3 teaching points <=20 words each.\nNO redundancy. No flowery language. Every word earns its place. Aim for clarity, not comprehensiveness.'
       : '\n\nDEPTH: DETAILED (full 10-min talk). Go deep. 5-7 substantive bullets per section exploring mechanism, evidence, clinical application. Teaching pearls and board tips can be 1-2 sentences with nuance. Aim for the full 10-min chalk talk experience.';
     var refineHint = (S.refineContext && S.refineContext.trim()) ? "\n\nUSER CONTEXT/REFINEMENT: " + S.refineContext.trim() : "";
-    var uc=[{type:"text",text:'Create content on: "'+S.topic+'"' + refineHint + guidelineContext + ragContext + depthHint + searchHint + '\nONLY JSON. Plain text values, no XML tags, no citation markup.'}].concat(buildReferenceParts(S.files));
+    // Inject NEJM/NephJC/CardioNerds-grounded trial context when the topic mentions a curated landmark trial.
+    var trialContext = buildTrialExpansionContext(S.topic, S.refineContext);
+    var uc=[{type:"text",text:'Create content on: "'+S.topic+'"' + refineHint + guidelineContext + trialContext + ragContext + depthHint + searchHint + '\nONLY JSON. Plain text values, no XML tags, no citation markup.'}].concat(buildReferenceParts(S.files));
     var sys=S.style==="boards"?BOARDS_PROMPT:LECTURE_PROMPT;
 
     // Step 1: Main generation with model fallback chain (Opus -> Sonnet -> Haiku)
