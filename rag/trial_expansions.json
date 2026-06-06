@@ -1,0 +1,171 @@
+{
+  "_meta": {
+    "purpose": "Expanded trial context beyond bare PubMed abstracts. Each entry combines primary finding, population, critique, followup, guideline impact, and (where available) NephJC / CardioNerds / editorial commentary. Used at generation time to give the LLM richer interpretive context for landmark trials.",
+    "legal_posture": "All entries are factual restatements in our own words. NephJC content is CC-BY licensed (attribution required, already included in sources). No copyrighted prose copied. Trial findings are facts (not copyrightable under Feist v. Rural).",
+    "schema": "trial_name → {trial, primary_finding, population, critique, followup, guideline_impact, nephjc_takeaway|expert_takeaway, sources[]}",
+    "created": "2026-06-04",
+    "first_batch": "8 nephro + 8 cards = 16 of 95 landmark trials in landmark_trials.json. Continue batch-by-batch (ID, endo, GI, heme/onc, pulm, neuro)."
+  },
+
+  "DAPA-CKD": {
+    "trial": "DAPA-CKD (NEJM 2020)",
+    "primary_finding": "Dapagliflozin 10mg cut composite of >=50% eGFR decline, ESKD, or renal/CV death from 14.5% to 9.2% (HR 0.61, 95% CI 0.51-0.72); NNT ~19 over 2.4 years. All-cause mortality also reduced (HR 0.69).",
+    "population": "n=4,304 adults with eGFR 25-75 and UACR 200-5000 mg/g, ~67% with T2DM, on max-tolerated RASi.",
+    "critique": "Stopped early for efficacy (can inflate effect size). Only 270 IgAN and 104 FSGS patients enrolled, so etiology-specific inferences are exploratory; ADPKD/lupus/recent immunosuppression excluded.",
+    "followup": "Prespecified analyses confirmed benefit across CKD etiologies and KDIGO risk strata; informed SMART-C pooled meta-analyses.",
+    "guideline_impact": "Anchored KDIGO 2024 Grade 1A recommendation for SGLT2i in CKD with eGFR >=20 and albuminuria, including non-diabetic CKD.",
+    "nephjc_takeaway": "Safe and effective use down to eGFR 25 challenges 'renalism' (reflex to withhold therapies in advanced CKD) and extends flozin benefit beyond diabetes.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/32970396/", "http://www.nephjc.com/news/dapa-ckd"]
+  },
+  "EMPA-KIDNEY": {
+    "trial": "EMPA-KIDNEY (NEJM 2023)",
+    "primary_finding": "Empagliflozin 10mg reduced composite kidney progression or CV death from 16.9% to 13.1% (HR 0.72, 95% CI 0.64-0.82) over median 2 years; NNT ~27.",
+    "population": "n=6,609 with eGFR 20-<45, or eGFR 45-<90 with UACR >=200 mg/g; ~54% non-diabetic, broadest CKD population of the SGLT2i trials.",
+    "critique": "No significant reduction in CV death or HF hospitalization alone; benefit was concentrated in patients with albuminuria - the low-albuminuria subgroup showed little signal, leaving normoalbuminuric CKD a soft indication.",
+    "followup": "2024 long-term post-trial follow-up (NEJM) showed persistence of kidney benefit but attenuation after drug discontinuation, supporting indefinite therapy.",
+    "guideline_impact": "Cemented SGLT2i as standard of care in non-diabetic CKD in KDIGO 2024 and broadened the eligible eGFR floor.",
+    "nephjc_takeaway": "Extended flozin benefit to lower eGFR and lower albuminuria than DAPA-CKD; benefit is real but smaller without heavy albuminuria.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/36331190/", "http://www.nephjc.com/news/empa-kidney"]
+  },
+  "CREDENCE": {
+    "trial": "CREDENCE (NEJM 2019)",
+    "primary_finding": "Canagliflozin 100mg reduced composite of ESKD, doubling of creatinine, or renal/CV death by 30% (HR 0.70, 95% CI 0.59-0.82); NNT 22 over 2.5 years. First dedicated SGLT2i renal-outcomes trial.",
+    "population": "n=4,401 with T2DM, eGFR 30-90, and UACR 300-5000 mg/g, on max-tolerated RASi.",
+    "critique": "Restricted to T2DM with macroalbuminuria - applicability to non-proteinuric or non-diabetic CKD is unanswered; stopped early for efficacy after planned interim analysis, potentially overestimating effect.",
+    "followup": "Subgroup analyses showed benefit preserved even when canagliflozin continued below eGFR 30; informed FDA label expansion and the SMART-C pooled meta-analysis.",
+    "guideline_impact": "Triggered 2019-2020 ADA and KDIGO updates recommending SGLT2i as first-line add-on to RASi in diabetic CKD with albuminuria.",
+    "nephjc_takeaway": "Proof-of-concept that SGLT2 inhibition slows kidney disease independent of glycemic effect - the trial that opened the cardiorenal era.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/30990260/", "http://www.nephjc.com/news/credence"]
+  },
+  "FIDELIO-DKD": {
+    "trial": "FIDELIO-DKD (NEJM 2020)",
+    "primary_finding": "Finerenone reduced composite of kidney failure, sustained >=40% eGFR decline, or renal death from 21.1% to 17.8% (HR 0.82, 95% CI 0.73-0.93); NNT 29 over median 2.6 years.",
+    "population": "n=5,734 with T2DM and CKD (UACR 30-300 with eGFR 25-60 and retinopathy, or UACR 300-5000 with eGFR 25-75), on max-tolerated RASi.",
+    "critique": "Only ~5% were on SGLT2i and <10% on GLP-1RA at baseline; incremental benefit on top of modern guideline-directed therapy is uncertain. Hyperkalemia roughly doubled (18.3% vs 9.0%) requiring active K monitoring.",
+    "followup": "FIDELITY pooled analysis with FIGARO-DKD (>13,000 patients) and 2024 FINEARTS-HF + CONFIDENCE clarified additive effect with SGLT2i and HFpEF benefit.",
+    "guideline_impact": "Established finerenone as KDIGO 2024 'pillar three' for albuminuric diabetic CKD alongside RASi and SGLT2i.",
+    "nephjc_takeaway": "First MRA with hard renal endpoint benefit in diabetic CKD; hyperkalemia is manageable with the trial's monitoring protocol, not prohibitive.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/33069326/", "http://www.nephjc.com/news/fidelio"]
+  },
+  "FIGARO-DKD": {
+    "trial": "FIGARO-DKD (NEJM 2021)",
+    "primary_finding": "Finerenone reduced composite CV death, nonfatal MI, nonfatal stroke, or HF hospitalization from 14.4% to 12.4% (HR 0.87, 95% CI 0.76-0.98) over median 3.4 years, driven largely by 29% reduction in HF hospitalization.",
+    "population": "n=7,437 with T2DM and earlier CKD: UACR 30-<300 with eGFR 25-90, or UACR 300-5000 with eGFR >=60.",
+    "critique": "Primary kidney composite was not significantly reduced as a secondary endpoint (HR 0.87, 95% CI 0.76-1.01); benefit on hard kidney endpoints in less-albuminuric patients required FIDELITY pooling to reach significance.",
+    "followup": "FIDELITY pooled analysis (FIDELIO+FIGARO) confirmed consistent cardiorenal benefit across the CKD-T2DM spectrum and informed FINEHEART meta-analysis.",
+    "guideline_impact": "Broadened ADA and KDIGO 2024 finerenone recommendation to include T2DM patients with milder albuminuria and preserved eGFR.",
+    "nephjc_takeaway": null,
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/34449189/"]
+  },
+  "FLOW": {
+    "trial": "FLOW (NEJM 2024)",
+    "primary_finding": "Semaglutide 1mg weekly reduced composite of >=50% eGFR decline, ESKD, kidney death, or CV death by 24% (HR 0.76, 95% CI 0.66-0.88); NNT ~20 over 3.4 years. Trial stopped early for efficacy.",
+    "population": "n=3,533 with T2DM and CKD (eGFR 50-75 with UACR >300, or eGFR 25-<50 with UACR >100), on max-tolerated RASi.",
+    "critique": "Only ~16% were on SGLT2i at baseline despite contemporary guideline status, so incremental benefit on top of triple therapy (RASi + SGLT2i + ns-MRA) remains unproven; ~30% of participants stopped semaglutide.",
+    "followup": "Prespecified subgroup analyses (2024-2025) showed consistent benefit irrespective of baseline SGLT2i use and across CKD severity strata.",
+    "guideline_impact": "Expected to enter KDIGO and ADA guidance as a fourth pillar for diabetic CKD; FDA expanded the semaglutide label for CKD risk reduction in 2025.",
+    "nephjc_takeaway": "First GLP-1RA trial with a primary kidney composite endpoint - shifts GLP-1s from glycemic/weight drugs to bona fide cardiorenal protective therapy.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/38785209/", "http://www.nephjc.com/news/flow"]
+  },
+  "SPRINT": {
+    "trial": "SPRINT (NEJM 2015)",
+    "primary_finding": "Intensive SBP target <120 vs <140 mmHg reduced composite of MI, ACS, stroke, HF, or CV death by 25% (HR 0.75, 95% CI 0.64-0.89) and all-cause mortality by 27%; NNT ~61 over 3.3 years. No effect on the prespecified composite kidney outcome.",
+    "population": "n=9,361 non-diabetic adults >=50yo at high CV risk; ~28% (n=2,646) had CKD with eGFR 20-59. Excluded diabetes, prior stroke, proteinuria >1 g/day.",
+    "critique": "Used automated unattended office BP, which reads ~5-10 mmHg lower than standard office BP - real-world SBP targets should be adjusted upward. Intensive arm had more AKI and ~3 mL/min greater eGFR drop, mostly hemodynamic without tubular injury biomarkers.",
+    "followup": "2021 final report confirmed sustained CV/mortality benefit. SPRINT-MIND showed reduced mild cognitive impairment. STEP (2021) and ESPRIT (2024) replicated intensive-BP benefit including in diabetes.",
+    "guideline_impact": "Drove 2017 ACC/AHA redefinition of hypertension (>=130/80) and KDIGO 2021 BP guideline recommending SBP <120 in most CKD patients using standardized measurement.",
+    "nephjc_takeaway": "The eGFR dip with intensive control is hemodynamic, not injury - don't abandon the target over a small creatinine bump, but BP measurement technique matters enormously.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/26551272/", "http://www.nephjc.com/sprint"]
+  },
+  "PROTECT": {
+    "trial": "PROTECT (Lancet 2023)",
+    "primary_finding": "Sparsentan (dual endothelin-A + AT1 receptor antagonist) reduced UPCR by 49.8% vs 15.1% with irbesartan at 36 weeks (between-group reduction 41%, p<0.0001); 2-year eGFR slope -2.7 vs -3.8 mL/min/yr.",
+    "population": "n=404 adults with biopsy-proven IgA nephropathy and proteinuria >=1 g/day despite max-tolerated RASi for >=12 weeks.",
+    "critique": "Active comparator was irbesartan, not RASi + SGLT2i (now standard); proteinuria is a surrogate and the trial was not powered for hard kidney endpoints, leaving long-term ESKD benefit inferential. Modest absolute eGFR slope difference (~1 mL/min/yr).",
+    "followup": "2-year results (Lancet 2023) confirmed sustained proteinuria reduction and modest eGFR slope advantage; ongoing open-label extension and post-marketing studies tracking ESKD endpoints.",
+    "guideline_impact": "FDA accelerated approval (2023) and full approval (2024) for IgAN with proteinuria; incorporated into KDIGO 2024 IgAN guideline update as an option for high-risk proteinuria.",
+    "nephjc_takeaway": "Validates endothelin-receptor blockade as a non-immunosuppressive lever in IgAN; how it stacks with SGLT2i and targeted-release budesonide remains the practical question.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/37015244/", "http://www.nephjc.com/news/sparsentan-protect"]
+  },
+
+  "DAPA-HF": {
+    "trial": "DAPA-HF (NEJM 2019)",
+    "primary_finding": "Dapagliflozin reduced CV death or worsening HF vs placebo (16.3% vs 21.2%; HR 0.74, 95% CI 0.65-0.85) over median 18.2 months; NNT ~21.",
+    "population": "n=4744 with NYHA II-IV HFrEF (EF <=40%), elevated NT-proBNP; ~55% had diabetes, on background GDMT including ARNI in 11%.",
+    "critique": "Only 11% on sacubitril/valsartan and 71% on MRA at baseline, so benefit on top of fully optimized quadruple therapy was extrapolated rather than directly proven.",
+    "followup": "Pooled patient-level meta-analysis with DELIVER (Nature Med 2022) confirmed benefit across full EF spectrum with HR 0.78 for CV death/HF hospitalization.",
+    "guideline_impact": "Foundational evidence for 2022 AHA/ACC/HFSA Class 1a recommendation for SGLT2i as pillar of GDMT in HFrEF regardless of diabetes status.",
+    "expert_takeaway": "Benefit emerged within weeks and was independent of diabetes, decisively reframing SGLT2 inhibitors as heart failure drugs rather than glucose-lowering agents.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/31535829/", "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2019/09/01/16/13/DAPA-HF"]
+  },
+  "EMPEROR-Reduced": {
+    "trial": "EMPEROR-Reduced (NEJM 2020)",
+    "primary_finding": "Empagliflozin reduced CV death or HF hospitalization vs placebo (HR 0.75, 95% CI 0.65-0.86) over median 16 months, driven by HF hospitalization (HR 0.70).",
+    "population": "n=3730 with NYHA II-IV HFrEF (EF <=40%) and elevated NT-proBNP; enriched for lower EF and higher NT-proBNP than DAPA-HF, ~50% diabetic.",
+    "critique": "Unlike DAPA-HF, did not show CV mortality reduction (HR 0.92, 95% CI 0.75-1.12), raising question whether empagliflozin and dapagliflozin differ on hard mortality.",
+    "followup": "EMPEROR-Pooled (Lancet 2020) meta-analysis with EMPEROR-Preserved confirmed renal protection with reduced eGFR decline; mortality benefit remained class-uncertain.",
+    "guideline_impact": "Co-anchors 2022 AHA/ACC/HFSA Class 1a SGLT2i recommendation for HFrEF; specifically validated benefit in the sickest, lowest-EF subgroup.",
+    "expert_takeaway": "Replicated DAPA-HF's HF hospitalization signal in a sicker cohort, cementing SGLT2i benefit as a class effect even when individual mortality endpoints differ.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/32865377/", "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2020/08/28/22/03/EMPEROR-Reduced"]
+  },
+  "PARADIGM-HF": {
+    "trial": "PARADIGM-HF (NEJM 2014)",
+    "primary_finding": "Sacubitril/valsartan beat enalapril for CV death or HF hospitalization (21.8% vs 26.5%; HR 0.80, 95% CI 0.73-0.87) and all-cause mortality (HR 0.84); NNT ~21.",
+    "population": "n=8442 with NYHA II-IV HFrEF (EF <=40%, later <=35%), elevated BNP, tolerating both ACEi and ARNI during run-in.",
+    "critique": "Long sequential run-in excluding patients intolerant of high-dose enalapril then sacubitril/valsartan selected for a sicker-than-average HF population that tolerated both drugs.",
+    "followup": "PIONEER-HF (NEJM 2019) extended use to acute decompensated HF; PARADIGM-HF stopped early at median 27 months for overwhelming efficacy.",
+    "guideline_impact": "Changed practice: 2022 AHA/ACC/HFSA elevated ARNI to Class 1a as preferred RAS inhibitor in chronic symptomatic HFrEF, displacing ACEi as first-line.",
+    "expert_takeaway": "First trial in two decades to show a new agent beats a proven ACEi head-to-head on mortality in HFrEF, ending the era of enalapril as standard.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/25176015/", "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2014/08/30/12/22/PARADIGM-HF"]
+  },
+  "ISCHEMIA": {
+    "trial": "ISCHEMIA (NEJM 2020)",
+    "primary_finding": "Initial invasive strategy did not reduce composite of CV death, MI, or hospitalization for unstable angina/HF/cardiac arrest vs conservative care (HR 0.93, 95% CI 0.80-1.08) at median 3.2 years.",
+    "population": "n=5179 with stable CAD and moderate-to-severe ischemia on stress testing; excluded left main disease, EF <35%, and recent ACS.",
+    "critique": "Procedural MI inflated early invasive-arm events while spontaneous MI was reduced later; curves crossed, leaving the time-horizon question unresolved at 3 years.",
+    "followup": "ISCHEMIA-EXTEND (Circulation 2023) at median 5.7 years showed no all-cause mortality difference but lower CV mortality offset by higher non-CV mortality with invasive strategy.",
+    "guideline_impact": "2021 ACC/AHA chest pain guideline downgraded routine revascularization for stable angina; medical optimization is now first-line for moderate-severe ischemia without left main disease.",
+    "expert_takeaway": "For stable CAD, revascularization is for angina relief, not prognosis; the symptom benefit is real but does not translate to fewer hard cardiac events.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/32227755/", "https://www.acc.org/Latest-in-Cardiology/Clinical-Trials/2019/11/15/17/27/ISCHEMIA"]
+  },
+  "AFFIRM": {
+    "trial": "AFFIRM (NEJM 2002)",
+    "primary_finding": "Rhythm-control vs rate-control showed no mortality difference (26.7% vs 25.9%; HR 1.15, 95% CI 0.99-1.34) at mean 3.5 years; rhythm-control trended toward more deaths and more hospitalizations.",
+    "population": "n=4060 with AF and >=1 stroke or death risk factor; mean age 70, ~40% women, recurrent AF allowed; anticoagulation continued in both arms.",
+    "critique": "37.5% of rhythm-control patients crossed to rate-control by 5 years; on-treatment analysis showed sinus rhythm was protective but antiarrhythmic drug toxicity erased the benefit.",
+    "followup": "RACE confirmed equivalence; EAST-AFNET 4 (2020) later overturned the 'rate-equals-rhythm' dogma in newly diagnosed AF using safer modern rhythm tools.",
+    "guideline_impact": "Confirmed practice: established rate-control as acceptable default in chronic AF, and that anticoagulation must continue regardless of rhythm status, a tenet still in 2023 ACC/AHA AF guidelines.",
+    "expert_takeaway": null,
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/12466506/"]
+  },
+  "EAST-AFNET 4": {
+    "trial": "EAST-AFNET 4 (NEJM 2020)",
+    "primary_finding": "Early rhythm control reduced composite of CV death, stroke, or hospitalization for HF/ACS vs usual care (3.9 vs 5.0 per 100 person-years; HR 0.79, 95% CI 0.66-0.94) over median 5.1 years.",
+    "population": "n=2789 with AF diagnosed within 12 months and >=2 CV conditions; mean age 70, ~70% had hypertension, only ~30% symptomatic.",
+    "critique": "Open-label trial with only 8% of rhythm-control patients receiving ablation initially; benefit may reflect comprehensive AF care plus timing, not antiarrhythmic drugs per se.",
+    "followup": "EAST-AFNET 4 subanalyses (Eur Heart J 2022) showed benefit was mediated by sinus rhythm at 12 months; AHA/ACC 2023 cited as practice-changing.",
+    "guideline_impact": "Changed practice: 2023 ACC/AHA/ACCP/HRS AF guideline gave new recommendation that rhythm control is useful within 1 year of AF diagnosis to reduce hospitalization, stroke, and mortality.",
+    "expert_takeaway": "Timing matters: AFFIRM's neutral result reflected late, sick AF populations; treating AF early with modern tools changes the trajectory.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/32865375/", "https://www.nejm.org/doi/full/10.1056/NEJMe2027180"]
+  },
+  "PARTNER 3": {
+    "trial": "PARTNER 3 (NEJM 2019)",
+    "primary_finding": "TAVR with balloon-expandable Sapien 3 beat surgical AVR for composite of death, stroke, or rehospitalization at 1 year (8.5% vs 15.1%; HR 0.54, 95% CI 0.37-0.79; superior).",
+    "population": "n=1000 with severe symptomatic aortic stenosis and low surgical risk (mean STS 1.9%, mean age 73); excluded bicuspid valves and difficult anatomy.",
+    "critique": "Selected ideal transfemoral anatomy and excluded bicuspid valves; 1-year endpoint driven largely by rehospitalization, leaving long-term durability and structural valve deterioration unanswered.",
+    "followup": "5-year (NEJM 2023) and 7-year follow-up showed sustained composite equivalence, similar bioprosthetic valve failure rates (~3.3% vs 3.8%), but higher subclinical valve thrombosis with TAVR.",
+    "guideline_impact": "Changed practice: 2020 ACC/AHA valve guideline made TAVR a Class 1 option for patients >=65 with low surgical risk, ending surgery's exclusive claim on younger AS patients.",
+    "expert_takeaway": "Extended TAVR from a salvage option into first-line therapy for most symptomatic AS, but durability data through 10 years remains the key unsettled question for patients in their 60s.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/30883058/", "https://www.cardionerds.com/181-aortic-stenosis-and-the-story-of-tavr-historical-perspective-future-directions-with-dr-jon-resar/"]
+  },
+  "EMPEROR-Preserved / DELIVER": {
+    "trial": "EMPEROR-Preserved (NEJM 2021) and DELIVER (NEJM 2022)",
+    "primary_finding": "Empagliflozin reduced CV death/HF hospitalization in HFpEF (13.8% vs 17.1%; HR 0.79, 95% CI 0.69-0.90; NNT ~31); DELIVER showed dapagliflozin reduced CV death/worsening HF (16.4% vs 19.5%; HR 0.82, 95% CI 0.73-0.92).",
+    "population": "EMPEROR-Preserved: n=5988 with EF >40%, NYHA II-IV, elevated NT-proBNP; DELIVER: n=6263 with EF >40% including HF with improved EF.",
+    "critique": "Benefit driven by HF hospitalization rather than CV mortality; EMPEROR-Preserved subgroup analyses suggested attenuated effect at EF >=60-65%, though pooled DELIVER+EMPEROR data argue benefit persists across EF spectrum.",
+    "followup": "Patient-level pooled analysis (Lancet 2022) of DELIVER+DAPA-HF and meta-analysis of all four SGLT2i HF trials confirmed consistent ~20% reduction in HF hospitalization across the full EF range.",
+    "guideline_impact": "Changed practice: 2023 AHA/ACC/HFSA focused update elevated SGLT2i to Class 2a for HFpEF/HFmrEF, the first agents with mortality+morbidity signal in HFpEF.",
+    "expert_takeaway": "Ended decades of HFpEF therapeutic nihilism; SGLT2 inhibitors are the first drugs to convincingly reduce HF events across all ejection fractions, making them universal HF therapy.",
+    "sources": ["https://pubmed.ncbi.nlm.nih.gov/34449189/", "https://pubmed.ncbi.nlm.nih.gov/36027570/"]
+  }
+}
