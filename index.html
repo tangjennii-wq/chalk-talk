@@ -4456,7 +4456,7 @@ function renderLibCard(x){
 }
 
 function getDisplayLibrary(){
-  if(S.user) return (S.cloudTalks || []).map(function(row){
+  if(S.user) return (S.cloudTalks || []).filter(function(row){return !_softDeletedIds[row.id]}).map(function(row){
     // talk_json is intentionally NOT fetched in the lightweight list query — synthesize a minimal
     // talk object from columns so renderLibCard + the renderSaved _kind detection still work.
     // The full talk_json is fetched on Open via cloudLoadTalk(id).
@@ -4483,7 +4483,7 @@ function getDisplayLibrary(){
       _shareToken: row.share_token || null
     };
   });
-  return loadSavedTalks();
+  return loadSavedTalks().filter(_notSoftDeleted);
 }
 
 // === Favorites (Supabase-backed for logged-in users) ===
@@ -4631,6 +4631,67 @@ function loadSampleTitleOverrides(){try{return JSON.parse(localStorage.getItem("
 function setSampleTitleOverride(slug,title){try{var m=loadSampleTitleOverrides();if(title)m[slug]=title;else delete m[slug];localStorage.setItem("ct_sample_titles",JSON.stringify(m));return true}catch(e){return false}}
 function loadHiddenSampleSlugs(){try{return JSON.parse(localStorage.getItem("ct_sample_hidden")||"[]")}catch(e){return[]}}
 function hideSampleSlug(slug){try{var a=loadHiddenSampleSlugs();if(a.indexOf(slug)<0){a.push(slug);localStorage.setItem("ct_sample_hidden",JSON.stringify(a))}return true}catch(e){return false}}
+
+// === Delete confirmation modal + soft-delete with Undo ===
+// Replaces native confirm() for deletions. A branded modal asks first; on confirm we hide the item
+// immediately and show an Undo toast. The real delete (cloud/local/sample-hide) is deferred until the
+// toast window closes, so Undo is instant and lossless (nothing is removed until commit fires).
+var _softDeletedIds = {};    // saved-talk ids hidden pending commit
+var _softHiddenSlugs = {};   // sample slugs hidden pending commit
+function _notSoftDeleted(e){ return e && !_softDeletedIds[e.id]; }
+
+// Branded confirm dialog. onConfirm runs only if the user clicks Delete. Cancel is the focused/safe default.
+function showDeleteConfirm(name, onConfirm){
+  var ex=document.getElementById("ctConfirmOverlay"); if(ex)ex.remove();
+  var ov=document.createElement("div");
+  ov.id="ctConfirmOverlay";
+  ov.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(20,10,28,0.45);display:flex;align-items:center;justify-content:center;padding:20px";
+  var card=document.createElement("div");
+  card.style.cssText="background:#fff;border-radius:16px;max-width:380px;width:100%;padding:22px 22px 18px;box-shadow:0 20px 60px rgba(20,10,28,0.3);font-family:inherit";
+  card.innerHTML='<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px"><span style="background:#fbeaea;color:#c0392b;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🗑</span><span style="font-size:16px;font-weight:700;color:var(--ink)">Delete this talk?</span></div>'+
+    '<div style="font-size:13.5px;color:var(--ink-muted);line-height:1.5;margin-bottom:18px">“'+esc(name||"This talk")+'” will be removed from your library. You’ll have a few seconds to undo.</div>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+    '<button id="ctConfirmCancel" style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit">Cancel</button>'+
+    '<button id="ctConfirmDelete" style="background:#c0392b;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit">Delete</button>'+
+    '</div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ ov.remove(); document.removeEventListener("keydown",onKey) }
+  function onKey(e){ if(e.key==="Escape") close() }
+  document.addEventListener("keydown",onKey);
+  ov.onclick=function(e){ if(e.target===ov) close() };
+  document.getElementById("ctConfirmCancel").onclick=close;
+  document.getElementById("ctConfirmDelete").onclick=function(){ close(); onConfirm(); };
+  document.getElementById("ctConfirmCancel").focus();
+}
+
+// Undo toast. Calls onUndo if the user clicks Undo; otherwise onCommit fires when the window expires.
+function showUndoToast(message, onUndo, onCommit, ms){
+  var ex=document.getElementById("ctToast"); if(ex){ if(ex._commit) ex._commit(); ex.remove(); }
+  var t=document.createElement("div");
+  t.id="ctToast";
+  t.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999;background:#241430;color:#fff;border-radius:12px;padding:10px 8px 10px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(20,10,28,0.35);font-size:13px;font-family:inherit;max-width:90vw";
+  t.innerHTML='<span>'+esc(message)+'</span><button id="ctToastUndo" style="background:none;border:none;color:#d7b3ff;font-weight:700;font-size:13px;cursor:pointer;padding:4px 10px;border-radius:8px;font-family:inherit">Undo</button>';
+  document.body.appendChild(t);
+  var done=false;
+  function finish(undo){ if(done)return; done=true; clearTimeout(timer); t._commit=null; t.remove(); if(undo){ if(onUndo)onUndo() } else { if(onCommit)onCommit() } }
+  t._commit=function(){ finish(false) };  // allow a later toast to flush this one's commit
+  document.getElementById("ctToastUndo").onclick=function(){ finish(true) };
+  var timer=setTimeout(function(){ finish(false) }, ms||5000);
+  return t;
+}
+
+// Shared soft-delete for a saved talk id: hide now, commit (cloud or local) after the undo window.
+function softDeleteSavedTalk(id, name, afterHideFn){
+  _softDeletedIds[id]=true;
+  if(afterHideFn) afterHideFn(); else render();
+  showUndoToast("Talk deleted", function(){
+    delete _softDeletedIds[id]; render();
+  }, async function(){
+    if(S.user && window.sb && !String(id).startsWith("t_")){ await cloudDeleteTalk(id); }
+    else { writeSavedTalks(loadSavedTalks().filter(function(e){return e.id!==id})); }
+    delete _softDeletedIds[id]; render();
+  });
+}
 function writeSavedTalks(arr){try{localStorage.setItem("ct_saved_talks",JSON.stringify(arr));return true}catch(e){
   var n=arr.length;
   alert("Storage limit reached ("+n+" talks saved). Options:\n\n\u2022 Export your library to JSON as a backup, then delete some older talks\n\u2022 Or clear browser data for this site and re-import from the backup\n\nEach talk now averages ~15 KB, so this shouldn't happen under normal use.");
@@ -4731,23 +4792,18 @@ async function deleteSavedTalk(id){
   var arr=loadSavedTalks().filter(function(e){return e.id!==id});
   writeSavedTalks(arr);render();
 }
-// Delete the talk currently open in the detail view, then land the user back in the Library.
-// Mirrors deleteSavedTalk's cloud/local branching; gated in the UI to saved, owned, non-shared talks.
-async function deleteCurrentTalk(){
+// Delete the talk currently open in the detail view: confirm via modal, then soft-delete with Undo and
+// land the user back in the Library (the natural home after removal). Gated in the UI to owned saved talks.
+function deleteCurrentTalk(){
   var id=S.loadedTalkId; if(!id)return;
   var title=(S.talk&&S.talk.title)||"this talk";
-  if(!confirm('Delete "'+title+'"?\n\nThis permanently removes it from your library and cannot be undone.'))return;
-  if(S.user && window.sb && !String(id).startsWith("t_")){
-    var ok=await cloudDeleteTalk(id);
-    if(!ok){ alert("Delete failed — check connection."); return }
-  } else {
-    var arr=loadSavedTalks().filter(function(e){return e.id!==id});
-    writeSavedTalks(arr);
-  }
-  // Clear the now-deleted talk from view, then open the Library (the natural home after removal).
-  resetAll();
-  S.showSaved=true; S.libTab="lectures";
-  render(); window.scrollTo(0,0);
+  showDeleteConfirm(title, function(){
+    softDeleteSavedTalk(id, title, function(){
+      resetAll();
+      S.showSaved=true; S.libTab="lectures";
+      render(); window.scrollTo(0,0);
+    });
+  });
 }
 async function loadSavedTalk(id){
   var entry = null;
@@ -6412,7 +6468,7 @@ function renderSaved(){
   var _hiddenSamples=loadHiddenSampleSlugs();
   for(var si=0;si<samples.length;si++){
     var s=samples[si];
-    if(_hiddenSamples.indexOf(s.slug)>=0) continue;
+    if(_hiddenSamples.indexOf(s.slug)>=0 || _softHiddenSlugs[s.slug]) continue;
     var st = s.talk_concise || s.talk || s.talk_detailed || {};
     var hasBoth = !!(s.talk_concise && s.talk_detailed);
     all.push({_source:"sample",_kind:st.question?"boards":"lecture",_slug:s.slug,_id:null,
@@ -6572,11 +6628,20 @@ function bindSaved(){
     S.libCardMenuId=null;
     var slug=b.dataset.slug;
     if(slug){
-      // Sample: can't delete shared seed content, so hide it locally for this user.
-      if(confirm("Remove this sample from your library? You can restore it by clearing site data."))
-        { hideSampleSlug(slug); render(); }
+      // Sample: can't delete shared seed content, so hide it locally — confirm + Undo, commit on window close.
+      var samp=(typeof SAMPLES!=="undefined"&&SAMPLES?SAMPLES:[]).find(function(s){return s.slug===slug});
+      var sst=samp&&(samp.talk_concise||samp.talk||samp.talk_detailed);
+      var sname=(loadSampleTitleOverrides()[slug])||(sst&&sst.title)||(samp&&samp.topic)||"This sample";
+      showDeleteConfirm(sname, function(){
+        _softHiddenSlugs[slug]=true; render();
+        showUndoToast("Sample removed", function(){ delete _softHiddenSlugs[slug]; render(); },
+          function(){ hideSampleSlug(slug); delete _softHiddenSlugs[slug]; render(); });
+      });
     } else {
-      deleteSavedTalk(b.dataset.id);
+      var id=b.dataset.id;
+      var entry=getDisplayLibrary().find(function(x){return x.id===id});
+      var name=(entry&&entry.talk&&entry.talk.title)||(entry&&entry.topic)||"This talk";
+      showDeleteConfirm(name, function(){ softDeleteSavedTalk(id, name); });
     }
   }});
   // Per-library-card title rename
