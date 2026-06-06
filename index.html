@@ -5126,6 +5126,88 @@ var loadTimer = null;
 // ═══════════ UTILS ═══════════
 function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 
+// ─── Slides shorthand compressor (Jenni 2026-06-06) ───
+// Slides aren't lecture notes — they should read like a whiteboard scribble.
+// This applies safe medical abbreviations + drops filler words + word-caps to keep
+// each card scannable. Citation markers ([N], [N,M]) are PROTECTED so renderCite
+// downstream still chips them. Original text returned via .original so callers can
+// stash it in a title= tooltip for hover-reveal.
+//
+// Heuristic, NOT semantic. We avoid aggressive medical rewrites (e.g. won't drop
+// "not" or invert dosing). For high-stakes phrasing the user can hover for full.
+function slidesShorthand(text, maxWords){
+  if(!text) return {short:"", original:""};
+  var original = String(text);
+  var s = original;
+
+  // 1) Stash citation markers so substitutions never touch them.
+  //    Replace [N] / [N,M] / [N,M,...] with <idx> placeholders.
+  var stashed = [];
+  s = s.replace(/\[(\d+(?:\s*,\s*\d+)*)\]/g, function(m){
+    stashed.push(m);
+    return "" + (stashed.length - 1) + "";
+  });
+
+  // 2) Safe medical abbreviations — these are universally understood by MDs.
+  //    Order matters (longer phrases first) to avoid partial-word collisions.
+  var subs = [
+    [/\bapproximately\b/gi, "~"],
+    [/\bgreater than or equal to\b/gi, "≥"],
+    [/\bless than or equal to\b/gi, "≤"],
+    [/\bgreater than\b/gi, ">"],
+    [/\bless than\b/gi, "<"],
+    [/\bpatients with\b/gi, "pts w/"],
+    [/\bpatients\b/gi, "pts"],
+    [/\bpatient\b/gi, "pt"],
+    [/\bversus\b/gi, "vs"],
+    [/\bbetween\b/gi, "btwn"],
+    [/\bwithout\b/gi, "w/o"],
+    [/\bwith\b/gi, "w/"],
+    [/\bsecondary to\b/gi, "2/2"],
+    [/\bdue to\b/gi, "d/t"],
+    [/\bhistory of\b/gi, "h/o"],
+    [/\bin the setting of\b/gi, "i/s/o"],
+    [/\bfollow[- ]?up\b/gi, "f/u"],
+    [/\bdiagnosis\b/gi, "dx"],
+    [/\btreatment\b/gi, "tx"],
+    [/\bmanagement\b/gi, "mgmt"],
+    [/\b(\d+)\s*years?\b/gi, "$1y"],
+    [/\b(\d+)\s*months?\b/gi, "$1mo"],
+    [/\b(\d+)\s*weeks?\b/gi, "$1wk"],
+    // Filler — safe to drop entirely
+    [/\bparticularly\b/gi, ""],
+    [/\btypically\b/gi, ""],
+    [/\busually\b/gi, ""],
+    [/\bessentially\b/gi, ""],
+    [/\bimportantly\b/gi, ""],
+    [/\bit is important to (?:note|remember|recognize)(?: that)?\b/gi, ""],
+    [/\bplease note that\b/gi, ""],
+    [/\bin general\b/gi, ""],
+    [/\boverall\b/gi, ""],
+    // "X is a Y" → "X: Y" (often)
+    [/\bis associated with\b/gi, "→"],
+    [/\bresults? in\b/gi, "→"],
+    [/\bleads? to\b/gi, "→"]
+  ];
+  for(var i=0;i<subs.length;i++) s = s.replace(subs[i][0], subs[i][1]);
+
+  // 3) Collapse double spaces and tidy punctuation after filler drops.
+  s = s.replace(/\s{2,}/g, " ").replace(/\s+([,.;:])/g, "$1").replace(/^[,;.\s]+/, "").trim();
+
+  // 4) Word-cap. Don't split inside a citation placeholder.
+  if(maxWords && maxWords > 0){
+    var words = s.split(/\s+/);
+    if(words.length > maxWords){
+      s = words.slice(0, maxWords).join(" ").replace(/[.,;:]+$/, "") + "…";
+    }
+  }
+
+  // 5) Restore citation markers.
+  s = s.replace(/(\d+)/g, function(_, idx){ return stashed[parseInt(idx, 10)] || ""; });
+
+  return {short: s, original: original};
+}
+
 // ═══════════ CITATION RENDERER ═══════════
 // Parses [N] / [N,M] markers in talk text and renders them as clickable pills.
 // ── Citation chip helpers (OpenEvidence-style: inline pill with source name) ───
@@ -7235,10 +7317,12 @@ function renderMain(){
         h+='<div style="padding:16px 14px;background:#fafafa;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">';
         h+='<div class="slides-flow" style="display:flex;gap:6px;align-items:stretch">';
         flowCards.forEach(function(c, i){
-          h+='<div style="flex:1;min-width:0;background:#fff;border:1px solid var(--line);border-top:3px solid '+c.color+';border-radius:10px;padding:10px 11px;display:flex;flex-direction:column">';
+          // Shorthand for slide cards — 25 word cap, hover for full
+          var _shFlow = slidesShorthand(c.body, 25);
+          h+='<div style="flex:1;min-width:0;background:#fff;border:1px solid var(--line);border-top:3px solid '+c.color+';border-radius:10px;padding:10px 11px;display:flex;flex-direction:column" title="'+esc(_shFlow.original)+'">';
           h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px"><span style="background:'+c.bg+';color:'+c.color+';width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">'+c.icon+'</span><span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:'+c.color+'">'+esc(c.label)+'</span></div>';
           // renderCite so any [N] markers become hoverable citation chips matching the Overview tab
-          h+='<div style="font-size:11.5px;color:var(--ink);line-height:1.4;flex:1">'+renderCite(c.body, t.references)+'</div>';
+          h+='<div style="font-size:11.5px;color:var(--ink);line-height:1.4;flex:1">'+renderCite(_shFlow.short, t.references)+'</div>';
           h+='</div>';
           if(i < flowCards.length - 1){
             // Arrow between cards
@@ -7258,7 +7342,8 @@ function renderMain(){
           h+='<div style="background:#f5edfa;border-left:4px solid #702b9d;border-radius:0 10px 10px 0;padding:12px 14px">';
           h+='<div style="font-size:10.5px;font-weight:700;color:#4a1a7a;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="font-size:13px">💡</span>Teaching Pearls</div>';
           for(var pp=0;pp<allPearls.length;pp++){
-            h+='<div style="font-size:11.5px;color:#3a1564;line-height:1.5;margin-bottom:7px;padding-left:10px;border-left:2px solid rgba(112,43,157,0.22);font-style:italic">'+renderCite(allPearls[pp], t.references)+'</div>';
+            var _shP = slidesShorthand(allPearls[pp], 30);
+            h+='<div style="font-size:11.5px;color:#3a1564;line-height:1.5;margin-bottom:7px;padding-left:10px;border-left:2px solid rgba(112,43,157,0.22);font-style:italic" title="'+esc(_shP.original)+'">'+renderCite(_shP.short, t.references)+'</div>';
           }
           h+='</div>';
         }
@@ -7266,7 +7351,8 @@ function renderMain(){
           h+='<div style="background:#ede6f5;border-left:4px solid #4a1a7a;border-radius:0 10px 10px 0;padding:12px 14px">';
           h+='<div style="font-size:10.5px;font-weight:700;color:#330662;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="font-size:13px">⚠️</span>Board Tips</div>';
           for(var tt=0;tt<allTips.length;tt++){
-            h+='<div style="font-size:11.5px;color:#2a0552;line-height:1.5;margin-bottom:7px;padding-left:10px;border-left:2px solid rgba(74,26,122,0.22);font-style:italic">'+renderCite(allTips[tt], t.references)+'</div>';
+            var _shT = slidesShorthand(allTips[tt], 30);
+            h+='<div style="font-size:11.5px;color:#2a0552;line-height:1.5;margin-bottom:7px;padding-left:10px;border-left:2px solid rgba(74,26,122,0.22);font-style:italic" title="'+esc(_shT.original)+'">'+renderCite(_shT.short, t.references)+'</div>';
           }
           h+='</div>';
         }
@@ -7281,7 +7367,10 @@ function renderMain(){
       if(keyTakeaways.length===0){
         h+='<div style="font-size:12px;color:var(--ink-muted);font-style:italic">No takeaways were generated for this talk. Try Rebuild to regenerate.</div>';
       } else {
-        for(var ki=0;ki<keyTakeaways.length;ki++)h+='<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:8px;font-size:12.5px;color:var(--ink);line-height:1.5"><span style="background:var(--lavender-bg);color:var(--plum);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex-shrink:0">'+(ki+1)+'</span><span style="flex:1">'+renderCite(keyTakeaways[ki],t.references)+'</span></div>';
+        for(var ki=0;ki<keyTakeaways.length;ki++){
+          var _shK = slidesShorthand(keyTakeaways[ki], 20);
+          h+='<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:8px;font-size:12.5px;color:var(--ink);line-height:1.5" title="'+esc(_shK.original)+'"><span style="background:var(--lavender-bg);color:var(--plum);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex-shrink:0">'+(ki+1)+'</span><span style="flex:1">'+renderCite(_shK.short,t.references)+'</span></div>';
+        }
       }
       h+='</div>';
 
