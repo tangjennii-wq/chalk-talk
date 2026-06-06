@@ -5730,7 +5730,9 @@ async function weaveRevision(userMsg){
     "- Is each new bullet in the section it topically belongs to?\n" +
     "- If the user's request was already 100% covered, return the talk unchanged with a 'note' field at the top level saying \"User-requested content was already covered \u2014 no changes needed.\" (Otherwise omit the note field entirely.)\n" +
     "Return the COMPLETE updated talk JSON in the EXACT same schema. ONLY JSON, no commentary, no markdown fences.";
-  var content = "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (preserve this, weave in additions):\n" + existingJson;
+  // Inject trial expansions if the user's refine references a curated landmark trial
+  var weaveTrialContext = buildTrialExpansionContext(userMsg, "");
+  var content = "USER REQUEST: " + userMsg + weaveTrialContext + "\n\nEXISTING TALK JSON (preserve this, weave in additions):\n" + existingJson;
   var txt = await callAPI(sys, content, 8192);
   var parsed = JSON.parse(fixJSON(txt));
   parsed = deepCleanCitations(parsed);
