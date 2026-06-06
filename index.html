@@ -4731,6 +4731,24 @@ async function deleteSavedTalk(id){
   var arr=loadSavedTalks().filter(function(e){return e.id!==id});
   writeSavedTalks(arr);render();
 }
+// Delete the talk currently open in the detail view, then land the user back in the Library.
+// Mirrors deleteSavedTalk's cloud/local branching; gated in the UI to saved, owned, non-shared talks.
+async function deleteCurrentTalk(){
+  var id=S.loadedTalkId; if(!id)return;
+  var title=(S.talk&&S.talk.title)||"this talk";
+  if(!confirm('Delete "'+title+'"?\n\nThis permanently removes it from your library and cannot be undone.'))return;
+  if(S.user && window.sb && !String(id).startsWith("t_")){
+    var ok=await cloudDeleteTalk(id);
+    if(!ok){ alert("Delete failed — check connection."); return }
+  } else {
+    var arr=loadSavedTalks().filter(function(e){return e.id!==id});
+    writeSavedTalks(arr);
+  }
+  // Clear the now-deleted talk from view, then open the Library (the natural home after removal).
+  resetAll();
+  S.showSaved=true; S.libTab="lectures";
+  render(); window.scrollTo(0,0);
+}
 async function loadSavedTalk(id){
   var entry = null;
   // Cloud path
@@ -6880,6 +6898,12 @@ function renderMain(){
       h+='<button id="pdfTalkBtn">📄 Export PDF</button>';
       h+='<button id="pngTalkBtn">📸 Save as image</button>';
       h+='<button id="jsonTalkBtn">{} Export JSON</button>';
+      // Delete — only when the user owns a persisted copy (saved local/cloud); hidden for unsaved,
+      // sample, and shared read-only talks. Last item, divider above, red, to match the Library card kebab.
+      if(S.talkIsSaved && S.loadedTalkId && !S.isSampleTalk && !S.sharedTalk){
+        h+='<div style="height:1px;background:var(--line);margin:4px 0"></div>';
+        h+='<button id="deleteTalkBtn" class="danger">🗑 Delete talk</button>';
+      }
       h+='</div>';
     }
     if(S.savedFlash)h+='<div style="margin-bottom:10px;padding:8px 12px;background:#f0f7f0;border:1px solid #b8d8b8;border-radius:8px;color:#2d6a2d;font-size:12px;font-weight:600;text-align:center">'+esc(S.savedFlash)+'</div>';
@@ -7850,6 +7874,7 @@ function bindMain(){
   var pngb=document.getElementById("pngTalkBtn");if(pngb)pngb.onclick=function(){S.overflowOpen=false;render();setTimeout(exportTalkImage,50)};
   var sib=document.getElementById("saveSlidesImgBtn");if(sib)sib.onclick=exportSlidesImage;
   var jtb=document.getElementById("jsonTalkBtn");if(jtb)jtb.onclick=function(){exportTalkJSON(null)};
+  var dtb=document.getElementById("deleteTalkBtn");if(dtb)dtb.onclick=function(){S.overflowOpen=false;deleteCurrentTalk()};
   var shr=document.getElementById("shareTalkBtn");if(shr)shr.onclick=function(){shareTalk()};
   // ── Public sharing handlers ─────────────────────────────────────────────
   var pubBtn=document.getElementById("publishTalkBtn");if(pubBtn)pubBtn.onclick=async function(){
