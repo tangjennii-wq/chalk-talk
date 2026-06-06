@@ -57,6 +57,14 @@ export default {
       return handleImageGeneration(request, env, ctx, origin);
     }
 
+    // ── Sharing: public talk by share_token (Jenni 2026-06-04) ───────────────
+    // GET /share/:token returns the public talk JSON for anonymous viewers.
+    // Reads via Supabase REST using the anon key — RLS allows any public-read.
+    // Edge-cached 5 min via Cloudflare Cache-Control header.
+    if (request.method === "GET" && url.pathname.startsWith("/share/")) {
+      return handleShareGet(request, env, ctx, origin, url);
+    }
+
     if (request.method !== "POST" || url.pathname !== "/v1/messages")
       return jsonError(404, "not_found", `Unknown endpoint ${request.method} ${url.pathname}`, origin);
 
@@ -319,4 +327,85 @@ function jsonError(status, type, message, origin, extra) {
       "Vary": "Origin",
     },
   });
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Sharing handler — GET /share/:token (Jenni 2026-06-04)
+// Looks up a public talk by share_token via Supabase REST (anon key),
+// strips author PII, returns JSON with 5-min edge cache.
+// ───────────────────────────────────────────────────────────────────────────
+async function handleShareGet(request, env, ctx, origin, url) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    return jsonError(503, "supabase_unconfigured", "Sharing backend not available.", origin);
+  }
+  const token = url.pathname.replace("/share/", "").split("/")[0].trim();
+  if (!token || !/^[a-f0-9-]{36}$/i.test(token)) {
+    return jsonError(400, "bad_token", "Invalid share token.", origin);
+  }
+
+  // Cloudflare edge cache for hot tokens
+  const cacheKey = new Request(`https://chalk-talk-cache/share/${token}`, request);
+  const cache = caches.default;
+  const cached = await cache.match(cacheKey);
+  if (cached) return cached;
+
+  // Query Supabase REST — RLS policy `public_talks_readable` permits anon reads where is_public=true.
+  const select = encodeURIComponent("id,title,topic,style,depth,talk_json,created_at,user_id");
+  const supaUrl = `${env.SUPABASE_URL}/rest/v1/talks?share_token=eq.${token}&is_public=eq.true&select=${select}`;
+  const supaRes = await fetch(supaUrl, {
+    headers: {
+      "apikey": env.SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${env.SUPABASE_ANON_KEY}`,
+    },
+  });
+  if (!supaRes.ok) {
+    return jsonError(502, "upstream_error", `Supabase lookup failed: ${supaRes.status}`, origin);
+  }
+  const rows = await supaRes.json();
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return jsonError(404, "not_found", "No public talk with that share link.", origin);
+  }
+
+  const row = rows[0];
+  const userId = row.user_id;
+  // Lookup author display name from profiles (decoration — failure is non-fatal)
+  let authorName = null;
+  if (userId) {
+    try {
+      const profUrl = `${env.SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=name,role,specialty,institution`;
+      const profRes = await fetch(profUrl, {
+        headers: {
+          "apikey": env.SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${env.SUPABASE_ANON_KEY}`,
+        },
+      });
+      if (profRes.ok) {
+        const profs = await profRes.json();
+        if (profs[0]) authorName = profs[0].name || null;
+      }
+    } catch (e) { /* swallow */ }
+  }
+
+  // Strip PII — never return user_id, email, etc.
+  const payload = {
+    id: row.id,
+    title: row.title,
+    topic: row.topic,
+    style: row.style,
+    depth: row.depth,
+    talk_json: row.talk_json,
+    created_at: row.created_at,
+    author: authorName ? { name: authorName } : null,
+  };
+
+  const resp = new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: {
+      "content-type": "application/json",
+      "access-control-allow-origin": origin || "*",
+      "cache-control": "public, max-age=300, s-maxage=300", // 5-min edge cache
+    },
+  });
+  ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+  return resp;
 }
