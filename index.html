@@ -7299,14 +7299,37 @@ function renderMain(){
         flowSrc.workup    = vm.bottom_left;
         flowSrc.treatment = vm.bottom_right;
       }
-      // Fall back to section pearls if vmc is empty. Keep [N] citation markers so renderCite can chip them.
-      if(!flowSrc.pathophys && t.sections && t.sections[0]) flowSrc.pathophys = (t.sections[0].teaching_pearl || (t.sections[0].points||[])[0] || "").trim();
-      if(!flowSrc.workup && t.sections){
-        var wkSec = t.sections.find(function(s){return /work|diagnos|test|labs|exam|imaging/i.test(s.heading||"")}); if(wkSec) flowSrc.workup = (wkSec.teaching_pearl || (wkSec.points||[])[0] || "").trim();
+      // Robust fallbacks so all 4 cards always populate (Jenni 2026-06-06: NSIP was rendering w/ only Pathophys).
+      // For each card, hunt sections by heading regex; if no match, take whichever section is most likely a fit.
+      // Keep [N] citation markers so renderCite can chip them.
+      var _secs = t.sections || [];
+      function _pickSection(re){ return _secs.find(function(s){return re.test(s.heading||"")}); }
+      function _bodyOf(sec){ if(!sec) return ""; return (sec.teaching_pearl || (sec.points||[])[0] || "").trim(); }
+
+      if(!flowSrc.pathophys){
+        var ppSec = _pickSection(/patho|mechan|biolog|cause|etiolog|definition|overview/i) || _secs[0];
+        flowSrc.pathophys = _bodyOf(ppSec);
       }
-      if(!flowSrc.treatment && t.sections){
-        var txSec = t.sections.find(function(s){return /treat|manage|therapy|drug|intervention/i.test(s.heading||"")}); if(txSec) flowSrc.treatment = (txSec.teaching_pearl || (txSec.points||[])[0] || "").trim();
+      if(!flowSrc.workup){
+        var wkSec = _pickSection(/work[- ]?up|diagnos|test|labs?|exam|imaging|screen|evaluat/i) || _secs[1] || _secs[0];
+        flowSrc.workup = _bodyOf(wkSec);
       }
+      if(!flowSrc.treatment){
+        var txSec = _pickSection(/treat|manage|therap|drug|interven|medic|surger/i) || _secs[2] || _secs[_secs.length-2] || _secs[_secs.length-1];
+        flowSrc.treatment = _bodyOf(txSec);
+      }
+      if(!flowSrc.findings){
+        var fdSec = _pickSection(/find|present|clinical|sign|symptom|complicat|outcome|prognos|pearl|takeaway/i) || _secs[_secs.length-1];
+        flowSrc.findings = _bodyOf(fdSec);
+      }
+      // De-duplicate — if multiple cards pulled the same fallback section, blank out repeats
+      // so we don't show "Pathophys: X / Workup: X / Treatment: X". Keep the first occurrence.
+      var _seen = {};
+      ["pathophys","workup","treatment","findings"].forEach(function(k){
+        var v = (flowSrc[k]||"").trim();
+        if(!v) return;
+        if(_seen[v]) flowSrc[k] = ""; else _seen[v] = true;
+      });
       var flowCards = [
         {key:"pathophys",  icon:"🧬", label:"Pathophys",  body:flowSrc.pathophys, color:"#702b9d", bg:"#f5edfa"},
         {key:"workup",     icon:"🔍", label:"Workup",     body:flowSrc.workup,    color:"#0f6f8a", bg:"#e6f4f7"},
@@ -7318,12 +7341,10 @@ function renderMain(){
         h+='<div style="padding:16px 14px;background:#fafafa;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">';
         h+='<div class="slides-flow" style="display:flex;gap:6px;align-items:stretch">';
         flowCards.forEach(function(c, i){
-          // Shorthand for slide cards — 25 word cap, hover for full
-          var _shFlow = slidesShorthand(c.body, 25);
-          h+='<div style="flex:1;min-width:0;background:#fff;border:1px solid var(--line);border-top:3px solid '+c.color+';border-radius:10px;padding:10px 11px;display:flex;flex-direction:column" title="'+esc(_shFlow.original)+'">';
+          h+='<div style="flex:1;min-width:0;background:#fff;border:1px solid var(--line);border-top:3px solid '+c.color+';border-radius:10px;padding:10px 11px;display:flex;flex-direction:column">';
           h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px"><span style="background:'+c.bg+';color:'+c.color+';width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">'+c.icon+'</span><span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:'+c.color+'">'+esc(c.label)+'</span></div>';
           // renderCite so any [N] markers become hoverable citation chips matching the Overview tab
-          h+='<div style="font-size:11.5px;color:var(--ink);line-height:1.4;flex:1">'+renderCite(_shFlow.short, t.references)+'</div>';
+          h+='<div style="font-size:11.5px;color:var(--ink);line-height:1.4;flex:1">'+renderCite(c.body, t.references)+'</div>';
           h+='</div>';
           if(i < flowCards.length - 1){
             // Arrow between cards
@@ -7343,8 +7364,7 @@ function renderMain(){
           h+='<div style="background:#f5edfa;border-left:4px solid #702b9d;border-radius:0 10px 10px 0;padding:12px 14px">';
           h+='<div style="font-size:10.5px;font-weight:700;color:#4a1a7a;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="font-size:13px">💡</span>Teaching Pearls</div>';
           for(var pp=0;pp<allPearls.length;pp++){
-            var _shP = slidesShorthand(allPearls[pp], 30);
-            h+='<div style="font-size:11.5px;color:#3a1564;line-height:1.5;margin-bottom:7px;padding-left:10px;border-left:2px solid rgba(112,43,157,0.22);font-style:italic" title="'+esc(_shP.original)+'">'+renderCite(_shP.short, t.references)+'</div>';
+            h+='<div style="font-size:11.5px;color:#3a1564;line-height:1.5;margin-bottom:7px;padding-left:10px;border-left:2px solid rgba(112,43,157,0.22);font-style:italic">'+renderCite(allPearls[pp], t.references)+'</div>';
           }
           h+='</div>';
         }
@@ -7352,8 +7372,7 @@ function renderMain(){
           h+='<div style="background:#ede6f5;border-left:4px solid #4a1a7a;border-radius:0 10px 10px 0;padding:12px 14px">';
           h+='<div style="font-size:10.5px;font-weight:700;color:#330662;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="font-size:13px">⚠️</span>Board Tips</div>';
           for(var tt=0;tt<allTips.length;tt++){
-            var _shT = slidesShorthand(allTips[tt], 30);
-            h+='<div style="font-size:11.5px;color:#2a0552;line-height:1.5;margin-bottom:7px;padding-left:10px;border-left:2px solid rgba(74,26,122,0.22);font-style:italic" title="'+esc(_shT.original)+'">'+renderCite(_shT.short, t.references)+'</div>';
+            h+='<div style="font-size:11.5px;color:#2a0552;line-height:1.5;margin-bottom:7px;padding-left:10px;border-left:2px solid rgba(74,26,122,0.22);font-style:italic">'+renderCite(allTips[tt], t.references)+'</div>';
           }
           h+='</div>';
         }
@@ -7368,10 +7387,7 @@ function renderMain(){
       if(keyTakeaways.length===0){
         h+='<div style="font-size:12px;color:var(--ink-muted);font-style:italic">No takeaways were generated for this talk. Try Rebuild to regenerate.</div>';
       } else {
-        for(var ki=0;ki<keyTakeaways.length;ki++){
-          var _shK = slidesShorthand(keyTakeaways[ki], 20);
-          h+='<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:8px;font-size:12.5px;color:var(--ink);line-height:1.5" title="'+esc(_shK.original)+'"><span style="background:var(--lavender-bg);color:var(--plum);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex-shrink:0">'+(ki+1)+'</span><span style="flex:1">'+renderCite(_shK.short,t.references)+'</span></div>';
-        }
+        for(var ki=0;ki<keyTakeaways.length;ki++)h+='<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:8px;font-size:12.5px;color:var(--ink);line-height:1.5"><span style="background:var(--lavender-bg);color:var(--plum);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex-shrink:0">'+(ki+1)+'</span><span style="flex:1">'+renderCite(keyTakeaways[ki],t.references)+'</span></div>';
       }
       h+='</div>';
 
