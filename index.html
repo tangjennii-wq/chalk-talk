@@ -7332,9 +7332,9 @@ function renderMain(){
       });
       var flowCards = [
         {key:"pathophys",  icon:"🧬", label:"Pathophys",  body:flowSrc.pathophys, color:"#702b9d", bg:"#f5edfa"},
-        {key:"workup",     icon:"🔍", label:"Workup",     body:flowSrc.workup,    color:"#0f6f8a", bg:"#e6f4f7"},
+        {key:"workup",     icon:"🔍", label:"Diagnosis",  body:flowSrc.workup,    color:"#0f6f8a", bg:"#e6f4f7"},
         {key:"treatment",  icon:"💊", label:"Treatment",  body:flowSrc.treatment, color:"#2d6a2d", bg:"#eef7ee"},
-        {key:"findings",   icon:"🎯", label:"Key Point",  body:flowSrc.findings,  color:"#a44a1e", bg:"#fdeee6"}
+        {key:"findings",   icon:"💡", label:"Pearls",     body:flowSrc.findings,  color:"#a44a1e", bg:"#fdeee6"}
       ].filter(function(c){return c.body && String(c.body).trim().length});
 
       if(flowCards.length){
