@@ -4147,7 +4147,7 @@ var S = {
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libCardMenuId:null,
-  gldOpen:false, editSettings:false, overflowOpen:false,
+  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false,
   talkHistory:[], editingSection:null, editingDraft:null,
   loadingFromHash:false,
   // — Auth + cloud
@@ -6827,8 +6827,9 @@ function renderMain(){
   h+='</div>';
 
   // === "How this works" — inline expandable, closed by default ===
+  // Open state tracked in S.howitOpen so unrelated render() calls don't collapse it.
   if(!S.talk){
-    h+='<details class="howit">';
+    h+='<details class="howit" id="howitDetails"'+(S.howitOpen?' open':'')+'>';
     h+='<summary><span>✦ How this works</span><span class="howit-caret">⌄</span></summary>';
     h+='<div class="howit-body">';
     h+='<div class="howit-step"><span class="howit-num">1</span><div><b>You enter a topic.</b> We retrieve matching evidence from PubMed — landmark trials, meta-analyses, and recent reviews — using semantic search.</div></div>';
@@ -7740,6 +7741,8 @@ function bindMain(){
   document.querySelectorAll(".tk-tab,.bntab").forEach(function(b){b.onclick=function(){if(b.dataset.tab&&S.tab!==b.dataset.tab){S.tab=b.dataset.tab;render()}}});
   // Guideline collapsible
   var gtg=document.getElementById("gldToggle");if(gtg)gtg.onclick=function(){S.gldOpen=!S.gldOpen;render()};
+  // "How this works" — native <details> toggle; mirror state so it survives unrelated render()
+  var hwt=document.getElementById("howitDetails");if(hwt)hwt.ontoggle=function(){S.howitOpen=hwt.open};
   // gldToggle2 handler deleted — ID no longer rendered.
   // Lightbox
   var lo1=document.getElementById("lightboxOpenBtn");if(lo1)lo1.onclick=function(){S.lightbox=true;render()};
