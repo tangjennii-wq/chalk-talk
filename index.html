@@ -4142,7 +4142,7 @@ var SAMPLES = [
 var S = {
   // — Compose form / generation
   topic:"", style:"lecture", depth:"concise", refineContext:"", files:[],
-  wantPod:false, wantWebSearch:false,
+  wantPod:false, wantWebSearch:false, queueAudio:false,
   loading:false, loadSec:0, loadMsg:"", error:"",
   // — Current talk + interaction
   talk:null, sec:0, activeSection:0, tab:"overview",
@@ -5938,7 +5938,12 @@ async function generate(){
   }catch(e){if(!S.genCancelled)S.error=e.message}
   clearInterval(loadTimer);S.loading=false;render();
   if(S.talk){var ts=document.getElementById("talkStart");if(ts)ts.scrollIntoView({behavior:"smooth",block:"start"})}
-  // Audio is no longer auto-generated — user opts in from the Audio tab on demand. (Jenni 2026-06-08)
+  // If user queued audio during the loading state, fire podcast generation now.
+  // Flag is one-shot — cleared so it doesn't bleed into the next generation. (Jenni 2026-06-08)
+  if(S.talk && S.queueAudio){
+    S.queueAudio = false;
+    genPodcast();
+  }
 }
 
 // Cancel an in-flight generation. We can't abort the fetch (no AbortController wired up
@@ -5947,6 +5952,7 @@ async function generate(){
 function cancelGen(){
   if(!S.loading) return;
   S.genCancelled = true;
+  S.queueAudio = false; // don't carry the audio-queue intent into the next generation
   clearInterval(loadTimer);
   S.loading = false;
   S.loadSec = 0;
@@ -6992,6 +6998,7 @@ function renderMain(){
     h+='<div class="howit-step"><span class="howit-num">1</span><div><b>You enter a topic.</b> We retrieve matching evidence from PubMed — landmark trials, meta-analyses, and recent reviews — using semantic search.</div></div>';
     h+='<div class="howit-step"><span class="howit-num">2</span><div><b>Claude drafts the talk</b> grounded in those retrieved papers, with inline PMID citations next to every clinical fact. Optionally cross-checks against current literature on the open web (allowlisted medical domains only).</div></div>';
     h+='<div class="howit-step"><span class="howit-num">3</span><div><b>A second model peer-reviews</b> the draft before you see it. You get back a 5–10 min teaching outline with the PMIDs that ground each fact.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">4</span><div><b>Three views of the same talk:</b> read the full <i>Overview</i>, switch to <i>📊 Slides</i> for a one-screen visual poster you can screenshot and share with co-residents, or open <i>🎧 Audio</i> to generate a narrated version for commute review.</div></div>';
     h+='<div class="howit-note">You can refine after generating using <i>Ask to revise lesson</i>. Your topic is sent to Anthropic via a Cloudflare proxy — no logging beyond standard request metadata.</div>';
     h+='</div>';
     h+='</details>';
@@ -7133,7 +7140,14 @@ function renderMain(){
     var _pct = Math.min(95, Math.round((S.loadSec/45)*100));
     h+='<div style="margin-top:10px;height:4px;background:var(--lavender-bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,var(--plum-rich),var(--plum-deep));transition:width 0.6s ease"></div></div>';
     h+='</div>';
-    h+='<button id="cancelGenBtn" style="width:100%;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:13px 20px;color:var(--ink-muted);font-size:13.5px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .15s ease">✕ Cancel</button>';
+    h+='<button id="cancelGenBtn" style="width:100%;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:13px 20px;color:var(--ink-muted);font-size:13.5px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .15s ease;margin-bottom:8px">✕ Cancel</button>';
+    // Audio queue — discoverability for the podcast feature. Tap during generation → genPodcast
+    // auto-fires as soon as the talk is ready. (Jenni 2026-06-08)
+    if(S.queueAudio){
+      h+='<div style="background:#eef7ee;border:1px solid #c8e0c8;border-radius:14px;padding:11px 14px;color:#2d6a2d;font-size:12.5px;font-weight:600;text-align:center;display:flex;align-items:center;justify-content:center;gap:7px"><span style="font-size:14px">🎧</span> Audio queued — starts when talk is ready</div>';
+    } else {
+      h+='<button id="queueAudioBtn" style="width:100%;background:var(--cream);border:1px dashed var(--lavender-soft);border-radius:14px;padding:11px 14px;color:var(--plum);font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:all .15s ease"><span style="font-size:14px">🎧</span> Also queue audio version <span style="font-size:10.5px;color:var(--ink-soft);font-weight:500">— for commute review</span></button>';
+    }
   } else {
     h+='<button id="genBtn" '+(!S.topic.trim()?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich) 0%,var(--plum-deep) 100%);border:none;border-radius:18px;padding:16px 20px;color:#fff;font-size:15px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(75,17,111,0.28);opacity:'+(!S.topic.trim()?"0.45":"1")+';cursor:'+(!S.topic.trim()?"not-allowed":"pointer")+';transition:all .15s ease"><span style="font-size:14px">✨</span>'+(S.topic.trim()?"Generate Chalk Talk":"Enter a topic to generate")+'<span style="font-size:14px">→</span></button>';
   }
@@ -7940,6 +7954,8 @@ function bindMain(){
   var wc=document.getElementById("webCheck");if(wc)wc.onchange=function(e){S.wantWebSearch=e.target.checked};
   var gb=document.getElementById("genBtn");if(gb)gb.onclick=generate;
   var cgb=document.getElementById("cancelGenBtn");if(cgb)cgb.onclick=cancelGen;
+  // Audio-queue during loading state (Jenni 2026-06-08)
+  var qab=document.getElementById("queueAudioBtn");if(qab)qab.onclick=function(){S.queueAudio=true;render()};
 
   // ─── Generated-talk view ────────────────────────────────────────────────
   var rb=document.getElementById("resetBtn");if(rb)rb.onclick=safeResetAll;
