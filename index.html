@@ -247,6 +247,8 @@ textarea,input[type=text]{font-family:inherit}
 @media (max-width:720px){
   .slides-flow{flex-direction:column !important;gap:8px !important}
   .slides-flow > div[aria-hidden="true"]{transform:rotate(90deg);padding:2px 0 !important}
+  /* Pearls + Tips columns stack on mobile so each gets full width (Jenni 2026-06-08) */
+  .slides-callouts{grid-template-columns:1fr !important}
 }
 /* OpenEvidence-style inline citation chips. Color-coded by source type: guideline=warm, trial=plum, journal=cool. */
 .cite{display:inline-flex;align-items:center;gap:3px;background:#eee6f3;color:#4a1a7a;padding:1px 7px 1px 6px;border-radius:10px;font-size:10.5px;font-weight:600;margin:0 2px;cursor:pointer;line-height:1.5;text-decoration:none;border:1px solid #d4baea;transition:all .12s ease;font-family:ui-sans-serif,system-ui,sans-serif;vertical-align:baseline;white-space:nowrap}
@@ -5788,13 +5790,32 @@ async function generate(){
       console.warn("Critique failed, using draft:", critErr.message);
     }
 
-    S.talk = finalTalk;
+    // If the user cancelled mid-flight, discard the result so they don't suddenly
+  // see a talk appear after they tapped Cancel (Jenni 2026-06-08).
+  if(S.genCancelled){
+    S.genCancelled=false;
+    return;
+  }
+  S.talk = finalTalk;
     S.sec=0;S.dg=null;S.dgErr="";S.podScript="";
     if (glRef) { S.glRef = glRef; } else { S.glRef = null; }
-  }catch(e){S.error=e.message}
+  }catch(e){if(!S.genCancelled)S.error=e.message}
   clearInterval(loadTimer);S.loading=false;render();
   if(S.talk){var ts=document.getElementById("talkStart");if(ts)ts.scrollIntoView({behavior:"smooth",block:"start"})}
   if(S.talk&&S.wantPod)genPodcast();
+}
+
+// Cancel an in-flight generation. We can't abort the fetch (no AbortController wired up
+// through the existing call chain), but we can flip a flag so generate() discards the result
+// when it returns. Loader teardown is immediate so UI feels responsive.
+function cancelGen(){
+  if(!S.loading) return;
+  S.genCancelled = true;
+  clearInterval(loadTimer);
+  S.loading = false;
+  S.loadSec = 0;
+  S.loadMsg = "";
+  render();
 }
 
 function getGeminiKey(){
@@ -6387,6 +6408,7 @@ function diagSVG(dg){
 
 // ═══════════ RAG SOURCES PANEL ═══════════
 function renderRAGSources() {
+  return ''; // sources panel removed per request — references & citations retained
   if (!S.ragChunks || !S.ragChunks.length) return '';
   var chunks = S.ragChunks;
   var n = chunks.length;
@@ -6797,11 +6819,9 @@ function renderMain(){
   h+='<h1 class="hero-title">Chalk Talk</h1>';
   h+='<p class="hero-byline" style="margin-top:3px">by <a href="https://www.linkedin.com/in/tangjennii/" target="_blank">Jennifer Tang, MD</a></p>';
   h+='</div>';
-  // Column 2 — tagline + criteria (centered, inline with title)
-  h+='<div class="hero-tagline-col" style="flex:1 1 auto;text-align:center;min-width:200px">';
-  h+='<div style="font-size:13px;color:var(--ink);font-weight:500;display:inline-flex;align-items:center;gap:6px;line-height:1.3;justify-content:center"><span style="color:var(--plum);font-size:14px">⏱</span> 10-minute evidence-based teaching</div>';
-  h+='<div style="font-size:11px;color:var(--ink-muted);letter-spacing:0.005em;margin-top:3px;line-height:1.4">ABIM topics · Peer-reviewed sources · Society guidelines</div>';
-  h+='</div>';
+  // Column 2 — tagline merged into the "How this works" pill below the hero (Jenni 2026-06-08)
+  // Empty spacer keeps the 3-column flex balanced so account column stays right-aligned.
+  h+='<div class="hero-tagline-col" style="flex:1 1 auto;min-width:0"></div>';
   // Column 3 — Sign in/account on top, Library underneath (upper right)
   h+='<div class="hero-account-col" style="flex:0 0 auto;align-self:flex-start;display:flex;flex-direction:column;align-items:flex-end;gap:6px">';
   if(S.user){
@@ -6828,9 +6848,10 @@ function renderMain(){
 
   // === "How this works" — inline expandable, closed by default ===
   // Open state tracked in S.howitOpen so unrelated render() calls don't collapse it.
-  if(!S.talk){
+  // Hide while generating so the focus card has the screen (Jenni 2026-06-08).
+  if(!S.talk && !S.loading){
     h+='<details class="howit" id="howitDetails"'+(S.howitOpen?' open':'')+'>';
-    h+='<summary><span>✦ How this works</span><span class="howit-caret">⌄</span></summary>';
+    h+='<summary><span>✦ How it works · 10-min evidence-based teaching</span><span class="howit-caret">⌄</span></summary>';
     h+='<div class="howit-body">';
     h+='<div class="howit-step"><span class="howit-num">1</span><div><b>You enter a topic.</b> We retrieve matching evidence from PubMed — landmark trials, meta-analyses, and recent reviews — using semantic search.</div></div>';
     h+='<div class="howit-step"><span class="howit-num">2</span><div><b>Claude drafts the talk</b> grounded in those retrieved papers, with inline PMID citations next to every clinical fact. Optionally cross-checks against current literature on the open web (allowlisted medical domains only).</div></div>';
@@ -6913,12 +6934,16 @@ function renderMain(){
   h+='</div>';
   h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-soft)">';
   h+='<span style="color:var(--ink-soft);font-size:14px;flex-shrink:0">🔍</span>';
-  h+='<input id="topicTA" type="text" value="'+esc(S.topic)+'" placeholder="Enter a topic…" style="flex:1;min-width:0;background:transparent;border:none;padding:8px 0;font-size:14px;color:var(--ink);outline:none;font-family:inherit">';
+  h+='<input id="topicTA" type="text" value="'+esc(S.topic)+'" placeholder="Enter a topic…" '+(S.loading?'disabled':'')+' style="flex:1;min-width:0;background:transparent;border:none;padding:8px 0;font-size:14px;color:var(--ink);outline:none;font-family:inherit;opacity:'+(S.loading?'0.55':'1')+'">';
   h+='</div>';
   // Helper hint — tells user that refine/context is available post-generation via the composer
   h+='<div style="font-size:11px;color:var(--ink-muted);margin:7px 4px 0;line-height:1.4;display:flex;align-items:center;gap:5px"><span style="font-size:11px">💬</span>You can add context or refine the lesson after generating.</div>';
   h+='</div>';
 
+  // Hide compose controls (style/depth/refs/toggles) during generation so the focus
+  // block has the screen on mobile. Topic input stays visible (read-only) so the user
+  // can see what's cooking. (Jenni 2026-06-08)
+  if(!S.loading){
   // Style + Depth — combined row (side by side on desktop, stack on narrow mobile)
   var depthInactive = (S.style === "boards");
   h+='<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">';
@@ -6962,11 +6987,24 @@ function renderMain(){
   h+='<span class="toggle-sw"><input type="checkbox" id="podCheck" '+(S.wantPod?"checked":"")+'><span class="slider"></span></span>';
   h+='</label>';
   h+='</div>';
+  } // end if(!S.loading) — compose controls hidden during generation
 
   // Sticky bottom Generate CTA + privacy note
   h+='<div class="compose-cta"><div class="compose-cta-inner">';
-  h+='<button id="genBtn" '+(S.loading||!S.topic.trim()?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich) 0%,var(--plum-deep) 100%);border:none;border-radius:18px;padding:16px 20px;color:#fff;font-size:15px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(75,17,111,0.28);opacity:'+(S.loading||!S.topic.trim()?"0.45":"1")+';cursor:'+(S.loading||!S.topic.trim()?"not-allowed":"pointer")+';transition:all .15s ease"><span style="font-size:14px">✨</span>'+(S.loading?"Generating…":(S.topic.trim()?"Generate Chalk Talk":"Enter a topic to generate"))+'<span style="font-size:14px">→</span></button>';
-  if(S.loading)h+='<div style="margin-top:8px;text-align:center;font-size:11.5px;color:var(--plum)"><span class="spinner" style="margin-right:6px"></span>'+esc(S.loadMsg)+' · '+S.loadSec+'s</div>';
+  if(S.loading){
+    // Generating state — progress block + Cancel button (Jenni 2026-06-08)
+    h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:18px;padding:18px 16px;text-align:center;margin-bottom:8px">';
+    h+='<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><span class="spinner" style="width:22px;height:22px;border-width:3px"></span><span style="font-size:14px;font-weight:600;color:var(--plum-deep)">Generating talk</span></div>';
+    h+='<div style="font-size:12px;color:var(--ink);margin-bottom:6px">'+esc(S.loadMsg||"Working…")+'</div>';
+    h+='<div style="font-size:10.5px;color:var(--ink-muted);letter-spacing:0.04em;text-transform:uppercase">'+S.loadSec+'s elapsed</div>';
+    // Progress bar — caps at ~95% until done so user sees motion without overpromising
+    var _pct = Math.min(95, Math.round((S.loadSec/45)*100));
+    h+='<div style="margin-top:10px;height:4px;background:var(--lavender-bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,var(--plum-rich),var(--plum-deep));transition:width 0.6s ease"></div></div>';
+    h+='</div>';
+    h+='<button id="cancelGenBtn" style="width:100%;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:13px 20px;color:var(--ink-muted);font-size:13.5px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .15s ease">✕ Cancel</button>';
+  } else {
+    h+='<button id="genBtn" '+(!S.topic.trim()?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich) 0%,var(--plum-deep) 100%);border:none;border-radius:18px;padding:16px 20px;color:#fff;font-size:15px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(75,17,111,0.28);opacity:'+(!S.topic.trim()?"0.45":"1")+';cursor:'+(!S.topic.trim()?"not-allowed":"pointer")+';transition:all .15s ease"><span style="font-size:14px">✨</span>'+(S.topic.trim()?"Generate Chalk Talk":"Enter a topic to generate")+'<span style="font-size:14px">→</span></button>';
+  }
   if(S.error)h+='<p style="color:#c0392b;font-size:12px;text-align:center;margin-top:6px">'+esc(S.error)+'</p>';
   h+='<p class="compose-cta-note"><span style="opacity:.7">🔒</span> Your content is private and never shared.</p>';
   h+='</div></div>';
@@ -7359,7 +7397,7 @@ function renderMain(){
       var allPearls  = (t.sections||[]).map(function(s){return s.teaching_pearl}).filter(Boolean);
       var allTips    = (t.sections||[]).map(function(s){return s.board_tip}).filter(Boolean);
       if(allPearls.length || allTips.length){
-        h+='<div style="display:grid;grid-template-columns:'+((allPearls.length && allTips.length)?'1fr 1fr':'1fr')+';gap:10px;padding:14px">';
+        h+='<div class="slides-callouts" style="display:grid;grid-template-columns:'+((allPearls.length && allTips.length)?'1fr 1fr':'1fr')+';gap:10px;padding:14px">';
         if(allPearls.length){
           h+='<div style="background:#f5edfa;border-left:4px solid #702b9d;border-radius:0 10px 10px 0;padding:12px 14px">';
           h+='<div style="font-size:10.5px;font-weight:700;color:#4a1a7a;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="font-size:13px">💡</span>Teaching Pearls</div>';
@@ -7728,6 +7766,7 @@ function bindMain(){
   var pc=document.getElementById("podCheck");if(pc)pc.onchange=function(e){S.wantPod=e.target.checked};
   var wc=document.getElementById("webCheck");if(wc)wc.onchange=function(e){S.wantWebSearch=e.target.checked};
   var gb=document.getElementById("genBtn");if(gb)gb.onclick=generate;
+  var cgb=document.getElementById("cancelGenBtn");if(cgb)cgb.onclick=cancelGen;
 
   // ─── Generated-talk view ────────────────────────────────────────────────
   var rb=document.getElementById("resetBtn");if(rb)rb.onclick=safeResetAll;
