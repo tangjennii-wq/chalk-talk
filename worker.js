@@ -154,7 +154,9 @@ async function handleRetrieve(request, env, origin) {
     parseInt(body.match_count) || RETRIEVE_DEFAULT_MATCH_COUNT,
     RETRIEVE_MAX_MATCH_COUNT
   );
-  const minSimilarity = typeof body.min_similarity === "number" ? body.min_similarity : 0.0;
+  // Backstop floor: if the caller doesn't specify, drop the weakly-related tail
+  // (raw cosine over title+abstract vs a short query; <0.30 is mostly noise).
+  const minSimilarity = typeof body.min_similarity === "number" ? body.min_similarity : 0.30;
   const maxAgeYears = (body.max_age_years == null) ? null : parseInt(body.max_age_years);
   const allowedSources = Array.isArray(body.allowed_sources) && body.allowed_sources.length > 0 ? body.allowed_sources : null;
   const tierBoostWeight = typeof body.tier_boost_weight === "number" ? body.tier_boost_weight : 0.05;

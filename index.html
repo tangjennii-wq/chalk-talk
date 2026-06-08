@@ -157,6 +157,10 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
   /* Mode tabs: shrink padding so 4 fit comfortably on narrow viewports */
   .mode-card{padding:7px 4px;font-size:12px;gap:4px}
   .mode-card .mc-ico{font-size:13px}
+  /* Hide text labels in capsule action buttons on mobile — icons only.
+     Without this, "Save" / "Edit settings" labels overflow on a 375px iPhone
+     and the Save button gets clipped or hidden. (Jenni 2026-06-08 — missing rule) */
+  .hide-mobile-text{display:none !important}
 }
 /* Guideline row collapsed/expanded */
 .guideline-row{background:#f0f7f0;border:1px solid #b8d8b8;border-radius:14px;margin-bottom:10px;overflow:hidden}
@@ -5505,6 +5509,99 @@ function pruneFakeReferences(talk) {
   return walk(talk);
 }
 
+// ═══════════ CLAIM-LEVEL CITATION VERIFICATION ═══════════
+// pruneFakeReferences() only checks a cited PMID EXISTS in our trusted set (presence).
+// This step closes the harder gap: does the cited abstract actually SUPPORT the specific
+// sentence it's attached to? A real PMID next to a claim it doesn't substantiate reads as
+// rigor without being rigor. We verify each (claim, abstract) pair against the retrieved
+// abstracts (no extra fetch — we already hold them in S.ragChunks) and strip the inline
+// PMID from any claim the source doesn't support.
+async function verifyCitations(talk) {
+  if (!talk || !S.ragChunks || !S.ragChunks.length) return talk;
+  // Map of PMID -> abstract text for everything we actually retrieved.
+  var absByPmid = {};
+  for (var i = 0; i < S.ragChunks.length; i++) {
+    var ch = S.ragChunks[i];
+    if (ch.pmid && ch.text) absByPmid[String(ch.pmid)] = { abstract: ch.text, title: ch.title || "" };
+  }
+  if (!Object.keys(absByPmid).length) return talk;
+
+  // Collect (claim string, pmid) pairs from inline "PMID 12345" / "(PMID 12345)" markers.
+  // Only verify PMIDs we hold an abstract for; unknown ones are handled by pruneFakeReferences.
+  var PMID_RE = /PMID\s*[:\-]?\s*(\d{6,9})/gi;
+  var pairs = [];           // { claim, pmid }
+  var seen = {};            // dedupe identical claim+pmid
+  function collect(str) {
+    if (typeof str !== "string") return;
+    var m;
+    PMID_RE.lastIndex = 0;
+    while ((m = PMID_RE.exec(str)) !== null) {
+      var pmid = m[1];
+      if (!absByPmid[pmid]) continue;
+      var key = pmid + "::" + str;
+      if (seen[key]) continue;
+      seen[key] = true;
+      // The claim is the sentence/bullet the marker sits in, with citation noise removed.
+      var claim = str.replace(/\(?\s*PMID\s*[:\-]?\s*\d{6,9}\s*\)?/gi, "").replace(/\s{2,}/g, " ").trim();
+      if (claim.length >= 12) pairs.push({ claim: claim, pmid: pmid });
+    }
+  }
+  function walkCollect(node) {
+    if (typeof node === "string") collect(node);
+    else if (Array.isArray(node)) node.forEach(walkCollect);
+    else if (node && typeof node === "object") for (var k in node) { if (k !== "references") walkCollect(node[k]); }
+  }
+  walkCollect(talk);
+  if (!pairs.length) return talk;
+  // Bound cost: verify at most the first 14 distinct claim/PMID pairs.
+  pairs = pairs.slice(0, 14);
+
+  // One batched judge call. Returns, per index, whether the abstract supports the claim.
+  var items = pairs.map(function(p, idx) {
+    var src = absByPmid[p.pmid];
+    return { i: idx, pmid: p.pmid, claim: p.claim, abstract: (src.abstract || "").slice(0, 1400) };
+  });
+  var sys = "You are a strict evidence auditor. For each item you are given a CLAIM from a medical teaching talk and the ABSTRACT of the source cited for it (by PMID). Decide whether the abstract DIRECTLY SUPPORTS the specific claim — i.e. a careful reader would agree the abstract substantiates that exact statement (same drug/threshold/population/direction of effect). General topical relatedness is NOT support. If the abstract is about the same disease but does not establish the specific claim, mark it unsupported. Output ONLY a JSON array, one object per item: {\"i\":<index>,\"supported\":true|false}. No other text.";
+  var inp = JSON.stringify(items);
+  var verdicts = {};
+  try {
+    var res = await callAPIWithFallback(sys, inp, 1024, [MODEL_CRITIC]);
+    var arr = JSON.parse(fixJSON(res.txt));
+    if (Array.isArray(arr)) arr.forEach(function(v){ if (v && typeof v.i === "number") verdicts[v.i] = !!v.supported; });
+  } catch (e) {
+    console.warn("Citation verification failed, leaving citations as-is:", e.message);
+    return talk; // fail open — never block a talk on the auditor
+  }
+
+  // Build the set of (claim, pmid) pairs judged UNSUPPORTED, then strip just those inline markers.
+  var stripSet = {};
+  S.citeAudit = { checked: pairs.length, dropped: 0 };
+  for (var pi = 0; pi < pairs.length; pi++) {
+    if (verdicts[pi] === false) { stripSet[pairs[pi].pmid + "::" + pairs[pi].claim] = true; S.citeAudit.dropped++; }
+  }
+  if (!S.citeAudit.dropped) return talk;
+  function stripUnsupported(str) {
+    if (typeof str !== "string") return str;
+    var claim = str.replace(/\(?\s*PMID\s*[:\-]?\s*\d{6,9}\s*\)?/gi, "").replace(/\s{2,}/g, " ").trim();
+    var out = str.replace(PMID_RE, function(match, pmid) {
+      return stripSet[pmid + "::" + claim] ? "" : match;
+    });
+    return out.replace(/\(\s*\)/g, "").replace(/\s+([,.;])/g, "$1").replace(/\s{2,}/g, " ").trim();
+  }
+  function walkStrip(node) {
+    if (typeof node === "string") return stripUnsupported(node);
+    if (Array.isArray(node)) return node.map(walkStrip);
+    if (node && typeof node === "object") {
+      var o = {};
+      for (var k in node) { o[k] = (k === "references") ? node[k] : walkStrip(node[k]); }
+      return o;
+    }
+    return node;
+  }
+  console.info("Citation audit: dropped " + S.citeAudit.dropped + "/" + S.citeAudit.checked + " unsupported inline PMID citation(s)");
+  return walkStrip(talk);
+}
+
 function deepCleanCitations(obj) {
   if (typeof obj === "string") return stripCitations(obj);
   if (Array.isArray(obj)) return obj.map(deepCleanCitations);
@@ -5652,17 +5749,41 @@ async function callAPIWithFallback(sys, content, maxTok, models, opts) {
 async function retrieveRAG(topic, opts) {
   opts = opts || {};
   if (!RAG_CONFIG.enabled || !RAG_CONFIG.url) return {text: "", chunks: []};
+  // ── Retrieval quality floors ──────────────────────────────────────────────
+  // Weakly-related chunks (the 0.16–0.30 tail seen in the old sources panel) were
+  // reaching the prompt and diluting grounding. Embeddings are over (title+abstract)
+  // vs a SHORT topic query, so absolute cosine runs low even for good matches — a
+  // naive high floor would return nothing. So we combine:
+  //   • ABS_FLOOR  — a modest absolute minimum to drop the genuinely-irrelevant tail
+  //   • REL_DELTA  — keep only chunks within this gap of the BEST match (the strong cluster)
+  // and never starve the prompt (always keep at least the top 2 candidates).
+  var ABS_FLOOR = (typeof opts.minSim === "number") ? opts.minSim : 0.30;
+  var REL_DELTA = (typeof opts.relDelta === "number") ? opts.relDelta : 0.08;
+  var MAX_KEEP = opts.maxKeep || 6;
   try {
     var endpoint = RAG_CONFIG.url.replace(/\/$/, "") + "/retrieve";
     var r = await fetch(endpoint, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ query: topic, match_count: opts.match_count || 8 })
+      // Pull a wider candidate set, then gate client-side so the relative filter has options.
+      body: JSON.stringify({ query: topic, match_count: opts.match_count || 12, min_similarity: ABS_FLOOR })
     });
     if (!r.ok) { console.warn("RAG retrieve failed: " + r.status); return {text: "", chunks: []}; }
     var data = await r.json();
     var chunks = data.chunks || [];
     if (!chunks.length) return {text: "", chunks: []};
+    // Absolute floor (backstop in case the worker didn't enforce it).
+    chunks = chunks.filter(function(c){ return typeof c.similarity !== "number" || c.similarity >= ABS_FLOOR; });
+    if (chunks.length) {
+      // Relative floor: keep only the top similarity cluster.
+      var topSim = chunks.reduce(function(m,c){ return (typeof c.similarity === "number" && c.similarity > m) ? c.similarity : m; }, 0);
+      var relFloor = topSim - REL_DELTA;
+      var strong = chunks.filter(function(c){ return typeof c.similarity !== "number" || c.similarity >= relFloor; });
+      // Don't starve the prompt — keep the 2 best candidates even if the gate is strict.
+      if (strong.length < 2) strong = chunks.slice(0, 2);
+      chunks = strong.slice(0, MAX_KEEP);
+    }
+    if (!chunks.length) { console.info("RAG: all chunks below similarity floor for \"" + topic + "\""); return {text: "", chunks: []}; }
     var lines = chunks.map(function(c, i) {
       var auths = (c.authors || "").split(",").slice(0, 3).join(",");
       if (c.authors && c.authors.split(",").length > 3) auths += " et al.";
@@ -5789,6 +5910,13 @@ async function generate(){
       // If critique fails, fall back to original draft silently
       console.warn("Critique failed, using draft:", critErr.message);
     }
+
+    // Step 3: Citation grounding. Re-run the presence audit on the (possibly critic-rewritten)
+    // final talk, then the claim-level semantic audit that strips inline PMIDs whose abstract
+    // doesn't actually support the sentence. Both fail open — never block a talk.
+    finalTalk = pruneFakeReferences(finalTalk);
+    try { finalTalk = await verifyCitations(finalTalk); }
+    catch (vErr) { console.warn("verifyCitations error, using talk as-is:", vErr.message); }
 
     // If the user cancelled mid-flight, discard the result so they don't suddenly
   // see a talk appear after they tapped Cancel (Jenni 2026-06-08).
@@ -7046,12 +7174,16 @@ function renderMain(){
       var lastLabel = S.talkHistory[S.talkHistory.length-1].label;
       h+='<button id="undoEditBtn" title="Undo last '+esc(lastLabel)+'" style="background:none;border:none;color:var(--plum);cursor:pointer;padding:5px 8px;border-radius:7px;line-height:0;display:inline-flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg></button>';
     }
-    // Public viewer (sharedTalk) is read-only — hide Save/Edit settings/⋮ for anonymous viewers
-    if(!S.isSampleTalk && !S.sharedTalk){
-      if(S.talkIsSaved){
+    // Save is hidden only for public-share read-only viewers. Samples now ALSO show Save
+    // (defaults to "save as new" in saveCurrentTalk) so users can edit a template and keep it.
+    // (Jenni 2026-06-08 — was hidden on samples + when sharedTalk-flag leaked.)
+    if(!S.sharedTalk){
+      if(S.talkIsSaved && !S.isSampleTalk){
         h+='<button id="saveTalkBtnTop" class="cap-save" title="No unsaved changes" disabled style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;box-shadow:none;cursor:default">✓ <span class="hide-mobile-text">Saved</span></button>';
       } else {
-        h+='<button id="saveTalkBtnTop" class="cap-save" title="Save to library">★ <span class="hide-mobile-text">Save</span></button>';
+        var _saveLbl = S.isSampleTalk ? "Save as my own" : "Save";
+        var _saveTitle = S.isSampleTalk ? "Save this as a new talk in your library" : "Save to library";
+        h+='<button id="saveTalkBtnTop" class="cap-save" title="'+_saveTitle+'">★ <span class="hide-mobile-text">'+_saveLbl+'</span></button>';
       }
     }
     if(!S.sharedTalk){
