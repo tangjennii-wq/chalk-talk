@@ -350,6 +350,21 @@ textarea,input[type=text]{font-family:inherit}
   .app .secBtn { padding: 8px 10px !important; }
   .app .choiceBtn { padding: 9px 12px !important; }
   .app .choiceBtn span:last-child { font-size: 13px !important; line-height: 1.45 !important; }
+  /* Talk title (the big serif at the top of a rendered talk) — keep it on one line when reasonable.
+     The h1 is wrapped in flex by inline style so the ✎ pencil sits next to it; constrain the inner
+     <span> so long titles ellipsize instead of stacking. (Jenni 2026-06-08) */
+  .tk-lessontitle h1 { font-size: 17px !important; line-height: 1.18 !important; flex-wrap: nowrap !important; }
+  .tk-lessontitle h1 > span:first-child { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; min-width: 0 !important; flex: 1 1 auto !important; }
+  /* Section heading — one line, ellipsize. Was wrapping to 2 lines on phones. (Jenni 2026-06-08) */
+  .tk-acc-ttl { font-size: 12px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; min-width: 0 !important; padding-right: 90px !important; /* leave room for the Edit button positioned absolutely at right:34px + chev */ }
+  /* Outline-head — stack the controls under the LESSON OUTLINE label so Concise/Detailed and
+     Expand all don't fight for the same row. (Jenni 2026-06-08) */
+  .outline-head { flex-wrap: wrap !important; gap: 4px !important; }
+  .outline-head > div { width: 100%; justify-content: space-between !important; margin-top: 2px !important; }
+  /* Save button on mobile — show the "Save" label (override the universal hide-mobile-text rule
+     so users see what the star does) and bump touch target. (Jenni 2026-06-08) */
+  .tk-capsule .cap-actions button.cap-save .hide-mobile-text { display: inline !important; }
+  .tk-capsule .cap-actions button.cap-save { padding: 7px 13px !important; font-size: 12px !important; }
 }
 /* Aggressive landing-only compaction so mobile fits in one viewport (no scroll) */
 @media (max-width: 640px) {
@@ -7353,9 +7368,9 @@ function renderMain(){
           h+='<div style="display:flex;align-items:center;gap:0;position:relative">';
           h+='<button class="tk-acc-head secBtn" data-i="'+si2+'" style="flex:1;min-width:0"><span class="tk-acc-num">'+(si2+1)+'</span><span class="tk-acc-ttl">'+esc(x.heading)+'</span><span class="tk-acc-chev" style="margin-left:auto">⌄</span></button>';
           if(!isEditing){
-            // Edit affordance — was a near-invisible ink-soft pencil; pulled into a small visible
-            // lavender pill with label so users discover the inline section editor. (Jenni 2026-06-08)
-            h+='<button class="secEditBtn" data-i="'+si2+'" title="Edit this section" style="position:absolute;right:34px;top:50%;transform:translateY(-50%);background:var(--lavender-bg);border:1px solid var(--lavender-soft);color:var(--plum);font-size:11.5px;font-weight:600;cursor:pointer;padding:4px 9px;border-radius:8px;line-height:1.1;display:inline-flex;align-items:center;gap:4px;transition:all .15s ease" onmouseover="this.style.background=\'var(--plum)\';this.style.color=\'#fff\';this.style.borderColor=\'var(--plum)\';" onmouseout="this.style.background=\'var(--lavender-bg)\';this.style.color=\'var(--plum)\';this.style.borderColor=\'var(--lavender-soft)\';">✎ Edit</button>';
+            // Edit affordance — Jenni 2026-06-08: pill was too loud, but the original ink-soft pencil
+            // was invisible. Compromise: bigger, bolder yellow pencil icon, no pill background.
+            h+='<button class="secEditBtn" data-i="'+si2+'" title="Edit this section" aria-label="Edit this section" style="position:absolute;right:34px;top:50%;transform:translateY(-50%);background:none;border:none;color:#e8a91f;font-size:18px;font-weight:700;cursor:pointer;padding:5px 8px;border-radius:6px;line-height:1;text-shadow:0 1px 1px rgba(232,169,31,0.18);transition:all .15s ease" onmouseover="this.style.background=\'rgba(232,169,31,0.12)\';" onmouseout="this.style.background=\'none\';">✎</button>';
           }
           h+='</div>';
           if(isEditing){
