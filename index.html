@@ -180,10 +180,18 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
   .msample-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:8px !important}
   .msample-grid > *:nth-child(n+3){display:none !important}  /* hide cards 3-4 on mobile; tap "See all" for full list */
 }
-/* Hero card mobile layout — keep Sign-in/Library upper-right, tagline drops below */
+/* Hero card mobile layout — keep Sign-in/Library upper-right, tagline drops below.
+   2026-06-08 tightening: tagline column is now empty (merged into "How it works"), hide it on mobile
+   to recover ~30px. Compose-state hero is also shrunk further below. */
 @media (max-width:640px){
   .hero-tagline-col{order:3;flex-basis:100% !important;text-align:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--line-soft)}
   .hero-account-col{order:2}
+  /* Hero column 2 (tagline) is empty now → hide it on mobile so we don't leave a 30px gap below the title */
+  .app:not(.has-talk) .hero-tagline-col{display:none !important}
+  /* Compose-state hero: smaller title + tighter padding so home page approaches single-screen on iPhone */
+  .app:not(.has-talk) .hero-card{padding:6px 12px 6px !important;margin-bottom:6px !important}
+  .app:not(.has-talk) .hero-title{font-size:19px !important;letter-spacing:-0.01em !important}
+  .app:not(.has-talk) .hero-byline{font-size:10.5px !important;margin-top:1px !important}
 }
 /* ─── Floating refine composer (Jenni 2026-06-04 redesign) ───────────────
    Standardized 360px-wide portrait card at every breakpoint. Collapsed = 48px FAB. */
@@ -5930,7 +5938,7 @@ async function generate(){
   }catch(e){if(!S.genCancelled)S.error=e.message}
   clearInterval(loadTimer);S.loading=false;render();
   if(S.talk){var ts=document.getElementById("talkStart");if(ts)ts.scrollIntoView({behavior:"smooth",block:"start"})}
-  if(S.talk&&S.wantPod)genPodcast();
+  // Audio is no longer auto-generated — user opts in from the Audio tab on demand. (Jenni 2026-06-08)
 }
 
 // Cancel an in-flight generation. We can't abort the fetch (no AbortController wired up
@@ -7108,12 +7116,8 @@ function renderMain(){
   h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Cross-check the live web</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Always uses PubMed + society guidelines. Toggle on to also check the open web for newer updates (slower, ~30s).</div></div>';
   h+='<span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!verifyInactive?"checked":"")+' '+(verifyInactive?"disabled":"")+'><span class="slider"></span></span>';
   h+='</label>';
-  h+='<div style="height:1px;background:var(--line-soft)"></div>';
-  h+='<label style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer">';
-  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🎧</span>';
-  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Generate audio podcast</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Create a narrated audio version</div></div>';
-  h+='<span class="toggle-sw"><input type="checkbox" id="podCheck" '+(S.wantPod?"checked":"")+'><span class="slider"></span></span>';
-  h+='</label>';
+  // Podcast toggle removed from compose form (Jenni 2026-06-08). Audio is now on-demand via the Audio tab
+  // after generation, which is where users actually decide they want to listen vs read.
   h+='</div>';
   } // end if(!S.loading) — compose controls hidden during generation
 
@@ -7181,9 +7185,8 @@ function renderMain(){
       if(S.talkIsSaved && !S.isSampleTalk){
         h+='<button id="saveTalkBtnTop" class="cap-save" title="No unsaved changes" disabled style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;box-shadow:none;cursor:default">✓ <span class="hide-mobile-text">Saved</span></button>';
       } else {
-        var _saveLbl = S.isSampleTalk ? "Save as my own" : "Save";
         var _saveTitle = S.isSampleTalk ? "Save this as a new talk in your library" : "Save to library";
-        h+='<button id="saveTalkBtnTop" class="cap-save" title="'+_saveTitle+'">★ <span class="hide-mobile-text">'+_saveLbl+'</span></button>';
+        h+='<button id="saveTalkBtnTop" class="cap-save" title="'+_saveTitle+'">★ <span class="hide-mobile-text">Save</span></button>';
       }
     }
     if(!S.sharedTalk){
@@ -7336,7 +7339,9 @@ function renderMain(){
           h+='<div style="display:flex;align-items:center;gap:0;position:relative">';
           h+='<button class="tk-acc-head secBtn" data-i="'+si2+'" style="flex:1;min-width:0"><span class="tk-acc-num">'+(si2+1)+'</span><span class="tk-acc-ttl">'+esc(x.heading)+'</span><span class="tk-acc-chev" style="margin-left:auto">⌄</span></button>';
           if(!isEditing){
-            h+='<button class="secEditBtn" data-i="'+si2+'" title="Edit this section" style="position:absolute;right:34px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--ink-soft);font-size:13px;cursor:pointer;padding:5px 7px;border-radius:6px;line-height:1">✎</button>';
+            // Edit affordance — was a near-invisible ink-soft pencil; pulled into a small visible
+            // lavender pill with label so users discover the inline section editor. (Jenni 2026-06-08)
+            h+='<button class="secEditBtn" data-i="'+si2+'" title="Edit this section" style="position:absolute;right:34px;top:50%;transform:translateY(-50%);background:var(--lavender-bg);border:1px solid var(--lavender-soft);color:var(--plum);font-size:11.5px;font-weight:600;cursor:pointer;padding:4px 9px;border-radius:8px;line-height:1.1;display:inline-flex;align-items:center;gap:4px;transition:all .15s ease" onmouseover="this.style.background=\'var(--plum)\';this.style.color=\'#fff\';this.style.borderColor=\'var(--plum)\';" onmouseout="this.style.background=\'var(--lavender-bg)\';this.style.color=\'var(--plum)\';this.style.borderColor=\'var(--lavender-soft)\';">✎ Edit</button>';
           }
           h+='</div>';
           if(isEditing){
@@ -7444,6 +7449,15 @@ function renderMain(){
         h+='</div>';
       }
       h+=renderRAGSources();
+
+      // "See as poster" CTA — bottom-of-Overview discovery hint for the Slides tab.
+      // Boards-mode talks have no Slides view (isBQ), so skip there. (Jenni 2026-06-08)
+      if(!isBQ){
+        h+='<button id="overviewToSlidesBtn" style="width:100%;margin:14px 0 4px;background:linear-gradient(135deg,var(--plum-rich) 0%,var(--plum-deep) 100%);border:none;border-radius:14px;padding:14px 18px;color:#fff;font-size:13px;font-weight:600;letter-spacing:0.005em;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 4px 14px rgba(75,17,111,0.22);cursor:pointer;transition:all .15s ease">';
+        h+='<span style="display:inline-flex;align-items:center;gap:10px;text-align:left;line-height:1.3"><span style="font-size:18px">📊</span><span><span style="display:block;font-weight:700">See this as a one-screen poster</span><span style="display:block;font-weight:400;font-size:11.5px;color:rgba(255,255,255,0.82);margin-top:2px">Visual summary + key pearls — screenshot to share with co-residents</span></span></span>';
+        h+='<span style="font-size:18px;flex-shrink:0">→</span>';
+        h+='</button>';
+      }
     }
 
     // ---------------- SLIDES TAB (poster / visual abstract redesign — Jenni 2026-06-04) ----------------
@@ -7560,6 +7574,34 @@ function renderMain(){
         for(var ki=0;ki<keyTakeaways.length;ki++)h+='<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:8px;font-size:12.5px;color:var(--ink);line-height:1.5"><span style="background:var(--lavender-bg);color:var(--plum);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex-shrink:0">'+(ki+1)+'</span><span style="flex:1">'+renderCite(keyTakeaways[ki],t.references)+'</span></div>';
       }
       h+='</div>';
+
+      // ─── References band (Jenni 2026-06-08) ───
+      // Compact academic bibliography pinned to the poster so the screenshot carries citations.
+      // Mirrors Overview's references block in content; tighter formatting to keep the poster scannable.
+      if(t.references && t.references.length){
+        h+='<div style="background:#fafafa;border-top:1px solid var(--line);padding:12px 16px">';
+        h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:8px">References <span style="font-weight:500;color:var(--ink-soft);letter-spacing:0">('+t.references.length+')</span></div>';
+        h+='<ol style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px">';
+        for(var rfsi=0; rfsi<t.references.length; rfsi++){
+          var rfs = t.references[rfsi];
+          var metaBits=[];
+          if(rfs.year) metaBits.push(esc(String(rfs.year)));
+          if(rfs.society) metaBits.push(esc(rfs.society));
+          var metaStr = metaBits.length ? ' <span style="color:var(--ink-muted)">· '+metaBits.join(" · ")+'</span>' : '';
+          var srcLabel = esc(rfs.source || ("Reference "+rfs.id));
+          // Numbered chip + source name + year/society. URL is rendered as a clickable link on-screen;
+          // html2canvas will capture the rendered text in screenshots.
+          var linkHtml = rfs.url
+            ? ' <a href="'+esc(rfs.url)+'" target="_blank" rel="noopener" style="color:var(--plum);text-decoration:none;border-bottom:1px solid var(--lavender);font-size:10px">↗</a>'
+            : '';
+          h+='<li style="display:flex;gap:7px;font-size:10.5px;line-height:1.45;color:var(--ink)">';
+          h+='<span style="background:var(--lavender-bg);color:var(--plum);border-radius:4px;padding:0 5px;font-size:9.5px;font-weight:700;flex-shrink:0;height:fit-content;margin-top:1px">'+esc(String(rfs.id))+'</span>';
+          h+='<span style="flex:1;min-width:0"><strong style="color:var(--plum-deep);font-weight:600">'+srcLabel+'</strong>'+metaStr+linkHtml+'</span>';
+          h+='</li>';
+        }
+        h+='</ol>';
+        h+='</div>';
+      }
 
       h+='</div>'; // close #slidesCapture
     }
@@ -7694,8 +7736,7 @@ function renderMain(){
     var vInact2=(S.style==="boards");
     h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin:6px 0 14px;overflow:hidden">';
     h+='<label style="display:flex;align-items:center;gap:12px;padding:11px 13px;cursor:'+(vInact2?"not-allowed":"pointer")+';opacity:'+(vInact2?"0.5":"1")+'"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px">📄</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">Verify with current literature</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px">Use up-to-date, peer-reviewed sources</div></div><span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!vInact2?"checked":"")+' '+(vInact2?"disabled":"")+'><span class="slider"></span></span></label>';
-    h+='<div style="height:1px;background:var(--line-soft)"></div>';
-    h+='<label style="display:flex;align-items:center;gap:12px;padding:11px 13px;cursor:pointer"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px">🎧</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">Generate audio podcast</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px">Create a narrated audio version</div></div><span class="toggle-sw"><input type="checkbox" id="podCheck" '+(S.wantPod?"checked":"")+'><span class="slider"></span></span></label>';
+    // Podcast toggle removed from drawer too (Jenni 2026-06-08) — Audio tab handles on-demand.
     h+='</div>';
     // Rebuild CTA in drawer
     h+='<button id="rebuildBtn2" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:18px;padding:14px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px"><span>↻</span>Rebuild lesson</button>';
@@ -7895,7 +7936,7 @@ function bindMain(){
       else if(f.type==="application/pdf"||f.type.indexOf("image/")===0){var r2=new FileReader();r2.onload=function(){S.files.push({n:f.name,t:f.type==="application/pdf"?"pdf":"img",c:r2.result.split(",")[1],m:f.type});render()};r2.readAsDataURL(f)}
     }catch(err){}}};
   document.querySelectorAll(".rmFile").forEach(function(b){b.onclick=function(){S.files.splice(+b.dataset.i,1);render()}});
-  var pc=document.getElementById("podCheck");if(pc)pc.onchange=function(e){S.wantPod=e.target.checked};
+  // podCheck handler removed (2026-06-08) — toggle was deleted from compose form + drawer.
   var wc=document.getElementById("webCheck");if(wc)wc.onchange=function(e){S.wantWebSearch=e.target.checked};
   var gb=document.getElementById("genBtn");if(gb)gb.onclick=generate;
   var cgb=document.getElementById("cancelGenBtn");if(cgb)cgb.onclick=cancelGen;
@@ -8217,6 +8258,8 @@ function bindMain(){
   var ptb=document.getElementById("pdfTalkBtn");if(ptb)ptb.onclick=exportTalkPDF;
   var pngb=document.getElementById("pngTalkBtn");if(pngb)pngb.onclick=function(){S.overflowOpen=false;render();setTimeout(exportTalkImage,50)};
   var sib=document.getElementById("saveSlidesImgBtn");if(sib)sib.onclick=exportSlidesImage;
+  // Overview's bottom CTA → switch to Slides tab + jump to top (Jenni 2026-06-08)
+  var o2s=document.getElementById("overviewToSlidesBtn");if(o2s)o2s.onclick=function(){S.tab="slides";window.scrollTo(0,0);render()};
   var jtb=document.getElementById("jsonTalkBtn");if(jtb)jtb.onclick=function(){exportTalkJSON(null)};
   var dtb=document.getElementById("deleteTalkBtn");if(dtb)dtb.onclick=function(){S.overflowOpen=false;deleteCurrentTalk()};
   var shr=document.getElementById("shareTalkBtn");if(shr)shr.onclick=function(){shareTalk()};

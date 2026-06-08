@@ -22,8 +22,11 @@ if (!SUPABASE_URL || !SUPABASE_KEY || !OPENAI_KEY) {
 const topicsByName = JSON.parse(readFileSync("rag/abim_topics.json", "utf8"));
 const SUBSPECIALTIES = Object.keys(topicsByName);
 
-const PER_TOPIC_LIMIT  = 10;
-const YEARS_BACK       = 7;
+// All tunable via env so you can scale / batch without editing code.
+const PER_TOPIC_LIMIT  = parseInt(process.env.PER_TOPIC_LIMIT || "20", 10);  // was 10 — bigger haul per subspecialty
+const YEARS_BACK       = parseInt(process.env.YEARS_BACK || "10", 10);       // was 7 — wider recency window
+const START_INDEX      = parseInt(process.env.START_INDEX || "0", 10);       // resume / batch offset into the subspecialty list
+const MAX_SUBS         = parseInt(process.env.MAX_SUBS || "0", 10) || null;  // limit # of subspecialties this run (e.g. MAX_SUBS=3 for a test batch)
 const REQUEST_DELAY_MS = NCBI_KEY ? 110 : 350;
 const EMBEDDING_MODEL  = "text-embedding-3-small";
 const EMBEDDING_DIM    = 1536;
@@ -197,9 +200,11 @@ async function ingestSubspecialty(name) {
 async function main() {
   console.log(`Scaling ingest: ${SUBSPECIALTIES.length} subspecialties × ${PER_TOPIC_LIMIT} reviews/each`);
   console.log(`Rate: ${NCBI_KEY ? "10/s" : "3/s"} | Filter: AIM + review/MA/guideline + last ${YEARS_BACK}y`);
+  const endIndex = MAX_SUBS ? Math.min(SUBSPECIALTIES.length, START_INDEX + MAX_SUBS) : SUBSPECIALTIES.length;
+  console.log(`Range: subspecialties [${START_INDEX}..${endIndex - 1}] of ${SUBSPECIALTIES.length}` + (MAX_SUBS ? ` (batch of ${MAX_SUBS})` : " (full run)"));
   const start = Date.now();
   let totalIn = 0, totalSkip = 0;
-  for (let i = 0; i < SUBSPECIALTIES.length; i++) {
+  for (let i = START_INDEX; i < endIndex; i++) {
     const name = SUBSPECIALTIES[i];
     process.stdout.write(`[${String(i+1).padStart(3)}/${SUBSPECIALTIES.length}] ${name.slice(0, 48).padEnd(48)} `);
     const { ins, skip } = await ingestSubspecialty(name);
