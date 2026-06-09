@@ -5725,15 +5725,122 @@ function render(){
       '<div style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:var(--plum-deep);margin-bottom:6px">Opening your talk…</div>'+
       '<div style="font-size:12.5px;color:var(--ink-muted);max-width:280px;line-height:1.5">Pulling the full lesson from your library</div>'+
       '</div>';
+    renderGlobalModals();
     return;
   }
   // S.showExamples + renderExamples() / bindExamples() were removed when samples
   // were merged into the Library view. Library is the unified entry point.
-  if(S.showSaved){root.innerHTML=renderSaved();bindSaved();return}
-  if(S.showLib){root.innerHTML=renderLib();bindLib();return}
+  if(S.showSaved){root.innerHTML=renderSaved();bindSaved();renderGlobalModals();return}
+  if(S.showLib){root.innerHTML=renderLib();bindLib();renderGlobalModals();return}
   // Showcase view — public curated portfolio (Jenni 2026-06-08)
-  if(S.showcase){root.innerHTML=renderShowcase();bindShowcase();return}
-  root.innerHTML=renderMain();bindMain();
+  if(S.showcase){root.innerHTML=renderShowcase();bindShowcase();renderGlobalModals();return}
+  root.innerHTML=renderMain();bindMain();renderGlobalModals();
+}
+
+// Global modals — rendered into a separate #globalModals element appended to <body>, so they
+// survive any view-change (renderSaved, renderLib, renderShowcase, etc.) clobbering #root.
+// Fixes the bug where Sign in / Share buttons did nothing in Library view because the modal
+// markup only lived inside renderMain. (Jenni 2026-06-08)
+function renderGlobalModals(){
+  var holder = document.getElementById("globalModals");
+  if(!holder){
+    holder = document.createElement("div");
+    holder.id = "globalModals";
+    document.body.appendChild(holder);
+  }
+  var h = "";
+
+  // ── Share modal — three-tier audience-framed (Phase 1+2) ─────────────────
+  if(S.shareModalOpen && S.shareModalTalkId){
+    var _smRow = (S.cloudTalks||[]).find(function(x){return x.id===S.shareModalTalkId});
+    var _smIsPublic = !!(_smRow && _smRow.is_public);
+    var _smIsFeatured = !!(_smRow && _smRow.is_featured);
+    var _smToken = (_smRow && _smRow.share_token) || S.shareModalToken || "";
+    var _smUrl = _smToken ? publicShareURL(_smToken) : "";
+    var _smTier = _smIsFeatured ? "profile" : (_smIsPublic ? "link" : "private");
+    h+='<div class="drawer-backdrop open" id="shareModalBackdrop" style="z-index:120"></div>';
+    h+='<div class="drawer open" id="shareModal" style="z-index:121;max-width:480px;margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
+    h+='<div class="drawer-head" style="padding:18px 20px 10px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🔗</span> Share this talk</div><button class="drawer-close" id="shareModalCloseBtn">×</button></div>';
+    h+='<div class="drawer-body" style="padding:0 20px 20px">';
+    h+='<p style="font-size:12.5px;color:var(--ink-muted);margin:0 0 14px;line-height:1.5">Who can see this talk?</p>';
+    var _t1Active = (_smTier==="private");
+    h+='<button class="shareTierBtn" data-tier="private" style="width:100%;background:'+(_t1Active?"var(--lavender-bg)":"#fff")+';border:1.5px solid '+(_t1Active?"var(--plum)":"var(--line)")+';border-radius:14px;padding:13px 14px;margin-bottom:8px;text-align:left;cursor:pointer;display:flex;align-items:flex-start;gap:11px;font-family:inherit;transition:all .15s ease">';
+    h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t1Active?"🔵":"⚪")+'</span>';
+    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔒 Just me</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">Stays in your library. No one else can see it.</span></span>';
+    h+='</button>';
+    var _t2Active = (_smTier==="link");
+    h+='<button class="shareTierBtn" data-tier="link" style="width:100%;background:'+(_t2Active?"#e6efff":"#fff")+';border:1.5px solid '+(_t2Active?"#5781c9":"var(--line)")+';border-radius:14px;padding:13px 14px;margin-bottom:8px;text-align:left;cursor:pointer;display:flex;align-items:flex-start;gap:11px;font-family:inherit;transition:all .15s ease">';
+    h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t2Active?"🔵":"⚪")+'</span>';
+    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔗 People I send the link to</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">I get a private URL to DM. Not listed anywhere.</span></span>';
+    h+='</button>';
+    var _t3Active = (_smTier==="profile");
+    var _heroProfile = window.location.origin + window.location.pathname + "#showcase";
+    h+='<button class="shareTierBtn" data-tier="profile" style="width:100%;background:'+(_t3Active?"#fff8e6":"#fff")+';border:1.5px solid '+(_t3Active?"#e8a91f":"var(--line)")+';border-radius:14px;padding:13px 14px;margin-bottom:14px;text-align:left;cursor:pointer;display:flex;align-items:flex-start;gap:11px;font-family:inherit;transition:all .15s ease">';
+    h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t3Active?"🔵":"⚪")+'</span>';
+    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">⭐ Anyone who finds my profile</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">Shows up at <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--plum)">'+esc(_heroProfile.replace(window.location.origin+window.location.pathname,""))+'</span> alongside your other featured talks.</span></span>';
+    h+='</button>';
+    if(_smUrl && (_t2Active || _t3Active)){
+      h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--ink);word-break:break-all;margin-bottom:10px">'+esc(_smUrl)+'</div>';
+      h+='<button id="shareModalCopyBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer">📋 Copy link</button>';
+    }
+    if(S.shareModalBusy){
+      h+='<div style="text-align:center;color:var(--ink-muted);font-size:11.5px;margin-top:10px"><span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px"></span>Updating…</div>';
+    }
+    h+='<div style="font-size:10.5px;color:var(--ink-soft);margin-top:12px;line-height:1.45;padding-top:10px;border-top:1px solid var(--line-soft)"><b>Privacy note:</b> Any uploaded references (PDFs, notes) are scrubbed before publishing. Your name from your profile is shown as author on shared views.</div>';
+    h+='</div></div>';
+  }
+
+  // ── Sign-in modal ────────────────────────────────────────────────────────
+  if(S.signInOpen){
+    h+='<div class="drawer-backdrop open" id="signInBackdrop"></div>';
+    h+='<div class="drawer open" style="max-height:auto" id="signInDrawer">';
+    h+='<div class="drawer-handle"></div>';
+    h+='<div class="drawer-head"><div class="drawer-title">Sign in</div><button class="drawer-close" id="signInCloseBtn">×</button></div>';
+    h+='<div class="drawer-body" style="padding:18px 20px 28px">';
+    h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.5;margin:0 0 18px">Sign in to save your library across devices and personalize your profile. Anonymous use still works without an account.</p>';
+    h+='<button id="googleSignInBtn" '+(S.authBusy?"disabled":"")+' style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease"><svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.32A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3.01 2.33A5.4 5.4 0 0 1 9 3.58z"/></svg>Continue with Google</button>';
+    h+='<div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--ink-soft);font-size:11px;letter-spacing:0.05em"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>';
+    h+='<form id="magicLinkForm" style="display:flex;flex-direction:column;gap:8px">';
+    h+='<label style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 0 4px">Email magic link</label>';
+    h+='<input id="authEmailInput" type="email" placeholder="you@hospital.edu" value="'+esc(S.authEmail||"")+'" required style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:16px;color:var(--ink);outline:none;font-family:inherit">';
+    h+='<button type="submit" '+(S.authBusy?"disabled":"")+' style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:'+(S.authBusy?"wait":"pointer")+';opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease">'+(S.authBusy?"Sending…":"Send magic link →")+'</button>';
+    h+='</form>';
+    if(S.authMsg){
+      var isErr = /error|fail|wrong|invalid/i.test(S.authMsg);
+      h+='<p style="margin-top:14px;padding:10px 12px;background:'+(isErr?"#fdf0ee":"#f0f7f0")+';border:1px solid '+(isErr?"#e8c8c0":"#b8d8b8")+';border-radius:10px;font-size:12.5px;color:'+(isErr?"#c0392b":"#2d6a2d")+';line-height:1.45">'+esc(S.authMsg)+'</p>';
+    }
+    h+='</div></div>';
+  }
+
+  holder.innerHTML = h;
+
+  // Re-bind handlers (each render they need to attach fresh since innerHTML wipes them)
+  // Share modal
+  var smc=document.getElementById("shareModalCloseBtn");if(smc)smc.onclick=function(){S.shareModalOpen=false;S.shareModalTalkId=null;render()};
+  var smb=document.getElementById("shareModalBackdrop");if(smb)smb.onclick=function(){S.shareModalOpen=false;S.shareModalTalkId=null;render()};
+  document.querySelectorAll("#globalModals .shareTierBtn").forEach(function(b){b.onclick=function(){
+    var tier=b.dataset.tier;
+    if(!tier || !S.shareModalTalkId || S.shareModalBusy) return;
+    applyShareTier(S.shareModalTalkId, tier);
+  }});
+  var smcp=document.getElementById("shareModalCopyBtn");if(smcp)smcp.onclick=function(){
+    var row=(S.cloudTalks||[]).find(function(x){return x.id===S.shareModalTalkId});
+    var token=(row && row.share_token) || S.shareModalToken;
+    if(!token) return;
+    var url=publicShareURL(token);
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(function(){
+        var b=document.getElementById("shareModalCopyBtn");
+        if(b){var orig=b.textContent;b.textContent="✓ Link copied — only people you send it to can view";setTimeout(function(){b.textContent=orig},2500)}
+      });
+    }
+  };
+  // Sign-in modal
+  var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){S.signInOpen=false;render()};
+  var sibd=document.getElementById("signInBackdrop");if(sibd)sibd.onclick=function(){S.signInOpen=false;render()};
+  var aei=document.getElementById("authEmailInput");if(aei)aei.oninput=function(e){S.authEmail=e.target.value};
+  var mlf=document.getElementById("magicLinkForm");if(mlf)mlf.onsubmit=async function(e){e.preventDefault();var em=(S.authEmail||"").trim();if(!em){S.authMsg="Enter your email";render();return}S.authBusy=true;S.authMsg="";render();try{await signInWithMagicLink(em);S.authMsg="Check "+em+" — we sent you a magic link.";S.authBusy=false;render()}catch(err){S.authMsg=err.message||"Could not send magic link";S.authBusy=false;render()}};
+  var gsb=document.getElementById("googleSignInBtn");if(gsb)gsb.onclick=async function(){S.authBusy=true;render();try{await signInWithGoogle()}catch(err){S.authMsg=err.message||"Google sign-in failed";S.authBusy=false;render()}};
 }
 
 // ═══════════ SHOWCASE / PORTFOLIO ═══════════
@@ -7030,9 +7137,9 @@ function renderMain(){
   h+='<div style="margin-top:4px;font-size:10.5px;color:#a8a3b8">Licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" style="color:#9490a6;text-decoration:none;border-bottom:1px dotted #c4c0d0">CC BY-NC-SA 4.0</a></div>';
   h+='</div>';
 
-  // === Sign-in modal (bottom-sheet drawer style) ===
-  // ── Share modal — three-tier audience-framed (Jenni 2026-06-08 Phase 1+2 redesign) ─────
-  if(S.shareModalOpen && S.shareModalTalkId){
+  // === Sign-in modal + Share modal moved to renderGlobalModals() so they work from any view ===
+  // (Jenni 2026-06-08 — fixes bug where Library/Showcase views had no access to these modals.)
+  if(false && S.shareModalOpen && S.shareModalTalkId){
     var _smRow = (S.cloudTalks||[]).find(function(x){return x.id===S.shareModalTalkId});
     var _smIsPublic = !!(_smRow && _smRow.is_public);
     var _smIsFeatured = !!(_smRow && _smRow.is_featured);
@@ -7080,7 +7187,7 @@ function renderMain(){
     h+='</div></div>';
   }
 
-  if(S.signInOpen){
+  if(false && S.signInOpen){
     h+='<div class="drawer-backdrop open" id="signInBackdrop"></div>';
     h+='<div class="drawer open" style="max-height:auto" id="signInDrawer">';
     h+='<div class="drawer-handle"></div>';
