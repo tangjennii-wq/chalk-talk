@@ -4176,6 +4176,8 @@ var S = {
   wantWebSearch:false, queueAudio:false, genId:0,
   // Showcase / portfolio view — Phase 2 sharing MVP (Jenni 2026-06-08)
   showcase:false, showcaseLoading:false, showcaseTalks:[],
+  // Landing-page featured cache — populated by loadLandingFeatured() on app init
+  landingFeatured:[],
   loading:false, loadSec:0, loadMsg:"", error:"",
   // — Current talk + interaction
   talk:null, sec:0, activeSection:0, tab:"overview",
@@ -4215,6 +4217,8 @@ window.onSupabaseReady = function(client){
       loadProfile();
     }
     if(typeof render === "function") render();
+    // Background-fetch featured talks for the landing page (Jenni 2026-06-08)
+    if(typeof loadLandingFeatured === "function") loadLandingFeatured();
     // Auth state is now known — drain any pending #t=<cloud-id> hash load from a deep-link.
     if(typeof drainPendingHashLoad === "function") drainPendingHashLoad();
   });
@@ -4381,17 +4385,19 @@ function showcaseURL(){
   return window.location.origin + window.location.pathname + "#showcase";
 }
 
-// Fetch featured talks for the showcase. Uses the anon (or signed-in) Supabase client — RLS allows
-// SELECT where is_public=true, and we additionally filter for is_featured=true client-side via the query.
-// Returns a normalized list shaped like cloudTalks rows for the existing card renderer to consume.
-async function loadShowcaseTalks(){
+// Fetch featured talks. Lightweight query — title + topic + style + share_token, plus subtitle
+// projected from talk_json. Drops the full talk_json (heavy) — it's fetched only when a user clicks
+// into a specific talk via loadPublicTalkByToken. Anon Supabase client works thanks to RLS on
+// is_public=true. (Jenni 2026-06-08 — landing + showcase share this loader for caching.)
+async function loadShowcaseTalks(limit){
   if(!window.sb) return [];
-  var r = await window.sb.from("talks")
-    .select("id,title,topic,style,depth,share_token,featured_at,talk_json,user_id")
+  var q = window.sb.from("talks")
+    .select("id,title,topic,style,depth,share_token,featured_at,user_id,has_visuals,talk_json->>subtitle")
     .eq("is_public", true)
     .eq("is_featured", true)
-    .order("featured_at", {ascending:false})
-    .limit(50);
+    .order("featured_at", {ascending:false});
+  if(limit) q = q.limit(limit);
+  var r = await q;
   if(r.error){ console.warn("loadShowcaseTalks", r.error); return []; }
   return r.data || [];
 }
@@ -6438,6 +6444,7 @@ function loadFromShowcaseHash(){
     S.showcase = true;
     S.showcaseLoading = true;
     if(typeof render === "function") render();
+    // No limit — show every featured talk on the dedicated portfolio page
     loadShowcaseTalks().then(function(rows){
       S.showcaseTalks = rows;
       S.showcaseLoading = false;
@@ -6446,6 +6453,20 @@ function loadFromShowcaseHash(){
     return true;
   }catch(e){console.error("loadFromShowcaseHash failed:",e)}
   return false;
+}
+
+// Background fetch of featured talks for the landing surface. ~10 cards is plenty for the
+// hero scroll; the full unlimited set lives at #showcase. Lightweight — runs in parallel
+// with auth, doesn't block initial render. (Jenni 2026-06-08)
+function loadLandingFeatured(){
+  if(!window.sb) return;
+  loadShowcaseTalks(10).then(function(rows){
+    if(!rows || !rows.length) return;
+    // Only merge if landing isn't already populated by an explicit #showcase visit
+    if(S.showcase) return;
+    S.landingFeatured = rows;
+    if(typeof render === "function") render();
+  });
 }
 
 // Library deep-link: when a new tab opens with #t=<id> or #s=<slug>, load that talk directly.
@@ -6821,10 +6842,9 @@ function renderShowcase(){
   } else {
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;max-width:960px;margin:0 auto">';
     S.showcaseTalks.forEach(function(t){
-      var talk = t.talk_json || {};
-      var title = talk.title || t.topic || t.title || 'Untitled';
-      var subtitle = talk.subtitle || '';
-      var spec = inferSpecialty(t.topic, talk, null);
+      var title = t.title || t.topic || 'Untitled';
+      var subtitle = t.subtitle || '';
+      var spec = inferSpecialty(t.topic, {title:title, subtitle:subtitle}, null);
       var ico = SPEC_ICONS[spec] || '●';
       var shareUrl = publicShareURL(t.share_token);
       h += '<a href="'+esc(shareUrl)+'" class="showcaseCard" data-token="'+esc(t.share_token)+'" style="text-decoration:none;color:inherit;background:var(--cream);border:1px solid var(--line);border-left:3px solid var(--plum);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow-soft);cursor:pointer;transition:all .15s ease" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 14px rgba(75,17,111,0.15)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'var(--shadow-soft)\'">';
@@ -7252,6 +7272,33 @@ function renderMain(){
   // most recent lectures instead — last 4 on desktop, last 2 on mobile (via .msample-grid CSS) — and the
   // section link points to the full library rather than the sample gallery. (Jenni 2026-06-06)
   if(!S.talk&&!S.loading){
+    // === Featured by Jennifer Tang, MD ===
+    // Curated public showcase, shown additively on the landing for everyone. (Jenni 2026-06-08)
+    // Lightweight cards — clicking routes to loadPublicTalkByToken via share_token.
+    if(S.landingFeatured && S.landingFeatured.length > 0){
+      h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px">';
+      h+='<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:4px">⭐</span>Featured samples</span>';
+      h+='<button id="landingShowcaseLinkBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all →</button>';
+      h+='</div>';
+      h+='<div data-msample-grid class="msample-grid">';
+      for(var fti=0;fti<S.landingFeatured.length;fti++){
+        var ft = S.landingFeatured[fti];
+        var ftTitle = ft.title || ft.topic || 'Untitled';
+        var ftSubtitle = ft.subtitle || '';
+        var ftSpec = inferSpecialty(ft.topic, {title:ftTitle, subtitle:ftSubtitle}, null);
+        var ftIco = SPEC_ICONS[ftSpec] || '●';
+        h+='<div class="landingFeaturedBtn" data-token="'+esc(ft.share_token||"")+'" style="background:#fffdf5;border:1px solid #f0d8a0;border-left:2px solid #e8a91f;border-radius:10px;padding:10px 11px;display:flex;flex-direction:column;gap:7px;min-height:84px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer">';
+        h+='<div style="display:flex;align-items:flex-start;gap:7px;min-width:0"><span style="background:#fff3d6;color:#7a5b1a;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">'+ftIco+'</span>';
+        h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(ftTitle)+'</span></div>';
+        h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
+        if(ftSpec) h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(ftSpec)+'</span>';
+        h+='<span style="background:var(--lavender-bg);color:var(--ink-muted);padding:0 5px;border-radius:5px;font-weight:500;font-size:8.5px;line-height:1.55">'+(ft.style==="boards"?"Boards":"Lecture")+'</span>';
+        h+='</div></div>';
+      }
+      h+='</div></div>';
+    }
+
     // Most recent saved LECTURES (boards carry .question, so they're excluded), newest first.
     var _recentLectures = (getDisplayLibrary()||[])
       .filter(function(e){ return e && e.talk && !e.talk.question; })
@@ -7279,7 +7326,10 @@ function renderMain(){
         h+='</div>';
       }
       h+='</div></div>';
-    } else if(typeof SAMPLES!=="undefined"&&SAMPLES&&SAMPLES.length>0){
+    }
+    // Samples — always shown additively below recent lectures + featured.
+    // Includes Boards-mode questions, which featured talks may not cover. (Jenni 2026-06-08)
+    if(typeof SAMPLES!=="undefined"&&SAMPLES&&SAMPLES.length>0){
       // Brand-new user, empty library: show the sample gallery.
       h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
       h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all '+SAMPLES.length+' →</button></div>';
@@ -8448,6 +8498,16 @@ function bindMain(){
   // examplesBtn was removed from hero; samples now live inside the Library view.
   document.querySelectorAll(".landingSampleBtn").forEach(function(b){b.onclick=function(e){if(e.target.closest(".favBtn"))return;loadSample(b.dataset.slug)}});
   document.querySelectorAll(".landingSavedBtn").forEach(function(b){b.onclick=function(){loadSavedTalk(b.dataset.id)}});
+  // Featured talk cards on landing — route through public-token loader (Jenni 2026-06-08)
+  document.querySelectorAll(".landingFeaturedBtn").forEach(function(b){b.onclick=function(){
+    var token = b.dataset.token;
+    if(token) loadPublicTalkByToken(token);
+  }});
+  var lsl=document.getElementById("landingShowcaseLinkBtn");
+  if(lsl)lsl.onclick=function(){
+    S.showcase=true;S.showcaseLoading=true;S.showcaseTalks=[];render();
+    loadShowcaseTalks().then(function(rows){S.showcaseTalks=rows;S.showcaseLoading=false;render()});
+  };
   document.querySelectorAll(".favBtn").forEach(function(b){b.onclick=function(e){e.stopPropagation();toggleFavorite(b.dataset.slug)}});
   // ─── Visual Memory Card (download / lightbox) ──────────────────────────
   var dvb=document.getElementById("downloadVMCBtn");if(dvb)dvb.onclick=downloadVMC;
