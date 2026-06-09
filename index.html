@@ -7268,9 +7268,10 @@ function renderMain(){
   }
 
   // === Landing showcase — 4 cards, 2-col on mobile ===
-  // New users (no saved lectures yet) see "Try a sample". Once they've saved a lecture, we swap in their
-  // most recent lectures instead — last 4 on desktop, last 2 on mobile (via .msample-grid CSS) — and the
-  // section link points to the full library rather than the sample gallery. (Jenni 2026-06-06)
+  // Keep samples as the primary onboarding row until the user has built a fuller lecture library.
+  // With 1-3 saved lectures, show samples first and recent lectures underneath; with >4 saved
+  // lectures, lead with recents. Four saved lectures is the buffer state where samples still lead.
+  // (Jenni 2026-06-09)
   if(!S.talk&&!S.loading){
     // === Featured by Jennifer Tang, MD ===
     // Curated public showcase, shown additively on the landing for everyone. (Jenni 2026-06-08)
@@ -7300,13 +7301,14 @@ function renderMain(){
     }
 
     // Most recent saved LECTURES (boards carry .question, so they're excluded), newest first.
-    var _recentLectures = (getDisplayLibrary()||[])
+    var _allRecentLectures = (getDisplayLibrary()||[])
       .filter(function(e){ return e && e.talk && !e.talk.question; })
-      .sort(function(a,b){ return new Date(b.savedAt||0) - new Date(a.savedAt||0); })
-      .slice(0,4);
+      .sort(function(a,b){ return new Date(b.savedAt||0) - new Date(a.savedAt||0); });
+    var _recentLectures = _allRecentLectures.slice(0,4);
+    var _showRecentFirst = _allRecentLectures.length > 4;
+    var _showRecentAfterSamples = _allRecentLectures.length > 0 && _allRecentLectures.length <= 3;
 
-    if(_recentLectures.length>0){
-      // Returning user: show their recent lectures, link to the library.
+    function renderLandingRecentLectures(){
       h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
       h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>Recent lectures</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all in library →</button></div>';
       h+='<div data-msample-grid class="msample-grid">';
@@ -7327,10 +7329,9 @@ function renderMain(){
       }
       h+='</div></div>';
     }
-    // Samples — always shown additively below recent lectures + featured.
-    // Includes Boards-mode questions, which featured talks may not cover. (Jenni 2026-06-08)
-    if(typeof SAMPLES!=="undefined"&&SAMPLES&&SAMPLES.length>0){
-      // Brand-new user, empty library: show the sample gallery.
+
+    function renderLandingSamples(){
+      if(!(typeof SAMPLES!=="undefined"&&SAMPLES&&SAMPLES.length>0)) return;
       h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
       h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all '+SAMPLES.length+' →</button></div>';
       // Landing shows 4 hand-picked samples on desktop, first 2 (HFrEF + Hyponatremia) on mobile via CSS.
@@ -7357,6 +7358,10 @@ function renderMain(){
       }
       h+='</div></div>';
     }
+
+    if(_showRecentFirst) renderLandingRecentLectures();
+    renderLandingSamples();
+    if(_showRecentAfterSamples) renderLandingRecentLectures();
   }
 
   // === COMPOSE STATE: only when no talk loaded ===
