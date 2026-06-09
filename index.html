@@ -4167,7 +4167,7 @@ var SAMPLES = [
 var S = {
   // — Compose form / generation
   topic:"", style:"lecture", depth:"concise", refineContext:"", files:[],
-  wantWebSearch:false, queueAudio:false,
+  wantWebSearch:false, queueAudio:false, genId:0,
   loading:false, loadSec:0, loadMsg:"", error:"",
   // — Current talk + interaction
   talk:null, sec:0, activeSection:0, tab:"overview",
@@ -5082,8 +5082,9 @@ function exportSlidesImage(){
   var runCapture=function(){
     try{
       window.html2canvas(target,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false}).then(function(canvas){
-        var url=canvas.toDataURL("image/png");
-        var a=document.createElement("a");a.href=url;a.download="chalk-talk-slides-"+slug+".png";
+        // JPEG @0.92 — visually lossless for text/poster content, ~5-10× smaller than PNG. (Jenni 2026-06-08)
+        var url=canvas.toDataURL("image/jpeg",0.92);
+        var a=document.createElement("a");a.href=url;a.download="chalk-talk-slides-"+slug+".jpg";
         document.body.appendChild(a);a.click();document.body.removeChild(a);
         toast.textContent="✓ Slides image downloaded";
         setTimeout(cleanup,1500);
@@ -5142,8 +5143,9 @@ function exportTalkImage(){
       try{
         fr.style.height=Math.max(fd.body.scrollHeight,fd.documentElement.scrollHeight)+"px";
         w2c(fd.body,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false}).then(function(canvas){
-          var url=canvas.toDataURL("image/png");
-          var a=document.createElement("a");a.href=url;a.download="chalk-talk-"+slug+".png";
+          // JPEG @0.92 — visually lossless for text/poster content, much smaller. (Jenni 2026-06-08)
+          var url=canvas.toDataURL("image/jpeg",0.92);
+          var a=document.createElement("a");a.href=url;a.download="chalk-talk-"+slug+".jpg";
           document.body.appendChild(a);a.click();document.body.removeChild(a);
           toast.textContent="\u2713 Image downloaded";
           setTimeout(cleanup,1500);
@@ -5858,9 +5860,12 @@ function buildReferenceParts(files) {
 
 async function generate(){
   if(!S.topic.trim()||S.loading)return;
-  // Reset cancel flag at the START of every generation — otherwise rapid cancel/restart
-  // races leave the flag stuck true and the new gen's result gets silently discarded. (Jenni 2026-06-08)
+  // Reset cancel flag at the START of every generation. (Jenni 2026-06-08)
   S.genCancelled=false;
+  // Generation-ID counter — used so that mid-flight setting changes can restart cleanly
+  // without the stale generation's late return stomping on the new one. (Jenni 2026-06-08)
+  S.genId = (S.genId || 0) + 1;
+  var _myGenId = S.genId;
   S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;speechSynthesis.cancel();render();
   loadTimer=setInterval(function(){S.loadSec++;var msgs=S.wantWebSearch?["Reasoning through physiology...","Searching current literature...","Cross-referencing societies...","Building content...","AI-checking...","Polishing final version..."]:["Reasoning through physiology...","Loading guidelines...","Building content...","AI-checking & polishing..."];S.loadMsg=msgs[Math.min(Math.floor(S.loadSec/3),msgs.length-1)];render()},1000);
   try{
@@ -5954,6 +5959,11 @@ async function generate(){
     S.genCancelled=false;
     return;
   }
+  // Stale-gen check: if user restarted with new settings mid-flight, our genId is no longer
+  // the current one — drop this result silently so the new gen's output wins. (Jenni 2026-06-08)
+  if(_myGenId !== S.genId){
+    return;
+  }
   S.talk = finalTalk;
     S.sec=0;S.dg=null;S.dgErr="";S.podScript="";
     if (glRef) { S.glRef = glRef; } else { S.glRef = null; }
@@ -5980,6 +5990,21 @@ function cancelGen(){
   S.loadSec = 0;
   S.loadMsg = "";
   render();
+}
+
+// Restart an in-flight generation with the user's just-changed settings (depth / web-verify).
+// Preserves S.queueAudio so the audio intent survives across the restart. The stale gen's late
+// return is dropped via the genId check inside generate(). (Jenni 2026-06-08)
+function restartGen(){
+  if(!S.loading) return;
+  // Tear down the current loader without setting genCancelled — we WANT to start fresh
+  clearInterval(loadTimer);
+  S.loading = false;
+  S.loadSec = 0;
+  S.loadMsg = "";
+  S.genCancelled = false; // genId check handles the stale-drop; cancel flag should be clean
+  // Use setTimeout so the loading-state DOM clears before the new generate() re-sets S.loading=true
+  setTimeout(generate, 0);
 }
 
 function getGeminiKey(){
@@ -6383,7 +6408,7 @@ async function downloadVMC(){
   function triggerDownload(href,revoke){
     var a=document.createElement("a");
     a.href=href;
-    a.download="vmc-"+slug+".png";
+    a.download="vmc-"+slug+".jpg";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -6393,19 +6418,20 @@ async function downloadVMC(){
   }
   try{
     var canvas=await html2canvas(vmc,{scale:2,backgroundColor:"#330662",useCORS:true,logging:false,allowTaint:true});
+    // JPEG @0.92 \u2014 smaller files, visually lossless for poster content. (Jenni 2026-06-08)
     if(canvas.toBlob){
       canvas.toBlob(function(blob){
         if(!blob){
           // toBlob returned null (some Safari builds) \u2014 fall back to data URL
-          try{triggerDownload(canvas.toDataURL("image/png"),false)}
+          try{triggerDownload(canvas.toDataURL("image/jpeg",0.92),false)}
           catch(e2){S.savedFlash="Image generation failed: "+e2.message;render();setTimeout(function(){S.savedFlash="";render()},4500)}
         }else{
           triggerDownload(URL.createObjectURL(blob),true);
         }
-      },"image/png");
+      },"image/jpeg",0.92);
     }else{
       // toBlob unsupported \u2014 straight to data URL
-      triggerDownload(canvas.toDataURL("image/png"),false);
+      triggerDownload(canvas.toDataURL("image/jpeg",0.92),false);
     }
   }catch(e){
     console.error("downloadVMC error",e);
@@ -7162,6 +7188,28 @@ function renderMain(){
     var _pct = Math.min(95, Math.round((S.loadSec/45)*100));
     h+='<div style="margin-top:10px;height:4px;background:var(--lavender-bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,var(--plum-rich),var(--plum-deep));transition:width 0.6s ease"></div></div>';
     h+='</div>';
+
+    // Live settings — Depth + Verify can be changed mid-generation; change triggers a clean restart.
+    // Topic + Style stay locked (those need a New Talk). (Jenni 2026-06-08)
+    if(S.style==="lecture"){
+      h+='<div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px">';
+      h+='<div style="font-size:10px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;display:flex;align-items:center;gap:5px"><span>⚙</span> Change anytime — restarts generation</div>';
+      // Depth row
+      var _dC = (S.depth==="concise"), _dD = (S.depth==="detailed");
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
+      h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink)">Depth</span>';
+      h+='<div style="display:inline-flex;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:2px;font-size:11px;font-weight:600">';
+      h+='<button class="loadingDepthBtn" data-d="concise"  style="background:'+(_dC?"#fff":"transparent")+';color:'+(_dC?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dC?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dC?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dC?"700":"500")+'">Concise</button>';
+      h+='<button class="loadingDepthBtn" data-d="detailed" style="background:'+(_dD?"#fff":"transparent")+';color:'+(_dD?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dD?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dD?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dD?"700":"500")+'">Detailed</button>';
+      h+='</div></div>';
+      // Verify toggle
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">';
+      h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px"><span style="font-size:13px">🔬</span>Verify w/ current literature</span>';
+      h+='<span class="toggle-sw"><input type="checkbox" id="loadingVerifyCheck" '+(S.wantWebSearch?"checked":"")+'><span class="slider"></span></span>';
+      h+='</div>';
+      h+='</div>';
+    }
+
     h+='<button id="cancelGenBtn" style="width:100%;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:13px 20px;color:var(--ink-muted);font-size:13.5px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .15s ease;margin-bottom:8px">✕ Cancel</button>';
     // Audio queue — discoverability for the podcast feature. Tap during generation → genPodcast
     // auto-fires as soon as the talk is ready. (Jenni 2026-06-08)
@@ -7206,7 +7254,9 @@ function renderMain(){
     h+='<div id="talkStart" style="scroll-margin-top:8px"></div>';
     h+='<div class="tk-capsule">';
     // LEFT: + New talk only.
-    h+='<div class="cap-meta" style="flex:1;min-width:0"><button id="resetBtn" title="Start a new talk" style="background:none;border:none;color:var(--plum);font:inherit;font-weight:600;font-size:12.5px;padding:4px 8px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px">+ New talk</button></div>';
+    // + New talk — promoted from text link to outlined plum pill so it reads as a clear secondary action.
+    // Save (right side) is the primary gradient CTA; New talk is the alternative escape hatch. (Jenni 2026-06-08)
+    h+='<div class="cap-meta" style="flex:1;min-width:0"><button id="resetBtn" title="Start a new talk" style="background:#fff;border:1.5px solid var(--plum);color:var(--plum);font:inherit;font-weight:700;font-size:12.5px;padding:7px 14px;border-radius:18px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(75,17,111,0.08);transition:all .15s ease" onmouseover="this.style.background=\'var(--plum)\';this.style.color=\'#fff\';" onmouseout="this.style.background=\'#fff\';this.style.color=\'var(--plum)\';"><span style="font-size:14px;font-weight:700">+</span> New talk</button></div>';
     // RIGHT: Undo · Save · Edit settings · ⋮  (horizontal)
     h+='<div class="cap-actions">';
     // Undo button — standard inline SVG (curved arrow looping back), matches what every app uses.
@@ -7985,6 +8035,20 @@ function bindMain(){
   var cgb=document.getElementById("cancelGenBtn");if(cgb)cgb.onclick=cancelGen;
   // Audio-queue during loading state (Jenni 2026-06-08)
   var qab=document.getElementById("queueAudioBtn");if(qab)qab.onclick=function(){S.queueAudio=true;render()};
+  // Live depth + verify controls inside the loading panel — changing restarts generation cleanly
+  document.querySelectorAll(".loadingDepthBtn").forEach(function(b){
+    b.onclick=function(){
+      var d=b.dataset.d;
+      if(!d || S.depth===d) return;
+      S.depth=d;
+      restartGen();
+    };
+  });
+  var lvc=document.getElementById("loadingVerifyCheck");
+  if(lvc) lvc.onchange=function(e){
+    S.wantWebSearch=e.target.checked;
+    restartGen();
+  };
 
   // ─── Generated-talk view ────────────────────────────────────────────────
   var rb=document.getElementById("resetBtn");if(rb)rb.onclick=safeResetAll;
