@@ -4174,6 +4174,8 @@ var S = {
   // — Compose form / generation
   topic:"", style:"lecture", depth:"concise", refineContext:"", files:[],
   wantWebSearch:false, queueAudio:false, genId:0,
+  // Showcase / portfolio view — Phase 2 sharing MVP (Jenni 2026-06-08)
+  showcase:false, showcaseLoading:false, showcaseTalks:[],
   loading:false, loadSec:0, loadMsg:"", error:"",
   // — Current talk + interaction
   talk:null, sec:0, activeSection:0, tab:"overview",
@@ -4255,7 +4257,7 @@ async function refreshCloudTalks(){
     // has_visuals is a denormalized boolean column maintained by the sync_has_visuals trigger
     // (see supabase/migrations/add_has_visuals.sql). Lets us show the 🖼 badge without fetching the heavy talk_json.
     var r = await window.sb.from("talks")
-      .select("id, title, topic, style, depth, created_at, share_token, is_public, has_visuals, talk_json->>subtitle")
+      .select("id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, talk_json->>subtitle")
       .order("created_at", { ascending: false });
     if(r.error) throw r.error;
     S.cloudTalks = r.data || [];
@@ -4348,6 +4350,50 @@ async function cloudSetTalkPublic(id, makePublic){
 function publicShareURL(token){
   if(!token) return "";
   return window.location.origin + window.location.pathname + "#share/" + token;
+}
+
+// Featured/showcase API — Jenni 2026-06-08 Phase 2 sharing MVP.
+// Featuring a talk auto-publishes it (the DB trigger ensures is_public=true) and stamps featured_at.
+// The showcase view at #showcase queries WHERE user_id = curator AND is_public AND is_featured.
+async function cloudSetTalkFeatured(id, makeFeatured){
+  if(!window.sb || !S.user || !id) return null;
+  var r = await window.sb.from("talks")
+    .update({is_featured: !!makeFeatured})
+    .eq("id", id)
+    .select("id,is_public,is_featured,share_token,featured_at")
+    .maybeSingle();
+  if(r.error){ console.warn(r.error); return null }
+  S.cloudTalks = (S.cloudTalks || []).map(function(x){
+    if(x.id !== id) return x;
+    return Object.assign({}, x, {
+      is_public: r.data.is_public,
+      is_featured: r.data.is_featured,
+      share_token: r.data.share_token,
+      featured_at: r.data.featured_at
+    });
+  });
+  return r.data;
+}
+
+// Public URL for someone's showcase. For MVP we hardcode "showcase" for the canonical curator (the app owner).
+// Future: /u/<handle> when handle reservation lands. Coworkers paste this URL.
+function showcaseURL(){
+  return window.location.origin + window.location.pathname + "#showcase";
+}
+
+// Fetch featured talks for the showcase. Uses the anon (or signed-in) Supabase client — RLS allows
+// SELECT where is_public=true, and we additionally filter for is_featured=true client-side via the query.
+// Returns a normalized list shaped like cloudTalks rows for the existing card renderer to consume.
+async function loadShowcaseTalks(){
+  if(!window.sb) return [];
+  var r = await window.sb.from("talks")
+    .select("id,title,topic,style,depth,share_token,featured_at,talk_json,user_id")
+    .eq("is_public", true)
+    .eq("is_featured", true)
+    .order("featured_at", {ascending:false})
+    .limit(50);
+  if(r.error){ console.warn("loadShowcaseTalks", r.error); return []; }
+  return r.data || [];
 }
 
 // Load a public talk via the Worker /share/:token route (works without sign-in)
@@ -4459,8 +4505,17 @@ function renderLibCard(x){
   iconBtns += '<div style="position:relative;flex-shrink:0">';
   iconBtns += '<button class="libCardMenuBtn" data-key="'+esc(menuKey)+'" title="More actions" aria-label="More actions" aria-haspopup="true" style="background:none;border:none;color:var(--ink-muted);font-size:18px;cursor:pointer;padding:5px 8px;border-radius:50%;line-height:1;font-weight:700">⋮</button>';
   if(menuOpen){
-    iconBtns += '<div class="libCardMenu" style="position:absolute;right:0;top:34px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(20,10,28,0.14);min-width:170px;z-index:80;overflow:hidden">';
+    iconBtns += '<div class="libCardMenu" style="position:absolute;right:0;top:34px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(20,10,28,0.14);min-width:200px;z-index:80;overflow:hidden">';
     iconBtns += '<button class="libMenuItem libEditTitleBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">✎</span>Rename</button>';
+    // Feature/Unfeature — only for cloud-saved user talks (samples + local-only excluded).
+    // Featuring auto-publishes (DB trigger) so the talk is reachable via /share/:token.
+    if(!isSample && x._id && !String(x._id).startsWith("t_")){
+      if(x._isFeatured){
+        iconBtns += '<button class="libMenuItem libUnfeatureBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="font-size:14px;width:16px;display:inline-flex;justify-content:center">☆</span>Unfeature</button>';
+      } else {
+        iconBtns += '<button class="libMenuItem libFeatureBtn" '+dataAttr+' title="Add to your public showcase at #showcase" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:#e8a91f;font-size:14px;width:16px;display:inline-flex;justify-content:center">⭐</span>Feature in showcase</button>';
+      }
+    }
     iconBtns += '<button class="libMenuItem libPdfBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">↓</span>Export PDF</button>';
     iconBtns += '<button class="libMenuItem delTalkBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:#c0392b;text-align:left;font-family:inherit"><span style="font-size:14px;width:16px;display:inline-flex;justify-content:center">🗑</span>Delete</button>';
     iconBtns += '</div>';
@@ -4486,6 +4541,8 @@ function renderLibCard(x){
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">✨</span>';
   // Public badge — talk has is_public=true (sharing feature Jenni 2026-06-04)
   if(x._isPublic) h += '<span style="background:#e6f4ea;color:#2d6a2d;border:1px solid #c8e0c8;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Public — anyone with the link can view">🌐 Public</span>';
+  // Featured badge — talk is in the curated showcase (Jenni 2026-06-08)
+  if(x._isFeatured) h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Featured in your public showcase">⭐ Featured</span>';
   // Visuals badge: prefer exact count (local talks with full savedVisuals data); else just show 🖼 (cloud cards).
   if(visuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼 '+visuals.length+'</span>';
   else if(t._hasCloudVisuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼</span>';
@@ -4525,7 +4582,8 @@ function getDisplayLibrary(){
       dg: null,
       glRef: { sources: [], specialties: [], context: "", trials: [] },
       _isPublic: !!row.is_public,
-      _shareToken: row.share_token || null
+      _shareToken: row.share_token || null,
+      _isFeatured: !!row.is_featured
     };
   });
   return loadSavedTalks().filter(_notSoftDeleted);
@@ -6370,6 +6428,26 @@ function loadFromPublicShareHash(){
   return false;
 }
 
+// Showcase hash: #showcase routes to the public curated portfolio page.
+// Jenni 2026-06-08 Phase 2 sharing MVP — handle reservation skipped for now.
+function loadFromShowcaseHash(){
+  try{
+    var hash = window.location.hash || "";
+    if(hash !== "#showcase") return false;
+    history.replaceState(null,"",window.location.pathname+window.location.search);
+    S.showcase = true;
+    S.showcaseLoading = true;
+    if(typeof render === "function") render();
+    loadShowcaseTalks().then(function(rows){
+      S.showcaseTalks = rows;
+      S.showcaseLoading = false;
+      if(typeof render === "function") render();
+    });
+    return true;
+  }catch(e){console.error("loadFromShowcaseHash failed:",e)}
+  return false;
+}
+
 // Library deep-link: when a new tab opens with #t=<id> or #s=<slug>, load that talk directly.
 // Samples load immediately. Saved-talk loads must wait for Supabase auth to restore (otherwise
 // the cloud lookup runs before S.user is populated and silently falls through to localStorage).
@@ -6718,7 +6796,85 @@ function render(){
   // were merged into the Library view. Library is the unified entry point.
   if(S.showSaved){root.innerHTML=renderSaved();bindSaved();return}
   if(S.showLib){root.innerHTML=renderLib();bindLib();return}
+  // Showcase view — public curated portfolio (Jenni 2026-06-08)
+  if(S.showcase){root.innerHTML=renderShowcase();bindShowcase();return}
   root.innerHTML=renderMain();bindMain();
+}
+
+// ═══════════ SHOWCASE / PORTFOLIO ═══════════
+// Public curated portfolio. Anyone hitting #showcase sees the curator's featured talks.
+// MVP: single canonical curator (the app owner). Future: /u/<handle> for multi-curator.
+function renderShowcase(){
+  var h = '';
+  h += '<div style="padding:24px 20px 8px;text-align:center;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#f5edfa 0%,transparent 100%)">';
+  h += '<div style="font-size:10.5px;font-weight:700;color:var(--plum);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:8px">✦ Curated reading list</div>';
+  h += '<h1 style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:var(--plum-deep);margin:0 0 6px;letter-spacing:-0.01em">Jennifer Tang, MD</h1>';
+  h += '<p style="font-size:12.5px;color:var(--ink-muted);margin:0 0 12px;line-height:1.5">Internal Medicine / Nephrology · NYU Langone<br>Hand-picked teaching talks for residents</p>';
+  h += '<button id="showcaseBackBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:6px 12px;border-radius:8px">← Open Chalk Talk</button>';
+  h += '</div>';
+
+  h += '<div style="padding:18px 16px 32px">';
+  if(S.showcaseLoading){
+    h += '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted)"><span class="spinner" style="width:22px;height:22px;border-width:3px;margin-bottom:10px"></span><div style="font-size:13px;margin-top:10px">Loading talks…</div></div>';
+  } else if(!S.showcaseTalks || S.showcaseTalks.length===0){
+    h += '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-size:13px;line-height:1.6">No featured talks yet.<br><span style="font-size:11.5px">Sign in and ⭐ a few from your library to feature them here.</span></div>';
+  } else {
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;max-width:960px;margin:0 auto">';
+    S.showcaseTalks.forEach(function(t){
+      var talk = t.talk_json || {};
+      var title = talk.title || t.topic || t.title || 'Untitled';
+      var subtitle = talk.subtitle || '';
+      var spec = inferSpecialty(t.topic, talk, null);
+      var ico = SPEC_ICONS[spec] || '●';
+      var shareUrl = publicShareURL(t.share_token);
+      h += '<a href="'+esc(shareUrl)+'" class="showcaseCard" data-token="'+esc(t.share_token)+'" style="text-decoration:none;color:inherit;background:var(--cream);border:1px solid var(--line);border-left:3px solid var(--plum);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow-soft);cursor:pointer;transition:all .15s ease" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 14px rgba(75,17,111,0.15)\'" onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'var(--shadow-soft)\'">';
+      h += '<div style="display:flex;align-items:flex-start;gap:8px"><span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">'+ico+'</span>';
+      h += '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.3;letter-spacing:-0.005em">'+esc(title)+'</div>';
+      if(subtitle) h += '<div style="font-size:11px;color:var(--ink-muted);margin-top:3px;line-height:1.4">'+esc(subtitle)+'</div>';
+      h += '</div></div>';
+      h += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:auto">';
+      if(spec) h += '<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:1px 6px;border-radius:6px;font-weight:600;font-size:9.5px">'+esc(spec)+'</span>';
+      h += '<span style="background:var(--lavender-bg);color:var(--ink-muted);padding:1px 6px;border-radius:6px;font-weight:500;font-size:9.5px">'+(t.style==="boards"?"Boards":"Lecture")+'</span>';
+      h += '</div></a>';
+    });
+    h += '</div>';
+    // Footer attribution + share link
+    h += '<div style="text-align:center;margin-top:32px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-muted);line-height:1.5">';
+    h += '<div style="margin-bottom:6px">Built with <a href="'+window.location.origin+window.location.pathname+'" style="color:var(--plum);text-decoration:none;font-weight:600">Chalk Talk</a> — a teaching tool by Jennifer Tang, MD</div>';
+    h += '<button id="showcaseCopyLinkBtn" style="background:none;border:1px solid var(--line);color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:7px;margin-top:4px">📋 Copy this page link</button>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function bindShowcase(){
+  var back = document.getElementById("showcaseBackBtn");
+  if(back) back.onclick = function(){
+    S.showcase = false;
+    render();
+  };
+  var copy = document.getElementById("showcaseCopyLinkBtn");
+  if(copy) copy.onclick = function(){
+    var url = showcaseURL();
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(url).then(function(){
+        copy.textContent = "✓ Link copied";
+        setTimeout(function(){ copy.textContent = "📋 Copy this page link" }, 1800);
+      }).catch(function(){ prompt("Copy this URL to share the showcase:", url) });
+    } else { prompt("Copy this URL to share the showcase:", url) }
+  };
+  // Card click — intercept to use hash navigation (preserves SPA behavior on direct anchor click)
+  document.querySelectorAll(".showcaseCard").forEach(function(a){
+    a.onclick = function(e){
+      e.preventDefault();
+      var token = a.dataset.token;
+      if(!token) return;
+      S.showcase = false;
+      // Load the public talk via the existing token path so the public-viewer UI kicks in
+      loadPublicTalkByToken(token);
+    };
+  });
 }
 
 // ═══════════ EXAMPLES (DEMO MODE) ═══════════
@@ -6930,6 +7086,31 @@ function bindSaved(){
       if(st)exportTalkPDF(st);else alert("Couldn't find that sample to export.");
     } else {
       exportSavedTalkPDF(b.dataset.id);
+    }
+  }});
+  // Feature in showcase (Jenni 2026-06-08 Phase 2 sharing MVP)
+  document.querySelectorAll(".libFeatureBtn").forEach(function(b){b.onclick=async function(){
+    S.libCardMenuId=null; render();
+    var id=b.dataset.id;
+    if(!id) return;
+    var data = await cloudSetTalkFeatured(id, true);
+    if(data){
+      S.savedFlash="⭐ Featured in showcase · "+showcaseURL().replace(window.location.origin+window.location.pathname,'');
+      render();
+      setTimeout(function(){S.savedFlash="";render()},3500);
+    } else {
+      S.savedFlash="⚠ Couldn't feature — try again";render();
+      setTimeout(function(){S.savedFlash="";render()},3500);
+    }
+  }});
+  document.querySelectorAll(".libUnfeatureBtn").forEach(function(b){b.onclick=async function(){
+    S.libCardMenuId=null; render();
+    var id=b.dataset.id;
+    if(!id) return;
+    var data = await cloudSetTalkFeatured(id, false);
+    if(data){
+      S.savedFlash="☆ Removed from showcase";render();
+      setTimeout(function(){S.savedFlash="";render()},2500);
     }
   }});
   document.querySelectorAll(".delTalkBtn").forEach(function(b){b.onclick=function(){
@@ -7907,6 +8088,7 @@ function renderMain(){
     h+='  <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc((S.profile && S.profile.name) || S.user.email)+'</span>';
     h+='</div>';
     h+='<button id="profileEditBtn">👤 Edit profile</button>';
+    h+='<button id="viewShowcaseBtn" title="See your public curated reading list">⭐ My showcase</button>';
     // API key management — let users add/replace their personal keys without digging through prompts.
     h+='<div style="padding:6px 14px;border-top:1px solid var(--line-soft);font-size:10px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.08em">API Keys</div>';
     h+='<button id="setClaudeKeyBtn">🔑 Anthropic key '+(_hasClaude?'<span style="margin-left:auto;color:var(--ink-muted);font-size:11px;font-weight:500">set</span>':'<span style="margin-left:auto;color:#c0392b;font-size:11px;font-weight:500">not set</span>')+'</button>';
@@ -8152,6 +8334,13 @@ function bindMain(){
   if(S.accountMenuOpen){document.body.onclick=function(e){if(!e.target.closest("#accountMenu")&&!e.target.closest("#accountBtn")){S.accountMenuOpen=false;document.body.onclick=null;render()}}}
   var sob=document.getElementById("signOutBtn");if(sob)sob.onclick=function(){S.accountMenuOpen=false;signOut()};
   var peb=document.getElementById("profileEditBtn");if(peb)peb.onclick=function(){S.accountMenuOpen=false;S.profileEditOpen=true;S.profileForm=Object.assign({},S.profile||{});render()};
+  // "My showcase" link — opens the public portfolio so user can preview what coworkers see
+  var vsb=document.getElementById("viewShowcaseBtn");if(vsb)vsb.onclick=function(){
+    S.accountMenuOpen=false;
+    S.showcase=true;S.showcaseLoading=true;S.showcaseTalks=[];
+    render();
+    loadShowcaseTalks().then(function(rows){S.showcaseTalks=rows;S.showcaseLoading=false;render()});
+  };
   // API key buttons in account menu — prompt for new key, save to localStorage.
   function _setKey(storageKey, name, url){
     return function(){
@@ -8437,6 +8626,7 @@ function bindMain(){
 // ═══════════ INIT ═══════════
 loadFromShareHash();
 loadFromPublicShareHash();
+loadFromShowcaseHash();
 loadFromLibHash();
 render();
 // Safety net: if Supabase init never completes (e.g., user offline), still drain after 3s
