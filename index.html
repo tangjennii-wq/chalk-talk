@@ -6356,10 +6356,10 @@ function renderMain(){
       .filter(function(e){ return e && e.talk && !e.talk.question; })
       .sort(function(a,b){ return new Date(b.savedAt||0) - new Date(a.savedAt||0); });
 
-    // Single-row landing redesign (Jenni 2026-06-09):
+    // Single-row landing redesign (Jenni 2026-06-09 + iterations):
     // Target 4 cards on desktop / 2 on mobile (CSS handles the visibility cap on mobile).
     // Recent user lectures come first; if fewer than 4, pad with featured/sample cards.
-    // Header always reads "Lectures" — not "Recent lectures" since it's a mix.
+    // Sample order is SHUFFLED on each render so the same featured talk isn't always card #1.
     var TARGET = 4;
     var recentForLanding = _allRecentLectures.slice(0, TARGET);
     var savedCloudIdSet = {};
@@ -6367,13 +6367,34 @@ function renderMain(){
     var availableSamples = (S.landingFeatured || []).filter(function(row){
       return row && row.share_token && !savedCloudIdSet[row.id];
     });
+    // Fisher-Yates shuffle for variety each render — old gems resurface, no card is "stuck" at #1.
+    for(var _shi=availableSamples.length-1; _shi>0; _shi--){
+      var _shj = Math.floor(Math.random()*(_shi+1));
+      var _shtmp = availableSamples[_shi]; availableSamples[_shi]=availableSamples[_shj]; availableSamples[_shj]=_shtmp;
+    }
     var sampleSlotsNeeded = Math.max(0, TARGET - recentForLanding.length);
     var sampleForLanding = availableSamples.slice(0, sampleSlotsNeeded);
     var landingTotal = recentForLanding.length + sampleForLanding.length;
 
     if(landingTotal > 0){
+      // Context-aware header: bright-gold "Try a sample" for new users (no recent),
+      // mixed when both, "Your lectures" when the user has filled the row themselves.
+      var _hasRecent = recentForLanding.length > 0;
+      var _hasSamples = sampleForLanding.length > 0;
+      var _headerHtml, _seeAllHtml;
+      if(!_hasRecent && _hasSamples){
+        // New-user energy: bright gold ✨
+        _headerHtml = '<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span>';
+        _seeAllHtml = '<button id="landingShowcaseLinkBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all samples →</button>';
+      } else if(_hasRecent && _hasSamples){
+        _headerHtml = '<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>Lectures + samples</span>';
+        _seeAllHtml = '<button id="landingShowcaseLinkBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all samples →</button>';
+      } else {
+        _headerHtml = '<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>Your lectures</span>';
+        _seeAllHtml = '<button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all in library →</button>';
+      }
       h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
-      h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>Lectures</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all in library →</button></div>';
+      h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px">'+_headerHtml+_seeAllHtml+'</div>';
       h+='<div data-msample-grid class="msample-grid">';
       // Recent user lectures (cloud + local) — newest first
       for(var ri=0; ri<recentForLanding.length; ri++){
@@ -6404,7 +6425,7 @@ function renderMain(){
         h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(ftTitle)+'</span></div>';
         h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
         if(ftSpec) h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(ftSpec)+'</span>';
-        h+='<span style="background:#fff3d6;color:#7a5b1a;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;line-height:1.55">Sample</span>';
+        h+='<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid var(--lavender-soft);padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;line-height:1.55">Sample</span>';
         h+='</div></div>';
       }
       h+='</div></div>';
