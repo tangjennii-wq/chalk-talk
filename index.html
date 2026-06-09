@@ -219,10 +219,20 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 .composer-bubble .send-btn{background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:50%;width:36px;height:36px;color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(112,43,157,0.3)}
 .composer-bubble .send-btn:disabled{background:#c9c3d6;box-shadow:none;cursor:not-allowed}
 .composer-bubble .composer-hint{font-size:10.5px;color:var(--ink-muted);margin:6px 4px 0 4px;line-height:1.3;flex-shrink:0;text-align:right}
-/* Mobile: same shape, just height-flex to 60vh (clamped) and tighter corner offset */
+/* Mobile composer — tightened 2026-06-08 (Jenni).
+   Previous: fixed 420px min-height + vh sizing ignored the iOS keyboard, causing the panel to slide
+   under the keyboard and feel "glitchy + too big." Fix: edge-to-edge with 8px gutters, content-sized
+   height up to 50dvh (dynamic viewport excludes keyboard on Safari 15.4+), lift above iOS keyboard
+   via env(keyboard-inset-height), textarea defaults to a tight 2-line input that grows with content.
+   font-size:16px on the textarea suppresses iOS Safari's auto-zoom-on-focus. */
 @media (max-width:640px){
-  .composer-bubble{bottom:16px;right:16px}
-  .composer-bubble .composer-panel{height:min(60vh,560px);min-height:420px;width:min(360px,calc(100vw - 32px))}
+  .composer-bubble{bottom:max(12px, env(keyboard-inset-height, 0px) + 8px);right:8px;left:8px}
+  .composer-bubble .composer-pill{position:absolute;right:0;bottom:0}
+  .composer-bubble .composer-panel{width:auto;height:auto;max-height:50dvh;min-height:0;padding:12px;border-radius:18px}
+  .composer-bubble .revise-input{flex:0 1 auto;min-height:44px;max-height:30dvh;font-size:16px;padding:10px 12px;border-radius:12px;line-height:1.45}
+  .composer-bubble .composer-panel-head{margin-bottom:6px;height:auto}
+  .composer-bubble .composer-footer{margin-top:8px}
+  .composer-bubble .composer-hint{display:none}
 }
 .app.has-talk{padding-bottom:24px}
 /* Edit-settings drawer (bottom sheet) */
@@ -4157,7 +4167,7 @@ var SAMPLES = [
 var S = {
   // — Compose form / generation
   topic:"", style:"lecture", depth:"concise", refineContext:"", files:[],
-  wantPod:false, wantWebSearch:false, queueAudio:false,
+  wantWebSearch:false, queueAudio:false,
   loading:false, loadSec:0, loadMsg:"", error:"",
   // — Current talk + interaction
   talk:null, sec:0, activeSection:0, tab:"overview",
@@ -5155,16 +5165,10 @@ var loadTimer = null;
 // ═══════════ UTILS ═══════════
 function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 
-// ─── Slides shorthand compressor (Jenni 2026-06-06) ───
-// Slides aren't lecture notes — they should read like a whiteboard scribble.
-// This applies safe medical abbreviations + drops filler words + word-caps to keep
-// each card scannable. Citation markers ([N], [N,M]) are PROTECTED so renderCite
-// downstream still chips them. Original text returned via .original so callers can
-// stash it in a title= tooltip for hover-reveal.
-//
-// Heuristic, NOT semantic. We avoid aggressive medical rewrites (e.g. won't drop
-// "not" or invert dosing). For high-stakes phrasing the user can hover for full.
-function slidesShorthand(text, maxWords){
+// slidesShorthand() helper deleted 2026-06-08 — was an experiment in client-side text compression
+// for the Slides view. Truncated mid-word and lost clinical nuance; reverted same day. Smart
+// compression should happen at generation time (LLM prompt), not at render time. (Task #8)
+function _DELETED_slidesShorthand_remove_below(text, maxWords){
   if(!text) return {short:"", original:""};
   var original = String(text);
   var s = original;
@@ -5854,6 +5858,9 @@ function buildReferenceParts(files) {
 
 async function generate(){
   if(!S.topic.trim()||S.loading)return;
+  // Reset cancel flag at the START of every generation — otherwise rapid cancel/restart
+  // races leave the flag stuck true and the new gen's result gets silently discarded. (Jenni 2026-06-08)
+  S.genCancelled=false;
   S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;speechSynthesis.cancel();render();
   loadTimer=setInterval(function(){S.loadSec++;var msgs=S.wantWebSearch?["Reasoning through physiology...","Searching current literature...","Cross-referencing societies...","Building content...","AI-checking...","Polishing final version..."]:["Reasoning through physiology...","Loading guidelines...","Building content...","AI-checking & polishing..."];S.loadMsg=msgs[Math.min(Math.floor(S.loadSec/3),msgs.length-1)];render()},1000);
   try{
@@ -7244,7 +7251,12 @@ function renderMain(){
           h+='<button id="publishTalkBtn">🌐 Publish to web</button>';
         }
       }
-      h+='<button id="shareTalkBtn">🔗 Share link (private)</button>';
+      // Legacy base64-encoded private share link — only show for samples or shared talks
+      // where the new server-token share isn't available. For owned cloud talks, the
+      // Publish to web / Copy share link items above cover the use case. (Jenni 2026-06-08)
+      if(S.isSampleTalk || !S.user || !S.loadedTalkId || String(S.loadedTalkId).startsWith("t_")){
+        h+='<button id="shareTalkBtn">🔗 Share link (encoded)</button>';
+      }
       h+='<button id="pdfTalkBtn">📄 Export PDF</button>';
       h+='<button id="pngTalkBtn">📸 Save as image</button>';
       h+='<button id="jsonTalkBtn">{} Export JSON</button>';
@@ -7543,11 +7555,13 @@ function renderMain(){
         if(!v) return;
         if(_seen[v]) flowSrc[k] = ""; else _seen[v] = true;
       });
+      // Labels aligned with the LLM contract: vm.top_right is FINDINGS (per VMC prompt), not pearls.
+      // Reverted "Pearls" → "Findings" 2026-06-08 to match Export tab + PDF labels and sample data.
       var flowCards = [
         {key:"pathophys",  icon:"🧬", label:"Pathophys",  body:flowSrc.pathophys, color:"#702b9d", bg:"#f5edfa"},
         {key:"workup",     icon:"🔍", label:"Diagnosis",  body:flowSrc.workup,    color:"#0f6f8a", bg:"#e6f4f7"},
         {key:"treatment",  icon:"💊", label:"Treatment",  body:flowSrc.treatment, color:"#2d6a2d", bg:"#eef7ee"},
-        {key:"findings",   icon:"💡", label:"Pearls",     body:flowSrc.findings,  color:"#a44a1e", bg:"#fdeee6"}
+        {key:"findings",   icon:"🎯", label:"Findings",   body:flowSrc.findings,  color:"#a44a1e", bg:"#fdeee6"}
       ].filter(function(c){return c.body && String(c.body).trim().length});
 
       if(flowCards.length){
@@ -7742,7 +7756,7 @@ function renderMain(){
     // Topic
     h+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Topic</div><div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;display:flex;align-items:center;gap:8px"><span style="color:var(--ink-soft);font-size:14px">🔍</span><input id="topicTAd" type="text" value="'+esc(S.topic)+'" placeholder="Enter a topic…" style="flex:1;min-width:0;background:transparent;border:none;padding:8px 0;font-size:14px;outline:none;font-family:inherit"></div></div>';
     // Refine
-    h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Context (optional)</div><div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:flex;align-items:flex-start;gap:9px"><span style="color:var(--ink-soft);font-size:14px;margin-top:2px">💬</span><textarea id="refineTAd" rows="2" placeholder="Add context or refine topic…" style="flex:1;min-width:0;background:transparent;border:none;padding:0;font-size:13.5px;outline:none;font-family:inherit;resize:vertical;line-height:1.45">'+esc(S.refineContext||"")+'</textarea></div></div>';
+    h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Context (optional)</div><div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:flex;align-items:flex-start;gap:9px"><span style="color:var(--ink-soft);font-size:14px;margin-top:2px">💬</span><textarea id="refineTAd" rows="2" placeholder="Add context or refine topic…" style="flex:1;min-width:0;background:transparent;border:none;padding:0;font-size:16px;outline:none;font-family:inherit;resize:vertical;line-height:1.45">'+esc(S.refineContext||"")+'</textarea></div></div>';
     // Style
     h+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Style</div><div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px">';
     h+=segBtn("styleBtn","s","lecture",S.style,"🎓","Lecture",{compact:true});
@@ -7784,7 +7798,7 @@ function renderMain(){
   if(S.shareModalOpen && S.shareModalToken){
     var _url = publicShareURL(S.shareModalToken);
     h+='<div class="drawer-backdrop open" id="shareModalBackdrop" style="z-index:120"></div>';
-    h+='<div class="drawer open" id="shareModal" style="z-index:121;max-width:480px;margin:0 auto;left:50%;transform:translateX(-50%);bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
+    h+='<div class="drawer open" id="shareModal" style="z-index:121;max-width:480px;margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
     h+='<div class="drawer-head" style="padding:18px 20px 12px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🌐</span> Published to web</div><button class="drawer-close" id="shareModalCloseBtn">×</button></div>';
     h+='<div class="drawer-body" style="padding:0 20px 20px">';
     h+='<p style="font-size:13px;color:var(--ink-muted);margin:0 0 14px;line-height:1.5">Anyone with this link can view your talk. Make it private anytime from the ⋮ menu.</p>';
