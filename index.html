@@ -3204,6 +3204,12 @@ function openShareModal(talkId){
   var row = (S.cloudTalks||[]).find(function(x){return x.id===talkId});
   S.shareModalToken = (row && row.share_token) || null;
   if(typeof render === "function") render();
+  // Auto-feature on Share-from-private: most common intent is "put this on my profile."
+  // Modal still opens so user can downgrade to link-only / private if they want a different tier.
+  // (Jenni 2026-06-08: Share defaults to star, not link.)
+  if(row && !row.is_public && !row.is_featured){
+    applyShareTier(talkId, "profile");
+  }
 }
 
 // Apply a tier change from the share modal. tier ∈ "private" | "link" | "profile".
@@ -3380,7 +3386,7 @@ function renderLibCard(x){
         if(x._isPublic){
           // Already public — direct Copy link + Make private. Tier changes go through the modal too.
           iconBtns += '<button class="libMenuItem libCopyLinkBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">🔗</span>Copy link</button>';
-          iconBtns += '<button class="libMenuItem libShareBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">⚙</span>Change sharing</button>';
+          iconBtns += '<button class="libMenuItem libShareBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">🔗</span>Share</button>';
           iconBtns += '<button class="libMenuItem libMakePrivateBtn" '+dataAttr+' title="Removes from profile AND invalidates the link" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="font-size:14px;width:16px;display:inline-flex;justify-content:center">🔒</span>Make private</button>';
         } else {
           iconBtns += '<button class="libMenuItem libShareBtn" '+dataAttr+' title="Choose who can see this talk" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">🔗</span>Share</button>';
@@ -6589,7 +6595,7 @@ function renderMain(){
         var _isPub = !!(_row && _row.is_public);
         if(_isPub){
           h+='<button id="capCopyLinkBtn">🔗 Copy link</button>';
-          h+='<button id="capShareBtn">⚙ Change sharing</button>';
+          h+='<button id="capShareBtn">🔗 Share</button>';
           h+='<button id="capMakePrivateBtn">🔒 Make private</button>';
         } else {
           h+='<button id="capShareBtn">🔗 Share…</button>';
