@@ -401,6 +401,9 @@ async function handleShareGet(request, env, ctx, origin, url) {
     talk_json: row.talk_json,
     created_at: row.created_at,
     author: authorName ? { name: authorName } : null,
+    // Phase 5 — Jenni 2026-06-08: include author user_id so viewers can detect
+    // "this is my own talk" and the save-copy flow can stamp source_curator_user_id.
+    author_user_id: row.user_id,
   };
 
   const resp = new Response(JSON.stringify(payload), {
