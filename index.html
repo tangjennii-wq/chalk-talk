@@ -126,8 +126,10 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 .tk-capsule .cap-actions button:hover{background:var(--lavender-bg);color:var(--plum)}
 .tk-capsule .cap-actions button.cap-primary{color:var(--plum);font-weight:600}
 /* Save is the primary action — filled, prominent like the Generate CTA */
-.tk-capsule .cap-actions button.cap-save{background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;color:#fff;font-weight:600;padding:7px 14px;border-radius:18px;font-size:12px;box-shadow:0 2px 8px rgba(75,17,111,0.25);transition:all .15s ease}
-.tk-capsule .cap-actions button.cap-save:hover{background:linear-gradient(135deg,var(--plum-deep),var(--plum-rich));color:#fff;box-shadow:0 3px 12px rgba(75,17,111,0.32);transform:translateY(-1px)}
+/* Save button — was a purple gradient primary; reverted to white secondary so + New talk
+   (on the left) is the obvious primary action. (Jenni 2026-06-08 redesign) */
+.tk-capsule .cap-actions button.cap-save{background:#fff;border:1px solid var(--line);color:var(--ink);font-weight:600;padding:7px 14px;border-radius:14px;font-size:12px;box-shadow:none;transition:all .15s ease}
+.tk-capsule .cap-actions button.cap-save:hover{background:var(--lavender-bg);color:var(--plum);border-color:var(--lavender-soft)}
 .tk-capsule .cap-actions button.cap-save:active{transform:translateY(0)}
 .tk-capsule .cap-actions .cap-more{width:28px;height:28px;padding:0;border-radius:50%;background:var(--cream);border:1px solid var(--line);color:var(--plum);font-size:18px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;line-height:1;margin-left:4px;box-shadow:var(--shadow-soft);transition:all .12s ease}
 .tk-capsule .cap-actions .cap-more:hover{background:var(--lavender-bg);color:var(--plum-deep);border-color:var(--plum)}
@@ -374,6 +376,11 @@ textarea,input[type=text]{font-family:inherit}
   /* Save button on mobile — show the "Save" label (override the universal hide-mobile-text rule
      so users see what the star does) and bump touch target. (Jenni 2026-06-08) */
   .tk-capsule .cap-actions button.cap-save .hide-mobile-text { display: inline !important; }
+  /* Talk-render hero card — tighten the empty space under the title/library row to ~80% smaller.
+     (Jenni 2026-06-08: was leaving ~50-80px of dead space between hero and the talk capsule.) */
+  .app.has-talk .hero-card { padding: 8px 14px 6px !important; margin-bottom: 8px !important; }
+  .app.has-talk .hero-card .hero-meta { margin-top: 4px !important; padding-top: 4px !important; }
+  .app.has-talk .hero-tagline-col { display: none !important; }
   .tk-capsule .cap-actions button.cap-save { padding: 7px 13px !important; font-size: 12px !important; }
   /* iOS auto-zoom-on-focus suppression — Safari zooms into any input/textarea with computed
      font-size < 16px. Force 16px on all text inputs + textareas mobile-wide. (Jenni 2026-06-08) */
@@ -2910,6 +2917,8 @@ var S = {
   landingFeatured:[],
   // Phase 5 sharing — origin metadata for a publicly-loaded talk so Save copy can stamp attribution
   sharedAuthorUserId:null, sharedOriginalTalkId:null,
+  // Collapsed share-info chip — toggles details on tap (Jenni 2026-06-08)
+  shareInfoOpen:false,
   // Option B: cached depth variants for the currently-loaded saved talk. Enables instant depth swap.
   depthVariantsCache:null,
   loading:false, loadSec:0, loadMsg:"", error:"",
@@ -6346,44 +6355,46 @@ function renderMain(){
     var _allRecentLectures = (getDisplayLibrary()||[])
       .filter(function(e){ return e && e.talk && !e.talk.question; })
       .sort(function(a,b){ return new Date(b.savedAt||0) - new Date(a.savedAt||0); });
-    var _recentLectures = _allRecentLectures.slice(0,4);
-    var _showRecentFirst = _allRecentLectures.length > 4;
-    var _showRecentAfterSamples = _allRecentLectures.length > 0 && _allRecentLectures.length <= 3;
 
-    function renderLandingRecentLectures(){
+    // Single-row landing redesign (Jenni 2026-06-09):
+    // Target 4 cards on desktop / 2 on mobile (CSS handles the visibility cap on mobile).
+    // Recent user lectures come first; if fewer than 4, pad with featured/sample cards.
+    // Header always reads "Lectures" — not "Recent lectures" since it's a mix.
+    var TARGET = 4;
+    var recentForLanding = _allRecentLectures.slice(0, TARGET);
+    var savedCloudIdSet = {};
+    recentForLanding.forEach(function(e){ if(e && e.id) savedCloudIdSet[e.id] = true; });
+    var availableSamples = (S.landingFeatured || []).filter(function(row){
+      return row && row.share_token && !savedCloudIdSet[row.id];
+    });
+    var sampleSlotsNeeded = Math.max(0, TARGET - recentForLanding.length);
+    var sampleForLanding = availableSamples.slice(0, sampleSlotsNeeded);
+    var landingTotal = recentForLanding.length + sampleForLanding.length;
+
+    if(landingTotal > 0){
       h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
-      h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>Recent lectures</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all in library →</button></div>';
+      h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px"><span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>Lectures</span><button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all in library →</button></div>';
       h+='<div data-msample-grid class="msample-grid">';
-      for(var ri=0;ri<_recentLectures.length;ri++){
-        var rec=_recentLectures[ri];
-        var ret=rec.talk||{};
-        var rspec=inferSpecialty(rec.topic, ret, null);
-        var rico=SPEC_ICONS[rspec]||"●";
-        var rtitle=ret.title||rec.topic||"Untitled";
+      // Recent user lectures (cloud + local) — newest first
+      for(var ri=0; ri<recentForLanding.length; ri++){
+        var rec = recentForLanding[ri];
+        var ret = rec.talk || {};
+        var rspec = inferSpecialty(rec.topic, ret, null);
+        var rico = SPEC_ICONS[rspec] || "●";
+        var rtitle = ret.title || rec.topic || "Untitled";
         h+='<div class="landingSavedBtn" data-id="'+esc(rec.id)+'" style="background:var(--cream);border:1px solid var(--line);border-left:2px solid var(--plum);border-radius:10px;padding:10px 11px;display:flex;flex-direction:column;gap:7px;min-height:84px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer">';
         h+='<div style="display:flex;align-items:flex-start;gap:7px;min-width:0"><span style="background:var(--lavender-soft);color:var(--plum);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">'+rico+'</span>';
         h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(rtitle)+'</span></div>';
         h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
-        if(rspec)h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(rspec)+'</span>';
+        if(rspec) h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(rspec)+'</span>';
         h+='<span style="background:var(--lavender-bg);color:var(--ink-muted);padding:0 5px;border-radius:5px;font-weight:500;font-size:8.5px;line-height:1.55">Lecture</span>';
         h+='</div>';
         h+='</div>';
       }
-      h+='</div></div>';
-    }
-
-    function renderLandingShowcaseSamples(){
-      if(!(S.landingFeatured && S.landingFeatured.length > 0)) return;
-      h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
-      h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px">';
-      h+='<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span>';
-      h+='<button id="landingShowcaseLinkBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all →</button>';
-      h+='</div>';
-      // Landing lecture samples are Jenni's featured public talks, not the bundled demo lectures.
-      // The bundled SAMPLES list is kept for Boards-mode examples only. (Jenni 2026-06-09)
-      h+='<div data-msample-grid class="msample-grid">';
-      for(var fti=0;fti<S.landingFeatured.length;fti++){
-        var ft = S.landingFeatured[fti];
+      // Sample padding from featured lectures — only enough to reach TARGET. Featured cards have
+      // a subtle gold left border to distinguish them from user's own talks.
+      for(var fi=0; fi<sampleForLanding.length; fi++){
+        var ft = sampleForLanding[fi];
         var ftTitle = ft.title || ft.topic || 'Untitled';
         var ftSubtitle = ft.subtitle || '';
         var ftSpec = inferSpecialty(ft.topic, {title:ftTitle, subtitle:ftSubtitle}, null);
@@ -6393,15 +6404,11 @@ function renderMain(){
         h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(ftTitle)+'</span></div>';
         h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
         if(ftSpec) h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(ftSpec)+'</span>';
-        h+='<span style="background:var(--lavender-bg);color:var(--ink-muted);padding:0 5px;border-radius:5px;font-weight:500;font-size:8.5px;line-height:1.55">'+(ft.style==="boards"?"Boards":"Lecture")+'</span>';
+        h+='<span style="background:#fff3d6;color:#7a5b1a;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;line-height:1.55">Sample</span>';
         h+='</div></div>';
       }
       h+='</div></div>';
     }
-
-    if(_showRecentFirst) renderLandingRecentLectures();
-    renderLandingShowcaseSamples();
-    if(_showRecentAfterSamples) renderLandingRecentLectures();
   }
 
   // === COMPOSE STATE: only when no talk loaded ===
@@ -6526,13 +6533,19 @@ function renderMain(){
     if(t.sections){for(var smi=0;smi<t.sections.length;smi++){var mm=String(t.sections[smi].minutes||"").match(/(\d+(?:\.\d+)?)/);if(mm)totalMin+=parseFloat(mm[1])}}
     if(!totalMin)totalMin=isBQ?5:(S.depth==="detailed"?10:5);
 
-    // Public viewer banner — shown when S.sharedTalk = true (loaded via #share/<token>)
+    // Public viewer affordance — collapsed to a small 🔗 chip that expands on tap.
+    // Was a full purple banner; Jenni 2026-06-08 wanted it minimal so the talk content leads.
     if(S.sharedTalk && !S.isSampleTalk){
       var _authorName = (S.sharedAuthor && S.sharedAuthor.name) ? S.sharedAuthor.name : "a Chalk Talk author";
-      h+='<div style="background:linear-gradient(135deg,#f5edfa,#ede6f5);border:1px solid #d4baea;border-radius:14px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
-      h+='<span style="font-size:18px">🌐</span>';
-      h+='<div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--plum-deep);font-weight:600;line-height:1.3">Shared by '+esc(_authorName)+'</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px">Public chalk talk · Review for accuracy · Not medical advice</div></div>';
-      h+='<a href="'+esc(window.location.pathname)+'" style="background:var(--plum);color:#fff;border:none;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;flex-shrink:0">Make your own →</a>';
+      var _shareInfoOpen = !!S.shareInfoOpen;
+      h+='<div style="margin-bottom:10px">';
+      h+='<button id="sharedInfoToggle" title="About this shared talk" style="background:var(--lavender-bg);border:1px solid #d4baea;border-radius:10px;padding:5px 10px;color:var(--plum-deep);font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit">🔗 <span style="font-size:11px;color:var(--ink-muted);font-weight:500">Shared talk</span></button>';
+      if(_shareInfoOpen){
+        h+='<div style="background:linear-gradient(135deg,#f5edfa,#ede6f5);border:1px solid #d4baea;border-radius:12px;padding:11px 14px;margin-top:6px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+        h+='<div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--plum-deep);font-weight:600;line-height:1.3">Shared by '+esc(_authorName)+'</div><div style="font-size:10.5px;color:var(--ink-muted);margin-top:2px;line-height:1.4">Public chalk talk · Review for accuracy · Not medical advice</div></div>';
+        h+='<a href="'+esc(window.location.pathname)+'" style="background:var(--plum);color:#fff;border:none;border-radius:9px;padding:6px 12px;font-size:11.5px;font-weight:600;cursor:pointer;text-decoration:none;flex-shrink:0">Make your own →</a>';
+        h+='</div>';
+      }
       h+='</div>';
     }
 
@@ -6543,9 +6556,9 @@ function renderMain(){
     h+='<div id="talkStart" style="scroll-margin-top:8px"></div>';
     h+='<div class="tk-capsule">';
     // LEFT: + New talk only.
-    // + New talk — promoted from text link to outlined plum pill so it reads as a clear secondary action.
-    // Save (right side) is the primary gradient CTA; New talk is the alternative escape hatch. (Jenni 2026-06-08)
-    h+='<div class="cap-meta" style="flex:1;min-width:0"><button id="resetBtn" title="Start a new talk" style="background:#fff;border:1.5px solid var(--plum);color:var(--plum);font:inherit;font-weight:700;font-size:12.5px;padding:7px 14px;border-radius:18px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(75,17,111,0.08);transition:all .15s ease" onmouseover="this.style.background=\'var(--plum)\';this.style.color=\'#fff\';" onmouseout="this.style.background=\'#fff\';this.style.color=\'var(--plum)\';"><span style="font-size:14px;font-weight:700">+</span> New talk</button></div>';
+    // + New talk — now the obvious purple-primary "what next" action. (Jenni 2026-06-08 redesign:
+    // was a white-outlined secondary; flipped so Save/Edit/⋮ are quiet and New talk leads.)
+    h+='<div class="cap-meta" style="flex:1;min-width:0"><button id="resetBtn" title="Start a new talk" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;color:#fff;font:inherit;font-weight:700;font-size:12.5px;padding:8px 16px;border-radius:18px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(75,17,111,0.25);transition:all .15s ease"><span style="font-size:14px;font-weight:700">+</span> New talk</button></div>';
     // RIGHT: Undo · Save · Edit settings · ⋮  (horizontal)
     h+='<div class="cap-actions">';
     // Undo button — standard inline SVG (curved arrow looping back), matches what every app uses.
@@ -6574,8 +6587,10 @@ function renderMain(){
       var _saveTitle = S.isSampleTalk ? "Save this as a new talk in your library" : "Save to library";
       h+='<button id="saveTalkBtnTop" class="cap-save" title="'+_saveTitle+'">★ <span class="hide-mobile-text">Save</span></button>';
     }
+    // Capsule action row — Save · Edit · ⋮ all secondary (white), so + New talk on the left can be
+    // the obvious purple primary "what next" action. (Jenni 2026-06-08 redesign.)
     if(!S.sharedTalk){
-      h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit settings</span></button>';
+      h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit</span></button>';
       h+='<button id="overflowBtn" class="cap-more" title="More options" aria-label="More options">⋮</button>';
     }
     h+='</div>';
@@ -6626,10 +6641,10 @@ function renderMain(){
     // Pills
     var spec=(S.glRef&&S.glRef.specialties&&S.glRef.specialties[0])||"";
     if(!spec&&S.sampleSlug&&typeof SAMPLES!=="undefined"){for(var ssli=0;ssli<SAMPLES.length;ssli++){if(SAMPLES[ssli].slug===S.sampleSlug){spec=SAMPLES[ssli].specialty||"";break}}}
+    // Pills — time + Evidence-grounded removed per Jenni 2026-06-08. The "10-min evidence-based"
+    // framing already lives in the "How it works" disclosure; the per-talk pill was redundant.
     h+='<div class="ttl-pills">';
     h+='<span class="tk-pill">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
-    h+='<span class="tk-pill gray">⏱ '+(totalMin%1===0?totalMin:totalMin.toFixed(1))+' min</span>';
-    h+='<span class="tk-pill green">✓ Evidence-grounded</span>';
     if(S.isSampleTalk)h+='<span class="tk-pill gray">📖 Sample</span>';
     h+='</div>';
     h+='</div>';
@@ -7771,6 +7786,8 @@ function bindMain(){
   var sib=document.getElementById("saveSlidesImgBtn");if(sib)sib.onclick=exportSlidesImage;
   // Overview's bottom CTA → switch to Slides tab + jump to top (Jenni 2026-06-08)
   var o2s=document.getElementById("overviewToSlidesBtn");if(o2s)o2s.onclick=function(){S.tab="slides";window.scrollTo(0,0);render()};
+  // Shared-talk info chip — expands/collapses the "Shared by … · Make your own →" details
+  var sit=document.getElementById("sharedInfoToggle");if(sit)sit.onclick=function(){S.shareInfoOpen=!S.shareInfoOpen;render()};
   var jtb=document.getElementById("jsonTalkBtn");if(jtb)jtb.onclick=function(){exportTalkJSON(null)};
   var dtb=document.getElementById("deleteTalkBtn");if(dtb)dtb.onclick=function(){S.overflowOpen=false;deleteCurrentTalk()};
   var shr=document.getElementById("shareTalkBtn");if(shr)shr.onclick=function(){shareTalk()};
