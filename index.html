@@ -375,6 +375,12 @@ textarea,input[type=text]{font-family:inherit}
      so users see what the star does) and bump touch target. (Jenni 2026-06-08) */
   .tk-capsule .cap-actions button.cap-save .hide-mobile-text { display: inline !important; }
   .tk-capsule .cap-actions button.cap-save { padding: 7px 13px !important; font-size: 12px !important; }
+  /* iOS auto-zoom-on-focus suppression — Safari zooms into any input/textarea with computed
+     font-size < 16px. Force 16px on all text inputs + textareas mobile-wide. (Jenni 2026-06-08) */
+  .app input[type="text"],
+  .app input[type="search"],
+  .app input[type="email"],
+  .app textarea { font-size: 16px !important; }
 }
 /* Aggressive landing-only compaction so mobile fits in one viewport (no scroll) */
 @media (max-width: 640px) {
@@ -4754,6 +4760,14 @@ function writeSavedTalks(arr){try{localStorage.setItem("ct_saved_talks",JSON.str
 })();
 async function saveCurrentTalk(){
   if(!S.talk)return;
+  // If user re-taps the "✓ Saved" pill on a freshly-saved talk, just re-confirm with a flash
+  // instead of doing a no-op cloud insert (which is what made the button feel "frozen"). (Jenni 2026-06-08)
+  if(S.talkIsSaved && !S.isSampleTalk && S.loadedTalkId){
+    S.savedFlash = "✓ Already saved · edit to save changes";
+    render();
+    setTimeout(function(){S.savedFlash="";render()},2500);
+    return;
+  }
   // If this talk was loaded from the library AND has been edited, prompt: update vs save-as-new.
   // Skip the prompt for sample-talks (no source to update) and shared/anonymous talks.
   var mode = "new"; // default behavior when nothing is loaded
@@ -7189,11 +7203,12 @@ function renderMain(){
     h+='<div style="margin-top:10px;height:4px;background:var(--lavender-bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,var(--plum-rich),var(--plum-deep));transition:width 0.6s ease"></div></div>';
     h+='</div>';
 
-    // Live settings — Depth + Verify can be changed mid-generation; change triggers a clean restart.
-    // Topic + Style stay locked (those need a New Talk). (Jenni 2026-06-08)
+    // Live settings — Depth + Verify + Audio queue. Depth/Verify changes restart generation.
+    // Audio is just a flag — fires after current generation finishes. Toggleable in BOTH directions
+    // any time during loading. (Jenni 2026-06-08)
     if(S.style==="lecture"){
       h+='<div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px">';
-      h+='<div style="font-size:10px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;display:flex;align-items:center;gap:5px"><span>⚙</span> Change anytime — restarts generation</div>';
+      h+='<div style="font-size:10px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;display:flex;align-items:center;gap:5px"><span>⚙</span> Change anytime</div>';
       // Depth row
       var _dC = (S.depth==="concise"), _dD = (S.depth==="detailed");
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
@@ -7202,22 +7217,20 @@ function renderMain(){
       h+='<button class="loadingDepthBtn" data-d="concise"  style="background:'+(_dC?"#fff":"transparent")+';color:'+(_dC?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dC?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dC?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dC?"700":"500")+'">Concise</button>';
       h+='<button class="loadingDepthBtn" data-d="detailed" style="background:'+(_dD?"#fff":"transparent")+';color:'+(_dD?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dD?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dD?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dD?"700":"500")+'">Detailed</button>';
       h+='</div></div>';
-      // Verify toggle
-      h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">';
+      // Verify toggle — restarts generation on toggle (in either direction)
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
       h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px"><span style="font-size:13px">🔬</span>Verify w/ current literature</span>';
       h+='<span class="toggle-sw"><input type="checkbox" id="loadingVerifyCheck" '+(S.wantWebSearch?"checked":"")+'><span class="slider"></span></span>';
+      h+='</div>';
+      // Audio queue toggle — same switch UX as Verify. No restart needed; flag is read after gen completes.
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">';
+      h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px"><span style="font-size:13px">🎧</span>Queue audio version</span>';
+      h+='<span class="toggle-sw"><input type="checkbox" id="loadingAudioToggle" '+(S.queueAudio?"checked":"")+'><span class="slider"></span></span>';
       h+='</div>';
       h+='</div>';
     }
 
     h+='<button id="cancelGenBtn" style="width:100%;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:13px 20px;color:var(--ink-muted);font-size:13.5px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .15s ease;margin-bottom:8px">✕ Cancel</button>';
-    // Audio queue — discoverability for the podcast feature. Tap during generation → genPodcast
-    // auto-fires as soon as the talk is ready. (Jenni 2026-06-08)
-    if(S.queueAudio){
-      h+='<div style="background:#eef7ee;border:1px solid #c8e0c8;border-radius:14px;padding:11px 14px;color:#2d6a2d;font-size:12.5px;font-weight:600;text-align:center;display:flex;align-items:center;justify-content:center;gap:7px"><span style="font-size:14px">🎧</span> Audio queued — starts when talk is ready</div>';
-    } else {
-      h+='<button id="queueAudioBtn" style="width:100%;background:var(--cream);border:1px dashed var(--lavender-soft);border-radius:14px;padding:11px 14px;color:var(--plum);font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:all .15s ease"><span style="font-size:14px">🎧</span> Also queue audio version <span style="font-size:10.5px;color:var(--ink-soft);font-weight:500">— for commute review</span></button>';
-    }
   } else {
     h+='<button id="genBtn" '+(!S.topic.trim()?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich) 0%,var(--plum-deep) 100%);border:none;border-radius:18px;padding:16px 20px;color:#fff;font-size:15px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(75,17,111,0.28);opacity:'+(!S.topic.trim()?"0.45":"1")+';cursor:'+(!S.topic.trim()?"not-allowed":"pointer")+';transition:all .15s ease"><span style="font-size:14px">✨</span>'+(S.topic.trim()?"Generate Chalk Talk":"Enter a topic to generate")+'<span style="font-size:14px">→</span></button>';
   }
@@ -7264,12 +7277,12 @@ function renderMain(){
       var lastLabel = S.talkHistory[S.talkHistory.length-1].label;
       h+='<button id="undoEditBtn" title="Undo last '+esc(lastLabel)+'" style="background:none;border:none;color:var(--plum);cursor:pointer;padding:5px 8px;border-radius:7px;line-height:0;display:inline-flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg></button>';
     }
-    // Save is hidden only for public-share read-only viewers. Samples now ALSO show Save
-    // (defaults to "save as new" in saveCurrentTalk) so users can edit a template and keep it.
-    // (Jenni 2026-06-08 — was hidden on samples + when sharedTalk-flag leaked.)
+    // Save is hidden only for public-share read-only viewers. Always tappable — never disabled —
+    // so the button never feels frozen. When in "Saved" state, tapping re-shows the confirmation
+    // flash so user gets feedback. (Jenni 2026-06-08: was perceived as "frozen" when disabled.)
     if(!S.sharedTalk){
       if(S.talkIsSaved && !S.isSampleTalk){
-        h+='<button id="saveTalkBtnTop" class="cap-save" title="No unsaved changes" disabled style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;box-shadow:none;cursor:default">✓ <span class="hide-mobile-text">Saved</span></button>';
+        h+='<button id="saveTalkBtnTop" class="cap-save" title="Already saved — tap to confirm" style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;box-shadow:none;cursor:pointer">✓ <span class="hide-mobile-text">Saved</span></button>';
       } else {
         var _saveTitle = S.isSampleTalk ? "Save this as a new talk in your library" : "Save to library";
         h+='<button id="saveTalkBtnTop" class="cap-save" title="'+_saveTitle+'">★ <span class="hide-mobile-text">Save</span></button>';
@@ -8033,9 +8046,8 @@ function bindMain(){
   var wc=document.getElementById("webCheck");if(wc)wc.onchange=function(e){S.wantWebSearch=e.target.checked};
   var gb=document.getElementById("genBtn");if(gb)gb.onclick=generate;
   var cgb=document.getElementById("cancelGenBtn");if(cgb)cgb.onclick=cancelGen;
-  // Audio-queue during loading state (Jenni 2026-06-08)
-  var qab=document.getElementById("queueAudioBtn");if(qab)qab.onclick=function(){S.queueAudio=true;render()};
-  // Live depth + verify controls inside the loading panel — changing restarts generation cleanly
+  // Live depth + verify controls inside the loading panel — changing restarts generation cleanly.
+  // Audio toggle just sets a flag (no restart) — fires after the current generation completes.
   document.querySelectorAll(".loadingDepthBtn").forEach(function(b){
     b.onclick=function(){
       var d=b.dataset.d;
@@ -8048,6 +8060,11 @@ function bindMain(){
   if(lvc) lvc.onchange=function(e){
     S.wantWebSearch=e.target.checked;
     restartGen();
+  };
+  var lat=document.getElementById("loadingAudioToggle");
+  if(lat) lat.onchange=function(e){
+    S.queueAudio=e.target.checked;
+    // No restart — flag is read on generation completion. Light render so UI matches state.
   };
 
   // ─── Generated-talk view ────────────────────────────────────────────────
