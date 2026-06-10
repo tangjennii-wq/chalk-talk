@@ -2920,7 +2920,7 @@ var SAMPLES = [
 var S = {
   // — Compose form / generation
   topic:"", style:"lecture", depth:"concise", refineContext:"", files:[],
-  wantWebSearch:false, queueAudio:false, genId:0,
+  wantWebSearch:true, queueAudio:false, genId:0,
   // Showcase / portfolio view — Phase 2 sharing MVP (Jenni 2026-06-08)
   showcase:false, showcaseLoading:false, showcaseTalks:[],
   // Landing-page featured cache — populated by loadLandingFeatured() on app init
@@ -4882,6 +4882,7 @@ async function callAPI(sys, content, maxTok, opts) {
     var decoder = new TextDecoder();
     var sseBuffer = "";
     var fullText = "";
+    var sawMessageStop = false;
     while (true) {
       var step = await reader.read();
       if (step.done) break;
@@ -4901,9 +4902,19 @@ async function callAPI(sys, content, maxTok, opts) {
               fullText += t;
               try { opts.onStreamChunk(t, fullText); } catch (e2) { /* never let UI errors kill the stream */ }
             }
+          } else if (evt.type === "message_stop") {
+            sawMessageStop = true;
           }
         } catch (parseErr) { /* incomplete chunk, ignore — next read will complete it */ }
       }
+    }
+    // Robustness (Jenni 2026-06-09): if the stream ended without a message_stop event AND the
+    // accumulated text doesn't look like complete JSON, the connection was likely interrupted
+    // (mobile backgrounding, network blip). Throw a clear error so the caller can retry without
+    // streaming or surface a useful message — better than letting JSON.parse fail downstream.
+    var trimmed = fullText.trim();
+    if (!sawMessageStop && (!trimmed.endsWith("}") && !trimmed.endsWith("]"))) {
+      throw new Error("Stream interrupted before completion (likely caused by backgrounding the tab). Tap Generate again — keep the tab in the foreground this time.");
     }
     return fullText;
   }
@@ -6776,6 +6787,9 @@ function renderMain(){
       _pct = Math.min(95, Math.round((S.loadSec/45)*100));
     }
     h+='<div style="margin-top:10px;height:4px;background:var(--lavender-bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,var(--plum-rich),var(--plum-deep));transition:width 0.6s ease"></div></div>';
+    // Mobile backgrounding warning (Jenni 2026-06-09) — iOS Safari kills fetch when tab is
+    // backgrounded. No way around it without a service worker. Tell the user proactively.
+    h+='<div style="margin-top:10px;font-size:10.5px;color:var(--ink-muted);line-height:1.45">📱 Keep this tab open while generating · backgrounding pauses the connection.</div>';
     h+='</div>';
 
     // Live settings — Depth + Verify + Audio queue. Depth/Verify changes restart generation.
