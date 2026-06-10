@@ -4154,6 +4154,64 @@ var loadTimer = null;
 // ═══════════ UTILS ═══════════
 function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 
+// ─── Drug-name typo guard (Jenni 2026-06-09) ───
+// Mirrors the LLM-prompt drug list. Catches the same common LLM-mangling AND human typos in
+// inline section edits. Returns [{found, suggest, near}] for each suspected typo.
+// Heuristic: word looks like a known drug class suffix (-axaban, -gliflozin, -mab, etc.) but doesn't
+// match the canonical spellings; flag with closest-match suggestion.
+var _CANONICAL_DRUGS = [
+  "rivaroxaban","apixaban","edoxaban","dabigatran","betrixaban",
+  "clopidogrel","ticagrelor","prasugrel","cangrelor",
+  "empagliflozin","dapagliflozin","canagliflozin","ertugliflozin",
+  "semaglutide","liraglutide","dulaglutide","tirzepatide","exenatide","retatrutide",
+  "lisinopril","enalapril","ramipril","captopril","benazepril",
+  "losartan","valsartan","irbesartan","telmisartan","candesartan","olmesartan",
+  "metoprolol","carvedilol","bisoprolol","atenolol","propranolol","nebivolol",
+  "atorvastatin","rosuvastatin","simvastatin","pravastatin","pitavastatin",
+  "vancomycin","piperacillin","tazobactam","ceftriaxone","meropenem","levofloxacin","clindamycin","linezolid","daptomycin","ceftazidime",
+  "fluconazole","voriconazole","posaconazole","isavuconazole","micafungin","caspofungin","anidulafungin",
+  "rituximab","infliximab","adalimumab","vedolizumab","ustekinumab","dupilumab","tocilizumab","secukinumab","ixekizumab","guselkumab","risankizumab",
+  "imatinib","ibrutinib","erlotinib","dasatinib","nilotinib","gefitinib","sunitinib","sorafenib","osimertinib","alectinib","crizotinib","palbociclib","ribociclib","abemaciclib",
+  "pembrolizumab","nivolumab","ipilimumab","atezolizumab","durvalumab","cemiplimab",
+  "methotrexate","hydroxychloroquine","sulfasalazine","leflunomide",
+  "fidaxomicin","vancomycin","metronidazole",
+  "valganciclovir","ganciclovir","acyclovir","valacyclovir","famciclovir"
+];
+function _scanDrugNameTypos(text){
+  if(!text) return [];
+  var SUFFIXES = /([a-z]+axaban|[a-z]+gliflozin|[a-z]+glutide|[a-z]+pril|[a-z]+sartan|[a-z]+olol|[a-z]+statin|[a-z]+azole|[a-z]+candin|[a-z]+mab|[a-z]+tinib|[a-z]+ciclib|[a-z]+cycline|[a-z]+grel)/gi;
+  var found = {};
+  var match;
+  while((match = SUFFIXES.exec(String(text).toLowerCase())) !== null){
+    var word = match[1];
+    if(_CANONICAL_DRUGS.indexOf(word) >= 0) continue; // valid
+    // Find closest canonical drug by simple edit-distance threshold (≤2)
+    var best = null, bestDist = 99;
+    for(var i=0; i<_CANONICAL_DRUGS.length; i++){
+      var cand = _CANONICAL_DRUGS[i];
+      if(Math.abs(cand.length - word.length) > 3) continue;
+      var d = _levenshtein(word, cand);
+      if(d < bestDist){ bestDist = d; best = cand; }
+    }
+    if(best && bestDist <= 2 && !found[word]){
+      found[word] = {found: word, suggest: best, distance: bestDist};
+    }
+  }
+  return Object.values(found);
+}
+function _levenshtein(a, b){
+  var m = a.length, n = b.length;
+  if(!m) return n; if(!n) return m;
+  var dp = []; for(var i=0;i<=m;i++) dp.push([i]);
+  for(var j=1;j<=n;j++) dp[0][j] = j;
+  for(var i=1;i<=m;i++){
+    for(var j=1;j<=n;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+
 // slidesShorthand() helper deleted 2026-06-08 — was an experiment in client-side text compression
 // for the Slides view. Truncated mid-word and lost clinical nuance; reverted same day. Smart
 // compression should happen at generation time (LLM prompt), not at render time. (Task #8)
@@ -4296,7 +4354,9 @@ function _citeClass(ref){
 function renderCite(text, refs) {
   if (!text) return "";
   if (!refs || !refs.length) return esc(String(text));
-  var s = String(text);
+  // First, merge consecutive markers like "[1][2][3]" into a single "[1,2,3]" form so the renderer
+  // produces one combined chip rather than three crowded ones. (Jenni 2026-06-09 — citation chip clutter.)
+  var s = String(text).replace(/\](\s*)\[/g, ",");
   var html = "";
   var lastIdx = 0;
   var re = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
@@ -4374,16 +4434,32 @@ function showCitePop(anchor, refId) {
       ? '<div><a class="cite-pop-link" href="'+esc(ref.url)+'" target="_blank" rel="noopener">View source \u2192</a></div>'
       : '<div style="font-size:11.5px;color:#9490a6;margin-top:8px">Click \u201CSee all\u201D below for full citation</div>');
   document.body.appendChild(pop);
-  // Position below the anchor; flip up if too close to viewport bottom
+  // Position below the anchor; flip up if too close to viewport bottom.
+  // Uses ACTUAL offsetWidth/Height post-append so the popover sizes against its real content,
+  // not a hardcoded 320px. Clamps both axes to keep the popover fully on-screen, especially on
+  // narrow mobile viewports where the chip can sit near the right edge. (Jenni 2026-06-09 fix)
   var r = anchor.getBoundingClientRect();
-  var popW = 320, popH = pop.offsetHeight || 160;
-  var left = Math.min(r.left + window.scrollX, window.innerWidth - popW - 16);
-  left = Math.max(8, left);
+  var popW = pop.offsetWidth || 320;
+  var popH = pop.offsetHeight || 160;
+  var GAP = 8;
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+  // Horizontal: try to anchor to the chip's left edge, clamp to viewport with 8px gutter.
+  var left = r.left + window.scrollX;
+  left = Math.min(left, window.scrollX + vw - popW - 8);
+  left = Math.max(window.scrollX + 8, left);
+  // Vertical: try below the chip first, flip above if it'd clip; if both clip, snap to whichever
+  // edge gives more room and keep it inside the viewport.
+  var spaceBelow = vh - r.bottom - GAP;
+  var spaceAbove = r.top - GAP;
   var top;
-  if (r.bottom + popH + 16 > window.innerHeight) {
-    top = r.top + window.scrollY - popH - 8; // flip above
+  if (popH <= spaceBelow) {
+    top = r.bottom + window.scrollY + GAP / 2;
+  } else if (popH <= spaceAbove) {
+    top = r.top + window.scrollY - popH - GAP / 2;
   } else {
-    top = r.bottom + window.scrollY + 6;
+    // Neither side fits — pin to viewport top and let user scroll the popover if it overflows.
+    top = window.scrollY + 8;
   }
   pop.style.left = left + "px";
   pop.style.top = top + "px";
@@ -6554,20 +6630,29 @@ function renderMain(){
     if(t.sections){for(var smi=0;smi<t.sections.length;smi++){var mm=String(t.sections[smi].minutes||"").match(/(\d+(?:\.\d+)?)/);if(mm)totalMin+=parseFloat(mm[1])}}
     if(!totalMin)totalMin=isBQ?5:(S.depth==="detailed"?10:5);
 
-    // Public viewer affordance — collapsed to a small 🔗 chip that expands on tap.
-    // Was a full purple banner; Jenni 2026-06-08 wanted it minimal so the talk content leads.
+    // Public viewer affordance — collapsed chip with Save copy CTA inline.
+    // Coworker landing on a shared talk gets a one-tap save action, not buried in the capsule.
     if(S.sharedTalk && !S.isSampleTalk){
       var _authorName = (S.sharedAuthor && S.sharedAuthor.name) ? S.sharedAuthor.name : "a Chalk Talk author";
       var _shareInfoOpen = !!S.shareInfoOpen;
-      h+='<div style="margin-bottom:10px">';
-      h+='<button id="sharedInfoToggle" title="About this shared talk" style="background:var(--lavender-bg);border:1px solid #d4baea;border-radius:10px;padding:5px 10px;color:var(--plum-deep);font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit">🔗 <span style="font-size:11px;color:var(--ink-muted);font-weight:500">Shared talk</span></button>';
+      var _isOwnSharedTalk = !!(S.user && S.sharedAuthorUserId && S.user.id === S.sharedAuthorUserId);
+      h+='<div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+      h+='<button id="sharedInfoToggle" title="About this shared talk" style="background:var(--lavender-bg);border:1px solid #d4baea;border-radius:10px;padding:5px 10px;color:var(--plum-deep);font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit">🔗 <span style="font-size:11px;color:var(--ink-muted);font-weight:500">Shared by '+esc(_authorName)+'</span></button>';
+      // Promoted Save copy CTA — only when the viewer is NOT the original author. (Jenni 2026-06-09)
+      if(!_isOwnSharedTalk){
+        if(S.user){
+          h+='<button id="bannerSaveCopyBtn" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;border-radius:10px;padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(75,17,111,0.22)">★ Save your copy</button>';
+        } else {
+          h+='<button id="bannerSaveCopySignInBtn" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;border-radius:10px;padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(75,17,111,0.22)">★ Sign in to save copy</button>';
+        }
+      }
+      h+='</div>';
       if(_shareInfoOpen){
-        h+='<div style="background:linear-gradient(135deg,#f5edfa,#ede6f5);border:1px solid #d4baea;border-radius:12px;padding:11px 14px;margin-top:6px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+        h+='<div style="background:linear-gradient(135deg,#f5edfa,#ede6f5);border:1px solid #d4baea;border-radius:12px;padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
         h+='<div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--plum-deep);font-weight:600;line-height:1.3">Shared by '+esc(_authorName)+'</div><div style="font-size:10.5px;color:var(--ink-muted);margin-top:2px;line-height:1.4">Public chalk talk · Review for accuracy · Not medical advice</div></div>';
         h+='<a href="'+esc(window.location.pathname)+'" style="background:var(--plum);color:#fff;border:none;border-radius:9px;padding:6px 12px;font-size:11.5px;font-weight:600;cursor:pointer;text-decoration:none;flex-shrink:0">Make your own →</a>';
         h+='</div>';
       }
-      h+='</div>';
     }
 
     // === Capsule header (Jenni 2026-06-03: stripped — left=New talk only, right=Save/Edit/⋮ horizontal) ===
@@ -6671,7 +6756,9 @@ function renderMain(){
     h+='</div>';
 
     // === 2x2 mode grid ===
-    var MODES=isBQ?[["overview","📄","Overview"],["audio","🔉","Audio"]]:[["overview","📄","Overview"],["slides","📊","Slides"],["visual","🖼","Visual"],["audio","🔉","Audio"]];
+    // Visual tab consolidated into Overview (Jenni 2026-06-09 — it lives in the lecture now,
+    // not in its own tab). Audio also re-evaluated but kept as a tab for now.
+    var MODES=isBQ?[["overview","📄","Overview"],["audio","🔉","Audio"]]:[["overview","📄","Overview"],["slides","📊","Slides"],["audio","🔉","Audio"]];
     h+='<div class="mode-grid">';
     for(var mi=0;mi<MODES.length;mi++){
       var m2=MODES[mi];
@@ -7036,9 +7123,17 @@ function renderMain(){
     }
 
     // ---------------- VISUAL TAB ----------------
-    if(S.tab==="visual"&&!isBQ){
-      h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)">';
-      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px">🎨</span><div><div style="font-size:14px;font-weight:700;color:var(--ink)">Visual Aid</div><div style="font-size:11px;color:var(--ink-muted)">'+(S.dgMode==="ai"?(S.dg&&S.dg.imgB64?"Generated with Nano Banana Pro":"Gemini Nano Banana Pro"):(S.dg&&S.dg.imgB64?"Generated with gpt-image-1.5":"OpenAI gpt-image-1.5"))+'</div></div></div>';
+    // Visual aid — now lives at the top of Overview (Jenni 2026-06-09). Collapsible to keep the
+    // outline as the primary content; auto-expanded if a visual has been generated already.
+    if(S.tab==="overview"&&!isBQ){
+      var _vaOpen = !!S.visualOpen || !!(S.dg && S.dg.imgB64);
+      h+='<details class="va-card" '+(_vaOpen?'open':'')+' style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)">';
+      h+='<summary style="list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:10px;font-family:inherit">';
+      h+='<span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🎨</span>';
+      h+='<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700;color:var(--ink)">Visual aid</div><div style="font-size:11px;color:var(--ink-muted);margin-top:1px">'+(S.dg&&S.dg.imgB64?'Generated · tap to view / regenerate':'Generate an AI illustration for this talk')+'</div></div>';
+      h+='<span style="color:var(--ink-soft);font-size:12px">⌄</span>';
+      h+='</summary>';
+      h+='<div style="padding:0 14px 14px">';
       // Flowchart (SVG) mode removed — autoLayout produced overlapping/clipped output. Only raster modes remain.
       // Guard: if S.dgMode is stuck on "svg" from a previous session, fall back to "ai".
       if(S.dgMode==="svg")S.dgMode="ai";
@@ -7068,7 +7163,7 @@ function renderMain(){
         h+='</div>';
       }
       else{h+='<button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:13px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer">'+(S.dgBusy?"Generating…":"✨ Generate Visual")+'</button>'}
-      h+='</div>';
+      h+='</div></details>';
     }
 
     // ---------------- AUDIO TAB ----------------
@@ -7708,6 +7803,13 @@ function bindMain(){
     });
     // Drop empty bullets
     S.editingDraft.points = (S.editingDraft.points||[]).map(function(p){return String(p||"").trim()}).filter(Boolean);
+    // Drug-name guard on inline edits — same pattern as the generation prompt's drug list.
+    // Catches common LLM-mangling AND human typos. Confirm before saving on hit. (Jenni 2026-06-09)
+    var drugFlags = _scanDrugNameTypos([S.editingDraft.heading, S.editingDraft.teaching_pearl, S.editingDraft.board_tip].concat(S.editingDraft.points||[]).join("\n"));
+    if(drugFlags.length){
+      var msg = "⚠ Possible drug-name typo(s) in your edit:\n\n" + drugFlags.map(function(f){return "  • \""+f.found+"\" → did you mean \""+f.suggest+"\"?"}).join("\n") + "\n\nSave anyway?";
+      if(!confirm(msg)) return;
+    }
     // Snapshot for undo, commit, exit edit mode
     pushTalkHistory("section "+(S.editingSection+1)+" edit");
     S.talk.sections[S.editingSection] = S.editingDraft;
@@ -7796,6 +7898,26 @@ function bindMain(){
   };
   // Save copy when not signed in — open the sign-in modal
   var scsibt=document.getElementById("saveCopySignInBtnTop");if(scsibt)scsibt.onclick=function(){
+    S.signInOpen=true;S.authMsg="Sign in to save a copy of this talk to your library";render();
+  };
+  // Banner Save Copy CTA — same logic as the capsule one, promoted in the shared-talk header.
+  // (Jenni 2026-06-09: coworkers were missing the capsule button.)
+  var bsc=document.getElementById("bannerSaveCopyBtn");if(bsc)bsc.onclick=async function(){
+    if(!S.talk || !S.user){ return; }
+    bsc.disabled = true; bsc.textContent = "… Saving";
+    var sourceName = (S.sharedAuthor && S.sharedAuthor.name) || null;
+    var data = await cloudSaveCopyOfPublic(S.talk, S.sharedOriginalTalkId, S.sharedAuthorUserId, sourceName, S.topic, S.style, S.depth);
+    if(data){
+      S.savedFlash = "✓ Saved a copy to your library" + (sourceName ? " · from "+sourceName : "");
+      render();
+      setTimeout(function(){S.savedFlash="";render()},3000);
+    } else {
+      bsc.disabled = false; bsc.textContent = "★ Save your copy";
+      S.savedFlash = "⚠ Couldn't save — check connection"; render();
+      setTimeout(function(){S.savedFlash="";render()},3000);
+    }
+  };
+  var bscsi=document.getElementById("bannerSaveCopySignInBtn");if(bscsi)bscsi.onclick=function(){
     S.signInOpen=true;S.authMsg="Sign in to save a copy of this talk to your library";render();
   };
   // Save button at the bottom (after the lesson outline) — same handler.
