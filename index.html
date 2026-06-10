@@ -3017,9 +3017,19 @@ async function refreshCloudTalks(){
     // Tiny bandwidth (~30-80 bytes/row) and restores the subtitle line on library cards.
     // has_visuals is a denormalized boolean column maintained by the sync_has_visuals trigger
     // (see supabase/migrations/add_has_visuals.sql). Lets us show the 🖼 badge without fetching the heavy talk_json.
-    var r = await window.sb.from("talks")
-      .select("id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, talk_json->>subtitle")
-      .order("created_at", { ascending: false });
+    // Try the full query first (includes Pattern A columns). If the migration hasn't been run yet,
+    // the new columns don't exist and PostgREST returns 42703 / "column does not exist" — fall back
+    // to the prior query so the user still sees their saved talks. (Jenni 2026-06-09)
+    var FULL_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, talk_json->>subtitle";
+    var LEGACY_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, talk_json->>subtitle";
+    var r = await window.sb.from("talks").select(FULL_COLS).order("created_at", { ascending: false });
+    if(r.error){
+      var msg = (r.error && (r.error.message||"")) + " " + (r.error.code||"");
+      if(/specialty_override|is_pinned|pinned_at|42703|column .* does not exist/i.test(msg)){
+        console.warn("Pattern A columns missing — using legacy query. Run the migration to enable pin/recategorize.");
+        r = await window.sb.from("talks").select(LEGACY_COLS).order("created_at", { ascending: false });
+      }
+    }
     if(r.error) throw r.error;
     S.cloudTalks = r.data || [];
     S.cloudLoaded = true;
