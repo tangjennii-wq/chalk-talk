@@ -4749,6 +4749,38 @@ function fixJSON(raw) {
   // Strip web search citation tags that leak into output
   var t = raw.replace(/]*>/g,"").replace(/<\/antml:cite>/g,"").replace(/<cite[^>]*>/g,"").replace(/<\/cite>/g,"");
   t = t.replace(/```json/g,"").replace(/```/g,"").trim();
+  // (Jenni 2026-06-09) Extract only the first complete top-level JSON object/array.
+  // Models sometimes emit valid JSON followed by an explanatory paragraph, which causes
+  // "Unexpected non-whitespace character after JSON at position N" failures downstream.
+  // Walk char-by-char tracking brace/bracket depth while respecting string + escape contexts.
+  var firstObj = (function(){
+    var start = -1, openCh = "", closeCh = "";
+    for (var i = 0; i < t.length; i++) {
+      var c = t[i];
+      if (c === "{" || c === "[") { start = i; openCh = c; closeCh = (c==="{"?"}":"]"); break; }
+    }
+    if (start < 0) return null;
+    var depth = 0, inStr = false, esc = false;
+    for (var j = start; j < t.length; j++) {
+      var ch = t[j];
+      if (esc) { esc = false; continue; }
+      if (inStr) {
+        if (ch === "\\") { esc = true; continue; }
+        if (ch === '"') inStr = false;
+        continue;
+      }
+      if (ch === '"') { inStr = true; continue; }
+      if (ch === openCh) depth++;
+      else if (ch === closeCh) {
+        depth--;
+        if (depth === 0) return t.substring(start, j + 1);
+      }
+    }
+    return null;
+  })();
+  if (firstObj) {
+    try { JSON.parse(firstObj); return firstObj; } catch (e0) { /* fall through to legacy heuristics */ }
+  }
   try { return JSON.parse(t), t; } catch(e) {}
   if (!t.endsWith("}")) { var idx = t.lastIndexOf("}"); if (idx > 0) t = t.substring(0, idx + 1); }
   try { return JSON.parse(t), t; } catch(e) {}
