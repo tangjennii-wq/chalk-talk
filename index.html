@@ -2929,6 +2929,8 @@ var S = {
   sharedAuthorUserId:null, sharedOriginalTalkId:null,
   // Streaming progress (Jenni 2026-06-09 #3) — populated by callAPI's onStreamChunk during gen
   streamingTitle:"", streamingChars:0,
+  // #4 — true while the slow claim-level citation audit runs in background after talk is shown
+  citationAuditPending:false,
   // Collapsed share-info chip — toggles details on tap (Jenni 2026-06-08)
   shareInfoOpen:false,
   // Option B: cached depth variants for the currently-loaded saved talk. Enables instant depth swap.
@@ -5136,12 +5138,9 @@ async function generate(){
       console.warn("Critique failed, using draft:", critErr.message);
     }
 
-    // Step 3: Citation grounding. Re-run the presence audit on the (possibly critic-rewritten)
-    // final talk, then the claim-level semantic audit that strips inline PMIDs whose abstract
-    // doesn't actually support the sentence. Both fail open — never block a talk.
+    // Step 3a: Presence prune (cheap, synchronous) — strip citations to PMIDs we don't even have
+    // an abstract for. Always runs before showing the talk; it's fast.
     finalTalk = pruneFakeReferences(finalTalk);
-    try { finalTalk = await verifyCitations(finalTalk); }
-    catch (vErr) { console.warn("verifyCitations error, using talk as-is:", vErr.message); }
 
     // If the user cancelled mid-flight, discard the result so they don't suddenly
   // see a talk appear after they tapped Cancel (Jenni 2026-06-08).
@@ -5154,6 +5153,10 @@ async function generate(){
   if(_myGenId !== S.genId){
     return;
   }
+  // Step 3b: render the talk NOW. Show "🔄 verifying citations" badge. The slow semantic audit
+  // runs in the background and replaces the talk when done. (Jenni 2026-06-09 #4 — big perceived
+  // speedup; user can read while the audit runs.)
+  S.citationAuditPending = true;
   S.talk = finalTalk;
     S.sec=0;S.dg=null;S.dgErr="";S.podScript="";
     if (glRef) { S.glRef = glRef; } else { S.glRef = null; }
@@ -5176,6 +5179,44 @@ async function generate(){
   if(S.talk && S.queueAudio){
     S.queueAudio = false;
     genPodcast();
+  }
+  // Step 3c (Jenni 2026-06-09 #4): kick off the slow claim-level citation audit AFTER the talk
+  // is on screen. When it returns, replace S.talk with the audited version, clear the pending
+  // badge, and surface a toast if any citations were modified.
+  if(S.talk && S.citationAuditPending){
+    var _auditTargetGenId = _myGenId;
+    var _talkBeforeAudit = S.talk;
+    (async function runBackgroundAudit(){
+      try {
+        var auditedTalk = await verifyCitations(_talkBeforeAudit);
+        // Don't apply the audit result if the user has navigated away or started a new gen.
+        if(_auditTargetGenId !== S.genId) return;
+        if(!S.talk) return;
+        // Count differences in reference list as a proxy for "citations were modified."
+        var beforeCount = (_talkBeforeAudit.references||[]).length;
+        var afterCount  = (auditedTalk.references||[]).length;
+        var modified = beforeCount !== afterCount;
+        S.talk = auditedTalk;
+        S.citationAuditPending = false;
+        render();
+        if(modified){
+          var diff = Math.abs(beforeCount - afterCount);
+          S.savedFlash = "✓ Citations verified · " + diff + " reference" + (diff===1?"":"s") + " " + (afterCount<beforeCount?"removed":"updated") + " after review";
+          render();
+          setTimeout(function(){ S.savedFlash=""; render() }, 4000);
+        } else {
+          S.savedFlash = "✓ Citations verified";
+          render();
+          setTimeout(function(){ S.savedFlash=""; render() }, 2500);
+        }
+      } catch(auditErr){
+        console.warn("Background citation audit failed:", auditErr && auditErr.message);
+        if(_auditTargetGenId === S.genId){
+          S.citationAuditPending = false;
+          render();
+        }
+      }
+    })();
   }
 }
 
@@ -6905,6 +6946,10 @@ function renderMain(){
     // framing already lives in the "How it works" disclosure; the per-talk pill was redundant.
     h+='<div class="ttl-pills">';
     h+='<span class="tk-pill">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
+    // Background citation audit indicator (Jenni 2026-06-09 #4)
+    if(S.citationAuditPending){
+      h+='<span class="tk-pill" style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;display:inline-flex;align-items:center;gap:5px"><span class="spinner" style="width:9px;height:9px;border-width:1.5px"></span>Verifying citations…</span>';
+    }
     if(S.isSampleTalk)h+='<span class="tk-pill gray">📖 Sample</span>';
     h+='</div>';
     h+='</div>';
