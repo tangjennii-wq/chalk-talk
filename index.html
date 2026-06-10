@@ -101,7 +101,7 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 .tk-acc.open{border-color:var(--plum-rich);box-shadow:0 0 0 1px var(--plum-rich) inset,var(--shadow-soft)}
 .tk-acc-num{background:var(--lavender-bg);color:var(--plum);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex-shrink:0}
 .tk-acc.open .tk-acc-num{background:var(--plum-rich);color:#fff}
-.tk-acc-ttl{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink);line-height:1.3}
+.tk-acc-ttl{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;padding-right:90px}
 .tk-acc-min{font-size:11px;color:var(--ink-muted);font-weight:500;flex-shrink:0}
 .tk-acc-chev{font-size:14px;color:var(--ink-soft);transition:transform .2s ease;flex-shrink:0}
 .tk-acc.open .tk-acc-chev{transform:rotate(180deg);color:var(--plum)}
@@ -6761,6 +6761,7 @@ function renderMain(){
       if(S.isSampleTalk || !S.user || !S.loadedTalkId || String(S.loadedTalkId).startsWith("t_")){
         h+='<button id="shareTalkBtn">🔗 Share link (encoded)</button>';
       }
+      h+='<button id="copyAllTalkBtn">📋 Copy entire talk</button>';
       h+='<button id="pdfTalkBtn">📄 Export PDF</button>';
       h+='<button id="pngTalkBtn">📸 Save as image</button>';
       h+='<button id="jsonTalkBtn">{} Export JSON</button>';
@@ -6872,6 +6873,7 @@ function renderMain(){
         }
         if(hasMultiSec){
           h+='<button id="expandAllBtn" title="'+(S.allExpanded?"Collapse all sections":"Expand all sections at once")+'" style="background:none;border:none;padding:2px 8px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;border-radius:6px">'+allExpLbl2+'</button>';
+          h+='<button id="copyAllSectionsBtn" title="Copy the entire lesson outline to clipboard" style="background:none;border:none;padding:2px 8px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;border-radius:6px;display:inline-flex;align-items:center;gap:4px">'+COPY_ICON+'<span>Copy all</span></button>';
         }
         h+='</div>';
         h+='</div>';
@@ -6884,8 +6886,9 @@ function renderMain(){
           h+='<div style="display:flex;align-items:center;gap:0;position:relative">';
           h+='<button class="tk-acc-head secBtn" data-i="'+si2+'" style="flex:1;min-width:0"><span class="tk-acc-num">'+(si2+1)+'</span><span class="tk-acc-ttl">'+esc(x.heading)+'</span><span class="tk-acc-chev" style="margin-left:auto">⌄</span></button>';
           if(!isEditing){
-            // Edit affordance — Jenni 2026-06-08: pill was too loud, but the original ink-soft pencil
-            // was invisible. Compromise: bigger, bolder yellow pencil icon, no pill background.
+            // Edit + Copy paired in the section header — easier to discover than the buried
+            // bottom-right copy button. (Jenni 2026-06-09 — copy was easy to miss alone.)
+            h+='<button class="copySecBtn" data-i="'+si2+'" title="Copy this section to clipboard" aria-label="Copy section" style="position:absolute;right:62px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:5px 8px;border-radius:6px;line-height:0;display:inline-flex;align-items:center;transition:all .15s ease" onmouseover="this.style.background=\'var(--lavender-bg)\';this.style.color=\'var(--plum)\';" onmouseout="this.style.background=\'none\';this.style.color=\'var(--ink-soft)\';">'+COPY_ICON+'</button>';
             h+='<button class="secEditBtn" data-i="'+si2+'" title="Edit this section" aria-label="Edit this section" style="position:absolute;right:34px;top:50%;transform:translateY(-50%);background:none;border:none;color:#e8a91f;font-size:18px;font-weight:700;cursor:pointer;padding:5px 8px;border-radius:6px;line-height:1;text-shadow:0 1px 1px rgba(232,169,31,0.18);transition:all .15s ease" onmouseover="this.style.background=\'rgba(232,169,31,0.12)\';" onmouseout="this.style.background=\'none\';">✎</button>';
           }
           h+='</div>';
@@ -6936,8 +6939,7 @@ function renderMain(){
             if(x.mechanism){
               h+='<details style="margin-top:10px;padding:6px 12px;background:#fafafa;border:1px solid var(--line-soft);border-radius:8px"><summary style="font-size:11px;font-weight:600;color:var(--plum);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:5px;font-family:inherit"><span style="display:inline-block;width:0;height:0;border-left:5px solid var(--plum);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s ease"></span>Why this works</summary><div style="font-size:12px;color:var(--ink-muted);line-height:1.55;margin-top:6px;padding-left:12px;border-left:2px solid var(--line-soft);font-family:Georgia,serif;font-style:italic">'+renderCite(x.mechanism,t.references)+'</div></details>';
             }
-            // Section copy button — bottom-right of the body
-            h+='<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="copySecBtn" data-i="'+si2+'" title="Copy this section to clipboard" style="background:none;border:1px solid var(--line-soft);color:var(--ink-soft);cursor:pointer;padding:4px 9px;border-radius:6px;line-height:0;display:inline-flex;align-items:center">'+COPY_ICON+'</button></div>';
+            // Section copy button moved to the header next to Edit (Jenni 2026-06-09 — easier to spot).
             h+='</div>';
           }
           h+='</div>';
@@ -7880,6 +7882,44 @@ function bindMain(){
       copyTextToClipboard(lines.join("\n"),"Section copied");
     };
   });
+  // Copy ALL sections at once — full lesson outline as plain text (Jenni 2026-06-09).
+  function _copyAllSections(){
+    if(!S.talk||!S.talk.sections)return;
+    var t = S.talk;
+    var lines = [];
+    if(t.title) lines.push(t.title);
+    if(t.subtitle) lines.push(t.subtitle);
+    if(lines.length) lines.push("");
+    (t.sections||[]).forEach(function(sec, i){
+      lines.push((i+1)+". "+(sec.heading||"")+(sec.minutes?" ("+sec.minutes+")":""));
+      lines.push("");
+      (sec.points||[]).forEach(function(p){lines.push("• "+p)});
+      if(sec.teaching_pearl){lines.push(""); lines.push("💡 Teaching Pearl: "+sec.teaching_pearl)}
+      if(sec.board_tip){lines.push(""); lines.push("🎯 Board Tip: "+sec.board_tip)}
+      if(sec.mechanism){lines.push(""); lines.push("⚙ Why this works: "+sec.mechanism)}
+      lines.push(""); lines.push("");
+    });
+    if(t.summary_points && t.summary_points.length){
+      lines.push("KEY TAKEAWAYS");
+      lines.push("");
+      t.summary_points.forEach(function(p, i){ lines.push((i+1)+". "+p); });
+      lines.push("");
+    }
+    if(t.references && t.references.length){
+      lines.push("REFERENCES");
+      lines.push("");
+      t.references.forEach(function(r){
+        var bits=[r.source||("Reference "+r.id)];
+        if(r.year) bits.push(String(r.year));
+        if(r.society) bits.push(r.society);
+        if(r.url) bits.push(r.url);
+        lines.push("["+r.id+"] "+bits.join(" · "));
+      });
+    }
+    copyTextToClipboard(lines.join("\n"),"Full lesson copied to clipboard");
+  }
+  var cas=document.getElementById("copyAllSectionsBtn");if(cas)cas.onclick=function(e){e.stopPropagation();_copyAllSections()};
+  var caso=document.getElementById("copyAllTalkBtn");if(caso)caso.onclick=function(){_copyAllSections();S.overflowOpen=false;render()};
   // "See all N →" on the landing samples row now jumps into Library (samples merged in).
   var lmb=document.getElementById("landingMoreBtn");if(lmb)lmb.onclick=function(){S.showSaved=true;S.libTab="lectures";render();refreshLibraryShowcaseSamples()};
   // modeToggleBtn handler deleted — ID no longer rendered.
