@@ -3449,32 +3449,24 @@ function renderLibCard(x){
   var menuOpen = (S.libCardMenuId === menuKey);
   var iconBtns = '';
   if(!isShowcase){
+    // Standalone Share icon — LEFT of the kebab, only for cloud-saved user talks.
+    // Subagent UX call (Jenni 2026-06-10): Share is the highest-frequency secondary action
+    // and earns a 1-tap shortcut. Opens the unified 3-tier modal (private / link / profile).
+    if(!isSample && x._id && !String(x._id).startsWith("t_")){
+      iconBtns += '<button class="libShareIconBtn" '+dataAttr+' title="Share — choose who can see this" aria-label="Share" style="background:none;border:none;color:var(--ink-muted);cursor:pointer;padding:5px 8px;border-radius:50%;line-height:1;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><span style="font-size:15px">🔗</span></button>';
+    }
     iconBtns += '<div style="position:relative;flex-shrink:0">';
     iconBtns += '<button class="libCardMenuBtn" data-key="'+esc(menuKey)+'" title="More actions" aria-label="More actions" aria-haspopup="true" style="background:none;border:none;color:var(--ink-muted);font-size:18px;cursor:pointer;padding:5px 8px;border-radius:50%;line-height:1;font-weight:700">⋮</button>';
     if(menuOpen){
       iconBtns += '<div class="libCardMenu" style="position:absolute;right:0;top:34px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(20,10,28,0.14);min-width:200px;z-index:80;overflow:hidden">';
       iconBtns += '<button class="libMenuItem libEditTitleBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">✎</span>Rename</button>';
-      // Pattern A (Jenni 2026-06-09) — Pin to top + Change specialty for cloud-saved user talks.
+      // Pattern A (Jenni 2026-06-09; pin dropped 2026-06-10) — only Change specialty for cloud-saved talks.
       if(!isSample && x._id && !String(x._id).startsWith("t_")){
-        if(x._isPinned){
-          iconBtns += '<button class="libMenuItem libUnpinBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">📌</span>Unpin from top</button>';
-        } else {
-          iconBtns += '<button class="libMenuItem libPinBtn" '+dataAttr+' title="Pin this talk to the top of your library" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">📌</span>Pin to top</button>';
-        }
         iconBtns += '<button class="libMenuItem libChangeSpecBtn" '+dataAttr+' title="Change specialty (e.g. move out of Other)" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">🏷️</span>Change specialty</button>';
       }
-      // Privacy actions — only for cloud-saved user talks. Replaces the old Feature/Unfeature buttons
-      // with a unified Share modal (private/link/profile). (Jenni 2026-06-08 Phase 1+2)
-      if(!isSample && x._id && !String(x._id).startsWith("t_")){
-        if(x._isPublic){
-          // Already public — direct Copy link + Make private. Tier changes go through the modal too.
-          iconBtns += '<button class="libMenuItem libCopyLinkBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">🔗</span>Copy link</button>';
-          iconBtns += '<button class="libMenuItem libShareBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">🔗</span>Share</button>';
-          iconBtns += '<button class="libMenuItem libMakePrivateBtn" '+dataAttr+' title="Removes from profile AND invalidates the link" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="font-size:14px;width:16px;display:inline-flex;justify-content:center">🔒</span>Make private</button>';
-        } else {
-          iconBtns += '<button class="libMenuItem libShareBtn" '+dataAttr+' title="Choose who can see this talk" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">🔗</span>Share</button>';
-        }
-      }
+      // Privacy actions consolidated (Jenni 2026-06-10): Share is now a standalone icon to the LEFT
+      // of the kebab — opening the same 3-tier modal where Copy link / Make private already live.
+      // Removed from kebab to avoid redundancy: Copy link, Make private, Share.
       iconBtns += '<button class="libMenuItem libPdfBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">↓</span>Export PDF</button>';
       iconBtns += '<button class="libMenuItem delTalkBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:#c0392b;text-align:left;font-family:inherit"><span style="font-size:14px;width:16px;display:inline-flex;justify-content:center">🗑</span>Delete</button>';
       iconBtns += '</div>';
@@ -3499,8 +3491,6 @@ function renderLibCard(x){
   h += '<div style="display:flex;gap:6px;font-size:10.5px;color:var(--ink-muted);align-items:center;flex-wrap:wrap">';
   h += '<span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;letter-spacing:0.02em">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">✨</span>';
-  // Pattern A (Jenni 2026-06-09) — pin badge: this card is sorted to the top of its tab
-  if(x._isPinned) h += '<span style="background:#f5edfa;color:var(--plum);border:1px solid #d4baea;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Pinned to top">📌</span>';
   if(isShowcase) h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Featured teaching sample from Jenni">✨ Sample</span>';
   // Privacy badge — 3-color system: blue = link-only, gold = on profile, no badge = private.
   // (Jenni 2026-06-08 Phase 1 — replaces the older 🌐 Public / ⭐ Featured pair.)
@@ -6472,18 +6462,6 @@ function renderSaved(){
   // Search + export/import
   h+='<input id="savedSearchIn" value="'+esc(S.savedSearch)+'" placeholder="Search the library\u2026" style="width:100%;background:#fff;border:1.5px solid #e2dfe8;border-radius:12px;padding:11px 16px;font-size:14px;outline:none;margin-bottom:10px">';
   h+='<div style="display:flex;gap:8px;margin-bottom:14px;justify-content:flex-end"><button id="exportLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:7px 12px;color:#702b9d;font-size:11.5px;font-weight:600;cursor:pointer">\u2B07 Export</button><button id="importLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:7px 12px;color:#702b9d;font-size:11.5px;font-weight:600;cursor:pointer">\u2B06 Import</button><input type="file" id="importLibInput" accept=".json" style="display:none"></div>';
-  // Pattern A (Jenni 2026-06-09) — pinned items float to the top within each grouping.
-  // For the flat-list branch (active specialty filter), this orders the whole list.
-  // For the grouped branch, we re-sort each group below so pins stay within their specialty.
-  function _pinFirstSort(a,b){
-    var ap=a._isPinned?1:0, bp=b._isPinned?1:0;
-    if(ap!==bp) return bp-ap;                                              // pinned first
-    if(ap && bp){                                                          // both pinned → newest pin first
-      return new Date(b._pinnedAt||0) - new Date(a._pinnedAt||0);
-    }
-    return new Date(b.savedAt||b.generated_at||0) - new Date(a.savedAt||a.generated_at||0); // else newest first
-  }
-  filtered.sort(_pinFirstSort);
   // Group filtered items by specialty, render in canonical order (SPEC_ORDER).
   if(filtered.length===0){
     var emptyMsg = (all.length===0) ? "No items yet" : "No matches in "+(tab==="all"?"the library":tab);
@@ -6561,6 +6539,12 @@ function bindSaved(){
   // Unified Share — opens the three-tier modal. (Jenni 2026-06-08 Phase 1+2)
   document.querySelectorAll(".libShareBtn").forEach(function(b){b.onclick=function(){
     S.libCardMenuId=null;
+    var id=b.dataset.id;
+    if(id) openShareModal(id);
+  }});
+  // Standalone Share icon left of the kebab (Jenni 2026-06-10) — same modal, 1-tap shortcut.
+  document.querySelectorAll(".libShareIconBtn").forEach(function(b){b.onclick=function(e){
+    e.stopPropagation();
     var id=b.dataset.id;
     if(id) openShareModal(id);
   }});
@@ -6663,16 +6647,7 @@ function bindSaved(){
     }
     render();
   }});
-  // Pattern A (Jenni 2026-06-09) — Pin / Unpin from kebab
-  document.querySelectorAll(".libPinBtn, .libUnpinBtn").forEach(function(b){b.onclick=async function(e){
-    e.stopPropagation();
-    var id=b.dataset.id; if(!id) return;
-    S.libCardMenuId=null;
-    var makePinned = b.classList.contains("libPinBtn");
-    var res = await cloudSetPinned(id, makePinned);
-    if(!res){ alert("Couldn't update pin — check connection."); return }
-    render();
-  }});
+  // Pin/Unpin dropped 2026-06-10 — kebab was too crowded. cloudSetPinned helper kept in case we bring it back.
   // Pattern A — Change specialty: opens a small picker dialog
   document.querySelectorAll(".libChangeSpecBtn").forEach(function(b){b.onclick=function(e){
     e.stopPropagation();
