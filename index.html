@@ -4822,9 +4822,20 @@ async function callAPI(sys, content, maxTok, opts) {
     headers = {"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"};
   }
   // Try the request with up to 2 retries for transient overload (529) / unavailable (503).
+  // AbortController support (Jenni 2026-06-09 #5) — caller can pass opts.signal to cut the
+  // request when generation is cancelled or restarted mid-flight, saving real API budget.
   var r, attempt = 0;
   while (true) {
-    r = await fetch(endpoint, {method:"POST", headers:headers, body:JSON.stringify(body)});
+    var fetchOpts = {method:"POST", headers:headers, body:JSON.stringify(body)};
+    if (opts.signal) fetchOpts.signal = opts.signal;
+    try {
+      r = await fetch(endpoint, fetchOpts);
+    } catch (abortErr) {
+      if (abortErr && abortErr.name === "AbortError") {
+        throw new Error("AbortError: generation cancelled");
+      }
+      throw abortErr;
+    }
     if (useProxy) {
       var rem = r.headers.get("X-RateLimit-Remaining");
       if (rem !== null && rem !== "") S.rateRemaining = parseInt(rem);
@@ -5013,6 +5024,12 @@ async function generate(){
   // without the stale generation's late return stomping on the new one. (Jenni 2026-06-08)
   S.genId = (S.genId || 0) + 1;
   var _myGenId = S.genId;
+  // AbortController for the live fetch (Jenni 2026-06-09 #5) — cancelGen / restartGen abort
+  // this signal, killing the in-flight Anthropic call so we don't burn API budget on a result
+  // we're already going to discard.
+  if (window._lastGenAbort) try { window._lastGenAbort.abort() } catch(_){}
+  window._lastGenAbort = new AbortController();
+  var _abortSignal = window._lastGenAbort.signal;
   S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;speechSynthesis.cancel();render();
   loadTimer=setInterval(function(){S.loadSec++;var msgs=S.wantWebSearch?["Reasoning through physiology...","Searching current literature...","Cross-referencing societies...","Building content...","AI-checking...","Polishing final version..."]:["Reasoning through physiology...","Loading guidelines...","Building content...","AI-checking & polishing..."];S.loadMsg=msgs[Math.min(Math.floor(S.loadSec/3),msgs.length-1)];render()},1000);
   try{
@@ -5052,6 +5069,7 @@ async function generate(){
     // Tested Sonnet-first for Concise — quality regressed too much, not worth the ~15s saved.
     var mainModels = [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC];
     var maxTok=(S.style==="boards")?6144:4096;
+    mainOpts.signal = _abortSignal;
     // Streaming progress: surface the draft title as soon as it appears in the stream, and tick
     // a char-count so the progress bar reflects actual generation activity. (Jenni 2026-06-09 #3)
     var _streamLastRender = 0;
@@ -5083,8 +5101,11 @@ async function generate(){
     draftTalk = pruneFakeReferences(draftTalk);
 
     // Step 2: Combined critique-and-fix in a single Haiku call
-    // If clean, returns {"verdict":"clean"}; if issues, returns the corrected JSON in same schema as draft
-    var critiqueSystem = "You are a senior board-certified Internal Medicine attending acting as a peer reviewer for a chalk talk. Review for: (1) factual errors in physiology or pharmacology, (2) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/AAAAI/AAD/APA/AGS/ACOG/USPSTF/AAHPM), (3) internal contradictions, (4) wrong landmark trial attributions, (5) shallow physiology, (6) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug or known investigational compound MUST be corrected. If unsure of generic spelling, replace with the brand name. Do NOT flag stylistic preferences.\n\nBOARDS-MODE ANSWER VERIFICATION (when the input contains a 'question' field): EXPLICITLY re-derive the correct answer. (a) Restate the discriminating clinical features in the stem. (b) Identify the most relevant guideline and year (KDIGO, AHA/ACC, ADA, etc.) or landmark trial. (c) Confirm whether the marked correct_letter is truly best per that guideline. (d) If a different choice is better, fix correct_letter and rewrite explanation + wrong_explanations accordingly. Do not allow ambiguous or 'defensibly correct' answers to stand \u2014 the correct answer must be UNAMBIGUOUSLY best per current guidelines.\n\nSTEM STYLE VERIFICATION (boards mode): Also verify the stem follows UWorld / ABIM style. Check: (a) demographic + presentation opener (A [age]-year-old [man/woman] comes to the physician...), (b) quantitative symptom detail (frequency, duration, character, location, timing), (c) explicit pertinent positives AND key pertinent negatives stated together, (d) social/medical history quantified where relevant (e.g., 8-10 beers/week, 1 pack/day for 30 years), (e) specific vital signs with numbers and lab values with units, (f) imaging or diagnostic findings stated specifically, (g) ending phrase: Which of the following is the most likely [diagnosis/next step in management/initial test/cause/treatment]?, (h) 5 choices, parallel grammatical structure (all diagnoses OR all treatments OR all tests, not mixed), (i) each choice 2-8 words, no 'all of the above', no 'none of the above', no vague catch-alls, (j) distractors are plausible alternatives a less-prepared resident might pick \u2014 not throwaway. If the stem fails ANY criterion, REWRITE the stem and choices to match UWorld style while preserving the same correct answer and clinical scenario. Do not change the medical content; tighten the format.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk is accurate and needs no changes:\n{\"verdict\":\"clean\"}\n\nIF you find substantive accuracy issues, return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all your fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
+    // Split critique prompts (Jenni 2026-06-09 #3) — Lecture mode uses a focused review
+    // prompt (~600 tokens instead of ~2500), Boards keeps the full UWorld verification.
+    var LECTURE_CRITIQUE_PROMPT = "You are a senior IM attending peer-reviewing a chalk talk. Review for substantive accuracy only — do NOT flag stylistic preferences. Check: (1) factual errors in physiology or pharmacology, (2) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/USPSTF/AAHPM), (3) internal contradictions, (4) wrong landmark trial attributions, (5) shallow physiology that misses a key mechanism, (6) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug MUST be corrected. If unsure of generic spelling, replace with the brand name.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk is accurate and needs no changes:\n{\"verdict\":\"clean\"}\n\nIF you find substantive accuracy issues, return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all your fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
+    var BOARDS_CRITIQUE_PROMPT = "You are a senior board-certified Internal Medicine attending acting as a peer reviewer for a chalk talk. Review for: (1) factual errors in physiology or pharmacology, (2) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/AAAAI/AAD/APA/AGS/ACOG/USPSTF/AAHPM), (3) internal contradictions, (4) wrong landmark trial attributions, (5) shallow physiology, (6) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug or known investigational compound MUST be corrected. If unsure of generic spelling, replace with the brand name. Do NOT flag stylistic preferences.\n\nBOARDS-MODE ANSWER VERIFICATION (when the input contains a 'question' field): EXPLICITLY re-derive the correct answer. (a) Restate the discriminating clinical features in the stem. (b) Identify the most relevant guideline and year (KDIGO, AHA/ACC, ADA, etc.) or landmark trial. (c) Confirm whether the marked correct_letter is truly best per that guideline. (d) If a different choice is better, fix correct_letter and rewrite explanation + wrong_explanations accordingly. Do not allow ambiguous or 'defensibly correct' answers to stand \u2014 the correct answer must be UNAMBIGUOUSLY best per current guidelines.\n\nSTEM STYLE VERIFICATION (boards mode): Also verify the stem follows UWorld / ABIM style. Check: (a) demographic + presentation opener (A [age]-year-old [man/woman] comes to the physician...), (b) quantitative symptom detail (frequency, duration, character, location, timing), (c) explicit pertinent positives AND key pertinent negatives stated together, (d) social/medical history quantified where relevant (e.g., 8-10 beers/week, 1 pack/day for 30 years), (e) specific vital signs with numbers and lab values with units, (f) imaging or diagnostic findings stated specifically, (g) ending phrase: Which of the following is the most likely [diagnosis/next step in management/initial test/cause/treatment]?, (h) 5 choices, parallel grammatical structure (all diagnoses OR all treatments OR all tests, not mixed), (i) each choice 2-8 words, no 'all of the above', no 'none of the above', no vague catch-alls, (j) distractors are plausible alternatives a less-prepared resident might pick \u2014 not throwaway. If the stem fails ANY criterion, REWRITE the stem and choices to match UWorld style while preserving the same correct answer and clinical scenario. Do not change the medical content; tighten the format.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk is accurate and needs no changes:\n{\"verdict\":\"clean\"}\n\nIF you find substantive accuracy issues, return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all your fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
+    var critiqueSystem = (S.style === "boards") ? BOARDS_CRITIQUE_PROMPT : LECTURE_CRITIQUE_PROMPT;
     var critiqueInput = "Topic: " + S.topic + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
     var finalTalk = draftTalk;
@@ -5165,6 +5186,9 @@ function cancelGen(){
   if(!S.loading) return;
   S.genCancelled = true;
   S.queueAudio = false; // don't carry the audio-queue intent into the next generation
+  // Abort the live fetch so we stop paying for tokens we won't use. (Jenni 2026-06-09 #5)
+  if (window._lastGenAbort) try { window._lastGenAbort.abort() } catch(_){}
+  window._lastGenAbort = null;
   clearInterval(loadTimer);
   S.loading = false;
   S.loadSec = 0;
@@ -5177,6 +5201,10 @@ function cancelGen(){
 // return is dropped via the genId check inside generate(). (Jenni 2026-06-08)
 function restartGen(){
   if(!S.loading) return;
+  // Abort the in-flight call so we stop wasting tokens on the result we're about to discard.
+  // (Jenni 2026-06-09 #5)
+  if (window._lastGenAbort) try { window._lastGenAbort.abort() } catch(_){}
+  window._lastGenAbort = null;
   // Tear down the current loader without setting genCancelled — we WANT to start fresh
   clearInterval(loadTimer);
   S.loading = false;
