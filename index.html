@@ -4749,19 +4749,17 @@ function fixJSON(raw) {
   // Strip web search citation tags that leak into output
   var t = raw.replace(/]*>/g,"").replace(/<\/antml:cite>/g,"").replace(/<cite[^>]*>/g,"").replace(/<\/cite>/g,"");
   t = t.replace(/```json/g,"").replace(/```/g,"").trim();
-  // (Jenni 2026-06-09) Extract only the first complete top-level JSON object/array.
-  // Models sometimes emit valid JSON followed by an explanatory paragraph, which causes
-  // "Unexpected non-whitespace character after JSON at position N" failures downstream.
-  // Walk char-by-char tracking brace/bracket depth while respecting string + escape contexts.
-  var firstObj = (function(){
-    var start = -1, openCh = "", closeCh = "";
-    for (var i = 0; i < t.length; i++) {
-      var c = t[i];
-      if (c === "{" || c === "[") { start = i; openCh = c; closeCh = (c==="{"?"}":"]"); break; }
-    }
-    if (start < 0) return null;
-    var depth = 0, inStr = false, esc = false;
-    for (var j = start; j < t.length; j++) {
+  try { return JSON.parse(t), t; } catch(e) {}
+  // Truncate at the LAST `}` if there's trailing text after the JSON body (common when the
+  // model adds a postscript paragraph after the valid object). Use balanced-depth walk so we
+  // pick the OUTER closing brace, not a nested one inside the talk body. (Jenni 2026-06-09)
+  var lastTopLevelClose = (function(){
+    var startOpen = -1;
+    for (var i = 0; i < t.length; i++) { if (t[i] === "{" || t[i] === "[") { startOpen = i; break; } }
+    if (startOpen < 0) return -1;
+    var depth = 0, inStr = false, esc = false, lastClose = -1;
+    var openCh = t[startOpen], closeCh = (openCh==="{"?"}":"]");
+    for (var j = startOpen; j < t.length; j++) {
       var ch = t[j];
       if (esc) { esc = false; continue; }
       if (inStr) {
@@ -4773,15 +4771,18 @@ function fixJSON(raw) {
       if (ch === openCh) depth++;
       else if (ch === closeCh) {
         depth--;
-        if (depth === 0) return t.substring(start, j + 1);
+        if (depth === 0) lastClose = j;
       }
     }
-    return null;
+    return lastClose;
   })();
-  if (firstObj) {
-    try { JSON.parse(firstObj); return firstObj; } catch (e0) { /* fall through to legacy heuristics */ }
+  if (lastTopLevelClose > 0 && lastTopLevelClose < t.length - 1) {
+    // There's content after the matching outer close — truncate and retry parse.
+    var truncated = t.substring(0, lastTopLevelClose + 1);
+    try { JSON.parse(truncated); return truncated; } catch (eTrunc) {
+      // Fall through to legacy heuristics on failure
+    }
   }
-  try { return JSON.parse(t), t; } catch(e) {}
   if (!t.endsWith("}")) { var idx = t.lastIndexOf("}"); if (idx > 0) t = t.substring(0, idx + 1); }
   try { return JSON.parse(t), t; } catch(e) {}
   var tryPoints = [];
