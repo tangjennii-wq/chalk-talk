@@ -3018,7 +3018,7 @@ async function refreshCloudTalks(){
     // has_visuals is a denormalized boolean column maintained by the sync_has_visuals trigger
     // (see supabase/migrations/add_has_visuals.sql). Lets us show the 🖼 badge without fetching the heavy talk_json.
     var r = await window.sb.from("talks")
-      .select("id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, talk_json->>subtitle")
+      .select("id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, talk_json->>subtitle")
       .order("created_at", { ascending: false });
     if(r.error) throw r.error;
     S.cloudTalks = r.data || [];
@@ -3115,6 +3115,39 @@ async function cloudUpsertDepthVariant(id, depth, talkJson){
   if(r.error){ console.warn("cloudUpsertDepthVariant write", r.error); return false }
   S.cloudTalks = (S.cloudTalks || []).map(function(x){ return x.id === id ? r.data : x });
   return true;
+}
+
+// Pattern A — Set specialty override (Jenni 2026-06-09). When non-null, library uses this
+// instead of inferring from topic/content. Pass null to clear and revert to inference.
+async function cloudSetSpecialtyOverride(id, specialty){
+  if(!window.sb || !S.user || !id) return null;
+  var r = await window.sb.from("talks")
+    .update({specialty_override: specialty || null})
+    .eq("id", id)
+    .select("id,specialty_override")
+    .maybeSingle();
+  if(r.error){ console.warn("cloudSetSpecialtyOverride", r.error); return null }
+  S.cloudTalks = (S.cloudTalks || []).map(function(x){
+    if(x.id !== id) return x;
+    return Object.assign({}, x, {specialty_override: r.data.specialty_override});
+  });
+  return r.data;
+}
+
+// Pattern A — Toggle pin. DB trigger stamps pinned_at when flipping to true. (Jenni 2026-06-09)
+async function cloudSetPinned(id, makePinned){
+  if(!window.sb || !S.user || !id) return null;
+  var r = await window.sb.from("talks")
+    .update({is_pinned: !!makePinned})
+    .eq("id", id)
+    .select("id,is_pinned,pinned_at")
+    .maybeSingle();
+  if(r.error){ console.warn("cloudSetPinned", r.error); return null }
+  S.cloudTalks = (S.cloudTalks || []).map(function(x){
+    if(x.id !== id) return x;
+    return Object.assign({}, x, {is_pinned: r.data.is_pinned, pinned_at: r.data.pinned_at});
+  });
+  return r.data;
 }
 
 async function cloudDeleteTalk(id){
@@ -3411,6 +3444,15 @@ function renderLibCard(x){
     if(menuOpen){
       iconBtns += '<div class="libCardMenu" style="position:absolute;right:0;top:34px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(20,10,28,0.14);min-width:200px;z-index:80;overflow:hidden">';
       iconBtns += '<button class="libMenuItem libEditTitleBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">✎</span>Rename</button>';
+      // Pattern A (Jenni 2026-06-09) — Pin to top + Change specialty for cloud-saved user talks.
+      if(!isSample && x._id && !String(x._id).startsWith("t_")){
+        if(x._isPinned){
+          iconBtns += '<button class="libMenuItem libUnpinBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">📌</span>Unpin from top</button>';
+        } else {
+          iconBtns += '<button class="libMenuItem libPinBtn" '+dataAttr+' title="Pin this talk to the top of your library" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">📌</span>Pin to top</button>';
+        }
+        iconBtns += '<button class="libMenuItem libChangeSpecBtn" '+dataAttr+' title="Change specialty (e.g. move out of Other)" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">🏷️</span>Change specialty</button>';
+      }
       // Privacy actions — only for cloud-saved user talks. Replaces the old Feature/Unfeature buttons
       // with a unified Share modal (private/link/profile). (Jenni 2026-06-08 Phase 1+2)
       if(!isSample && x._id && !String(x._id).startsWith("t_")){
@@ -3447,6 +3489,8 @@ function renderLibCard(x){
   h += '<div style="display:flex;gap:6px;font-size:10.5px;color:var(--ink-muted);align-items:center;flex-wrap:wrap">';
   h += '<span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;letter-spacing:0.02em">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">✨</span>';
+  // Pattern A (Jenni 2026-06-09) — pin badge: this card is sorted to the top of its tab
+  if(x._isPinned) h += '<span style="background:#f5edfa;color:var(--plum);border:1px solid #d4baea;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Pinned to top">📌</span>';
   if(isShowcase) h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Featured teaching sample from Jenni">✨ Sample</span>';
   // Privacy badge — 3-color system: blue = link-only, gold = on profile, no badge = private.
   // (Jenni 2026-06-08 Phase 1 — replaces the older 🌐 Public / ⭐ Featured pair.)
@@ -3506,7 +3550,11 @@ function getDisplayLibrary(){
       _sourceCuratorUserId: row.source_curator_user_id || null,
       // Option B: surface "has both depths cached" to the library card so it can show a small badge.
       _hasBoth: !!(row.depth_variants && row.depth_variants.concise && row.depth_variants.detailed),
-      _depthVariantsAvailable: row.depth_variants ? Object.keys(row.depth_variants) : []
+      _depthVariantsAvailable: row.depth_variants ? Object.keys(row.depth_variants) : [],
+      // Pattern A (Jenni 2026-06-09) — user-controlled curation
+      _specialtyOverride: row.specialty_override || null,
+      _isPinned: !!row.is_pinned,
+      _pinnedAt: row.pinned_at || null
     };
   });
   return loadSavedTalks().filter(_notSoftDeleted);
@@ -6103,6 +6151,29 @@ function renderGlobalModals(){
     h+='</div></div>';
   }
 
+  // ── Specialty picker — Pattern A (Jenni 2026-06-09) ──────────────────────
+  // Small dialog with the IM specialty list. Click one → cloudSetSpecialtyOverride.
+  if(S.specPickerForId){
+    var _spEntry = (getDisplayLibrary()||[]).find(function(x){return x.id===S.specPickerForId});
+    var _spCurrent = (_spEntry && _spEntry._specialtyOverride) || (_spEntry && inferSpecialty(_spEntry.topic, _spEntry.talk||{}, null)) || "Other";
+    var _spOpts = ["Cardiovascular","Pulmonary","Nephrology","Gastroenterology","Hepatology","Endocrinology","Hematology","Oncology","Infectious Disease","Rheumatology","Neurology","Allergy/Immunology","Dermatology","Psychiatry","Geriatrics","Other"];
+    h+='<div class="drawer-backdrop open" id="specPickerBackdrop" style="z-index:120"></div>';
+    h+='<div class="drawer open" id="specPickerModal" style="z-index:121;max-width:380px;margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
+    h+='<div class="drawer-head" style="padding:18px 20px 6px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🏷️</span> Change specialty</div><button class="drawer-close" id="specPickerClose">×</button></div>';
+    h+='<div class="drawer-body" style="padding:0 16px 18px">';
+    h+='<p style="font-size:12px;color:var(--ink-muted);margin:0 0 12px 4px;line-height:1.45">Pick where this talk should appear in your library. Currently: <b style="color:var(--ink)">'+esc(_spCurrent)+'</b></p>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+    for(var _spi=0; _spi<_spOpts.length; _spi++){
+      var _spOpt = _spOpts[_spi];
+      var _spIsCurrent = (_spOpt === _spCurrent);
+      h+='<button class="specPickerBtn" data-id="'+esc(S.specPickerForId)+'" data-spec="'+esc(_spOpt)+'" style="background:'+(_spIsCurrent?"var(--lavender-bg)":"#fff")+';border:1px solid '+(_spIsCurrent?"var(--plum)":"var(--line)")+';border-radius:10px;padding:9px 10px;font-size:12px;color:var(--ink);cursor:pointer;text-align:left;font-family:inherit;font-weight:'+(_spIsCurrent?"600":"500")+';transition:all .12s ease">'+esc(_spOpt)+(_spIsCurrent?' <span style="color:var(--plum);font-size:10px">✓</span>':'')+'</button>';
+    }
+    h+='</div>';
+    // "Use auto" — clear override and revert to inference
+    h+='<button class="specPickerBtn" data-id="'+esc(S.specPickerForId)+'" data-spec="" style="width:100%;background:#fff;border:1px dashed var(--line);border-radius:10px;padding:9px 10px;font-size:11.5px;color:var(--ink-muted);cursor:pointer;font-family:inherit;margin-top:10px">↺ Auto-detect from topic</button>';
+    h+='</div></div>';
+  }
+
   // ── Sign-in modal ────────────────────────────────────────────────────────
   if(S.signInOpen){
     h+='<div class="drawer-backdrop open" id="signInBackdrop"></div>';
@@ -6315,9 +6386,13 @@ function renderSaved(){
   }
   for(var di=0;di<saved.length;di++){
     var e=saved[di];var et=e.talk||{};
+    // Pattern A: user's specialty override wins over the auto-inferred specialty. (Jenni 2026-06-09)
+    var resolvedSpec = e._specialtyOverride || inferSpecialty(e.topic, et, null);
     all.push({_source:"saved",_kind:et.question?"boards":"lecture",_slug:null,_id:e.id,
-      _spec:inferSpecialty(e.topic, et, null),
+      _spec: resolvedSpec,
       _isPublic: !!e._isPublic, _shareToken: e._shareToken || null,
+      _isPinned: !!e._isPinned, _pinnedAt: e._pinnedAt || null,
+      _specialtyOverride: e._specialtyOverride || null,
       topic:e.topic||"",talk:et,savedAt:e.savedAt,specialty:"",generated_at:""});
   }
   // Mark items that have saved visuals (for the Visuals tab + thumbnail rendering)
@@ -6387,6 +6462,18 @@ function renderSaved(){
   // Search + export/import
   h+='<input id="savedSearchIn" value="'+esc(S.savedSearch)+'" placeholder="Search the library\u2026" style="width:100%;background:#fff;border:1.5px solid #e2dfe8;border-radius:12px;padding:11px 16px;font-size:14px;outline:none;margin-bottom:10px">';
   h+='<div style="display:flex;gap:8px;margin-bottom:14px;justify-content:flex-end"><button id="exportLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:7px 12px;color:#702b9d;font-size:11.5px;font-weight:600;cursor:pointer">\u2B07 Export</button><button id="importLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:7px 12px;color:#702b9d;font-size:11.5px;font-weight:600;cursor:pointer">\u2B06 Import</button><input type="file" id="importLibInput" accept=".json" style="display:none"></div>';
+  // Pattern A (Jenni 2026-06-09) — pinned items float to the top within each grouping.
+  // For the flat-list branch (active specialty filter), this orders the whole list.
+  // For the grouped branch, we re-sort each group below so pins stay within their specialty.
+  function _pinFirstSort(a,b){
+    var ap=a._isPinned?1:0, bp=b._isPinned?1:0;
+    if(ap!==bp) return bp-ap;                                              // pinned first
+    if(ap && bp){                                                          // both pinned → newest pin first
+      return new Date(b._pinnedAt||0) - new Date(a._pinnedAt||0);
+    }
+    return new Date(b.savedAt||b.generated_at||0) - new Date(a.savedAt||a.generated_at||0); // else newest first
+  }
+  filtered.sort(_pinFirstSort);
   // Group filtered items by specialty, render in canonical order (SPEC_ORDER).
   if(filtered.length===0){
     var emptyMsg = (all.length===0) ? "No items yet" : "No matches in "+(tab==="all"?"the library":tab);
@@ -6566,6 +6653,35 @@ function bindSaved(){
     }
     render();
   }});
+  // Pattern A (Jenni 2026-06-09) — Pin / Unpin from kebab
+  document.querySelectorAll(".libPinBtn, .libUnpinBtn").forEach(function(b){b.onclick=async function(e){
+    e.stopPropagation();
+    var id=b.dataset.id; if(!id) return;
+    S.libCardMenuId=null;
+    var makePinned = b.classList.contains("libPinBtn");
+    var res = await cloudSetPinned(id, makePinned);
+    if(!res){ alert("Couldn't update pin — check connection."); return }
+    render();
+  }});
+  // Pattern A — Change specialty: opens a small picker dialog
+  document.querySelectorAll(".libChangeSpecBtn").forEach(function(b){b.onclick=function(e){
+    e.stopPropagation();
+    var id=b.dataset.id; if(!id) return;
+    S.libCardMenuId=null;
+    S.specPickerForId=id;
+    render();
+  }});
+  // Specialty picker: actual specialty selection buttons (rendered when S.specPickerForId is set)
+  document.querySelectorAll(".specPickerBtn").forEach(function(b){b.onclick=async function(e){
+    e.stopPropagation();
+    var id=b.dataset.id; var spec=b.dataset.spec || null;
+    S.specPickerForId=null;
+    var res = await cloudSetSpecialtyOverride(id, spec);
+    if(!res){ alert("Couldn't update specialty — check connection."); return }
+    render();
+  }});
+  var sp1=document.getElementById("specPickerClose"); if(sp1) sp1.onclick=function(){S.specPickerForId=null; render();};
+  var sp2=document.getElementById("specPickerBackdrop"); if(sp2) sp2.onclick=function(){S.specPickerForId=null; render();};
   var el=document.getElementById("exportLibBtn");if(el)el.onclick=exportLibraryJSON;
   var il=document.getElementById("importLibBtn");if(il)il.onclick=function(){document.getElementById("importLibInput").click()};
   var ili=document.getElementById("importLibInput");if(ili)ili.onchange=function(e){if(e.target.files[0])importLibraryJSON(e.target.files[0])};
