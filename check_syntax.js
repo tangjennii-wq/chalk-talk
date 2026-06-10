@@ -21,19 +21,28 @@ if (!fs.existsSync(abs)) {
 const html = fs.readFileSync(abs, "utf8");
 
 // Match <script>…</script> blocks that do NOT have a src= attribute.
-// Captures the inner JS in group 1.
-const scriptRe = /<script(?![^>]*\bsrc\b)[^>]*>([\s\S]*?)<\/script>/g;
+// Captures the opening tag in group 1 and the inner JS in group 2 (so we can detect type=module).
+const scriptRe = /<script(?![^>]*\bsrc\b)([^>]*)>([\s\S]*?)<\/script>/g;
 
 let scriptCount = 0;
+let checkedCount = 0;
 let errorCount = 0;
 let m;
 
 while ((m = scriptRe.exec(html)) !== null) {
   scriptCount += 1;
-  const content = m[1];
+  const attrs = m[1] || "";
+  const content = m[2];
   const tagOpenLen = m[0].indexOf(content);
   const startOffset = m.index + tagOpenLen;
   const startLine = html.slice(0, startOffset).split("\n").length;
+
+  // Skip ES module scripts — `new Function()` can't parse `import` statements, but they're
+  // valid syntax in the browser. False positives are worse than no check for these.
+  if (/\btype\s*=\s*["']?module["']?/.test(attrs)) {
+    continue;
+  }
+  checkedCount += 1;
 
   try {
     // `new Function` parses the body without executing it. Throws SyntaxError on bad parse.
@@ -44,7 +53,6 @@ while ((m = scriptRe.exec(html)) !== null) {
     console.error("");
     console.error("✗ <script> block #" + scriptCount + " starts around line " + startLine);
     console.error("  " + err.message);
-    // V8 SyntaxErrors include a line/column hint in the stack — try to extract.
     const stackHint = (err.stack || "").split("\n").slice(0, 3).join("\n  ");
     if (stackHint) console.error("  " + stackHint);
   }
@@ -56,10 +64,12 @@ if (scriptCount === 0) {
 }
 
 if (errorCount === 0) {
-  console.log("✓ Parsed " + scriptCount + " inline script" + (scriptCount === 1 ? "" : "s") + " — no syntax errors in " + target);
+  const skipped = scriptCount - checkedCount;
+  const skipNote = skipped > 0 ? " (skipped " + skipped + " ES module" + (skipped === 1 ? "" : "s") + ")" : "";
+  console.log("✓ Parsed " + checkedCount + " inline script" + (checkedCount === 1 ? "" : "s") + " — no syntax errors in " + target + skipNote);
   process.exit(0);
 } else {
   console.error("");
-  console.error("Found " + errorCount + " syntax error" + (errorCount === 1 ? "" : "s") + " in " + scriptCount + " script block" + (scriptCount === 1 ? "" : "s") + ".");
+  console.error("Found " + errorCount + " syntax error" + (errorCount === 1 ? "" : "s") + " in " + checkedCount + " checked script block" + (checkedCount === 1 ? "" : "s") + ".");
   process.exit(1);
 }
