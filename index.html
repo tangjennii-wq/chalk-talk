@@ -4929,8 +4929,11 @@ async function callAPI(sys, content, maxTok, opts) {
         if (!payload || payload === "[DONE]") continue;
         try {
           var evt = JSON.parse(payload);
-          if (evt.type === "content_block_delta" && evt.delta) {
-            var t = evt.delta.text || evt.delta.partial_json || "";
+          if (evt.type === "content_block_delta" && evt.delta && evt.delta.type === "text_delta") {
+            // Tool calls (web_search) stream their arguments as input_json_delta / partial_json.
+            // Those are NOT assistant text; appending them corrupts the final JSON talk string.
+            // Only accumulate real text deltas. (Jenni 2026-06-10)
+            var t = evt.delta.text || "";
             if (t) {
               fullText += t;
               try { opts.onStreamChunk(t, fullText); } catch (e2) { /* never let UI errors kill the stream */ }
