@@ -2927,6 +2927,8 @@ var S = {
   landingFeatured:[],
   // Phase 5 sharing — origin metadata for a publicly-loaded talk so Save copy can stamp attribution
   sharedAuthorUserId:null, sharedOriginalTalkId:null,
+  // Streaming progress (Jenni 2026-06-09 #3) — populated by callAPI's onStreamChunk during gen
+  streamingTitle:"", streamingChars:0,
   // Collapsed share-info chip — toggles details on tap (Jenni 2026-06-08)
   shareInfoOpen:false,
   // Option B: cached depth variants for the currently-loaded saved talk. Enables instant depth swap.
@@ -4786,13 +4788,28 @@ function autoLayout(nodes,arrows){
 // ═══════════ API ═══════════
 async function callAPI(sys, content, maxTok, opts) {
   opts = opts || {};
+  // Anthropic prompt caching: wrap the (static, ~5000-token) system prompt in a single block with
+  // cache_control:ephemeral so subsequent calls within 5 min hit the cache. ~80% cheaper + faster
+  // on cache-hit. Strings are still accepted for backward compat; we only upgrade if sys is long
+  // enough to be worth caching (Anthropic minimum is 1024 tokens / ~4096 chars). (Jenni 2026-06-09)
+  var systemField;
+  if (typeof sys === "string" && sys.length >= 4096) {
+    systemField = [{ type: "text", text: sys, cache_control: { type: "ephemeral" } }];
+  } else {
+    systemField = sys;
+  }
   var body = {
     model: opts.model || MODEL,
     max_tokens: maxTok,
-    system: sys,
+    system: systemField,
     messages: [{role:"user", content: content}]
   };
   if (opts.tools) body.tools = opts.tools;
+  // Streaming mode (Jenni 2026-06-09 #3) — when opts.onStreamChunk is provided, request SSE from
+  // Anthropic, parse content_block_delta events as they arrive, and surface them via the callback
+  // so the loading UI can show progressive feedback. The Worker just pipes the response body
+  // through unchanged. Returns a payload shaped like the non-streaming response.
+  if (opts.onStreamChunk) body.stream = true;
   var useProxy = PROXY_CONFIG.enabled && PROXY_CONFIG.url && !S.useByok;
   var endpoint, headers;
   if (useProxy) {
@@ -4846,6 +4863,37 @@ async function callAPI(sys, content, maxTok, opts) {
     if (r.status === 408 || r.status === 504) throw new Error("Request timed out. Anthropic servers are slow right now — try again in a moment.");
     if (r.status >= 500) throw new Error("Anthropic API server error ("+r.status+"). Try again in a moment.");
     throw new Error((e.error&&e.error.message)||"API "+r.status)}
+  // Streaming path — parse SSE events from Anthropic, call onStreamChunk with each text delta.
+  if (opts.onStreamChunk && r.body && r.body.getReader) {
+    var reader = r.body.getReader();
+    var decoder = new TextDecoder();
+    var sseBuffer = "";
+    var fullText = "";
+    while (true) {
+      var step = await reader.read();
+      if (step.done) break;
+      sseBuffer += decoder.decode(step.value, { stream: true });
+      var lines = sseBuffer.split("\n");
+      sseBuffer = lines.pop() || ""; // keep incomplete last line for next iteration
+      for (var li = 0; li < lines.length; li++) {
+        var line = lines[li].trim();
+        if (!line.startsWith("data: ")) continue;
+        var payload = line.slice(6);
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          var evt = JSON.parse(payload);
+          if (evt.type === "content_block_delta" && evt.delta) {
+            var t = evt.delta.text || evt.delta.partial_json || "";
+            if (t) {
+              fullText += t;
+              try { opts.onStreamChunk(t, fullText); } catch (e2) { /* never let UI errors kill the stream */ }
+            }
+          }
+        } catch (parseErr) { /* incomplete chunk, ignore — next read will complete it */ }
+      }
+    }
+    return fullText;
+  }
   var d=await r.json();var txt="";for(var i=0;i<(d.content||[]).length;i++){if(d.content[i].type==="text")txt+=d.content[i].text}return txt;
 }
 
@@ -4980,7 +5028,7 @@ async function generate(){
       ? '\nUse web_search to verify the most current society guidance from high-quality sources only (society guideline pages, NEJM, JAMA, Lancet, PubMed) before writing. CRITICAL: Do NOT include any citation markup, XML tags, <cite> tags,  tags, or footnote markers in your output. The JSON values must be plain text only. If you want to attribute a fact, write it inline like "per KDIGO 2024" or "(EMPA-KIDNEY trial)" — never use XML/HTML tags.'
       : '\nRely on your training and the GUIDELINE REFERENCE CONTEXT above. Do not search the web.';
     var depthHint = S.depth === 'concise'
-      ? '\n\nDEPTH: CONCISE (~5-min summary). Keep this TIGHT. Same overall structure, but cut depth ~50%.\n- Each section: 3-4 BRIEF bullets (<=15 words each), not 5-7 long ones\n- Subtitle: <=10 words\n- Teaching pearl: 1 sentence, <=20 words\n- Board tip: 1 sentence, <=15 words\n- Visual memory card quadrants: <=8 words each, center: <=6 words\n- Summary points: <=20 words each, max 4 points\n- For boards style: vignette <=80 words, explanation 3-5 sentences, wrong explanations 1 sentence each, 3-4 board pearls (not 5), 3 teaching points <=20 words each.\nNO redundancy. No flowery language. Every word earns its place. Aim for clarity, not comprehensiveness.'
+      ? '\n\nDEPTH: CONCISE (~6-min summary, denser than a quick skim). Cover the substance — about 25% more content than a bare outline so each bullet teaches something. Same overall structure, ~30-40% reduction vs Detailed.\n- Each section: 4-5 substantive bullets (each <=22 words). Each bullet should make a teaching point, not just a header.\n- Subtitle: <=12 words\n- Teaching pearl: 1-2 sentences, up to ~30 words — leave room for the "why"\n- Board tip: 1 sentence, <=20 words\n- Visual memory card quadrants: <=10 words each, center: <=8 words\n- Summary points: 4-5 points, <=25 words each\n- For boards style: vignette <=110 words, explanation 4-6 sentences, wrong explanations 1-2 sentences each, 4-5 board pearls, 4 teaching points <=25 words each.\nNo redundancy. No flowery language. Each bullet should carry a fact a resident could not have guessed. Aim for "tight but actually informative," not "headline-only."'
       : '\n\nDEPTH: DETAILED (full 10-min talk). Go deep. 5-7 substantive bullets per section exploring mechanism, evidence, clinical application. Teaching pearls and board tips can be 1-2 sentences with nuance. Aim for the full 10-min chalk talk experience.';
     var refineHint = (S.refineContext && S.refineContext.trim()) ? "\n\nUSER CONTEXT/REFINEMENT: " + S.refineContext.trim() : "";
     // Inject NEJM/NephJC/CardioNerds-grounded trial context when the topic mentions a curated landmark trial.
@@ -5004,7 +5052,29 @@ async function generate(){
     // Tested Sonnet-first for Concise — quality regressed too much, not worth the ~15s saved.
     var mainModels = [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC];
     var maxTok=(S.style==="boards")?6144:4096;
+    // Streaming progress: surface the draft title as soon as it appears in the stream, and tick
+    // a char-count so the progress bar reflects actual generation activity. (Jenni 2026-06-09 #3)
+    var _streamLastRender = 0;
+    S.streamingTitle = ""; S.streamingChars = 0;
+    mainOpts.onStreamChunk = function(chunk, fullText){
+      S.streamingChars = fullText.length;
+      if (!S.streamingTitle) {
+        var titleMatch = fullText.match(/"title"\s*:\s*"([^"\\]+)/);
+        if (titleMatch) {
+          S.streamingTitle = titleMatch[1];
+          _streamLastRender = fullText.length;
+          if (typeof render === "function") render();
+        }
+      }
+      // Re-render every ~600 chars so the UI updates without thrashing
+      if (fullText.length - _streamLastRender > 600) {
+        _streamLastRender = fullText.length;
+        if (typeof render === "function") render();
+      }
+    };
     var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
+    // Clear streaming progress now that the main draft is in hand; critique/audit run after.
+    S.streamingTitle = ""; S.streamingChars = 0;
     var txt = mainResult.txt;
     if (mainResult.fellBack) console.info("Draft generated with " + mainResult.modelUsed + " (Opus was overloaded)");
     if(!txt.trim())throw new Error("Empty response");
@@ -6619,12 +6689,23 @@ function renderMain(){
   h+='<div class="compose-cta"><div class="compose-cta-inner">';
   if(S.loading){
     // Generating state — progress block + Cancel button (Jenni 2026-06-08)
+    // Streaming preview (Jenni 2026-06-09 #3) — once Anthropic emits the title in the stream, we
+    // swap "Generating talk" for "Drafting: <Title>" and use char-count to feed the progress bar.
     h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:18px;padding:18px 16px;text-align:center;margin-bottom:8px">';
-    h+='<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><span class="spinner" style="width:22px;height:22px;border-width:3px"></span><span style="font-size:14px;font-weight:600;color:var(--plum-deep)">Generating talk</span></div>';
+    var _genLabel = S.streamingTitle ? ("Drafting: "+S.streamingTitle) : "Generating talk";
+    h+='<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><span class="spinner" style="width:22px;height:22px;border-width:3px"></span><span style="font-size:14px;font-weight:600;color:var(--plum-deep)">'+esc(_genLabel)+'</span></div>';
     h+='<div style="font-size:12px;color:var(--ink);margin-bottom:6px">'+esc(S.loadMsg||"Working…")+'</div>';
-    h+='<div style="font-size:10.5px;color:var(--ink-muted);letter-spacing:0.04em;text-transform:uppercase">'+S.loadSec+'s elapsed</div>';
-    // Progress bar — caps at ~95% until done so user sees motion without overpromising
-    var _pct = Math.min(95, Math.round((S.loadSec/45)*100));
+    h+='<div style="font-size:10.5px;color:var(--ink-muted);letter-spacing:0.04em;text-transform:uppercase">'+S.loadSec+'s elapsed'+(S.streamingChars?(' · ~'+Math.round(S.streamingChars/5)+' words drafted'):'')+'</div>';
+    // Progress bar — uses streamed-char count when available (real activity); falls back to
+    // wall-clock interpolation. Both cap at ~95% until response completes.
+    var _pct;
+    if (S.streamingChars > 0) {
+      // Estimate based on expected output length (~4500 chars for Detailed lecture, ~2500 Concise)
+      var expectedLen = (S.style==="boards"?5500:(S.depth==="detailed"?4500:2500));
+      _pct = Math.min(95, Math.round((S.streamingChars / expectedLen) * 100));
+    } else {
+      _pct = Math.min(95, Math.round((S.loadSec/45)*100));
+    }
     h+='<div style="margin-top:10px;height:4px;background:var(--lavender-bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,var(--plum-rich),var(--plum-deep));transition:width 0.6s ease"></div></div>';
     h+='</div>';
 
