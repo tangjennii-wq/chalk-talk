@@ -116,7 +116,13 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 .tk-lightbox .tk-lightbox-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.25);color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 /* === Two-state UX (compose / generated) === */
 /* Capsule header (generated) */
-.tk-capsule{display:flex;align-items:center;gap:10px;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:9px 12px;margin-bottom:10px;font-size:12.5px;color:var(--ink);box-shadow:var(--shadow-soft)}
+.tk-capsule{display:flex;align-items:center;gap:10px;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:9px 12px;margin-bottom:10px;font-size:12.5px;color:var(--ink);box-shadow:var(--shadow-soft);position:sticky;top:8px;z-index:40;transition:padding .15s ease,box-shadow .15s ease,background .15s ease}
+/* Scrolled state — when body.scrolled-past-capsule, the capsule compresses so the talk content
+   gets more vertical real estate while still leaving Save/Edit/⋮ accessible. (Jenni 2026-06-09) */
+body.scrolled-past-capsule .tk-capsule{padding:5px 10px;background:rgba(254,253,250,0.96);backdrop-filter:saturate(140%) blur(6px);-webkit-backdrop-filter:saturate(140%) blur(6px);box-shadow:0 2px 12px rgba(20,10,28,0.06)}
+body.scrolled-past-capsule .tk-capsule #resetBtn{padding:5px 12px !important;font-size:11.5px !important}
+body.scrolled-past-capsule .tk-capsule .cap-actions button{padding:4px 6px}
+body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:none !important}
 .tk-capsule .cap-back{background:none;border:none;color:var(--ink-muted);font-size:16px;padding:2px 4px;cursor:pointer;flex-shrink:0;line-height:1}
 .tk-capsule .cap-meta{flex:1;min-width:0;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.005em}
 .tk-capsule .cap-meta b{font-weight:700;color:var(--ink)}
@@ -3433,9 +3439,10 @@ function renderLibCard(x){
   } else if(x._isPublic) {
     h += '<span style="background:#e6efff;color:#1e4a8a;border:1px solid #a8c4eb;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="People you sent the link to can view this">🔗 Link</span>';
   }
-  // Attribution chip — Phase 5 (Jenni 2026-06-08). Shown when this is a copy of someone else's talk.
+  // Attribution chip — Phase 5 (Jenni 2026-06-08). Now clickable: opens source curator's profile.
+  // (Jenni 2026-06-09: was static text; coworkers had no way to discover the original library.)
   if(x._sourceCuratorName){
-    h += '<span style="background:#f5edfa;color:#4a1a7a;border:1px solid #d4baea;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Saved a copy from '+esc(x._sourceCuratorName)+'\'s profile">📥 From: '+esc(x._sourceCuratorName)+'</span>';
+    h += '<button class="libAttribChip" data-id="'+esc(x._id||"")+'" type="button" title="View '+esc(x._sourceCuratorName)+'\'s profile" style="background:#f5edfa;color:#4a1a7a;border:1px solid #d4baea;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;cursor:pointer;font-family:inherit">📥 From: '+esc(x._sourceCuratorName)+'</button>';
   }
   // Visuals badge: prefer exact count (local talks with full savedVisuals data); else just show 🖼 (cloud cards).
   if(visuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼 '+visuals.length+'</span>';
@@ -4520,6 +4527,23 @@ document.addEventListener("click", function(e){
   }
 });
 document.addEventListener("keydown", function(e){ if (e.key === "Escape") hideCitePop(); });
+
+// Sticky capsule scroll listener (Jenni 2026-06-09).
+// Toggles a body class once user has scrolled past the capsule's natural top position, so the
+// capsule visually compresses (less padding, hidden labels) — talk content gets more focus.
+// Uses requestAnimationFrame for cheap throttling.
+(function(){
+  var ticking = false;
+  function update(){
+    var threshold = 100; // px scrolled before compress kicks in
+    var scrolled = (window.scrollY || window.pageYOffset || 0) > threshold;
+    document.body.classList.toggle("scrolled-past-capsule", scrolled);
+    ticking = false;
+  }
+  window.addEventListener("scroll", function(){
+    if(!ticking){ requestAnimationFrame(update); ticking = true; }
+  }, { passive: true });
+})();
 
 
 function stripCitations(str) {
@@ -6245,6 +6269,15 @@ function bindSaved(){
     var id=b.dataset.id;
     if(id) openShareModal(id);
   }});
+  // Attribution chip click — opens the source curator's profile. (Jenni 2026-06-09)
+  // For now this is hardcoded to #showcase (Jenni is the only curator). Phase 3+4 will route
+  // to /u/<handle> based on the source curator's handle.
+  document.querySelectorAll(".libAttribChip").forEach(function(b){b.onclick=function(e){
+    e.stopPropagation(); // don't trigger the underlying card-open click
+    S.showSaved=false; S.showcase=true; S.showcaseLoading=true; S.showcaseTalks=[];
+    render();
+    loadShowcaseTalks().then(function(rows){S.showcaseTalks=rows;S.showcaseLoading=false;render()});
+  }});
   // Copy link — for already-public talks, skip the modal and just copy.
   document.querySelectorAll(".libCopyLinkBtn").forEach(function(b){b.onclick=function(){
     S.libCardMenuId=null;
@@ -6412,11 +6445,11 @@ function renderMain(){
     h+='<details class="howit" id="howitDetails"'+(S.howitOpen?' open':'')+'>';
     h+='<summary><span>✦ How it works · 10-min evidence-based teaching</span><span class="howit-caret">⌄</span></summary>';
     h+='<div class="howit-body">';
-    h+='<div class="howit-step"><span class="howit-num">1</span><div><b>You enter a topic.</b> We retrieve matching evidence from PubMed — landmark trials, meta-analyses, and recent reviews — using semantic search.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>Claude drafts the talk</b> grounded in those retrieved papers, with inline PMID citations next to every clinical fact. Optionally cross-checks against current literature on the open web (allowlisted medical domains only).</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">3</span><div><b>A second model peer-reviews</b> the draft before you see it. You get back a 5–10 min teaching outline with the PMIDs that ground each fact.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">4</span><div><b>Three views of the same talk:</b> read the full <i>Overview</i>, switch to <i>📊 Slides</i> for a one-screen visual poster you can screenshot and share with co-residents, or open <i>🎧 Audio</i> to generate a narrated version for commute review.</div></div>';
-    h+='<div class="howit-note">You can refine after generating using <i>Ask to revise lesson</i>. Your topic is sent to Anthropic via a Cloudflare proxy — no logging beyond standard request metadata.</div>';
+    h+='<div class="howit-step"><span class="howit-num">1</span><div><b>You enter a topic.</b> We pull matching evidence from PubMed and current society guidelines.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>An AI drafts the talk</b> with inline citations for every clinical claim. Optional: cross-checks against current literature on the open web.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">3</span><div><b>A second AI double-checks</b> the draft for errors, outdated guidelines, and drug-name mistakes before you see it.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">4</span><div><b>Three ways to view it:</b> the full <i>Overview</i>, a one-screen <i>📊 Slides</i> poster you can screenshot, or commute-friendly <i>🎧 Audio</i>.</div></div>';
+    h+='<div class="howit-note">Refine anytime via <i>Ask to revise lesson</i>. Your library stays private until you choose to share.</div>';
     h+='</div>';
     h+='</details>';
   }
