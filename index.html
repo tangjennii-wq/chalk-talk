@@ -6789,9 +6789,7 @@ function renderMain(){
     h+='</div>';
 
     // === 2x2 mode grid ===
-    // Visual tab consolidated into Overview (Jenni 2026-06-09 — it lives in the lecture now,
-    // not in its own tab). Audio also re-evaluated but kept as a tab for now.
-    var MODES=isBQ?[["overview","📄","Overview"],["audio","🔉","Audio"]]:[["overview","📄","Overview"],["slides","📊","Slides"],["audio","🔉","Audio"]];
+    var MODES=isBQ?[["overview","📄","Overview"],["audio","🔉","Audio"]]:[["overview","📄","Overview"],["slides","📊","Slides"],["visual","🖼","Visual"],["audio","🔉","Audio"]];
     h+='<div class="mode-grid">';
     for(var mi=0;mi<MODES.length;mi++){
       var m2=MODES[mi];
@@ -7156,17 +7154,9 @@ function renderMain(){
     }
 
     // ---------------- VISUAL TAB ----------------
-    // Visual aid — now lives at the top of Overview (Jenni 2026-06-09). Collapsible to keep the
-    // outline as the primary content; auto-expanded if a visual has been generated already.
-    if(S.tab==="overview"&&!isBQ){
-      var _vaOpen = !!S.visualOpen || !!(S.dg && S.dg.imgB64);
-      h+='<details class="va-card" '+(_vaOpen?'open':'')+' style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)">';
-      h+='<summary style="list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:10px;font-family:inherit">';
-      h+='<span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🎨</span>';
-      h+='<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700;color:var(--ink)">Visual aid</div><div style="font-size:11px;color:var(--ink-muted);margin-top:1px">'+(S.dg&&S.dg.imgB64?'Generated · tap to view / regenerate':'Generate an AI illustration for this talk')+'</div></div>';
-      h+='<span style="color:var(--ink-soft);font-size:12px">⌄</span>';
-      h+='</summary>';
-      h+='<div style="padding:0 14px 14px">';
+    if(S.tab==="visual"&&!isBQ){
+      h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)">';
+      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px">🎨</span><div><div style="font-size:14px;font-weight:700;color:var(--ink)">Visual Aid</div><div style="font-size:11px;color:var(--ink-muted)">'+(S.dgMode==="ai"?(S.dg&&S.dg.imgB64?"Generated with Nano Banana Pro":"Gemini Nano Banana Pro"):(S.dg&&S.dg.imgB64?"Generated with gpt-image-1.5":"OpenAI gpt-image-1.5"))+'</div></div></div>';
       // Flowchart (SVG) mode removed — autoLayout produced overlapping/clipped output. Only raster modes remain.
       // Guard: if S.dgMode is stuck on "svg" from a previous session, fall back to "ai".
       if(S.dgMode==="svg")S.dgMode="ai";
@@ -7196,7 +7186,7 @@ function renderMain(){
         h+='</div>';
       }
       else{h+='<button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:13px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer">'+(S.dgBusy?"Generating…":"✨ Generate Visual")+'</button>'}
-      h+='</div></details>';
+      h+='</div>';
     }
 
     // ---------------- AUDIO TAB ----------------
