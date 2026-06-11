@@ -3492,12 +3492,14 @@ function renderLibCard(x){
   h += '<span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;letter-spacing:0.02em">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">✨</span>';
   if(isShowcase) h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Featured teaching sample from Jenni">✨ Sample</span>';
-  // Privacy badge — 3-color system: blue = link-only, gold = on profile, no badge = private.
-  // (Jenni 2026-06-08 Phase 1 — replaces the older 🌐 Public / ⭐ Featured pair.)
-  if(x._isFeatured) {
-    h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="On your public profile">⭐ On profile</span>';
-  } else if(x._isPublic) {
-    h += '<span style="background:#e6efff;color:#1e4a8a;border:1px solid #a8c4eb;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="People you sent the link to can view this">🔗 Link</span>';
+  // Privacy badge — only meaningful when the viewer OWNS the talk (saved branch + logged in).
+  // For showcase pull-ins or incognito browsing, "On profile" reads as the viewer's profile, which
+  // is misleading. (Jenni 2026-06-10) Unified: any public share now shows ⭐ On profile — Link tier
+  // is still a thing under the hood, but the badge no longer distinguishes them, because Jenni's
+  // mental model is "if I made it public, it's on my profile."
+  var _isMyOwnTalk = !!(S.user && x._source === "saved");
+  if(_isMyOwnTalk && (x._isFeatured || x._isPublic)) {
+    h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="On your public profile (or link-shared — either way, publicly viewable)">⭐ On profile</span>';
   }
   // Attribution chip — Phase 5 (Jenni 2026-06-08). Now clickable: opens source curator's profile.
   // (Jenni 2026-06-09: was static text; coworkers had no way to discover the original library.)
@@ -4801,10 +4803,14 @@ function fixJSON(raw) {
   // Truncate at the LAST `}` if there's trailing text after the JSON body (common when the
   // model adds a postscript paragraph after the valid object). Use balanced-depth walk so we
   // pick the OUTER closing brace, not a nested one inside the talk body. (Jenni 2026-06-09)
-  var lastTopLevelClose = (function(){
+  // Walk forward to find the first `{` or `[` and forward-walk depth to its matching close.
+  // Returns {start, end} or null if no balanced structure found. (Jenni 2026-06-10 fix: previously
+  // the truncated substring kept the preamble — `t.substring(0, close+1)` — which still failed parse
+  // when the model wrote "Looking at the references...\n\n{...}" before the JSON.)
+  var braceRange = (function(){
     var startOpen = -1;
     for (var i = 0; i < t.length; i++) { if (t[i] === "{" || t[i] === "[") { startOpen = i; break; } }
-    if (startOpen < 0) return -1;
+    if (startOpen < 0) return null;
     var depth = 0, inStr = false, esc = false, lastClose = -1;
     var openCh = t[startOpen], closeCh = (openCh==="{"?"}":"]");
     for (var j = startOpen; j < t.length; j++) {
@@ -4822,15 +4828,20 @@ function fixJSON(raw) {
         if (depth === 0) lastClose = j;
       }
     }
-    return lastClose;
+    return { start: startOpen, end: lastClose };
   })();
-  if (lastTopLevelClose > 0 && lastTopLevelClose < t.length - 1) {
-    // There's content after the matching outer close — truncate and retry parse.
-    var truncated = t.substring(0, lastTopLevelClose + 1);
-    try { JSON.parse(truncated); return truncated; } catch (eTrunc) {
+  if (braceRange && braceRange.end > braceRange.start) {
+    // Slice from the open brace to the matching close — drops preamble AND any postscript.
+    var sliced = t.substring(braceRange.start, braceRange.end + 1);
+    try { JSON.parse(sliced); return sliced; } catch (eTrunc) {
       // Fall through to legacy heuristics on failure
     }
   }
+  // Also strip leading preamble before the first `{`/`[` so the legacy fallback below stops
+  // erroring with "Unexpected token 'L'" / "Unexpected token 'H'" / etc.
+  var firstBrace = -1;
+  for (var fb = 0; fb < t.length; fb++) { if (t[fb] === "{" || t[fb] === "[") { firstBrace = fb; break; } }
+  if (firstBrace > 0) t = t.substring(firstBrace);
   if (!t.endsWith("}")) { var idx = t.lastIndexOf("}"); if (idx > 0) t = t.substring(0, idx + 1); }
   try { return JSON.parse(t), t; } catch(e) {}
   var tryPoints = [];
@@ -5147,7 +5158,7 @@ async function generate(){
     var refineHint = (S.refineContext && S.refineContext.trim()) ? "\n\nUSER CONTEXT/REFINEMENT: " + S.refineContext.trim() : "";
     // Inject NEJM/NephJC/CardioNerds-grounded trial context when the topic mentions a curated landmark trial.
     var trialContext = buildTrialExpansionContext(S.topic, S.refineContext);
-    var uc=[{type:"text",text:'Create content on: "'+S.topic+'"' + refineHint + guidelineContext + trialContext + ragContext + depthHint + searchHint + '\nONLY JSON. Plain text values, no XML tags, no citation markup.'}].concat(buildReferenceParts(S.files));
+    var uc=[{type:"text",text:'Create content on: "'+S.topic+'"' + refineHint + guidelineContext + trialContext + ragContext + depthHint + searchHint + '\nONLY JSON. Plain text values, no XML tags, no citation markup.\nCRITICAL: Your response MUST start with { and end with }. Do NOT write any preamble like "Looking at the references" or "Here is the talk" — start immediately with the opening brace. Any text before { will break the parser.'}].concat(buildReferenceParts(S.files));
     var sys=S.style==="boards"?BOARDS_PROMPT:LECTURE_PROMPT;
 
     // Step 1: Main generation with model fallback chain (Opus -> Sonnet -> Haiku)
@@ -5377,7 +5388,7 @@ function getImageProxyURL(){
 }
 async function genDiagram(){
   if(!S.talk||S.dgBusy)return;
-  S.dgBusy=true;S.dgErr="";render();
+  S.dgBusy=true;S.dgErr="";S.visualStale=false;render();
   var parts=["Title: "+S.talk.title];
   if(S.talk.sections)parts.push("Key concepts: "+S.talk.sections.map(function(s){return s.heading}).join(", "));
   if(S.talk.board_pearls)parts.push("Pearls: "+S.talk.board_pearls.slice(0,4).join("; "));
@@ -5553,8 +5564,15 @@ async function weaveRevision(userMsg){
     "Return the COMPLETE updated talk JSON in the EXACT same schema. ONLY JSON, no commentary, no markdown fences.";
   // Inject trial expansions if the user's refine references a curated landmark trial
   var weaveTrialContext = buildTrialExpansionContext(userMsg, "");
-  var content = "USER REQUEST: " + userMsg + weaveTrialContext + "\n\nEXISTING TALK JSON (preserve this, weave in additions):\n" + existingJson;
-  var txt = await callAPI(sys, content, 8192);
+  // Pass uploaded refs into the refine call (Jenni 2026-06-10). Previously weaveRevision saw
+  // only the user message + existing talk JSON — uploaded PDFs/notes were silently dropped, even
+  // though the system prompt instructed the model to treat them as primary sources. Now content is
+  // an array of parts (text + ref docs/images) so the refs actually reach Claude.
+  var contentParts = [{
+    type: "text",
+    text: "USER REQUEST: " + userMsg + weaveTrialContext + "\n\nEXISTING TALK JSON (preserve this, weave in additions):\n" + existingJson
+  }].concat(buildReferenceParts(S.files));
+  var txt = await callAPI(sys, contentParts, 8192);
   var parsed = JSON.parse(fixJSON(txt));
   parsed = deepCleanCitations(parsed);
   if(typeof pruneFakeReferences === "function") parsed = pruneFakeReferences(parsed);
@@ -5605,7 +5623,12 @@ async function sendChat(){
         if(updated.note) delete updated.note;
         S.talk = updated;
         // Don't reset section index / mode \u2014 user stays where they were in the talk.
-        S.dg = null; S.dgErr = ""; S.podScript = ""; // visuals/podcast may need refresh after content change
+        // Visual auto-stale (Jenni 2026-06-10): keep the existing image but flag it stale so the
+        // user sees a banner offering one-tap regenerate. Better than silently nuking the visual,
+        // which forced a regenerate even when content didn't materially affect the image.
+        if(S.dg && S.dg.imgB64) S.visualStale = true;
+        else { S.dg = null; S.dgErr = ""; }
+        S.podScript = ""; // podcast still re-renders on refresh (cheap to regenerate)
         S.talkIsSaved = false; // edits made \u2014 unsaved again
         S.msgs.push({r:"a",t:"\u2713 Updated \u2014 only what was new was added, in the relevant section. Existing content preserved. Say \"rewrite\" if you want a full regenerate instead."});
       }
@@ -5896,7 +5919,9 @@ function resetAll(){
   // Reset per-talk state + transient UI flags. Auth/profile/cloud/library survives — session-scoped.
   S.talk=null; S.topic=""; S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview";
   S.loadedTalkId=null; S.talkIsSaved=false;
-  S.dg=null; S.dgErr=""; S.dgBusy=false;
+  // Uploaded references are per-talk too — they leaked into the next talk before. (Jenni 2026-06-10)
+  S.files=[];
+  S.dg=null; S.dgErr=""; S.dgBusy=false; S.visualStale=false;
   S.msgs=[]; S.error="";
   S.podScript=""; S.podBusy=false; S.podPlaying=false; S.podShow=false;
   S.showAns=false; S.userPick=""; S.reviseIn="";
@@ -6358,10 +6383,16 @@ function renderSaved(){
   var showcaseSamples=(S.landingFeatured||[]).filter(function(row){
     return row && row.share_token && !savedCloudIds[row.id];
   });
-  var samples=((typeof SAMPLES!=="undefined"&&SAMPLES)?SAMPLES:[]).filter(function(s){
-    var st=s && (s.talk_concise || s.talk || s.talk_detailed || {});
-    return !!st.question;
-  });
+  // For incognito visitors viewing Jenni's library (no S.user), exclude the static Boards SAMPLES.
+  // They're generic onboarding cards, not Jenni's shared work — counting them inflates the library
+  // total and clutters her public-facing collection. Logged-in users still see them as onboarding.
+  // (Jenni 2026-06-10)
+  var samples = S.user
+    ? ((typeof SAMPLES!=="undefined"&&SAMPLES)?SAMPLES:[]).filter(function(s){
+        var st=s && (s.talk_concise || s.talk || s.talk_detailed || {});
+        return !!st.question;
+      })
+    : [];
   // Normalize both into a single shape with _kind ("lecture"|"boards"), _source ("sample"|"saved"),
   // _spec (specialty), and _hasBoth (true if sample has both concise+detailed cached versions).
   var all=[];
@@ -6724,10 +6755,14 @@ function renderMain(){
   // Library — saved talks + Jenni's featured showcase lectures + pre-made Boards samples.
   // Showcase talk cards are lightweight pointers; the full talk loads only when opened.
   // (Jenni 2026-06-09)
-  var boardSampleCount = ((typeof SAMPLES!=="undefined"&&SAMPLES)?SAMPLES:[]).filter(function(s){
-    var st=s && (s.talk_concise || s.talk || s.talk_detailed || {});
-    return !!st.question;
-  }).length;
+  // For incognito visitors: don't include Boards SAMPLES in the library count (matches the
+  // exclusion in getDisplayLibrary). Logged-in users still see them counted. (Jenni 2026-06-10)
+  var boardSampleCount = S.user
+    ? ((typeof SAMPLES!=="undefined"&&SAMPLES)?SAMPLES:[]).filter(function(s){
+        var st=s && (s.talk_concise || s.talk || s.talk_detailed || {});
+        return !!st.question;
+      }).length
+    : 0;
   var savedCloudIdsForCount={};
   (getDisplayLibrary()||[]).forEach(function(e){ if(e && e.id) savedCloudIdsForCount[e.id]=true; });
   var showcaseSampleCount=(S.landingFeatured||[]).filter(function(row){return row && row.share_token && !savedCloudIdsForCount[row.id]}).length;
@@ -7491,7 +7526,12 @@ function renderMain(){
       }
       if(S.dgErr)h+='<div style="color:#c0392b;font-size:11.5px;margin-bottom:10px">'+esc(S.dgErr)+'</div>';
       if(S.dg&&S.dg.imgB64){
-        h+='<div style="background:#fff;border-radius:10px;padding:6px;border:1px solid var(--line);margin-bottom:10px;cursor:zoom-in" id="lightboxOpenBtn"><img src="data:image/png;base64,'+S.dg.imgB64+'" style="width:100%;height:auto;display:block;border-radius:7px"/></div>';
+        // Visual auto-stale banner (Jenni 2026-06-10) — set by refine when talk content changed.
+        // One-tap Regenerate (same as the ↻ button below) clears the flag automatically.
+        if(S.visualStale){
+          h+='<div style="background:#fff7e0;border:1px solid #f0d59a;border-radius:10px;padding:9px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:12px;color:#7a5b1a"><span style="font-size:14px;flex-shrink:0">⚠️</span><div style="flex:1;line-height:1.45"><b>Visual may be stale.</b> Talk content changed since this image was generated — regenerate to match.</div><button id="dgStaleRegenBtn" '+(S.dgBusy?"disabled":"")+' style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:8px;padding:6px 11px;color:#fff;font-size:11.5px;font-weight:600;cursor:pointer;flex-shrink:0">↻ Regenerate</button></div>';
+        }
+        h+='<div style="background:#fff;border-radius:10px;padding:6px;border:1px solid var(--line);margin-bottom:10px;cursor:zoom-in" id="lightboxOpenBtn"><img src="data:image/png;base64,'+S.dg.imgB64+'" style="width:100%;height:auto;display:block;border-radius:7px'+(S.visualStale?';opacity:0.85':'')+'"/></div>';
         h+='<button id="lightboxOpenBtn2" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:6px">🔍 Open full image</button>';
         // Check if THIS exact image is already saved (compare by first 60 chars of base64 — unique enough)
         var _savedVis = (S.talk && S.talk.savedVisuals) || [];
@@ -8021,6 +8061,8 @@ function bindMain(){
 
   // ─── Visual / diagram generator ────────────────────────────────────────
   var db=document.getElementById("dgBtn");if(db)db.onclick=genDiagram;
+  // Stale-visual banner Regenerate button (Jenni 2026-06-10) — same action as ↻ Regenerate.
+  var dsb=document.getElementById("dgStaleRegenBtn");if(dsb)dsb.onclick=genDiagram;
   // Save the current visual to the lesson record + library. Persists with the talk.
   var dsi=document.getElementById("dgSaveImgBtn");if(dsi)dsi.onclick=function(){
     if(!S.talk||!S.dg||!S.dg.imgB64)return;
