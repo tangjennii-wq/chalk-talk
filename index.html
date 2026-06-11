@@ -3391,8 +3391,15 @@ async function cloudLoadTalk(id){
 
 // Helper: returns the active library array (cloud if logged in, else localStorage)
 // Canonical specialty taxonomy for the library — keep in sync with SPEC_ICONS below.
-var SPEC_ORDER = ["Cardiovascular","Pulmonary","Nephrology","Gastroenterology","Hepatology","Endocrinology","Hematology","Oncology","Infectious Disease","Rheumatology","Neurology","Allergy/Immunology","Dermatology","Psychiatry","Geriatrics","Other"];
-var SPEC_ICONS = {"Cardiovascular":"♥","Pulmonary":"🫁","Nephrology":"💧","Gastroenterology":"🍃","Hepatology":"🟤","Endocrinology":"⚪","Hematology":"🩸","Oncology":"🎗","Infectious Disease":"⚕","Rheumatology":"✦","Neurology":"⚡","Allergy/Immunology":"🌼","Dermatology":"☁","Psychiatry":"🧠","Geriatrics":"🕰","Other":"📚"};
+var SPEC_ORDER = ["Cardiovascular","Pulmonary","Nephrology","Gastroenterology","Hepatology","Endocrinology","Heme/Onc","Infectious Disease","Rheumatology","Neurology","Allergy/Immunology","Dermatology","Psychiatry","Geriatrics","Other"];
+var SPEC_ICONS = {"Cardiovascular":"♥","Pulmonary":"🫁","Nephrology":"💧","Gastroenterology":"🍃","Hepatology":"🟤","Endocrinology":"⚪","Heme/Onc":"🩸","Infectious Disease":"⚕","Rheumatology":"✦","Neurology":"⚡","Allergy/Immunology":"🌼","Dermatology":"☁","Psychiatry":"🧠","Geriatrics":"🕰","Other":"📚"};
+// Legacy specialty values (rows saved before 2026-06-10 had "Hematology" or "Oncology" as separate specs).
+// Normalize at read time so old data still groups correctly without a backfill migration.
+function normalizeSpec(s){
+  if(!s) return s;
+  if(s === "Hematology" || s === "Oncology") return "Heme/Onc";
+  return s;
+}
 
 // Infer specialty from topic text + talk metadata. Samples already carry .specialty;
 // saved talks usually don't, so we keyword-match. First-match-wins per SPEC_ORDER.
