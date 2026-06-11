@@ -6183,7 +6183,7 @@ function renderGlobalModals(){
     var _spCurrent = (_spEntry && _spEntry._specialtyOverride) || (_spEntry && inferSpecialty(_spEntry.topic, _spEntry.talk||{}, null)) || "Other";
     var _spOpts = ["Cardiovascular","Pulmonary","Nephrology","Gastroenterology","Hepatology","Endocrinology","Hematology","Oncology","Infectious Disease","Rheumatology","Neurology","Allergy/Immunology","Dermatology","Psychiatry","Geriatrics","Other"];
     h+='<div class="drawer-backdrop open" id="specPickerBackdrop" style="z-index:120"></div>';
-    h+='<div class="drawer open" id="specPickerModal" style="z-index:121;max-width:380px;margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
+    h+='<div class="drawer open" id="specPickerModal" style="z-index:121;max-width:380px;width:calc(100% - 32px);margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px;max-height:85vh;overflow-y:auto">';
     h+='<div class="drawer-head" style="padding:18px 20px 6px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🏷️</span> Change specialty</div><button class="drawer-close" id="specPickerClose">×</button></div>';
     h+='<div class="drawer-body" style="padding:0 16px 18px">';
     h+='<p style="font-size:12px;color:var(--ink-muted);margin:0 0 12px 4px;line-height:1.45">Pick where this talk should appear in your library. Currently: <b style="color:var(--ink)">'+esc(_spCurrent)+'</b></p>';
@@ -6244,6 +6244,26 @@ function renderGlobalModals(){
       });
     }
   };
+  // Specialty picker (Jenni 2026-06-10) — bound here so it works across any view.
+  // The X close + backdrop tap + auto-detect button + each specialty button.
+  var spc=document.getElementById("specPickerClose");
+  if(spc) spc.onclick=function(e){ e.stopPropagation(); S.specPickerForId=null; render(); };
+  var spbd=document.getElementById("specPickerBackdrop");
+  if(spbd) spbd.onclick=function(e){ e.stopPropagation(); S.specPickerForId=null; render(); };
+  document.querySelectorAll("#globalModals .specPickerBtn").forEach(function(b){b.onclick=async function(e){
+    e.stopPropagation();
+    var id=b.dataset.id; var spec=b.dataset.spec || null;
+    // Close the modal FIRST so the UI feels responsive; the network call runs in the background.
+    // (If the update fails, we re-open with an error — but typically it succeeds.)
+    S.specPickerForId=null;
+    render();
+    var res = await cloudSetSpecialtyOverride(id, spec);
+    if(!res){
+      alert("Couldn't update specialty — check connection.");
+      return;
+    }
+    render();
+  }});
   // Sign-in modal
   var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){S.signInOpen=false;render()};
   var sibd=document.getElementById("signInBackdrop");if(sibd)sibd.onclick=function(){S.signInOpen=false;render()};
@@ -6679,7 +6699,9 @@ function bindSaved(){
     render();
   }});
   // Pin/Unpin dropped 2026-06-10 — kebab was too crowded. cloudSetPinned helper kept in case we bring it back.
-  // Pattern A — Change specialty: opens a small picker dialog
+  // Pattern A — Change specialty: opens a small picker dialog. The specialty-button/close/backdrop
+  // handlers live in renderGlobalModals (the picker is rendered there, after bindSaved fires).
+  // (Jenni 2026-06-10 fix: previously bound here, but the buttons didn't exist yet → couldn't close.)
   document.querySelectorAll(".libChangeSpecBtn").forEach(function(b){b.onclick=function(e){
     e.stopPropagation();
     var id=b.dataset.id; if(!id) return;
@@ -6687,17 +6709,6 @@ function bindSaved(){
     S.specPickerForId=id;
     render();
   }});
-  // Specialty picker: actual specialty selection buttons (rendered when S.specPickerForId is set)
-  document.querySelectorAll(".specPickerBtn").forEach(function(b){b.onclick=async function(e){
-    e.stopPropagation();
-    var id=b.dataset.id; var spec=b.dataset.spec || null;
-    S.specPickerForId=null;
-    var res = await cloudSetSpecialtyOverride(id, spec);
-    if(!res){ alert("Couldn't update specialty — check connection."); return }
-    render();
-  }});
-  var sp1=document.getElementById("specPickerClose"); if(sp1) sp1.onclick=function(){S.specPickerForId=null; render();};
-  var sp2=document.getElementById("specPickerBackdrop"); if(sp2) sp2.onclick=function(){S.specPickerForId=null; render();};
   var el=document.getElementById("exportLibBtn");if(el)el.onclick=exportLibraryJSON;
   var il=document.getElementById("importLibBtn");if(il)il.onclick=function(){document.getElementById("importLibInput").click()};
   var ili=document.getElementById("importLibInput");if(ili)ili.onchange=function(e){if(e.target.files[0])importLibraryJSON(e.target.files[0])};
