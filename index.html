@@ -3419,8 +3419,7 @@ function inferSpecialty(topic, talk, fallback){
     ["Gastroenterology", /\b(\bgi\b|gut|ibd|crohn|ulcerative colitis|ibs|gerd|peptic ulcer|pancrea|gallbladder|cholecyst|esophag|colon|diverticul|gi bleed|pancreatitis)\b/],
     ["Hepatology", /\b(liver|cirrhosis|hepatitis|fatty liver|nash|masld|ascites|hepatic encephalopathy|portal hyper)\b/],
     ["Endocrinology", /\b(diabetes|t1dm|t2dm|dka|hhs|thyroid|hyperthyroid|hypothyroid|adrenal|cortisol|cushing|addison|parathyroid|pituitary|prolactin|acromegal|insulin)\b/],
-    ["Hematology", /\b(anemia|sickle|thrombocyt|leukemia|lymphoma|myeloma|dvt|vte|venous thromboembolism|anticoag|bleeding|tma|ttp|hus|itp|coag|platelet|warfarin|doac|hemophilia|porphyria)\b/],
-    ["Oncology", /\b(cancer|tumor|malignan|chemotherap|neoplasm|sarcoma|carcinoma|melanoma|metastas)\b/],
+    ["Heme/Onc", /\b(anemia|sickle|thrombocyt|leukemia|lymphoma|myeloma|dvt|vte|venous thromboembolism|anticoag|bleeding|tma|ttp|hus|itp|coag|platelet|warfarin|doac|hemophilia|porphyria|cancer|tumor|malignan|chemotherap|neoplasm|sarcoma|carcinoma|melanoma|metastas|immune checkpoint|irae|chemo|onco)\b/],
     ["Infectious Disease", /\b(hiv|sepsis|abscess|cellulitis|uti|meningitis|tuberculosis|\btb\b|malaria|fever of unknown|hcv|hbv|syphilis|gonorrhea|mrsa|candida|fungal|encephalitis|osteomyelitis|prosthetic joint infection|stis?\b)\b/],
     ["Rheumatology", /\b(rheumatoid|lupus|sle|gout|pseudogout|ana\b|vasculitis|sjogren|scleroderma|ankylosing|psoriatic|polymyalgia|pmr|fibromyalgia|giant cell|temporal arteritis|gpa)\b/],
     ["Neurology", /\b(stroke|seizure|epilepsy|neuropath|dementia|alzheimer|parkinson|multiple sclerosis|\bms\b|migraine|headache|myasthenia|guillain|tremor|delirium)\b/],
@@ -5563,6 +5562,10 @@ async function weaveRevision(userMsg){
   var nextRefId = ((S.talk.references||[]).reduce(function(m,r){return Math.max(m,parseInt(r.id)||0)},0)+1);
 
   var sys = "You are refining an existing chalk talk for an internal medicine educator. " +
+    "ITERATIVE REFINEMENT IS THE NORM \u2014 users will refine this talk many times over days/weeks " +
+    "as they pull in new references, MKSAP excerpts, society guideline updates, and their own clinical " +
+    "experience. Every educator has their own teaching style; your job is to RESPECT what they've " +
+    "already built and ADD to it. " +
     "The user wants to ADD content. Your job is to return a JSON PATCH describing the additions. " +
     "You CANNOT modify or remove existing content through this path \u2014 JS code merges your patch into " +
     "the existing talk, and the existing content is preserved exactly as-is.\n\n" +
@@ -5591,9 +5594,12 @@ async function weaveRevision(userMsg){
     type: "text",
     text: "USER REQUEST: " + userMsg + weaveTrialContext + "\n\nEXISTING TALK (for context — DO NOT echo this back, just return the patch):\n" + existingJson
   }].concat(buildReferenceParts(S.files));
-  // Patches are small (~1500 tokens for generous additions), but cap high for safety.
-  // (Jenni 2026-06-10: lifted the 8192 ceiling that was silently truncating talks.)
-  var txt = await callAPI(sys, contentParts, 16384);
+  // Patches are small (~1500 tokens for generous additions), but cap as high as Sonnet supports
+  // so a verbose addition (e.g., a long PDF of refs the user wants fully woven in) never truncates.
+  // Also routes refine through Sonnet (was Haiku via default MODEL) — refine is a context-heavy
+  // task where Haiku was occasionally dropping bullets. Worth ~$0.02/refine for the bump in
+  // reliability. (Jenni 2026-06-10 "increase the cap for refine".)
+  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6" });
   var patch = JSON.parse(fixJSON(txt));
   // Returns the patch — caller applies it via applyWeavePatch().
   return { kind: "patch", patch: patch };
@@ -6271,8 +6277,8 @@ function renderGlobalModals(){
   // Small dialog with the IM specialty list. Click one → cloudSetSpecialtyOverride.
   if(S.specPickerForId){
     var _spEntry = (getDisplayLibrary()||[]).find(function(x){return x.id===S.specPickerForId});
-    var _spCurrent = (_spEntry && _spEntry._specialtyOverride) || (_spEntry && inferSpecialty(_spEntry.topic, _spEntry.talk||{}, null)) || "Other";
-    var _spOpts = ["Cardiovascular","Pulmonary","Nephrology","Gastroenterology","Hepatology","Endocrinology","Hematology","Oncology","Infectious Disease","Rheumatology","Neurology","Allergy/Immunology","Dermatology","Psychiatry","Geriatrics","Other"];
+    var _spCurrent = normalizeSpec((_spEntry && _spEntry._specialtyOverride) || (_spEntry && inferSpecialty(_spEntry.topic, _spEntry.talk||{}, null)) || "Other");
+    var _spOpts = ["Cardiovascular","Pulmonary","Nephrology","Gastroenterology","Hepatology","Endocrinology","Heme/Onc","Infectious Disease","Rheumatology","Neurology","Allergy/Immunology","Dermatology","Psychiatry","Geriatrics","Other"];
     h+='<div class="drawer-backdrop open" id="specPickerBackdrop" style="z-index:120"></div>';
     h+='<div class="drawer open" id="specPickerModal" style="z-index:121;max-width:380px;width:calc(100% - 32px);margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px;max-height:85vh;overflow-y:auto">';
     h+='<div class="drawer-head" style="padding:18px 20px 6px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🏷️</span> Change specialty</div><button class="drawer-close" id="specPickerClose">×</button></div>';
@@ -6567,7 +6573,8 @@ function renderSaved(){
   for(var di=0;di<saved.length;di++){
     var e=saved[di];var et=e.talk||{};
     // Pattern A: user's specialty override wins over the auto-inferred specialty. (Jenni 2026-06-09)
-    var resolvedSpec = e._specialtyOverride || inferSpecialty(e.topic, et, null);
+    // normalizeSpec collapses legacy "Hematology"/"Oncology" overrides into "Heme/Onc". (2026-06-10)
+    var resolvedSpec = normalizeSpec(e._specialtyOverride || inferSpecialty(e.topic, et, null));
     all.push({_source:"saved",_kind:et.question?"boards":"lecture",_slug:null,_id:e.id,
       _spec: resolvedSpec,
       _isPublic: !!e._isPublic, _shareToken: e._shareToken || null,
@@ -7133,7 +7140,11 @@ function renderMain(){
 
     h+='<button id="cancelGenBtn" style="width:100%;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:13px 20px;color:var(--ink-muted);font-size:13.5px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .15s ease;margin-bottom:8px">✕ Cancel</button>';
   } else {
-    h+='<button id="genBtn" '+(!S.topic.trim()?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich) 0%,var(--plum-deep) 100%);border:none;border-radius:18px;padding:16px 20px;color:#fff;font-size:15px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(75,17,111,0.28);opacity:'+(!S.topic.trim()?"0.45":"1")+';cursor:'+(!S.topic.trim()?"not-allowed":"pointer")+';transition:all .15s ease"><span style="font-size:14px">✨</span>'+(S.topic.trim()?"Generate Chalk Talk":"Enter a topic to generate")+'<span style="font-size:14px">→</span></button>';
+    // Button copy adapts to mode (Jenni 2026-06-10): Lecture → "Generate Chalk Talk", Boards → "Generate Question".
+    var _genLabel = S.topic.trim()
+      ? (S.style === "boards" ? "Generate Question" : "Generate Chalk Talk")
+      : "Enter a topic to generate";
+    h+='<button id="genBtn" '+(!S.topic.trim()?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich) 0%,var(--plum-deep) 100%);border:none;border-radius:18px;padding:16px 20px;color:#fff;font-size:15px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(75,17,111,0.28);opacity:'+(!S.topic.trim()?"0.45":"1")+';cursor:'+(!S.topic.trim()?"not-allowed":"pointer")+';transition:all .15s ease"><span style="font-size:14px">✨</span>'+_genLabel+'<span style="font-size:14px">→</span></button>';
   }
   if(S.error)h+='<p style="color:#c0392b;font-size:12px;text-align:center;margin-top:6px">'+esc(S.error)+'</p>';
   h+='<p class="compose-cta-note"><span style="opacity:.7">🔒</span> Your content is private and never shared.</p>';
@@ -7406,6 +7417,18 @@ function renderMain(){
             // Board tip
             h+='<div style="font-size:10.5px;font-weight:700;color:#8a3a2a;text-transform:uppercase;letter-spacing:0.08em;margin:14px 0 4px">🎯 Board Tip</div>';
             h+='<textarea id="secEditTip" rows="2" placeholder="Optional…" style="width:100%;background:#fff;border:1px solid #e8c8c0;border-radius:8px;padding:8px 12px;font-size:12.5px;color:#8a3a2a;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box;line-height:1.5">'+esc(draft.board_tip||"")+'</textarea>';
+            // Section management — Move up/down + Delete. (Jenni 2026-06-10)
+            // Left side: reorder buttons (greyed out when at boundary). Right side: destructive delete.
+            var _totalSecs = (S.talk && S.talk.sections) ? S.talk.sections.length : 0;
+            var _canUp = si2 > 0;
+            var _canDown = si2 < (_totalSecs - 1);
+            h+='<div style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">';
+            h+='  <div style="display:flex;gap:6px">';
+            h+='    <button id="secEditUpBtn" data-i="'+si2+'" '+(_canUp?'':'disabled')+' title="Move this section up" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:'+(_canUp?'var(--plum)':'var(--ink-soft)')+';font-size:12px;font-weight:600;cursor:'+(_canUp?'pointer':'not-allowed')+';display:inline-flex;align-items:center;gap:4px;opacity:'+(_canUp?'1':'0.5')+'"><span style="font-size:12px">↑</span> Move up</button>';
+            h+='    <button id="secEditDownBtn" data-i="'+si2+'" '+(_canDown?'':'disabled')+' title="Move this section down" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:'+(_canDown?'var(--plum)':'var(--ink-soft)')+';font-size:12px;font-weight:600;cursor:'+(_canDown?'pointer':'not-allowed')+';display:inline-flex;align-items:center;gap:4px;opacity:'+(_canDown?'1':'0.5')+'"><span style="font-size:12px">↓</span> Move down</button>';
+            h+='  </div>';
+            h+='  <button id="secEditDeleteBtn" data-i="'+si2+'" title="Permanently remove this section from the talk" style="background:#fff;border:1px solid #e8c8c0;border-radius:8px;padding:6px 12px;color:#c0392b;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span style="font-size:12px">🗑</span> Delete</button>';
+            h+='</div>';
             h+='</div>';
           } else if(open){
             // ── Read mode ─────────────────────────────────────────────────
@@ -7734,13 +7757,23 @@ function renderMain(){
       // Busy state: textarea is replaced by a centered progress block, footer is hidden
       h+='    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px;color:var(--plum);font-weight:500"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span><span style="font-size:13px;line-height:1.5">'+(S.loading?'Regenerating lesson… '+(S.loadSec||0)+'s':'Weaving in your update…')+'</span><span style="font-size:11px;color:var(--ink-muted);max-width:200px">'+(S.loading?'Building from scratch with your direction':'Preserving existing content')+'</span></div>';
     } else {
-      h+='    <textarea class="revise-input" id="reviseIn" placeholder="Ask to revise lesson, or paste a long reference here…">'+esc(S.reviseIn||"")+'</textarea>';
+      h+='    <textarea class="revise-input" id="reviseIn" placeholder="Add detail, paste an MKSAP question, drop a PDF — your existing content stays, only NEW content is added.">'+esc(S.reviseIn||"")+'</textarea>';
+      // Show currently-attached refs so the user can confirm what's going up and remove if needed.
+      // (Jenni 2026-06-10 — refine is iterative + first-class, users should see their attached refs.)
+      if(S.files && S.files.length){
+        h+='    <div style="padding:6px 12px 0;display:flex;flex-direction:column;gap:4px">';
+        for(var rfi=0; rfi<S.files.length; rfi++){
+          var _f=S.files[rfi];
+          h+='      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--lavender-bg);border-radius:8px;padding:5px 10px;font-size:11.5px;color:var(--ink)"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">📄 '+esc(_f.n)+'</span><button class="rmFile" data-i="'+rfi+'" title="Remove this reference" style="background:none;border:none;color:var(--ink-muted);font-size:15px;cursor:pointer;flex-shrink:0;padding:0 0 0 8px;line-height:1">×</button></div>';
+        }
+        h+='    </div>';
+      }
       // Footer row: Reference pill (left) + send circle (right)
       h+='    <div class="composer-footer">';
-      h+='      <button class="ref-btn" id="composerRefBtn" title="Upload a reference (PDF, image, text)"><span style="font-size:14px;line-height:1">+</span> Reference</button>';
+      h+='      <button class="ref-btn" id="composerRefBtn" title="Upload a reference (PDF, image, text)"><span style="font-size:14px;line-height:1">+</span> '+(S.files && S.files.length ? "Add another" : "Reference")+'</button>';
       h+='      <button class="send-btn" id="reviseSend" '+(!String(S.reviseIn||"").trim()?"disabled":"")+' title="Send (⌘/Ctrl+Enter)">→</button>';
       h+='    </div>';
-      h+='    <div class="composer-hint">⌘/Ctrl+Enter to send · Enter = new line</div>';
+      h+='    <div class="composer-hint">⌘/Ctrl+Enter to send · Refines are iterative — keep adding</div>';
     }
     h+='  </div>';
     h+='</div>';
@@ -8002,7 +8035,12 @@ function bindMain(){
       var spans=gb2.querySelectorAll("span");
       // spans[0] = ✨, spans[2] = → (we want the text node between them, which is the button's middle textNode)
       var nodes=Array.prototype.filter.call(gb2.childNodes,function(n){return n.nodeType===3});
-      if(nodes.length){nodes[0].nodeValue = S.loading ? "Generating…" : (S.topic.trim() ? "Generate Chalk Talk" : "Enter a topic to generate");}
+      if(nodes.length){
+        var _liveLabel = S.topic.trim()
+          ? (S.style === "boards" ? "Generate Question" : "Generate Chalk Talk")
+          : "Enter a topic to generate";
+        nodes[0].nodeValue = S.loading ? "Generating…" : _liveLabel;
+      }
     }
   };
   var bb=document.getElementById("browseBtn");if(bb)bb.onclick=function(){S.showLib=true;S.expCat=null;render()};
@@ -8314,6 +8352,51 @@ function bindMain(){
     render();
   }});
   var secCB=document.getElementById("secEditCancelBtn");if(secCB)secCB.onclick=function(){S.editingSection=null;S.editingDraft=null;render()};
+  // Move section up / down (Jenni 2026-06-10) — swap with neighbor, keep edit focus on it.
+  function _moveSection(delta){
+    if(S.editingSection==null || !S.talk || !S.talk.sections) return;
+    var from = S.editingSection;
+    var to = from + delta;
+    if(to < 0 || to >= S.talk.sections.length) return;
+    // Sync any in-flight textarea edits into the draft before reorder, so user doesn't lose typed text.
+    var hEl=document.getElementById("secEditHeading"); if(hEl && S.editingDraft) S.editingDraft.heading=hEl.value;
+    var pEl=document.getElementById("secEditPearl"); if(pEl && S.editingDraft) S.editingDraft.teaching_pearl=pEl.value;
+    var tEl=document.getElementById("secEditTip"); if(tEl && S.editingDraft) S.editingDraft.board_tip=tEl.value;
+    document.querySelectorAll(".secEditBulletTA").forEach(function(ta){
+      var i=parseInt(ta.dataset.i,10);
+      if(S.editingDraft && S.editingDraft.points && i>=0 && i<S.editingDraft.points.length) S.editingDraft.points[i]=ta.value;
+    });
+    if(S.editingDraft) S.talk.sections[from] = S.editingDraft;
+    pushTalkHistory("move section "+(from+1)+" "+(delta<0?"up":"down"));
+    var moved = S.talk.sections.splice(from, 1)[0];
+    S.talk.sections.splice(to, 0, moved);
+    S.editingSection = to;
+    S.editingDraft = JSON.parse(JSON.stringify(moved));
+    S.activeSection = to;
+    S.talkIsSaved = false;
+    render();
+  }
+  var secUP=document.getElementById("secEditUpBtn"); if(secUP) secUP.onclick=function(){_moveSection(-1)};
+  var secDN=document.getElementById("secEditDownBtn"); if(secDN) secDN.onclick=function(){_moveSection(1)};
+  // Delete section (Jenni 2026-06-10) — splice the section out, snapshot for undo, exit edit mode.
+  var secDB=document.getElementById("secEditDeleteBtn");if(secDB)secDB.onclick=function(){
+    if(S.editingSection==null || !S.talk || !S.talk.sections) return;
+    var sec = S.talk.sections[S.editingSection];
+    var label = (sec && sec.heading) ? '"'+sec.heading+'"' : "this section";
+    if(!confirm("Delete "+label+"?\n\nThis removes the heading, all bullets, the teaching pearl, and the board tip. You can undo from the overflow menu.")) return;
+    pushTalkHistory("delete section "+(S.editingSection+1));
+    S.talk.sections.splice(S.editingSection, 1);
+    // Adjust activeSection if it was pointing at or past the deleted index
+    if(typeof S.activeSection === "number"){
+      if(S.activeSection === S.editingSection) S.activeSection = Math.max(0, S.editingSection - 1);
+      else if(S.activeSection > S.editingSection) S.activeSection = S.activeSection - 1;
+    }
+    S.editingSection = null;
+    S.editingDraft = null;
+    S.talkIsSaved = false;
+    if(S.dg && S.dg.imgB64) S.visualStale = true;
+    render();
+  };
   var secSB=document.getElementById("secEditSaveBtn");if(secSB)secSB.onclick=function(){
     if(S.editingSection==null||!S.editingDraft||!S.talk||!S.talk.sections)return;
     // Read current input values into draft (in case some weren't synced via onchange)
