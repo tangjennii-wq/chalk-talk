@@ -5180,7 +5180,9 @@ async function generate(){
     // Always use Opus first for draft quality (regardless of depth). Sonnet/Haiku are overload fallbacks only.
     // Tested Sonnet-first for Concise — quality regressed too much, not worth the ~15s saved.
     var mainModels = [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC];
-    var maxTok=(S.style==="boards")?6144:4096;
+    // Lifted from 4096/6144 → 16384 (Jenni 2026-06-10 "no cap please"). The old ceiling was
+    // squeezing detailed talks, which caused the model to compress content to fit.
+    var maxTok=(S.style==="boards")?16384:16384;
     mainOpts.signal = _abortSignal;
     // Streaming progress: surface the draft title as soon as it appears in the stream, and tick
     // a char-count so the progress bar reflects actual generation activity. (Jenni 2026-06-09 #3)
@@ -5537,50 +5539,133 @@ function undoLastEdit(){
   render();
 }
 
+// === PATCH-BASED WEAVE (Jenni 2026-06-10 \u2014 replaces full-rewrite weave) ============================
+// The old weave asked Claude to return a fully-rewritten talk JSON with additions woven in. Two
+// problems: (1) under max_tokens pressure on detailed talks, Claude silently dropped existing
+// content to fit; (2) Claude's "is this already covered?" audit fired too eagerly and ignored
+// the user's explicit add request. Result: users hit "add X" and lost their existing content
+// OR got nothing back. Both failure modes are catastrophic for a tool people trust to KEEP work.
+//
+// Fix: model returns ONLY a JSON patch describing what to ADD. JS code merges the patch into the
+// existing S.talk. Existing content is mathematically untouchable through this path. For corrections
+// or rewrites of existing content, isRadicalRevision routes to the full regenerate path instead.
 async function weaveRevision(userMsg){
-  if(!S.talk) return;
+  if(!S.talk) return null;
   var existingJson = JSON.stringify(S.talk);
+  var sectionHeadings = (S.talk.sections||[]).map(function(s,i){return i+": "+s.heading}).join("\n  ");
+  var nextRefId = ((S.talk.references||[]).reduce(function(m,r){return Math.max(m,parseInt(r.id)||0)},0)+1);
+
   var sys = "You are refining an existing chalk talk for an internal medicine educator. " +
-    "The user wants to ADD content, not start over.\n\n" +
-    "INTERNAL AUDIT PROCESS (do this BEFORE writing the JSON, do not include in output):\n" +
-    "1. Read the user's request and identify the SPECIFIC concepts/facts they want incorporated. Often a user pastes a large block of text (e.g. an OpenEvidence dump, MKSAP excerpt, society guideline passage) just to make sure ONE or TWO key points land. Extract those points; don't blindly absorb the whole dump.\n" +
-    "2. For EACH extracted concept, scan the existing talk JSON in full. Ask:\n" +
-    "   (a) Is this concept ALREADY covered? Check the sections' points, teaching_pearl, board_tip, summary_points, AND visual_memory_card quadrants. If it's already present in any meaningful form, DO NOT add it again \u2014 note internally that it's already covered and skip the addition.\n" +
-    "   (b) If only partially covered (e.g. the talk mentions the drug but not the dose, or names the trial but not the year), make a TARGETED addition to the existing location \u2014 don't create a parallel section.\n" +
-    "   (c) If genuinely new: identify which existing section it BELONGS in by topic affinity. Prefer extending an existing section over creating a new one. Only create a new section if the concept truly doesn't fit any existing one.\n" +
-    "3. After this audit, plan the minimum number of edits needed. Fewer changes is better.\n\n" +
-    "PRESERVATION RULES (strict):\n" +
-    "- KEEP all existing sections, teaching pearls, board tips, summary points, visual memory card quadrants, and references that are already working.\n" +
-    "- KEEP the title and subtitle unless the user's request directly contradicts them.\n" +
-    "- KEEP the citation IDs as they are; if you add new references, assign them new IDs continuing from the existing list.\n" +
-    "ADDITION RULES:\n" +
-    "- You MAY add new sections, new bullets to existing sections, new references, new teaching pearls \u2014 whatever the user asked for AND that isn't already present.\n" +
-    "- You MAY expand or clarify existing content when the user's request demands it (e.g. 'go deeper on physiology').\n" +
-    "- You MUST NOT delete or rewrite working content unless the user EXPLICITLY asked you to remove or replace something.\n" +
-    "- You MUST NOT duplicate concepts that already exist in the talk in any form (bullet, pearl, board tip, summary point, or VMC quadrant). Re-read the existing talk before adding ANY new content to verify.\n" +
-    "- If the user asks to add a topic that overlaps with an existing section, weave it in (add bullets, extend the section heading) rather than creating a duplicate section.\n" +
-    "- New bullets MUST be added to the most topically relevant existing section. Do not put a new mechanism bullet into the treatment section, or a new treatment bullet into the physiology section.\n" +
-    "- If the user uploaded reference PDFs/notes (in the context below), use them as PRIMARY sources for the new additions and add them to the references array. But still apply the duplication audit \u2014 only add what's NEW vs. the existing talk.\n" +
-    "SELF-CHECK BEFORE RETURNING:\n" +
-    "- Did you add anything that's already in the talk in another form? If yes, remove the duplicate.\n" +
-    "- Is each new bullet in the section it topically belongs to?\n" +
-    "- If the user's request was already 100% covered, return the talk unchanged with a 'note' field at the top level saying \"User-requested content was already covered \u2014 no changes needed.\" (Otherwise omit the note field entirely.)\n" +
-    "Return the COMPLETE updated talk JSON in the EXACT same schema. ONLY JSON, no commentary, no markdown fences.";
-  // Inject trial expansions if the user's refine references a curated landmark trial
+    "The user wants to ADD content. Your job is to return a JSON PATCH describing the additions. " +
+    "You CANNOT modify or remove existing content through this path \u2014 JS code merges your patch into " +
+    "the existing talk, and the existing content is preserved exactly as-is.\n\n" +
+    "PATCH SCHEMA (return exactly this \u2014 omit fields you don't need, all are optional):\n" +
+    "{\n" +
+    '  "skip_reason": null,\n' +
+    '  "add_pearls": ["board pearl 1", "..."],\n' +
+    '  "add_teaching_points": ["teaching point 1", "..."],\n' +
+    '  "add_summary_points": ["summary point 1", "..."],\n' +
+    '  "add_references": [{"type": "user-upload"|"guideline"|"trial"|"review", "source": "filename or paper title", "year": 2024, "society": "AHA/ACC", "url": "https://...", "title": "..."}],\n' +
+    '  "add_section_bullets": [{"section_index": 0, "bullets": ["new bullet 1", "..."]}],\n' +
+    '  "add_sections": [{"after_index": 2, "heading": "...", "points": ["..."], "teaching_pearl": "...", "board_tip": "..."}]\n' +
+    "}\n\n" +
+    "EXISTING SECTION HEADINGS (use these 0-based indices for add_section_bullets / after_index):\n  " + sectionHeadings + "\n\n" +
+    "RULES:\n" +
+    "- DEFAULT TO ADDING what the user asked for. Trust them \u2014 they know their teaching. Even if a concept is briefly mentioned elsewhere, if the user asks to add detail, ADD IT.\n" +
+    "- Place new bullets in the topically-relevant section using `section_index` (0-based, see headings above). If physiology bullet \u2192 physiology section. If treatment \u2192 treatment section.\n" +
+    "- ONLY skip if the user's request is 100% verbatim redundant. Be VERY conservative about skipping. When in doubt, add.\n" +
+    "- If the user wants to CORRECT or REPLACE existing content (e.g. 'the dose is wrong, should be 10mg'), set skip_reason to 'this is a correction \u2014 say rewrite [thing] to be... so I can do a full regen' and omit all add_* fields.\n" +
+    "- Uploaded refs are PRIMARY sources. When a fact comes from one, add it to `add_references` and cite it inline in the bullet using [N] where N is the new citation ID. Next free ID: " + nextRefId + ".\n" +
+    "- Inline cite ALL new clinical claims with [N] using existing citation IDs when applicable, or new IDs you're adding via add_references.\n" +
+    "- Keep bullets / pearls / tips concise and standalone (one teaching point per item).\n\n" +
+    "Return ONLY the JSON patch object. No markdown fences, no commentary, no preamble. Start with { and end with }.";
   var weaveTrialContext = buildTrialExpansionContext(userMsg, "");
-  // Pass uploaded refs into the refine call (Jenni 2026-06-10). Previously weaveRevision saw
-  // only the user message + existing talk JSON — uploaded PDFs/notes were silently dropped, even
-  // though the system prompt instructed the model to treat them as primary sources. Now content is
-  // an array of parts (text + ref docs/images) so the refs actually reach Claude.
   var contentParts = [{
     type: "text",
-    text: "USER REQUEST: " + userMsg + weaveTrialContext + "\n\nEXISTING TALK JSON (preserve this, weave in additions):\n" + existingJson
+    text: "USER REQUEST: " + userMsg + weaveTrialContext + "\n\nEXISTING TALK (for context — DO NOT echo this back, just return the patch):\n" + existingJson
   }].concat(buildReferenceParts(S.files));
-  var txt = await callAPI(sys, contentParts, 8192);
-  var parsed = JSON.parse(fixJSON(txt));
-  parsed = deepCleanCitations(parsed);
-  if(typeof pruneFakeReferences === "function") parsed = pruneFakeReferences(parsed);
-  return parsed;
+  // Patches are small (~1500 tokens for generous additions), but cap high for safety.
+  // (Jenni 2026-06-10: lifted the 8192 ceiling that was silently truncating talks.)
+  var txt = await callAPI(sys, contentParts, 16384);
+  var patch = JSON.parse(fixJSON(txt));
+  // Returns the patch — caller applies it via applyWeavePatch().
+  return { kind: "patch", patch: patch };
+}
+
+// Deterministic merge of a patch into a talk. Returns a NEW object — does not mutate the input.
+// Existing fields are appended-to, never overwritten or removed. (Jenni 2026-06-10)
+function applyWeavePatch(talk, patch){
+  var t = JSON.parse(JSON.stringify(talk));
+  if(!patch || typeof patch !== "object") return t;
+
+  function appendList(field, items){
+    if(!Array.isArray(items) || items.length === 0) return;
+    t[field] = (t[field] || []).concat(items.filter(function(x){return x && (typeof x === "string" || typeof x === "object")}));
+  }
+  appendList("board_pearls", patch.add_pearls);
+  appendList("teaching_points", patch.add_teaching_points);
+  appendList("summary_points", patch.add_summary_points);
+
+  if(Array.isArray(patch.add_references) && patch.add_references.length > 0){
+    var maxId = (t.references || []).reduce(function(m, r){return Math.max(m, parseInt(r.id) || 0)}, 0);
+    t.references = (t.references || []).slice();
+    patch.add_references.forEach(function(ref){
+      if(!ref || typeof ref !== "object") return;
+      maxId++;
+      t.references.push(Object.assign({}, ref, {
+        id: ref.id || maxId,
+        type: ref.type || "user-upload"
+      }));
+    });
+  }
+
+  if(Array.isArray(patch.add_section_bullets)){
+    patch.add_section_bullets.forEach(function(addition){
+      if(!addition || typeof addition !== "object") return;
+      var idx = addition.section_index;
+      if(typeof idx !== "number" || !t.sections || !t.sections[idx]) return;
+      var bullets = (addition.bullets || []).filter(function(b){return typeof b === "string" && b.trim()});
+      if(bullets.length === 0) return;
+      t.sections[idx].points = (t.sections[idx].points || []).concat(bullets);
+    });
+  }
+
+  if(Array.isArray(patch.add_sections)){
+    patch.add_sections.forEach(function(newSec){
+      if(!newSec || typeof newSec !== "object" || !newSec.heading) return;
+      var insertAt;
+      if(typeof newSec.after_index === "number" && newSec.after_index >= 0 && newSec.after_index < (t.sections||[]).length){
+        insertAt = newSec.after_index + 1;
+      } else {
+        insertAt = (t.sections || []).length;
+      }
+      t.sections = t.sections || [];
+      t.sections.splice(insertAt, 0, {
+        heading: String(newSec.heading),
+        points: (newSec.points || []).filter(function(p){return typeof p === "string" && p.trim()}),
+        teaching_pearl: newSec.teaching_pearl || "",
+        board_tip: newSec.board_tip || ""
+      });
+    });
+  }
+
+  return t;
+}
+
+// Human-readable summary of what the patch will add — for the chat confirmation message.
+function describePatchChanges(patch){
+  if(!patch) return "no changes";
+  var bits = [];
+  if(Array.isArray(patch.add_pearls) && patch.add_pearls.length) bits.push(patch.add_pearls.length + " pearl" + (patch.add_pearls.length===1?"":"s"));
+  if(Array.isArray(patch.add_teaching_points) && patch.add_teaching_points.length) bits.push(patch.add_teaching_points.length + " teaching point" + (patch.add_teaching_points.length===1?"":"s"));
+  if(Array.isArray(patch.add_summary_points) && patch.add_summary_points.length) bits.push(patch.add_summary_points.length + " summary point" + (patch.add_summary_points.length===1?"":"s"));
+  if(Array.isArray(patch.add_references) && patch.add_references.length) bits.push(patch.add_references.length + " reference" + (patch.add_references.length===1?"":"s"));
+  if(Array.isArray(patch.add_section_bullets)){
+    var bb = patch.add_section_bullets.reduce(function(s,a){return s + (Array.isArray(a.bullets) ? a.bullets.length : 0)}, 0);
+    if(bb) bits.push(bb + " bullet" + (bb===1?"":"s"));
+  }
+  if(Array.isArray(patch.add_sections) && patch.add_sections.length) bits.push(patch.add_sections.length + " new section" + (patch.add_sections.length===1?"":"s"));
+  return bits.length === 0 ? "no changes" : bits.join(", ");
 }
 
 async function sendChat(){
@@ -5614,31 +5699,26 @@ async function sendChat(){
   S.msgs.push({r:"a",t:"Weaving in your update (preserving the rest of the lesson)\u2026"});
   render();
   try{
-    var updated = await weaveRevision(msg);
-    if(updated && (updated.title || updated.question)){
-      // Detect the "already covered" signal from the audit step \u2014 model returns the talk unchanged
-      // with a top-level note field if everything the user asked for was already in the talk.
-      var alreadyCovered = updated.note && /already covered|no changes needed/i.test(updated.note);
-      if(alreadyCovered){
-        // Don't replace S.talk (nothing changed). Strip the note from what we'd save.
-        S.msgs.push({r:"a",t:"\u2139\ufe0f The content you asked about is already in the lesson \u2014 no changes made. Say \"add detail about X\" or \"rewrite\" if you want me to expand or replace something."});
+    // weaveRevision now returns { kind: "patch", patch }. Existing content is preserved by applyWeavePatch.
+    var result = await weaveRevision(msg);
+    var patch = result && result.patch;
+    if(patch && typeof patch === "object"){
+      var changes = describePatchChanges(patch);
+      if(patch.skip_reason || changes === "no changes"){
+        var reason = patch.skip_reason || "couldn't find anything new to add";
+        S.msgs.push({r:"a",t:"\u2139\ufe0f No changes \u2014 " + reason + ". Say \"rewrite [thing]\" if you want to modify existing content instead of adding."});
       } else {
-        // Strip any stray note field before persisting.
-        if(updated.note) delete updated.note;
-        S.talk = updated;
+        S.talk = applyWeavePatch(S.talk, patch);
         // Don't reset section index / mode \u2014 user stays where they were in the talk.
-        // Visual auto-stale (Jenni 2026-06-10): keep the existing image but flag it stale so the
-        // user sees a banner offering one-tap regenerate. Better than silently nuking the visual,
-        // which forced a regenerate even when content didn't materially affect the image.
         if(S.dg && S.dg.imgB64) S.visualStale = true;
         else { S.dg = null; S.dgErr = ""; }
-        S.podScript = ""; // podcast still re-renders on refresh (cheap to regenerate)
-        S.talkIsSaved = false; // edits made \u2014 unsaved again
-        S.msgs.push({r:"a",t:"\u2713 Updated \u2014 only what was new was added, in the relevant section. Existing content preserved. Say \"rewrite\" if you want a full regenerate instead."});
+        S.podScript = "";
+        S.talkIsSaved = false;
+        S.msgs.push({r:"a",t:"\u2713 Added " + changes + ". Existing content preserved. Say \"rewrite [thing]\" if you want to modify what was already there."});
       }
-      S._composerOpen = false; // auto-collapse on success
+      S._composerOpen = false;
     } else {
-      S.msgs.push({r:"a",t:"Couldn't parse the update \u2014 try again or say \"rewrite\" for a full regenerate."});
+      S.msgs.push({r:"a",t:"Couldn't parse the update \u2014 try again, or say \"rewrite\" for a full regenerate."});
     }
   } catch(e){
     S.msgs.push({r:"a",t:"Refine failed: "+e.message+". Try \"rewrite\" if you want a full regenerate."});
