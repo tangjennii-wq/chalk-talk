@@ -5514,7 +5514,14 @@ async function genDiagram(){
 // intact when they're just adding context (e.g. "include EGPA" or "add a pregnancy section").
 function isRadicalRevision(msg){
   var m = String(msg||"").toLowerCase();
-  return /\b(rewrite|redo|start over|from scratch|completely (?:different|new|change)|trash (?:it|this)|throw (?:it|this) out|wrong angle|totally different|new approach|different approach|scrap (?:it|this)|change everything|regenerate)\b/.test(m);
+  // Rewrite-from-scratch intents:
+  if(/\b(rewrite|redo|start over|from scratch|completely (?:different|new|change)|trash (?:it|this)|throw (?:it|this) out|wrong angle|totally different|new approach|different approach|scrap (?:it|this)|change everything|regenerate)\b/.test(m)) return true;
+  // Modification intents — patch-based weave can ONLY add. Asks to shorten / make concise /
+  // tighten / trim / condense / summarize / cut down / less verbose all need a full regenerate.
+  // (Jenni 2026-06-10 — "asked to make it more concise but didn't work" — concision is a
+  // modification, not an addition, so it must route through the radical path.)
+  if(/\b(more concise|less verbose|shorten|shorter|condens(e|ed)|trim(?: it| this| down)?|tighten|cut (?:down|out|it)|summari[sz]e|too long|less detail|fewer (?:bullets|points|sections)|punch(?:y|ier)|tl;?dr)\b/.test(m)) return true;
+  return false;
 }
 
 // Additive refinement \u2014 pass the EXISTING talk JSON to Claude + the user's add/change request.
@@ -5585,6 +5592,7 @@ async function weaveRevision(userMsg){
     "- Place new bullets in the topically-relevant section using `section_index` (0-based, see headings above). If physiology bullet \u2192 physiology section. If treatment \u2192 treatment section.\n" +
     "- ONLY skip if the user's request is 100% verbatim redundant. Be VERY conservative about skipping. When in doubt, add.\n" +
     "- If the user wants to CORRECT or REPLACE existing content (e.g. 'the dose is wrong, should be 10mg'), set skip_reason to 'this is a correction \u2014 say rewrite [thing] to be... so I can do a full regen' and omit all add_* fields.\n" +
+    "- If the user wants to SHORTEN, MAKE CONCISE, TRIM, CONDENSE, or otherwise REDUCE existing content, set skip_reason to 'this is a concision request \u2014 patch mode can only add. Say \"rewrite to be more concise\" and I will do a full regenerate at concise depth.' and omit all add_* fields. DO NOT try to satisfy concision by adding a summary bullet alongside the original \u2014 that makes it longer, not shorter.\n" +
     "- Uploaded refs are PRIMARY sources. When a fact comes from one, add it to `add_references` and cite it inline in the bullet using [N] where N is the new citation ID. Next free ID: " + nextRefId + ".\n" +
     "- Inline cite ALL new clinical claims with [N] using existing citation IDs when applicable, or new IDs you're adding via add_references.\n" +
     "- Keep bullets / pearls / tips concise and standalone (one teaching point per item).\n\n" +
