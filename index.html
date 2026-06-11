@@ -268,6 +268,10 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
 .libCardMenuBtn{opacity:0.5;transition:opacity .12s ease,background .12s ease}
 .libCardMenuBtn:hover,.libCardMenuBtn:focus-visible{opacity:1;background:var(--lavender-bg) !important;color:var(--plum) !important;outline:none}
 .libCardMenu button:hover{background:var(--lavender-bg)}
+/* Specialty picker — tap/click feedback so users see the selection register before the modal closes. (Jenni 2026-06-10) */
+.specPickerBtn{transition:background .12s ease,color .12s ease,border-color .12s ease,transform .08s ease,box-shadow .12s ease}
+.specPickerBtn:hover{background:var(--lavender-bg) !important;border-color:var(--plum) !important}
+.specPickerBtn:active{background:var(--plum) !important;color:#fff !important;border-color:var(--plum) !important;transform:scale(0.96);box-shadow:0 2px 8px rgba(75,17,111,0.25)}
 /* Sticky compose CTA */
 .compose-cta{position:sticky;bottom:0;left:0;right:0;background:linear-gradient(to top,var(--paper) 60%,rgba(248,246,251,0.7) 90%,transparent 100%);padding:14px 0 calc(8px + env(safe-area-inset-bottom));margin:18px -16px 0;z-index:10}
 .compose-cta-inner{padding:0 16px}
@@ -6253,16 +6257,23 @@ function renderGlobalModals(){
   document.querySelectorAll("#globalModals .specPickerBtn").forEach(function(b){b.onclick=async function(e){
     e.stopPropagation();
     var id=b.dataset.id; var spec=b.dataset.spec || null;
-    // Close the modal FIRST so the UI feels responsive; the network call runs in the background.
-    // (If the update fails, we re-open with an error — but typically it succeeds.)
-    S.specPickerForId=null;
-    render();
-    var res = await cloudSetSpecialtyOverride(id, spec);
-    if(!res){
-      alert("Couldn't update specialty — check connection.");
-      return;
-    }
-    render();
+    // Force the pressed visual state so the tap registers visibly even when closing fast.
+    // (CSS :active fires only while the finger is down; we paint the same look until close.)
+    b.style.background = "var(--plum)";
+    b.style.color = "#fff";
+    b.style.borderColor = "var(--plum)";
+    b.style.transform = "scale(0.96)";
+    // Brief delay so the press is visible, then close + persist. (Jenni 2026-06-10)
+    setTimeout(async function(){
+      S.specPickerForId = null;
+      render();
+      var res = await cloudSetSpecialtyOverride(id, spec);
+      if(!res){
+        alert("Couldn't update specialty — check connection.");
+        return;
+      }
+      render();
+    }, 140);
   }});
   // Sign-in modal
   var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){S.signInOpen=false;render()};
