@@ -387,6 +387,18 @@ textarea,input[type=text]{font-family:inherit}
      Expand all don't fight for the same row. (Jenni 2026-06-08) */
   .outline-head { flex-wrap: wrap !important; gap: 4px !important; }
   .outline-head > div { width: 100%; justify-content: space-between !important; margin-top: 2px !important; }
+  /* Mobile chrome de-cluttering (Jenni 2026-06-11) — too many stacked elements above the actual
+     content. On phones, drop the redundant ones: subtitle (eats 2 lines), "Lesson outline" label
+     (purely decorative), Lecture/Boards pill (emoji now lives in title), and the "Shared by author"
+     banner row (capsule already has Save copy). */
+  .ttl-sub { display: none !important; }
+  .outline-head > span:first-child { display: none !important; }
+  .tk-pill-modetype { display: none !important; }
+  .tk-shared-banner { display: none !important; }
+  /* With the outline-head label hidden, the controls (depth toggle + Expand all + Copy all) live
+     on the same row aligned to the right edge. */
+  .outline-head { justify-content: flex-end !important; }
+  .outline-head > div { width: auto !important; justify-content: flex-end !important; margin-top: 0 !important; }
   /* Save button on mobile — show the "Save" label (override the universal hide-mobile-text rule
      so users see what the star does) and bump touch target. (Jenni 2026-06-08) */
   .tk-capsule .cap-actions button.cap-save .hide-mobile-text { display: inline !important; }
@@ -7547,7 +7559,7 @@ function renderMain(){
       var _authorName = (S.sharedAuthor && S.sharedAuthor.name) ? S.sharedAuthor.name : "a Chalk Talk author";
       var _shareInfoOpen = !!S.shareInfoOpen;
       var _isOwnSharedTalk = !!(S.user && S.sharedAuthorUserId && S.user.id === S.sharedAuthorUserId);
-      h+='<div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+      h+='<div class="tk-shared-banner" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
       h+='<button id="sharedInfoToggle" title="About this shared talk" style="background:var(--lavender-bg);border:1px solid #d4baea;border-radius:10px;padding:5px 10px;color:var(--plum-deep);font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit">🔗 <span style="font-size:11px;color:var(--ink-muted);font-weight:500">Shared by '+esc(_authorName)+'</span></button>';
       // Promoted Save copy CTA — only when the viewer is NOT the original author. (Jenni 2026-06-09)
       if(!_isOwnSharedTalk){
@@ -7653,7 +7665,10 @@ function renderMain(){
     if(S.savedFlash)h+='<div style="margin-bottom:10px;padding:8px 12px;background:#f0f7f0;border:1px solid #b8d8b8;border-radius:8px;color:#2d6a2d;font-size:12px;font-weight:600;text-align:center">'+esc(S.savedFlash)+'</div>';
 
     // === Lesson title block ===
-    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span>'+esc(t.title||"")+'</span><button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0">✎</button></h1>';
+    // Emoji prefix on the title (Jenni 2026-06-11) — replaces the standalone "🎓 Lecture" pill on
+    // mobile, where chrome is over-crowded. The pill stays in the meta row on desktop for parity.
+    var _titleEmoji = isBQ ? "📋" : "🎓";
+    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="tk-title-emoji" aria-hidden="true" style="flex-shrink:0">'+_titleEmoji+'</span><span>'+esc(t.title||"")+'</span><button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0">✎</button></h1>';
     if(t.subtitle)h+='<p class="ttl-sub">'+esc(t.subtitle)+'</p>';
     // Pills
     var spec=(S.glRef&&S.glRef.specialties&&S.glRef.specialties[0])||"";
@@ -7661,7 +7676,8 @@ function renderMain(){
     // Pills — time + Evidence-grounded removed per Jenni 2026-06-08. The "10-min evidence-based"
     // framing already lives in the "How it works" disclosure; the per-talk pill was redundant.
     h+='<div class="ttl-pills">';
-    h+='<span class="tk-pill">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
+    // tk-pill-modetype class lets us hide this pill on mobile, since the emoji now lives in the title.
+    h+='<span class="tk-pill tk-pill-modetype">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
     // Background citation audit indicator (Jenni 2026-06-09 #4)
     if(S.citationAuditPending){
       h+='<span class="tk-pill" style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;display:inline-flex;align-items:center;gap:5px"><span class="spinner" style="width:9px;height:9px;border-width:1.5px"></span>Verifying citations…</span>';
