@@ -380,7 +380,13 @@ textarea,input[type=text]{font-family:inherit}
      The h1 is wrapped in flex by inline style so the ✎ pencil sits next to it; constrain the inner
      <span> so long titles ellipsize instead of stacking. (Jenni 2026-06-08) */
   .tk-lessontitle h1 { font-size: 17px !important; line-height: 1.18 !important; flex-wrap: nowrap !important; }
-  .tk-lessontitle h1 > span:first-child { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; min-width: 0 !important; flex: 1 1 auto !important; }
+  /* Single-line title on mobile (Jenni 2026-06-11): h1 stays on ONE row, title text ellipsizes if
+     too long. Emoji + pencil sit at fixed widths; title flexes to fill the rest. */
+  .tk-lessontitle h1 { flex-wrap: nowrap !important; }
+  .tk-lessontitle .tk-title-emoji { flex: 0 0 auto !important; }
+  .tk-lessontitle .tk-title-text { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; min-width: 0 !important; flex: 1 1 auto !important; }
+  /* Fallback for old structure (no emoji span) — still target the first span as before. */
+  .tk-lessontitle h1 > span:first-child:not(.tk-title-emoji) { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; min-width: 0 !important; flex: 1 1 auto !important; }
   /* Section heading — one line, ellipsize. Was wrapping to 2 lines on phones. (Jenni 2026-06-08) */
   .tk-acc-ttl { font-size: 12px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; min-width: 0 !important; padding-right: 90px !important; /* leave room for the Edit button positioned absolutely at right:34px + chev */ }
   /* Outline-head — stack the controls under the LESSON OUTLINE label so Concise/Detailed and
@@ -7668,7 +7674,7 @@ function renderMain(){
     // Emoji prefix on the title (Jenni 2026-06-11) — replaces the standalone "🎓 Lecture" pill on
     // mobile, where chrome is over-crowded. The pill stays in the meta row on desktop for parity.
     var _titleEmoji = isBQ ? "📋" : "🎓";
-    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="tk-title-emoji" aria-hidden="true" style="flex-shrink:0">'+_titleEmoji+'</span><span>'+esc(t.title||"")+'</span><button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0">✎</button></h1>';
+    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="tk-title-emoji" aria-hidden="true" style="flex-shrink:0">'+_titleEmoji+'</span><span class="tk-title-text">'+esc(t.title||"")+'</span><button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0">✎</button></h1>';
     if(t.subtitle)h+='<p class="ttl-sub">'+esc(t.subtitle)+'</p>';
     // Pills
     var spec=(S.glRef&&S.glRef.specialties&&S.glRef.specialties[0])||"";
