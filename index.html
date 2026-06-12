@@ -5148,7 +5148,14 @@ async function generate(){
   if (window._lastGenAbort) try { window._lastGenAbort.abort() } catch(_){}
   window._lastGenAbort = new AbortController();
   var _abortSignal = window._lastGenAbort.signal;
-  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;speechSynthesis.cancel();render();
+  // Jenni 2026-06-11: don't clear S.talk on regen. Keep the existing content visible so the user
+  // can keep reading + teaching while the new draft is being built. The compose-cta loading block
+  // checks for this case and renders a small banner instead of a full takeover. New draft swaps in
+  // when ready (or on cancel/error, the old content stays).
+  var _hadExistingTalk = !!S.talk;
+  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;speechSynthesis.cancel();
+  if(!_hadExistingTalk) S.talk = null;   // only blank the view when there's no prior content to read
+  render();
   loadTimer=setInterval(function(){S.loadSec++;var msgs=S.wantWebSearch?["Reasoning through physiology...","Searching current literature...","Cross-referencing societies...","Building content...","AI-checking...","Polishing final version..."]:["Reasoning through physiology...","Loading guidelines...","Building content...","AI-checking & polishing..."];S.loadMsg=msgs[Math.min(Math.floor(S.loadSec/3),msgs.length-1)];render()},1000);
   try{
     var glRef = getGuidelinesForTopic(S.topic);
@@ -5516,12 +5523,66 @@ function isRadicalRevision(msg){
   var m = String(msg||"").toLowerCase();
   // Rewrite-from-scratch intents:
   if(/\b(rewrite|redo|start over|from scratch|completely (?:different|new|change)|trash (?:it|this)|throw (?:it|this) out|wrong angle|totally different|new approach|different approach|scrap (?:it|this)|change everything|regenerate)\b/.test(m)) return true;
-  // Modification intents — patch-based weave can ONLY add. Asks to shorten / make concise /
-  // tighten / trim / condense / summarize / cut down / less verbose all need a full regenerate.
-  // (Jenni 2026-06-10 — "asked to make it more concise but didn't work" — concision is a
-  // modification, not an addition, so it must route through the radical path.)
-  if(/\b(more concise|less verbose|shorten|shorter|condens(e|ed)|trim(?: it| this| down)?|tighten|cut (?:down|out|it)|summari[sz]e|too long|less detail|fewer (?:bullets|points|sections)|punch(?:y|ier)|tl;?dr)\b/.test(m)) return true;
   return false;
+}
+
+// Detect a "compress this existing talk" intent — different from radical revision because the user
+// wants to KEEP all sections + clinical details, just tighten phrasing. Routes to compressTalk(),
+// NOT generate(). (Jenni 2026-06-11 — "it cuts way too short and drops sections" was the bug.)
+function isCompressionIntent(msg){
+  var m = String(msg||"").toLowerCase();
+  return /\b(more concise|less verbose|shorten|shorter|condens(e|ed)|trim(?: it| this| down)?|tighten|cut (?:down|out|it)|summari[sz]e|too long|less detail|fewer (?:bullets|points|sections)|punch(?:y|ier)|tl;?dr|more brief|briefer|terse|less wordy|less long|wordy)\b/.test(m);
+}
+
+// Compress an existing talk — keeps every section, every clinical detail, every citation; just
+// rewrites bullets/pearls/tips in fewer words. Returns the full updated talk JSON.
+// Uses Sonnet 4.6 with high max_tokens so nothing gets squeezed out. (Jenni 2026-06-11)
+async function compressTalk(userMsg){
+  if(!S.talk) return null;
+  var existingJson = JSON.stringify(S.talk);
+  var sectionList = (S.talk.sections||[]).map(function(s,i){return (i+1)+". "+(s.heading||"(no heading)")}).join("\n  ");
+  var sectionCount = (S.talk.sections||[]).length;
+  var refCount = (S.talk.references||[]).length;
+
+  var sys = "You are tightening an existing medical chalk talk for an internal medicine educator. " +
+    "Your ONLY job is to compress phrasing — make every bullet, pearl, and tip use fewer words while " +
+    "preserving EVERY clinical fact. This is not a regeneration; it is a copy-edit pass.\n\n" +
+    "ABSOLUTE PRESERVATION RULES (the user explicitly asked for this):\n" +
+    "- KEEP all " + sectionCount + " sections. Do NOT drop any. The exact section list (must be returned in the same order):\n  " + sectionList + "\n" +
+    "- KEEP all section headings exactly as-is unless the user explicitly asks to rename one.\n" +
+    "- KEEP all " + refCount + " references. Do NOT drop any. References array must come back identical or longer (never shorter).\n" +
+    "- KEEP every clinical fact: drug names, drug doses, trial names, study years, lab values, percentages, mortality numbers, NNT/NNH, society guideline citations [N], every named criterion.\n" +
+    "- KEEP every teaching_pearl and board_tip — tighten the wording but the clinical content stays.\n" +
+    "- KEEP all inline [N] citations exactly where they appeared. If a fact was cited [3], the compressed fact must still be cited [3].\n" +
+    "- KEEP the title, subtitle, and overall structure (visual_memory_card, summary_points, board_pearls, teaching_points).\n\n" +
+    "WHAT TO COMPRESS:\n" +
+    "- Remove filler words: 'in patients with', 'it is important to note that', 'studies have shown that', 'this is because', etc.\n" +
+    "- Convert long phrases to shorthand: 'has been shown to reduce mortality' → '↓ mortality'; 'in the setting of' → 'with'; 'patients who have' → 'patients with'.\n" +
+    "- Combine related bullets within a section if they're saying the same thing with different examples (but keep all the examples).\n" +
+    "- Use telegraphic style: noun phrases + dashes + arrows where appropriate. Cardiologists love → and ↓ and ↑.\n\n" +
+    "WHAT NOT TO DO:\n" +
+    "- Do NOT drop sections. The output must have EXACTLY " + sectionCount + " sections in the same order with the same headings.\n" +
+    "- Do NOT drop bullets that mention a unique fact. You may merge two bullets that say the same thing differently, but never drop a unique clinical point.\n" +
+    "- Do NOT drop references. The compressed talk must cite every reference the original talk cited.\n" +
+    "- Do NOT drop drug names, doses, trial names, or numeric values. Those are the most teaching-relevant content.\n" +
+    "- Do NOT drop teaching_pearl or board_tip. Tighten the wording, but the content stays.\n\n" +
+    "SELF-CHECK BEFORE RETURNING:\n" +
+    "1. Count: are there exactly " + sectionCount + " sections? If fewer, ADD BACK the missing one(s).\n" +
+    "2. Citations: every [N] in the original — is it still in the compressed version? If a citation disappeared, ADD IT BACK.\n" +
+    "3. Drug names: are every dose, drug name, trial name, and lab value still present? If any dropped, ADD BACK.\n" +
+    "4. References: same length or longer? Never shorter.\n\n" +
+    "Return the COMPLETE updated talk JSON in the EXACT same schema. ONLY JSON, no commentary, no markdown fences.";
+
+  var contentParts = [{
+    type: "text",
+    text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (compress this; preserve every section, fact, and citation):\n" + existingJson
+  }];
+  // No file refs needed — this is a copy-edit of the existing talk, not a content addition.
+  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6" });
+  var compressed = JSON.parse(fixJSON(txt));
+  if(typeof deepCleanCitations === "function") compressed = deepCleanCitations(compressed);
+  if(typeof pruneFakeReferences === "function") compressed = pruneFakeReferences(compressed);
+  return compressed;
 }
 
 // Additive refinement \u2014 pass the EXISTING talk JSON to Claude + the user's add/change request.
@@ -5704,6 +5765,45 @@ async function sendChat(){
   }
 
   S.msgs.push({r:"u",t:msg});
+  // Compression-intent path (Jenni 2026-06-11) \u2014 keeps every section + every fact, just tightens
+  // phrasing. Distinct from full regenerate (which would start from scratch and lose details) AND
+  // from additive weave (which can only add, not shorten).
+  if(isCompressionIntent(msg)){
+    pushTalkHistory("compress");
+    S.chatBusy = true;
+    S.msgs.push({r:"a",t:"Tightening phrasing \u2014 keeping every section, every fact, every citation\u2026"});
+    render();
+    try{
+      var compressed = await compressTalk(msg);
+      if(compressed && compressed.title){
+        // Safety check \u2014 never accept a compressed version that LOST sections or references.
+        var origSecCount = (S.talk.sections || []).length;
+        var newSecCount = (compressed.sections || []).length;
+        var origRefCount = (S.talk.references || []).length;
+        var newRefCount = (compressed.references || []).length;
+        if(newSecCount < origSecCount){
+          S.msgs.push({r:"a",t:"\u26a0 Compression dropped a section ("+origSecCount+" \u2192 "+newSecCount+"). Keeping the original to protect your work. Try a more specific phrasing like \"tighten the treatment section\" or \"shorter bullets, keep all sections.\""});
+        } else if(newRefCount < origRefCount){
+          S.msgs.push({r:"a",t:"\u26a0 Compression dropped a reference ("+origRefCount+" \u2192 "+newRefCount+"). Keeping the original. Try again or say \"rewrite\" for a full regen."});
+        } else {
+          S.talk = compressed;
+          if(S.dg && S.dg.imgB64) S.visualStale = true;
+          else { S.dg = null; S.dgErr = ""; }
+          S.podScript = "";
+          S.talkIsSaved = false;
+          S.msgs.push({r:"a",t:"\u2713 Tightened \u2014 kept all "+newSecCount+" sections + "+newRefCount+" references. Say \"rewrite\" if you wanted a fuller change."});
+        }
+      } else {
+        S.msgs.push({r:"a",t:"Couldn't parse the compressed version \u2014 your original is intact. Try again or say \"rewrite\"."});
+      }
+    } catch(e){
+      S.msgs.push({r:"a",t:"Compression failed: "+e.message+". Your original is intact."});
+    }
+    S.chatBusy = false;
+    S._composerOpen = false;
+    render();
+    return;
+  }
   if(isRadicalRevision(msg)){
     // User signalled they want a fresh take \u2014 full regenerate path (RAG + peer review + everything).
     pushTalkHistory("rewrite"); // snapshot for undo
@@ -7098,6 +7198,11 @@ function renderMain(){
     // Generating state — progress block + Cancel button (Jenni 2026-06-08)
     // Streaming preview (Jenni 2026-06-09 #3) — once Anthropic emits the title in the stream, we
     // swap "Generating talk" for "Drafting: <Title>" and use char-count to feed the progress bar.
+    // Jenni 2026-06-11: when an existing talk is already on screen (regen / radical refine),
+    // render a TINY one-line banner instead of the giant block — user keeps reading the old version
+    // until the new draft swaps in.
+    // (Dead branch from earlier; compose-cta is gated by !S.talk so this never runs during regen.
+    // The regen banner now lives inside the talk view below.) (Jenni 2026-06-11)
     h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:18px;padding:18px 16px;text-align:center;margin-bottom:8px">';
     var _genLabel = S.streamingTitle ? ("Drafting: "+S.streamingTitle) : "Generating talk";
     h+='<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><span class="spinner" style="width:22px;height:22px;border-width:3px"></span><span style="font-size:14px;font-weight:600;color:var(--plum-deep)">'+esc(_genLabel)+'</span></div>';
@@ -7163,6 +7268,16 @@ function renderMain(){
   // ═══ GENERATED STATE — capsule + 2x2 mode grid + accordion + composer ═══
   if(S.talk){var t=S.talk,vm=t.visual_memory_card,isBQ=!!(t.question);
     var refsCount=(t.references||[]).length||(S.files||[]).length;
+    // Regen-in-background banner (Jenni 2026-06-11) — when S.loading is true AND a talk is already
+    // on screen (radical refine like "make concise"), show a non-blocking strip at the top so the
+    // user keeps reading while the new draft is being built. New draft swaps in when ready.
+    if(S.loading){
+      h+='<div style="background:linear-gradient(90deg,var(--lavender-bg),#fff);border:1px solid #d4baea;border-radius:14px;padding:9px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--plum-deep)">';
+      h+='<span class="spinner" style="width:14px;height:14px;border-width:2px;flex-shrink:0"></span>';
+      h+='<span style="flex:1;font-weight:500">'+(S.streamingTitle ? esc("Drafting: "+S.streamingTitle) : "Regenerating in background — you can keep reading")+' · '+S.loadSec+'s</span>';
+      h+='<button id="cancelGenBtn" style="background:none;border:1px solid var(--line);border-radius:8px;padding:4px 10px;color:var(--ink-muted);font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0">✕ Cancel</button>';
+      h+='</div>';
+    }
     var styleLbl=(isBQ?"Boards":"Lecture");
     var depthLbl=(S.style==="boards")?"":(S.depth==="detailed"?"Detailed":"Concise");
     // Compute total minutes from sections
