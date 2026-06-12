@@ -5526,12 +5526,109 @@ function isRadicalRevision(msg){
   return false;
 }
 
+// Detect a clear ADDITIVE intent (user is asking to add SPECIFIC content). When this fires, we
+// bypass restructure/expand/compress and go straight to weave — so phrases like
+// "add more detail about FOURIER" or "include the SPRINT trial" route as additions, not as
+// whole-talk operations. (Jenni 2026-06-11)
+function isAdditiveIntent(msg){
+  var m = String(msg||"").toLowerCase();
+  // Strong addition signals: starts with "add", contains "include", "incorporate", "mention",
+  // "talk about", "say something about", "discuss", "what about", "also cover", etc.
+  return /\b(add\b|include\b|incorporate\b|mention\b|talk about|say (?:something|more) about|discuss\b|what about|also cover|don't forget|remember to|consider adding|address\b|cover\b|note\b|include the)\b/.test(m);
+}
+
 // Detect a "compress this existing talk" intent — different from radical revision because the user
 // wants to KEEP all sections + clinical details, just tighten phrasing. Routes to compressTalk(),
 // NOT generate(). (Jenni 2026-06-11 — "it cuts way too short and drops sections" was the bug.)
 function isCompressionIntent(msg){
   var m = String(msg||"").toLowerCase();
-  return /\b(more concise|less verbose|shorten|shorter|condens(e|ed)|trim(?: it| this| down)?|tighten|cut (?:down|out|it)|summari[sz]e|too long|less detail|fewer (?:bullets|points|sections)|punch(?:y|ier)|tl;?dr|more brief|briefer|terse|less wordy|less long|wordy)\b/.test(m);
+  // Broad: catches "keep it concise", "be concise", "make this concise", "stay concise",
+  // "concise version", "more concise", as well as shorten/trim/condense/etc.
+  return /\bconcise\b|\b(less verbose|shorten|shorter|condens(e|ed)|trim(?: it| this| down)?|tighten|cut (?:down|out|it)|summari[sz]e|too long|less detail|fewer (?:bullets|points|sections)|punch(?:y|ier)|tl;?dr|more brief|briefer|terse|less wordy|less long|wordy)\b/.test(m);
+}
+
+// Mirror of isCompressionIntent — detect "make more detailed / expand / go deeper" intent.
+// Routes to expandTalk(), which enriches existing content while keeping structure intact. (Jenni 2026-06-11)
+function isExpansionIntent(msg){
+  var m = String(msg||"").toLowerCase();
+  // Broad: catches "more detail", "add more detail", "be detailed", "make it detailed",
+  // "more in depth", "go deeper", "expand", etc.
+  return /\bdetailed\b|\b(more detail(?:s|ed)?|add detail|add more detail|more thorough|expand|elaborate|go deeper|deeper|fuller|richer|longer|more depth|more comprehensive|more in.?depth|in.?depth|flesh (?:it|this) out|fill (?:it|this) out|more explanation|more content|more substantive)\b/.test(m);
+}
+
+// Detect "restructure this talk" intent — splitting / merging / reordering / renaming sections.
+// Patch path can only ADD; compression/expansion preserve structure. This path is the only one
+// that can ACTUALLY MOVE content between sections. (Jenni 2026-06-11)
+function isRestructureIntent(msg){
+  var m = String(msg||"").toLowerCase();
+  return /\b(split|break (?:up|down|out|into|apart)|divide|separate (?:into|out)|reorder|re-?order|rearrange|move (?:section|sections|the section)|swap (?:section|sections)|merge|combine (?:section|sections)|consolidate|rename (?:section|sections|the section|the heading)|change (?:section|the section|the heading|the order)|smaller sections|bigger sections|fewer sections|more sections)\b/.test(m);
+}
+
+// Restructure an existing talk — splits, merges, reorders, renames sections WITHOUT losing any
+// bullet, pearl, fact, or citation. The model returns the talk with reorganized sections; JS
+// validates that every original citation [N] and every bullet survives somewhere.
+async function restructureTalk(userMsg){
+  if(!S.talk) return null;
+  var existingJson = JSON.stringify(S.talk);
+  var sectionList = (S.talk.sections||[]).map(function(s,i){
+    var bulletCount = (s.points||[]).length;
+    return (i+1)+". \""+(s.heading||"(no heading)")+"\" — "+bulletCount+" bullet"+(bulletCount===1?"":"s");
+  }).join("\n  ");
+  var refCount = (S.talk.references||[]).length;
+  // Count all bullets across sections so we can validate "no bullet lost"
+  var totalBullets = 0;
+  (S.talk.sections || []).forEach(function(s){ totalBullets += (s.points || []).length; });
+
+  var sys = "You are restructuring an existing medical chalk talk for an internal medicine educator. " +
+    "The user wants to REORGANIZE sections — split, merge, reorder, or rename — WITHOUT losing any " +
+    "clinical content. This is a structural rearrangement, not a regeneration.\n\n" +
+    "EXISTING STRUCTURE (use these 1-based indices to refer to sections in your reasoning):\n  " + sectionList + "\n" +
+    "Existing bullet count across all sections: " + totalBullets + "\n" +
+    "Existing references count: " + refCount + "\n\n" +
+    "ABSOLUTE PRESERVATION RULES:\n" +
+    "- EVERY bullet from the existing sections must end up SOMEWHERE in the output. Total bullet count must be ≥ " + totalBullets + ".\n" +
+    "- EVERY reference must be preserved. References array must come back the same length or longer (never shorter).\n" +
+    "- EVERY [N] citation must still appear inline somewhere in the output, attached to its original fact.\n" +
+    "- EVERY clinical detail: drug names, doses, trial names, lab values, percentages, numbers — all preserved.\n" +
+    "- The teaching_pearl and board_tip of each ORIGINAL section must end up attached to a section (the one they topically belong to after restructuring).\n" +
+    "- Title, subtitle, visual_memory_card, summary_points, board_pearls, teaching_points — all unchanged.\n\n" +
+    "ALLOWED STRUCTURAL OPERATIONS:\n" +
+    "- SPLIT a section into 2 or more sections (move some bullets to a new section, give each part its own heading + appropriate pearl/tip).\n" +
+    "- MERGE 2 or more sections into one (combine bullets, pick the most encompassing heading, keep all pearls/tips by appending).\n" +
+    "- REORDER sections (just rearrange the array — content stays attached to its heading).\n" +
+    "- RENAME headings (change the wording, keep the bullets attached).\n" +
+    "- MOVE bullets between sections if they topically belong elsewhere after the restructure.\n\n" +
+    "WHEN SPLITTING:\n" +
+    "- Give each new sub-section a focused heading.\n" +
+    "- Distribute the original bullets between them based on topic.\n" +
+    "- Distribute the teaching_pearl/board_tip — usually one new section keeps the original pearl, the other gets a derived one (or an empty string if no good fit).\n" +
+    "- NEVER duplicate a bullet across the split. Each bullet goes in exactly ONE new sub-section.\n\n" +
+    "WHEN MERGING:\n" +
+    "- Concatenate the bullets in a sensible order.\n" +
+    "- Combine the pearls/tips into single longer strings if both have content, separated by '; '.\n" +
+    "- Use the most encompassing heading (or coin a new one).\n\n" +
+    "WHAT NOT TO DO:\n" +
+    "- Do NOT drop any bullet. Total bullet count after restructure must be ≥ " + totalBullets + ".\n" +
+    "- Do NOT drop or rewrite bullets to be shorter — phrasing stays the same, only the GROUPING changes.\n" +
+    "- Do NOT drop references. References array must be the same length or longer.\n" +
+    "- Do NOT drop a [N] citation. Every original citation must remain inline.\n" +
+    "- Do NOT add NEW clinical content unless the user explicitly asked. This is restructuring, not enrichment.\n\n" +
+    "SELF-CHECK BEFORE RETURNING:\n" +
+    "1. Total bullet count: count every bullet across every section in your output. Is it ≥ " + totalBullets + "? If not, you LOST content — go back and recover it.\n" +
+    "2. Citations: list every [N] in the original talk. Is each one still present in your output? If not, ADD IT BACK.\n" +
+    "3. References array: ≥ " + refCount + " entries? If not, ADD BACK what you dropped.\n" +
+    "4. Every drug name, dose, trial name, lab value from the original — still present in some bullet?\n\n" +
+    "Return the COMPLETE updated talk JSON in the EXACT same schema. ONLY JSON, no commentary, no markdown fences.";
+
+  var contentParts = [{
+    type: "text",
+    text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (restructure per the user's request; preserve every bullet, fact, and citation):\n" + existingJson
+  }];
+  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6" });
+  var restructured = JSON.parse(fixJSON(txt));
+  if(typeof deepCleanCitations === "function") restructured = deepCleanCitations(restructured);
+  if(typeof pruneFakeReferences === "function") restructured = pruneFakeReferences(restructured);
+  return restructured;
 }
 
 // Compress an existing talk — keeps every section, every clinical detail, every citation; just
@@ -5585,6 +5682,62 @@ async function compressTalk(userMsg){
   return compressed;
 }
 
+// Expand an existing talk — keeps every section and every existing fact, just ENRICHES each
+// bullet/pearl/tip with more depth (mechanism, rationale, examples, doses, evidence). Mirror of
+// compressTalk. Used when the user says "more detailed" / "go deeper" / "expand". (Jenni 2026-06-11)
+async function expandTalk(userMsg){
+  if(!S.talk) return null;
+  var existingJson = JSON.stringify(S.talk);
+  var sectionList = (S.talk.sections||[]).map(function(s,i){return (i+1)+". "+(s.heading||"(no heading)")}).join("\n  ");
+  var sectionCount = (S.talk.sections||[]).length;
+  var refCount = (S.talk.references||[]).length;
+
+  var sys = "You are deepening an existing medical chalk talk for an internal medicine educator. " +
+    "Your job is to add depth — fuller mechanism, more rationale, named trials, doses, NNT/NNH, " +
+    "alternative agents, edge cases — to existing bullets while keeping every section and every " +
+    "existing fact. This is an enrichment pass, not a regeneration.\n\n" +
+    "ABSOLUTE PRESERVATION RULES:\n" +
+    "- KEEP all " + sectionCount + " sections. Do NOT drop any. The exact section list (same order):\n  " + sectionList + "\n" +
+    "- KEEP all section headings exactly as-is unless the user explicitly asks to rename.\n" +
+    "- KEEP all " + refCount + " existing references. References array must come back identical or longer.\n" +
+    "- KEEP every existing clinical fact: drug names, doses, trial names, study years, lab values, mortality numbers, NNT/NNH, society citations [N], every named criterion.\n" +
+    "- KEEP every existing teaching_pearl and board_tip — you may enrich them with more mechanism, but the existing content stays.\n" +
+    "- KEEP all existing inline [N] citations exactly where they appeared.\n" +
+    "- KEEP the title, subtitle, and overall structure.\n\n" +
+    "WHAT TO ADD (the enrichment):\n" +
+    "- Expand telegraphic bullets into fuller sentences with mechanism: 'ARNi ↓ mortality' → 'ARNi (sacubitril/valsartan) ↓ mortality vs ACEi/ARB via dual neprilysin + RAAS inhibition (PARADIGM-HF: 20% ↓ CV death/HF hosp) [N]'.\n" +
+    "- For drug bullets: add dose, titration, contraindications, monitoring.\n" +
+    "- For trial bullets: add primary outcome, comparison arm, effect size, follow-up duration, population.\n" +
+    "- For workup bullets: add sensitivity/specificity if known, sequence, alternatives.\n" +
+    "- For treatment bullets: add first-line vs second-line, NNT if known, key trials, contraindications.\n" +
+    "- For pathophys bullets: add why it matters clinically (the so-what).\n" +
+    "- Add new references when you cite new trials or guidelines — assign new IDs starting from " + (refCount + 1) + ".\n" +
+    "- You may add 1-2 NEW bullets per section if there's a genuinely important fact not yet covered. But every existing bullet must still be present.\n\n" +
+    "WHAT NOT TO DO:\n" +
+    "- Do NOT drop sections. Output must have exactly " + sectionCount + " sections in the same order.\n" +
+    "- Do NOT drop or rewrite existing bullets to be shorter (this is an EXPANSION, not a rewrite).\n" +
+    "- Do NOT remove drug names, doses, trial names, numbers, or [N] citations from the existing content.\n" +
+    "- Do NOT drop the teaching_pearl or board_tip.\n" +
+    "- Do NOT change the visual_memory_card structure.\n\n" +
+    "SELF-CHECK BEFORE RETURNING:\n" +
+    "1. Count: exactly " + sectionCount + " sections? If fewer, ADD BACK the missing one(s).\n" +
+    "2. Citations: every [N] in the original — still in the expanded version? If a citation disappeared, ADD IT BACK.\n" +
+    "3. Existing facts: every drug, dose, trial name, lab value, percentage — still present? If any dropped, ADD BACK.\n" +
+    "4. References: same length or longer? Never shorter.\n\n" +
+    "Return the COMPLETE updated talk JSON in the EXACT same schema. ONLY JSON, no commentary, no markdown fences.";
+
+  var contentParts = [{
+    type: "text",
+    text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (expand each section with more depth; preserve every existing fact and section):\n" + existingJson
+  }].concat(buildReferenceParts(S.files));
+  // Higher max — expansion grows the talk so we need headroom.
+  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6" });
+  var expanded = JSON.parse(fixJSON(txt));
+  if(typeof deepCleanCitations === "function") expanded = deepCleanCitations(expanded);
+  if(typeof pruneFakeReferences === "function") expanded = pruneFakeReferences(expanded);
+  return expanded;
+}
+
 // Additive refinement \u2014 pass the EXISTING talk JSON to Claude + the user's add/change request.
 // Explicitly tells the model: preserve sections, pearls, citations, references. ONLY add new content
 // (new sections, new bullets, new references) unless the user explicitly asked to remove something.
@@ -5629,6 +5782,16 @@ async function weaveRevision(userMsg){
   var sectionHeadings = (S.talk.sections||[]).map(function(s,i){return i+": "+s.heading}).join("\n  ");
   var nextRefId = ((S.talk.references||[]).reduce(function(m,r){return Math.max(m,parseInt(r.id)||0)},0)+1);
 
+  // Style-match: additions inherit the talk's current depth so concise talks stay terse and detailed
+  // talks stay rich. The model gets this hint in the system prompt. (Jenni 2026-06-11)
+  var _depthHint = (S.depth === "concise")
+    ? "STYLE: This talk is in CONCISE mode \u2014 terse telegraphic bullets, 1-2 short sentences each. " +
+      "Your new additions MUST match. No verbose explanations, no paragraph-length bullets. " +
+      "Examples of concise style: 'GDMT: ARNi + BB + MRA + SGLT2i \u2014 start all 4 within 30d if eGFR > 25', " +
+      "'PRAISE trial: \u2193 mortality with amlodipine in nonischemic HFrEF [N]'. "
+    : "STYLE: This talk is in DETAILED mode \u2014 fuller explanations welcome, multi-sentence bullets OK, " +
+      "include mechanism and rationale alongside facts. Your new additions should match that depth. ";
+
   var sys = "You are refining an existing chalk talk for an internal medicine educator. " +
     "ITERATIVE REFINEMENT IS THE NORM \u2014 users will refine this talk many times over days/weeks " +
     "as they pull in new references, MKSAP excerpts, society guideline updates, and their own clinical " +
@@ -5637,6 +5800,7 @@ async function weaveRevision(userMsg){
     "The user wants to ADD content. Your job is to return a JSON PATCH describing the additions. " +
     "You CANNOT modify or remove existing content through this path \u2014 JS code merges your patch into " +
     "the existing talk, and the existing content is preserved exactly as-is.\n\n" +
+    _depthHint + "\n\n" +
     "PATCH SCHEMA (return exactly this \u2014 omit fields you don't need, all are optional):\n" +
     "{\n" +
     '  "skip_reason": null,\n' +
@@ -5765,10 +5929,102 @@ async function sendChat(){
   }
 
   S.msgs.push({r:"u",t:msg});
+  // Additive-intent SHORTCUT (Jenni 2026-06-11): if the user is clearly asking to add specific
+  // content ("add the FOURIER trial", "include the SPRINT data", "talk about euvolemia"), skip
+  // straight to the weave path even if their phrasing happens to contain words like "more detail"
+  // or "split" that would otherwise trip the structural intent detectors. Addition is the most
+  // common refine intent \u2014 make sure it always works.
+  var _isAdditiveSignal = isAdditiveIntent(msg);
+  // Restructure-intent path (Jenni 2026-06-11) \u2014 splits / merges / reorders / renames sections
+  // without losing any bullet, fact, or citation. Checked BEFORE expansion/compression because
+  // restructure intent words can overlap (e.g. "break this into smaller sections" sounds compressive
+  // but is actually structural).
+  if(!_isAdditiveSignal && isRestructureIntent(msg)){
+    pushTalkHistory("restructure");
+    S.chatBusy = true;
+    S.msgs.push({r:"a",t:"Restructuring sections \u2014 keeping every bullet, every fact, every citation\u2026"});
+    render();
+    try{
+      var restructured = await restructureTalk(msg);
+      if(restructured && restructured.title){
+        // Count original bullets + references for the safety check
+        var origBullets = 0;
+        (S.talk.sections || []).forEach(function(s){ origBullets += (s.points || []).length; });
+        var newBullets = 0;
+        (restructured.sections || []).forEach(function(s){ newBullets += (s.points || []).length; });
+        var origRefCount = (S.talk.references || []).length;
+        var newRefCount = (restructured.references || []).length;
+        if(newBullets < origBullets){
+          S.msgs.push({r:"a",t:"\u26a0 Restructure dropped content ("+origBullets+" \u2192 "+newBullets+" bullets). Keeping the original to protect your work. Try a more specific instruction like \"split the treatment section into pharmacologic and non-pharmacologic\" or \"reorder so workup comes before pathophys.\""});
+        } else if(newRefCount < origRefCount){
+          S.msgs.push({r:"a",t:"\u26a0 Restructure dropped a reference. Keeping the original. Try a more specific phrasing."});
+        } else {
+          var origSecCount = (S.talk.sections || []).length;
+          var newSecCount = (restructured.sections || []).length;
+          S.talk = restructured;
+          if(S.dg && S.dg.imgB64) S.visualStale = true;
+          else { S.dg = null; S.dgErr = ""; }
+          S.podScript = "";
+          S.talkIsSaved = false;
+          var deltaSec = newSecCount - origSecCount;
+          var secMsg = deltaSec === 0 ? "reordered " + newSecCount + " sections"
+                      : deltaSec > 0 ? "split into " + newSecCount + " sections (was " + origSecCount + ")"
+                      : "merged into " + newSecCount + " sections (was " + origSecCount + ")";
+          S.msgs.push({r:"a",t:"\u2713 Restructured \u2014 " + secMsg + ", kept all " + newBullets + " bullets and " + newRefCount + " references."});
+        }
+      } else {
+        S.msgs.push({r:"a",t:"Couldn't parse the restructured version \u2014 your original is intact. Try again."});
+      }
+    } catch(e){
+      S.msgs.push({r:"a",t:"Restructure failed: "+e.message+". Your original is intact."});
+    }
+    S.chatBusy = false;
+    S._composerOpen = false;
+    render();
+    return;
+  }
+  // Expansion-intent path (Jenni 2026-06-11) \u2014 keeps every section + every existing fact, enriches
+  // bullets with mechanism / doses / trial details. Mirror of compression. Listen to the user when
+  // they explicitly want more detail.
+  if(!_isAdditiveSignal && isExpansionIntent(msg)){
+    pushTalkHistory("expand");
+    S.chatBusy = true;
+    S.msgs.push({r:"a",t:"Deepening each section \u2014 keeping every existing fact, adding mechanism + evidence\u2026"});
+    render();
+    try{
+      var expanded = await expandTalk(msg);
+      if(expanded && expanded.title){
+        var origSecCount = (S.talk.sections || []).length;
+        var newSecCount = (expanded.sections || []).length;
+        var origRefCount = (S.talk.references || []).length;
+        var newRefCount = (expanded.references || []).length;
+        if(newSecCount < origSecCount){
+          S.msgs.push({r:"a",t:"\u26a0 Expansion dropped a section ("+origSecCount+" \u2192 "+newSecCount+"). Keeping the original to protect your work. Try \"add more detail to the treatment section\" for a targeted enrichment."});
+        } else if(newRefCount < origRefCount){
+          S.msgs.push({r:"a",t:"\u26a0 Expansion dropped a reference. Keeping the original. Try again."});
+        } else {
+          S.talk = expanded;
+          if(S.dg && S.dg.imgB64) S.visualStale = true;
+          else { S.dg = null; S.dgErr = ""; }
+          S.podScript = "";
+          S.talkIsSaved = false;
+          S.msgs.push({r:"a",t:"\u2713 Expanded \u2014 kept all "+newSecCount+" sections + "+newRefCount+" references"+(newRefCount > origRefCount ? " (+"+(newRefCount-origRefCount)+" new)" : "")+", added depth to existing content."});
+        }
+      } else {
+        S.msgs.push({r:"a",t:"Couldn't parse the expanded version \u2014 your original is intact. Try again."});
+      }
+    } catch(e){
+      S.msgs.push({r:"a",t:"Expansion failed: "+e.message+". Your original is intact."});
+    }
+    S.chatBusy = false;
+    S._composerOpen = false;
+    render();
+    return;
+  }
   // Compression-intent path (Jenni 2026-06-11) \u2014 keeps every section + every fact, just tightens
   // phrasing. Distinct from full regenerate (which would start from scratch and lose details) AND
   // from additive weave (which can only add, not shorten).
-  if(isCompressionIntent(msg)){
+  if(!_isAdditiveSignal && isCompressionIntent(msg)){
     pushTalkHistory("compress");
     S.chatBusy = true;
     S.msgs.push({r:"a",t:"Tightening phrasing \u2014 keeping every section, every fact, every citation\u2026"});
