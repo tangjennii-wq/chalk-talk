@@ -560,7 +560,7 @@ a.pmid-pill:hover { background:var(--lavender-soft); }
    ═══════════════════════════════════════════════════════════════════════ */
 
 // ═══════════ CONFIG ═══════════
-var MODEL_MAIN = "claude-opus-4-6";
+var MODEL_MAIN = "claude-opus-4-8";  // Bumped 2026-06-11 (Jenni). If 4-8 isn't available yet on the API, the fallback chain catches it: Opus → Sonnet 4 → Haiku 4.5.
 var MODEL_CRITIC = "claude-haiku-4-5-20251001";
 var MODEL_SONNET_FALLBACK = "claude-sonnet-4-20250514"; // middle-tier fallback when Opus is overloaded
 var MODEL = MODEL_CRITIC; // legacy fallback for non-critical calls (diagrams, podcast, chat)
