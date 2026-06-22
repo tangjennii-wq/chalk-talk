@@ -3991,6 +3991,8 @@ function deleteCurrentTalk(){
   });
 }
 async function loadSavedTalk(id){
+  // Guard unsaved work — but NOT on deep-link/hash loads (fresh page, nothing to lose). (Jenni 2026-06-22)
+  if(!S.loadingFromHash && !confirmDiscardUnsaved()) return;
   var entry = null;
   // Cloud path
   if(S.user && window.sb && id && !String(id).startsWith("t_")){
@@ -6143,7 +6145,7 @@ function applyWeavePatch(talk, patch){
 
   // ---- SURGICAL EDITS (in place — no length change, all original indices stay valid) ----
   var TOMB = "\u0000__WEAVE_DELETE__";
-  function _inSec(i){ return typeof i === "number" && t.sections && t.sections[i]; }
+  function _inSec(i){ return typeof i === "number" && t.sections && t.sections[i] && !t.sections[i]._deleted; }
   if(Array.isArray(patch.edit_section_bullets)){
     patch.edit_section_bullets.forEach(function(e){
       if(!e || typeof e !== "object") return;
@@ -6255,7 +6257,15 @@ function applyWeavePatch(talk, patch){
   }
 
   if(Array.isArray(patch.add_sections)){
-    patch.add_sections.forEach(function(newSec){
+    // Insert highest-position-first so an earlier splice can't shift the after_index of a later one
+    // (the model emits after_index against the ORIGINAL array). Append-to-end items (no valid
+    // after_index) sort first and stack at the end. (Jenni 2026-06-22: fixes multi-add drift.)
+    var _addSecs = patch.add_sections.slice().sort(function(a,b){
+      var ai = (a && typeof a.after_index === "number") ? a.after_index : Infinity;
+      var bi = (b && typeof b.after_index === "number") ? b.after_index : Infinity;
+      return bi - ai;
+    });
+    _addSecs.forEach(function(newSec){
       if(!newSec || typeof newSec !== "object" || !newSec.heading) return;
       var insertAt;
       if(typeof newSec.after_index === "number" && newSec.after_index >= 0 && newSec.after_index < (t.sections||[]).length){
@@ -6808,6 +6818,28 @@ function copyTextToClipboard(text,label){
 // Guarded wrapper for resetAll. Prompts before discarding an unsaved, non-sample talk
 // (samples don't need confirmation — they're cached, can be reopened from Library anytime).
 // All "New talk" UI paths route through this — both the capsule header button + overflow menu.
+// Shared guard for any in-tab action that would replace the current talk (new talk, opening a
+// saved talk or sample from the landing page). Returns true if it's safe to proceed. Mirrors the
+// safeResetAll condition: only warns for a real, unsaved, non-sample talk. (Jenni 2026-06-22:
+// the landing-page Open buttons used to clobber unsaved work with no prompt.)
+function confirmDiscardUnsaved(){
+  if(S.talk && !S.isSampleTalk && !S.sharedTalk && !S.talkIsSaved){
+    return confirm("Open this talk?\n\nYour current talk isn't saved yet — it'll be gone.");
+  }
+  return true;
+}
+
+// Browser-level safety net: warn before a tab close / reload / external nav drops an unsaved talk.
+// Native dialog (message text is ignored by modern browsers; presence of returnValue triggers it).
+// (Jenni 2026-06-22: Cmd+R / closing the tab silently lost unsaved work before.)
+window.addEventListener("beforeunload", function(e){
+  if(typeof S !== "undefined" && S && S.talk && !S.isSampleTalk && !S.sharedTalk && !S.talkIsSaved){
+    e.preventDefault();
+    e.returnValue = "";
+    return "";
+  }
+});
+
 function safeResetAll(){
   if(S.talk && !S.isSampleTalk && !S.talkIsSaved){
     if(!confirm("Start a new talk?\n\nThis one isn't saved yet — it'll be gone.")) return;
@@ -7328,6 +7360,9 @@ function pickSampleTalk(s, depth){
 
 function loadSample(slug, depth){
   if(!SAMPLES||!SAMPLES.length)return;
+  // Guard unsaved work before a sample replaces it. Depth-flips pass a `depth` arg and the current
+  // talk is itself a sample (excluded by confirmDiscardUnsaved), so those never prompt. (Jenni 2026-06-22)
+  if(!confirmDiscardUnsaved())return;
   var s=null;for(var i=0;i<SAMPLES.length;i++){if(SAMPLES[i].slug===slug){s=SAMPLES[i];break}}
   if(!s)return;
   // Determine which depth version was actually picked (handles fallback when requested version is missing).
