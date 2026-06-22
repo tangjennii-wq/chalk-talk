@@ -280,6 +280,9 @@ button{cursor:pointer;font-family:inherit}
 textarea,input[type=text]{font-family:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{width:16px;height:16px;border:2.5px solid #e2dfe8;border-top-color:#702b9d;border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes streamBlink{0%,45%{opacity:1}50%,95%{opacity:0}100%{opacity:1}}
+.streamCursor{display:inline-block;color:var(--plum-rich,#702b9d);font-weight:700;animation:streamBlink 1s steps(1) infinite;margin-left:1px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 /* Citations */
 /* Slides poster — flow band stacks vertically on mobile (4 cards crushed too tight otherwise) */
 @media (max-width:720px){
@@ -572,13 +575,16 @@ function segBtn(cls, dataAttr, val, current, icon, label, opts){
   opts = opts || {};
   var active = (current === val);
   var compact = !!opts.compact;
+  var disabled = !!opts.disabled;   // gate a choice (e.g. Detailed before a concise talk exists)
   return '<button class="'+cls+'" data-'+dataAttr+'="'+val+'"'+
+    (disabled?' disabled':'')+
     (opts.title?' title="'+opts.title+'"':'')+
     ' style="flex:1 1 0;min-width:0;background:'+(active?"#fff":"transparent")+
     ';color:'+(active?"var(--plum-deep)":"var(--ink-muted)")+
     ';border:'+(active?"1px solid var(--line)":"1px solid transparent")+
     ';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(active?"600":"500")+
-    ';cursor:pointer;'+
+    ';cursor:'+(disabled?"not-allowed":"pointer")+';'+
+    (disabled?'opacity:0.4;pointer-events:none;':'')+
     (compact ? '' : 'box-shadow:'+(active?"var(--shadow-soft)":"none")+';transition:all .15s ease;')+
     'display:inline-flex;align-items:center;justify-content:center;gap:6px">'+
     '<span'+(compact?'':' style="font-size:13px"')+'>'+icon+'</span>'+label+'</button>';
@@ -615,6 +621,53 @@ function promptForNewClaudeKey(reasonMsg){
     return nk.trim();
   }
   return null;
+}
+
+// ═══════════ FREE TIER (FREE_TIER_SPEC.md) ═══════════
+// Signed-in users with no key of their own get N free talks on Jenni's key, routed
+// through the Cloudflare Worker. BYOK users (own key set, or "use my own key" on) go
+// direct to Anthropic and never touch the Worker / quota.
+function hasOwnClaudeKey(){ return !!(localStorage.getItem("claude_api_key")||"").trim(); }
+function freeTierToken(){ return (S.session && S.session.access_token) || null; }
+function freeTierActive(){
+  return !!(FREE_TIER_CONFIG.enabled && S.user && freeTierToken() && !hasOwnClaudeKey() && !S.useByok && RAG_CONFIG.url);
+}
+// Consume ONE unit of quota for a generation. Returns {ok} or {ok:false, code, message}.
+// Called once per generation (not per API call) so retries/fallbacks don't double-charge.
+async function consumeFreeTier(kind){
+  if(!freeTierActive()) return {ok:true, skipped:true};
+  try{
+    var r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/v1/free-tier/consume", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "X-Supabase-Auth": freeTierToken() },
+      body: JSON.stringify({ kind: kind||"talk" })
+    });
+    var data = {}; try{ data = await r.json(); }catch(_){}
+    if(r.ok){
+      if(data.remaining) S.freeTier = Object.assign({}, S.freeTier, {
+        talks_remaining: data.remaining.talks_remaining,
+        images_remaining: data.remaining.images_remaining,
+        signed_in:true
+      });
+      return {ok:true, remaining:data.remaining};
+    }
+    return {ok:false, code:(data.error&&data.error.type)||"quota_error", message:(data.error&&data.error.message)||"Free tier limit reached", resumes_on:(data.error&&data.error.detail&&data.error.detail.resumes_on)};
+  }catch(e){
+    // Network/Supabase failure — fail open with a soft message so we don't hard-block on a blip.
+    return {ok:false, code:"network", message:"Couldn't reach the free-tier service. Try again, or set your own key."};
+  }
+}
+// Refresh the quota badge from the Worker. Safe to call on load + after each generation.
+async function refreshFreeTierStatus(){
+  if(!FREE_TIER_CONFIG.enabled || !S.user || !freeTierToken() || hasOwnClaudeKey() || S.useByok || !RAG_CONFIG.url){ S.freeTier=null; if(typeof render==="function")render(); return; }
+  try{
+    var r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/v1/free-tier/status", {
+      headers:{ "X-Supabase-Auth": freeTierToken() }
+    });
+    if(!r.ok) return;
+    var s = await r.json();
+    if(s && s.signed_in){ S.freeTier = s; if(typeof render==="function")render(); }
+  }catch(e){ /* badge is best-effort */ }
 }
 
 // ═══════════ TOPICS ═══════════
@@ -1325,6 +1378,17 @@ var PROXY_CONFIG = {
 var RAG_CONFIG = {
   enabled: true,
   url: "https://chalk-talk-proxy.chalktalk.workers.dev"
+};
+
+// ═══════════ FREE TIER CONFIG ═══════════
+// Master off-switch for the whole free-tier frontend (quota chip, sign-in nudge, Worker
+// routing, upsell modal). Keep FALSE until the backend is live — see FREE_TIER_DEPLOY.md:
+//   1) apply supabase/migration_v3_free_tier.sql
+//   2) wrangler secret put SUPABASE_SERVICE_ROLE_KEY ; wrangler deploy
+// THEN set enabled:true and push. With it false, the app behaves exactly as before
+// (signed-in users without a key are asked for their own Anthropic key). (Jenni 2026-06-22)
+var FREE_TIER_CONFIG = {
+  enabled: false
 };
 
 // ═══════════ TRIAL EXPANSIONS ═══════════
@@ -2951,6 +3015,10 @@ var S = {
   sharedAuthorUserId:null, sharedOriginalTalkId:null,
   // Streaming progress (Jenni 2026-06-09 #3) — populated by callAPI's onStreamChunk during gen
   streamingTitle:"", streamingChars:0,
+  // Progressive rendering (Jenni 2026) — live section/subtitle/stem preview built mid-stream
+  streamingSubtitle:"", streamingSections:[], streamingStem:"",
+  // Free tier (Jenni 2026) — {signed_in,talks_remaining,images_remaining,talks_total,images_total,cap_hit,cap_pct_used}
+  freeTier:null, showOutOfFreeModal:false, freePausedMsg:"",
   // #4 — true while the slow claim-level citation audit runs in background after talk is shown
   citationAuditPending:false,
   // Collapsed share-info chip — toggles details on tap (Jenni 2026-06-08)
@@ -2983,7 +3051,10 @@ var S = {
   accountMenuOpen:false, cloudTalks:[], cloudLoaded:false, profileEditOpen:false, profileForm:null, profileKeyEditing:null,
   favorites:{},
   // — BYOK / billing
-  useByok: !(PROXY_CONFIG.enabled&&PROXY_CONFIG.url), rateRemaining:null
+  // Default false so signed-in users without a key flow into the free tier. (Was derived from
+  // PROXY_CONFIG, which left it stuck true and would have disabled the free tier.) The "use my
+  // own key" path still works via hasOwnClaudeKey() / setting a key. (Jenni 2026-06-22)
+  useByok: false, rateRemaining:null
 };
 
 // ═══════════ SUPABASE AUTH ═══════════
@@ -2994,6 +3065,7 @@ window.onSupabaseReady = function(client){
       S.session = r.data.session;
       S.user = r.data.session.user;
       loadProfile();
+      if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
     }
     if(typeof render === "function") render();
     // Background-fetch featured talks for the landing page (Jenni 2026-06-08)
@@ -3007,10 +3079,11 @@ window.onSupabaseReady = function(client){
     S.user = (session && session.user) || null;
     if(S.user){
       loadProfile();
+      if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
       // First-time-on-this-device prompt: migrate localStorage talks
       if(!wasSignedIn) maybeOfferLocalMigration();
     } else {
-      S.profile = null;
+      S.profile = null; S.freeTier = null;
     }
     if(typeof render === "function") render();
   });
@@ -4842,6 +4915,51 @@ function deepCleanCitations(obj) {
   return obj;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Progressive rendering (Jenni 2026) — parse an INCOMPLETE JSON string mid-stream
+// so the loading view can show sections as they draft. Best-effort: returns null
+// when the buffer can't yet be coerced into valid JSON; the next chunk retries.
+// We scan the buffer tracking string/bracket state, then auto-close open strings
+// and brackets at the truncation point and JSON.parse the repaired result. A few
+// fallback cut points (last comma / brace / bracket) handle a half-written token.
+// ─────────────────────────────────────────────────────────────────────────
+function _scanJSONState(s){
+  var stack=[], inStr=false, esc=false;
+  for(var i=0;i<s.length;i++){
+    var c=s[i];
+    if(inStr){ if(esc){esc=false;} else if(c==="\\"){esc=true;} else if(c==='"'){inStr=false;} continue; }
+    if(c==='"'){ inStr=true; }
+    else if(c==='{'){ stack.push('}'); }
+    else if(c==='['){ stack.push(']'); }
+    else if(c==='}'||c===']'){ stack.pop(); }
+  }
+  return {stack:stack, inStr:inStr, esc:esc};
+}
+function parsePartialJSON(raw){
+  if(!raw) return null;
+  var start=raw.indexOf("{");
+  if(start<0) return null;
+  var s=raw.slice(start);
+  // Try the full buffer first, then a few structural fallback cut points.
+  var cuts=[s.length];
+  var lc=s.lastIndexOf(","); if(lc>0) cuts.push(lc);
+  var lo=s.lastIndexOf("}"); if(lo>0) cuts.push(lo+1);
+  var la=s.lastIndexOf("]"); if(la>0) cuts.push(la+1);
+  for(var ci=0;ci<cuts.length;ci++){
+    var sub=s.slice(0,cuts[ci]);
+    if(!sub) continue;
+    var st=_scanJSONState(sub);
+    var fixed=sub;
+    if(st.inStr){ if(st.esc) fixed=fixed.slice(0,-1); fixed+='"'; }   // close an open string
+    fixed=fixed.replace(/[\s,]+$/,"");                                 // drop trailing comma/ws
+    fixed=fixed.replace(/"[^"]*"\s*:\s*$/,"").replace(/[\s,]+$/,"");   // drop a dangling key:
+    fixed=fixed.replace(/[\s,]+$/,"");
+    var closers=st.stack.slice().reverse().join("");
+    try { var o=JSON.parse(fixed+closers); if(o && typeof o==="object") return o; } catch(e){}
+  }
+  return null;
+}
+
 function fixJSON(raw) {
   // Strip web search citation tags that leak into output
   var t = raw.replace(/]*>/g,"").replace(/<\/antml:cite>/g,"").replace(/<cite[^>]*>/g,"").replace(/<\/cite>/g,"");
@@ -4951,9 +5069,15 @@ async function callAPI(sys, content, maxTok, opts) {
   // so the loading UI can show progressive feedback. The Worker just pipes the response body
   // through unchanged. Returns a payload shaped like the non-streaming response.
   if (opts.onStreamChunk) body.stream = true;
-  var useProxy = PROXY_CONFIG.enabled && PROXY_CONFIG.url && !S.useByok;
+  // Routing priority: (1) free tier (signed in, no own key) → Worker on Jenni's key;
+  // (2) demo proxy (if enabled) → Worker; (3) BYOK → direct to Anthropic.
+  var useFree = freeTierActive();
+  var useProxy = !useFree && PROXY_CONFIG.enabled && PROXY_CONFIG.url && !S.useByok;
   var endpoint, headers;
-  if (useProxy) {
+  if (useFree) {
+    endpoint = RAG_CONFIG.url.replace(/\/$/, "") + "/v1/messages";
+    headers = {"Content-Type":"application/json","X-Supabase-Auth":freeTierToken(),"X-CT-Meter":(opts.meterKind||"aux")};
+  } else if (useProxy) {
     endpoint = PROXY_CONFIG.url.replace(/\/$/, "") + "/v1/messages";
     headers = {"Content-Type":"application/json"};
   } else {
@@ -4982,7 +5106,7 @@ async function callAPI(sys, content, maxTok, opts) {
       if (rem !== null && rem !== "") S.rateRemaining = parseInt(rem);
     }
     // Retry transient server overload up to 2 times with backoff
-    if ((r.status === 529 || r.status === 503) && attempt < 2) {
+    if ((r.status === 529 || (r.status === 503 && !useFree)) && attempt < 2) {
       var waitMs = 4000 * (attempt + 1); // 4s, then 8s
       attempt++;
       await new Promise(function(resolve){setTimeout(resolve, waitMs)});
@@ -4991,6 +5115,14 @@ async function callAPI(sys, content, maxTok, opts) {
     break;
   }
   if(!r.ok){var e={};try{e=await r.json()}catch(x){}
+    // Free-tier signals from the Worker — surface as tagged errors so generate() can react.
+    if (useFree) {
+      var ftype = (e.error && e.error.type) || "";
+      var fmsg  = (e.error && e.error.message) || "";
+      if (ftype === "quota_exceeded" || ftype === "image_quota_exceeded") { var qe = new Error(fmsg || "Free tier limit reached."); qe.code = "quota_exceeded"; throw qe; }
+      if (ftype === "free_tier_paused") { var pe = new Error(fmsg || "Free tier paused this month."); pe.code = "free_tier_paused"; throw pe; }
+      if (ftype === "auth_invalid" || r.status === 401) { var ae = new Error(fmsg || "Please sign in again."); ae.code = "auth_invalid"; throw ae; }
+    }
     if (useProxy && r.status === 429) throw new Error("Daily demo-proxy limit reached. Switch to your own API key (top of header) for unlimited access, or come back tomorrow.");
     if (useProxy && r.status === 403) throw new Error("Demo proxy denied this origin. Open the deployed site or use your own API key.");
     // BYOK auth fail OR out-of-credits — prompt inline for a new key + retry once (don't loop forever).
@@ -5173,6 +5305,28 @@ function buildReferenceParts(files) {
 
 async function generate(){
   if(!S.topic.trim()||S.loading)return;
+  // Discovery nudge: a logged-out visitor with no key of their own gets the free-tier offer
+  // (sign in → 5 free talks) instead of a bare API-key prompt. BYOK users are unaffected.
+  if(FREE_TIER_CONFIG.enabled && !S.user && !hasOwnClaudeKey() && !S.useByok){
+    S.signInOpen = true;
+    S.authMsg = "Sign in to use your 5 free talks — no API key needed.";
+    if(typeof render === "function") render();
+    return;
+  }
+  // Free tier: consume 1 talk up front (once per generation). If out of quota or the
+  // month is paused, show the upsell instead of starting. BYOK users skip this entirely.
+  if(freeTierActive()){
+    var _ftc = await consumeFreeTier("talk");
+    // Block ONLY on real quota/paused signals. Network/config errors fail open (proceed) —
+    // the Worker's spend-cap check still backstops cost, and we never falsely accuse a user.
+    if(!_ftc.ok && (_ftc.code === "quota_exceeded" || _ftc.code === "free_tier_paused")){
+      if(_ftc.code === "free_tier_paused") S.freePausedMsg = _ftc.message || "Chalk Talk's free tier is paused for this month.";
+      else S.freePausedMsg = "";
+      S.showOutOfFreeModal = true;
+      if(typeof render === "function") render();
+      return;
+    }
+  }
   // Reset cancel flag at the START of every generation. (Jenni 2026-06-08)
   S.genCancelled=false;
   // Generation-ID counter — used so that mid-flight setting changes can restart cleanly
@@ -5190,7 +5344,9 @@ async function generate(){
   // checks for this case and renders a small banner instead of a full takeover. New draft swaps in
   // when ready (or on cancel/error, the old content stays).
   var _hadExistingTalk = !!S.talk;
-  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;speechSynthesis.cancel();
+  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;
+  S.streamingTitle="";S.streamingSubtitle="";S.streamingSections=[];S.streamingStem="";S.streamingChars=0;  // clear stale preview from prior gen (Jenni 2026)
+  speechSynthesis.cancel();
   if(!_hadExistingTalk) S.talk = null;   // only blank the view when there's no prior content to read
   render();
   loadTimer=setInterval(function(){S.loadSec++;var msgs=S.wantWebSearch?["Reasoning through physiology...","Searching current literature...","Cross-referencing societies...","Building content...","AI-checking...","Polishing final version..."]:["Reasoning through physiology...","Loading guidelines...","Building content...","AI-checking & polishing..."];S.loadMsg=msgs[Math.min(Math.floor(S.loadSec/3),msgs.length-1)];render()},1000);
@@ -5216,7 +5372,7 @@ async function generate(){
     var sys=S.style==="boards"?BOARDS_PROMPT:LECTURE_PROMPT;
 
     // Step 1: Main generation with model fallback chain (Opus -> Sonnet -> Haiku)
-    var mainOpts = {};
+    var mainOpts = { meterKind: "talk" };   // free-tier spend-metering tag (quota already consumed up front)
     if (S.wantWebSearch) mainOpts.tools = [{type:"web_search_20250305",name:"web_search",max_uses:3,allowed_domains:ALLOWED_SEARCH_DOMAINS}];
     // Guard: web-search allowed_domains must be duplicate-free, else Anthropic rejects the call.
     if (S.wantWebSearch) {
@@ -5237,7 +5393,8 @@ async function generate(){
     // Streaming progress: surface the draft title as soon as it appears in the stream, and tick
     // a char-count so the progress bar reflects actual generation activity. (Jenni 2026-06-09 #3)
     var _streamLastRender = 0;
-    S.streamingTitle = ""; S.streamingChars = 0;
+    var _streamLastParse = 0;
+    S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
     mainOpts.onStreamChunk = function(chunk, fullText){
       S.streamingChars = fullText.length;
       if (!S.streamingTitle) {
@@ -5248,7 +5405,30 @@ async function generate(){
           if (typeof render === "function") render();
         }
       }
-      // Re-render every ~600 chars so the UI updates without thrashing
+      // Progressive section rendering (Jenni 2026): every ~450 new chars, attempt a partial parse
+      // and surface whatever sections have formed so far. This is the headline perceived-speed win —
+      // the user watches the talk build section-by-section instead of staring at a spinner.
+      if (fullText.length - _streamLastParse > 450) {
+        _streamLastParse = fullText.length;
+        var partial = parsePartialJSON(fullText);
+        if (partial) {
+          if (partial.title) S.streamingTitle = partial.title;
+          if (partial.subtitle) S.streamingSubtitle = partial.subtitle;
+          if (Array.isArray(partial.sections)) {
+            S.streamingSections = partial.sections.map(function(sec){
+              return {
+                heading: (sec && sec.heading) ? String(sec.heading) : "",
+                minutes: (sec && sec.minutes) ? String(sec.minutes) : "",
+                points: (sec && Array.isArray(sec.points)) ? sec.points.filter(function(p){return p!=null}).map(String) : []
+              };
+            });
+          }
+          if (partial.question && partial.question.stem) S.streamingStem = String(partial.question.stem);
+          _streamLastRender = fullText.length;
+          if (typeof render === "function") render();
+        }
+      }
+      // Re-render every ~600 chars so the UI updates without thrashing even when no parse landed
       if (fullText.length - _streamLastRender > 600) {
         _streamLastRender = fullText.length;
         if (typeof render === "function") render();
@@ -5256,7 +5436,7 @@ async function generate(){
     };
     var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
     // Clear streaming progress now that the main draft is in hand; critique/audit run after.
-    S.streamingTitle = ""; S.streamingChars = 0;
+    S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
     var txt = mainResult.txt;
     if (mainResult.fellBack) console.info("Draft generated with " + mainResult.modelUsed + " (Opus was overloaded)");
     if(!txt.trim())throw new Error("Empty response");
@@ -5333,7 +5513,21 @@ async function generate(){
         if(!ok) console.warn("Depth variant merge failed — talk loaded in memory but not persisted to existing row.");
       });
     }
-  }catch(e){if(!S.genCancelled)S.error=e.message}
+  }catch(e){
+    if(!S.genCancelled){
+      // Free-tier signals (rare here — quota is pre-consumed — but cap can flip mid-flight).
+      if(e && (e.code === "quota_exceeded" || e.code === "free_tier_paused")){
+        if(e.code === "free_tier_paused") S.freePausedMsg = e.message || "Chalk Talk's free tier is paused for this month.";
+        S.showOutOfFreeModal = true;
+      } else if(e && e.code === "auth_invalid"){
+        S.error = "Your session expired — please sign in again.";
+      } else {
+        S.error = e.message;
+      }
+    }
+  }
+  // Keep the quota badge fresh after every generation attempt.
+  if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
   clearInterval(loadTimer);S.loading=false;render();
   if(S.talk){var ts=document.getElementById("talkStart");if(ts)ts.scrollIntoView({behavior:"smooth",block:"start"})}
   // If user queued audio during the loading state, fire podcast generation now.
@@ -5482,6 +5676,8 @@ async function genDiagram(){
       var oaEndpoint=imageProxy ? imageProxy + "/v1/images/generations" : "https://api.openai.com/v1/images/generations";
       var oaHeaders={"Content-Type":"application/json"};
       if(oaKey)oaHeaders.Authorization="Bearer "+oaKey;
+      // Free-tier image quota: the Worker consumes + meters when this header is present.
+      if(imageProxy && freeTierActive()) oaHeaders["X-Supabase-Auth"]=freeTierToken();
       var oaRes=await fetch(oaEndpoint,{
         method:"POST",
         headers:oaHeaders,
@@ -5495,11 +5691,13 @@ async function genDiagram(){
       });
       if(!oaRes.ok){
         var oaErrTxt=await oaRes.text();
-        if(oaRes.status===401||oaRes.status===403){
+        if(oaRes.status===401||oaRes.status===403&&!freeTierActive()){
           localStorage.removeItem("openai_api_key");
           throw new Error("OpenAI API key rejected ("+oaRes.status+"). Cleared \u2014 try again to re-enter.");
         }
-        throw new Error("OpenAI API "+oaRes.status+": "+oaErrTxt.slice(0,200));
+        if(oaRes.status===429){ throw new Error("You've used your free images. Add your own key to keep generating illustrations."); }
+        if(oaRes.status===503){ throw new Error("Free tier is paused this month. Add your own key to continue."); }
+        throw new Error("Image API "+oaRes.status+": "+oaErrTxt.slice(0,200));
       }
       var oaData=await oaRes.json();
       var oaImgB64=oaData.data&&oaData.data[0]&&oaData.data[0].b64_json;
@@ -5816,6 +6014,15 @@ function undoLastEdit(){
 // or rewrites of existing content, isRadicalRevision routes to the full regenerate path instead.
 async function weaveRevision(userMsg){
   if(!S.talk) return null;
+  // Refines count as 1 talk against free-tier quota (FREE_TIER_SPEC.md, LOCKED).
+  if(freeTierActive()){
+    var _wftc = await consumeFreeTier("talk");
+    if(!_wftc.ok && (_wftc.code === "quota_exceeded" || _wftc.code === "free_tier_paused")){
+      if(_wftc.code === "free_tier_paused") S.freePausedMsg = _wftc.message || "";
+      S.showOutOfFreeModal = true; if(typeof render === "function") render();
+      return null;
+    }
+  }
   var existingJson = JSON.stringify(S.talk);
   var sectionHeadings = (S.talk.sections||[]).map(function(s,i){return i+": "+s.heading}).join("\n  ");
   var nextRefId = ((S.talk.references||[]).reduce(function(m,r){return Math.max(m,parseInt(r.id)||0)},0)+1);
@@ -5870,7 +6077,7 @@ async function weaveRevision(userMsg){
   // Also routes refine through Sonnet (was Haiku via default MODEL) — refine is a context-heavy
   // task where Haiku was occasionally dropping bullets. Worth ~$0.02/refine for the bump in
   // reliability. (Jenni 2026-06-10 "increase the cap for refine".)
-  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6" });
+  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6", meterKind: "talk" });
   var patch = JSON.parse(fixJSON(txt));
   // Returns the patch — caller applies it via applyWeavePatch().
   return { kind: "patch", patch: patch };
@@ -6785,7 +6992,34 @@ function renderGlobalModals(){
     h+='</div></div>';
   }
 
+  // ── Out-of-free-tier / paused upsell modal ───────────────────────────────
+  if(S.showOutOfFreeModal){
+    var _paused = !!S.freePausedMsg;
+    h+='<div class="drawer-backdrop open" id="freeModalBackdrop" style="z-index:130"></div>';
+    h+='<div class="drawer open" id="freeModal" style="z-index:131;max-width:420px;width:calc(100% - 32px);margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
+    h+='<div class="drawer-head" style="padding:20px 22px 8px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>✨</span> '+(_paused?"Free tier paused":"You've used your free talks")+'</div><button class="drawer-close" id="freeModalCloseBtn">×</button></div>';
+    h+='<div class="drawer-body" style="padding:0 22px 22px">';
+    if(_paused){
+      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">'+esc(S.freePausedMsg)+' Bring your own Anthropic key to keep generating right now — it goes straight to Anthropic and isn\'t rate-limited.</p>';
+    } else {
+      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">Thanks for trying Chalk Talk! To keep generating, add your own Anthropic key — about <b style="color:var(--ink)">$5 of credit covers ~30 talks</b>. Your key is stored only in this browser and sent only to Anthropic.</p>';
+    }
+    h+='<button id="freeAddKeyBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-bottom:10px">Add my Anthropic key →</button>';
+    h+='<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:12px;color:var(--plum);text-decoration:underline;text-underline-offset:2px;margin-bottom:14px">Get a key (free signup, ~2 min)</a>';
+    h+='<button id="freeMaybeLaterBtn" style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px;font-size:13px;font-weight:600;color:var(--ink-muted);cursor:pointer">Maybe later</button>';
+    h+='</div></div>';
+  }
+
   holder.innerHTML = h;
+
+  // Free-tier modal handlers
+  var fmc=document.getElementById("freeModalCloseBtn");if(fmc)fmc.onclick=function(){S.showOutOfFreeModal=false;S.freePausedMsg="";render()};
+  var fmb=document.getElementById("freeModalBackdrop");if(fmb)fmb.onclick=function(){S.showOutOfFreeModal=false;S.freePausedMsg="";render()};
+  var fml=document.getElementById("freeMaybeLaterBtn");if(fml)fml.onclick=function(){S.showOutOfFreeModal=false;S.freePausedMsg="";render()};
+  var fak=document.getElementById("freeAddKeyBtn");if(fak)fak.onclick=function(){
+    var nk=promptForNewClaudeKey("Add your Anthropic API key to keep generating.");
+    if(nk){ S.showOutOfFreeModal=false;S.freePausedMsg="";S.freeTier=null; if(typeof refreshFreeTierStatus==="function")refreshFreeTierStatus(); render(); }
+  };
 
   // Re-bind handlers (each render they need to attach fresh since innerHTML wipes them)
   // Share modal
@@ -7359,6 +7593,19 @@ function renderMain(){
     h+='  <span style="background:var(--plum);color:#fff;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;box-shadow:0 1px 3px rgba(75,17,111,0.2)">'+esc(initial)+'</span>';
     h+='  <span style="color:var(--ink-soft);font-size:10px;line-height:1">⌄</span>';
     h+='</button>';
+    // Free-tier quota chip — only for signed-in users on Jenni's key (no own key, not BYOK).
+    if(freeTierActive() && S.freeTier && S.freeTier.signed_in){
+      var _tr = (typeof S.freeTier.talks_remaining === "number") ? S.freeTier.talks_remaining : null;
+      if(_tr !== null){
+        var _chipColor = _tr <= 0 ? "#c0392b" : (_tr <= 1 ? "#b9770e" : "var(--plum)");
+        var _chipBg = _tr <= 0 ? "#fbeaea" : (_tr <= 1 ? "#fdf3e3" : "var(--lavender-bg)");
+        if(_tr > 0){
+          h+='<button id="freeTierChip" title="Free talks remaining on the house — then bring your own key" style="background:'+_chipBg+';border:1px solid '+_chipColor+'33;color:'+_chipColor+';font-size:10.5px;font-weight:700;border-radius:999px;padding:3px 9px;cursor:default;font-family:inherit;white-space:nowrap">✨ '+_tr+' free talk'+(_tr===1?"":"s")+' left</button>';
+        } else {
+          h+='<button id="freeTierChip" title="Add your own Anthropic key to keep going" style="background:'+_chipBg+';border:1px solid '+_chipColor+'33;color:'+_chipColor+';font-size:10.5px;font-weight:700;border-radius:999px;padding:3px 9px;cursor:pointer;font-family:inherit;white-space:nowrap">Add your key →</button>';
+        }
+      }
+    }
   } else {
     // Logged out: "Sign in" link with a small person icon so it's recognizable as an account affordance.
     h+='<button id="signInBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--plum);font-size:13px;font-weight:600;padding:2px 0;display:inline-flex;align-items:center;gap:6px">';
@@ -7525,7 +7772,7 @@ function renderMain(){
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span></div>';
   h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
   h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min"});
-  h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:"~10 min"});
+  h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:(S.talk?"~10 min":"Generate the concise talk first — then upgrade to Detailed"),disabled:!S.talk});
   h+='</div></div>';
   h+='</div>';
 
@@ -7583,6 +7830,42 @@ function renderMain(){
     h+='<div style="margin-top:10px;font-size:10.5px;color:var(--ink-muted);line-height:1.45">📱 Keep this tab open while generating · backgrounding pauses the connection.</div>';
     h+='</div>';
 
+    // ─── Live preview: sections appear as they draft (progressive rendering, Jenni 2026) ───
+    // Read-only, lightweight — NOT the interactive accordion renderer (which expects complete data).
+    // Swaps to the full talk view once the draft parses + passes peer review.
+    var _hasStreamPreview = (S.streamingSections && S.streamingSections.length) || S.streamingStem;
+    if (_hasStreamPreview) {
+      h+='<div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:8px;text-align:left;animation:fadeIn .3s ease">';
+      if (S.streamingTitle) h+='<div style="font-size:15.5px;font-weight:700;color:var(--plum-deep);line-height:1.3;margin-bottom:'+(S.streamingSubtitle?"2px":"10px")+'">'+esc(S.streamingTitle)+'</div>';
+      if (S.streamingSubtitle) h+='<div style="font-size:12px;color:var(--ink-muted);line-height:1.4;margin-bottom:12px">'+esc(S.streamingSubtitle)+'</div>';
+      // Boards: stream the vignette stem as it forms.
+      if (S.streamingStem) {
+        h+='<div style="font-size:13px;color:var(--ink);line-height:1.55;white-space:pre-wrap">'+esc(S.streamingStem.replace(/\s*\[[\d,\s]+\]/g,""))+'<span class="streamCursor">▋</span></div>';
+      }
+      // Lecture: render each completed section; last one gets a live cursor.
+      var _ss = S.streamingSections || [];
+      for (var _psi=0; _psi<_ss.length; _psi++) {
+        var _sec = _ss[_psi];
+        if (!_sec.heading) continue;
+        var _isLastSec = (_psi === _ss.length-1);
+        h+='<div style="margin-bottom:'+(_isLastSec?"2px":"12px")+'">';
+        h+='<div style="font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.35;margin-bottom:5px">'+(_psi+1)+'. '+esc(_sec.heading)+(_sec.minutes?' <span style="color:var(--ink-muted);font-weight:400;font-size:11px">('+esc(_sec.minutes)+')</span>':'')+'</div>';
+        if (_sec.points && _sec.points.length) {
+          h+='<ul style="margin:0;padding-left:18px;list-style:disc">';
+          for (var _pj=0; _pj<_sec.points.length; _pj++) {
+            var _pt = String(_sec.points[_pj]||"").replace(/\s*\[[\d,\s]+\]/g,"").trim();   // hide inline [1] markers in preview
+            if (!_pt) continue;
+            var _ptLast = _isLastSec && (_pj === _sec.points.length-1);
+            h+='<li style="font-size:12.5px;color:var(--ink);line-height:1.5;margin-bottom:3px">'+esc(_pt)+(_ptLast?' <span class="streamCursor">▋</span>':'')+'</li>';
+          }
+          h+='</ul>';
+        }
+        h+='</div>';
+      }
+      h+='<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:10.5px;color:var(--ink-muted);font-style:italic;display:flex;align-items:center;gap:6px"><span class="spinner" style="width:11px;height:11px;border-width:2px"></span>Drafting live · peer-reviewed for accuracy before it finalizes</div>';
+      h+='</div>';
+    }
+
     // Live settings — Depth + Verify + Audio queue. Depth/Verify changes restart generation.
     // Audio is just a flag — fires after current generation finishes. Toggleable in BOTH directions
     // any time during loading. (Jenni 2026-06-08)
@@ -7595,7 +7878,8 @@ function renderMain(){
       h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink)">Depth</span>';
       h+='<div style="display:inline-flex;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:2px;font-size:11px;font-weight:600">';
       h+='<button class="loadingDepthBtn" data-d="concise"  style="background:'+(_dC?"#fff":"transparent")+';color:'+(_dC?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dC?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dC?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dC?"700":"500")+'">Concise</button>';
-      h+='<button class="loadingDepthBtn" data-d="detailed" style="background:'+(_dD?"#fff":"transparent")+';color:'+(_dD?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dD?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dD?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dD?"700":"500")+'">Detailed</button>';
+      // Detailed is gated until the concise talk exists — you upgrade after it generates. (Jenni)
+      h+='<button class="loadingDepthBtn" data-d="detailed" disabled title="Generate the concise talk first — then upgrade to Detailed" style="background:transparent;color:var(--ink-muted);border:1px solid transparent;border-radius:7px;padding:4px 10px;cursor:not-allowed;opacity:0.4;pointer-events:none;font-family:inherit;font-size:11px;font-weight:500">Detailed</button>';
       h+='</div></div>';
       // Verify toggle — restarts generation on toggle (in either direction)
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
@@ -8303,7 +8587,7 @@ function renderMain(){
     var dInact2=(S.style==="boards");
     h+='<div style="margin-bottom:14px;opacity:'+(dInact2?"0.4":"1")+';pointer-events:'+(dInact2?"none":"auto")+'"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth</div><div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px">';
     h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{compact:true});
-    h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true});
+    h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true,disabled:!S.talk,title:(S.talk?"~10 min":"Generate the concise talk first — then upgrade to Detailed")});
     h+='</div></div>';
     // References manager (in drawer)
     h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer">';
@@ -8549,7 +8833,7 @@ function bindMain(){
   // chatInput/chatSend handlers deleted — those IDs are no longer rendered. The
   // sendChat() function is still reachable via the reviseIn/reviseSend bindings below.
   document.querySelectorAll(".styleBtn").forEach(function(b){b.onclick=function(){if(S.style!==b.dataset.s){S.style=b.dataset.s;S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.error="";speechSynthesis.cancel()}render()}});
-  document.querySelectorAll(".depthBtn").forEach(function(b){b.onclick=function(){if(S.depth!==b.dataset.d){S.depth=b.dataset.d;S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.error="";speechSynthesis.cancel()}render()}});
+  document.querySelectorAll(".depthBtn").forEach(function(b){b.onclick=function(){if(b.disabled)return; /* Detailed gated until a concise talk exists */ if(b.dataset.d==="detailed"&&!S.talk)return;if(S.depth!==b.dataset.d){S.depth=b.dataset.d;S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.error="";speechSynthesis.cancel()}render()}});
   var dz=document.getElementById("dropZone");if(dz)dz.onclick=function(){document.getElementById("fileInput").click()};
   var fi=document.getElementById("fileInput");if(fi)fi.onchange=async function(e){
     for(var i=0;i<e.target.files.length;i++){var f=e.target.files[i];try{
@@ -8565,7 +8849,9 @@ function bindMain(){
   // Audio toggle just sets a flag (no restart) — fires after the current generation completes.
   document.querySelectorAll(".loadingDepthBtn").forEach(function(b){
     b.onclick=function(){
+      if(b.disabled) return;                 // Detailed gated mid-generation
       var d=b.dataset.d;
+      if(d==="detailed" && !S.talk) return;  // can't upgrade until concise exists
       if(!d || S.depth===d) return;
       S.depth=d;
       restartGen();
@@ -8676,6 +8962,7 @@ function bindMain(){
   var gsb=document.getElementById("googleSignInBtn");if(gsb)gsb.onclick=async function(){S.authBusy=true;render();try{await signInWithGoogle()}catch(err){S.authMsg=err.message||"Google sign-in failed";S.authBusy=false;render()}};
   // J / account avatar click → open the full profile drawer (was: small dropdown)
   var acb=document.getElementById("accountBtn");if(acb)acb.onclick=function(e){e.stopPropagation();S.accountMenuOpen=false;S.profileEditOpen=true;S.profileForm=Object.assign({},S.profile||{});render()};
+  var ftcChip=document.getElementById("freeTierChip");if(ftcChip)ftcChip.onclick=function(){ if(S.freeTier && S.freeTier.talks_remaining<=0){ S.showOutOfFreeModal=true; render(); } };
   if(S.accountMenuOpen){document.body.onclick=function(e){if(!e.target.closest("#accountMenu")&&!e.target.closest("#accountBtn")){S.accountMenuOpen=false;document.body.onclick=null;render()}}}
   var sob=document.getElementById("signOutBtn");if(sob)sob.onclick=function(){S.accountMenuOpen=false;signOut()};
   var peb=document.getElementById("profileEditBtn");if(peb)peb.onclick=function(){S.accountMenuOpen=false;S.profileEditOpen=true;S.profileForm=Object.assign({},S.profile||{});render()};
