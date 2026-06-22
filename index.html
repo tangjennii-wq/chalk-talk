@@ -401,10 +401,10 @@ textarea,input[type=text]{font-family:inherit}
   .outline-head > span:first-child { display: none !important; }
   .tk-pill-modetype { display: none !important; }
   .tk-shared-banner { display: none !important; }
-  /* With the outline-head label hidden, the controls (depth toggle + Expand all + Copy all) live
-     on the same row aligned to the right edge. */
-  .outline-head { justify-content: flex-end !important; }
-  .outline-head > div { width: auto !important; justify-content: flex-end !important; margin-top: 0 !important; }
+  /* With the outline-head label hidden, controls span the full width. Depth toggle anchors to the
+     LEFT; Expand all + Copy all anchor to the RIGHT. (Jenni 2026-06-11) */
+  .outline-head { justify-content: space-between !important; }
+  .outline-head > div { width: 100% !important; justify-content: space-between !important; margin-top: 0 !important; }
   /* Save button on mobile — show the "Save" label (override the universal hide-mobile-text rule
      so users see what the star does) and bump touch target. (Jenni 2026-06-08) */
   .tk-capsule .cap-actions button.cap-save .hide-mobile-text { display: inline !important; }
@@ -4232,11 +4232,30 @@ function exportTalkImage(){
         fr.style.height=Math.max(fd.body.scrollHeight,fd.documentElement.scrollHeight)+"px";
         w2c(fd.body,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false}).then(function(canvas){
           // JPEG @0.92 — visually lossless for text/poster content, much smaller. (Jenni 2026-06-08)
-          var url=canvas.toDataURL("image/jpeg",0.92);
-          var a=document.createElement("a");a.href=url;a.download="chalk-talk-"+slug+".jpg";
-          document.body.appendChild(a);a.click();document.body.removeChild(a);
-          toast.textContent="\u2713 Image downloaded";
-          setTimeout(cleanup,1500);
+          // Mobile fix (Jenni 2026-06-11): iOS Safari ignores <a download>. Use Web Share API
+          // with a File so the user gets the native share sheet (Save to Photos / Messages / etc).
+          // Desktop / unsupported browsers fall back to the classic download.
+          var fileName = "chalk-talk-"+slug+".jpg";
+          canvas.toBlob(function(blob){
+            if(!blob){ toast.textContent="\u274c Couldn't build image"; setTimeout(cleanup,2500); return; }
+            var file = null; try { file = new File([blob], fileName, {type:"image/jpeg"}); } catch(_){}
+            if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+              toast.textContent="\u2713 Choose where to save\u2026";
+              navigator.share({files:[file], title: (t.title||"Chalk Talk"), text: (t.title||"")})
+                .then(function(){ toast.textContent="\u2713 Shared"; setTimeout(cleanup,1200); })
+                .catch(function(err){
+                  if(err && (err.name==="AbortError" || /cancel|abort/i.test(err.message||""))) cleanup();
+                  else { toast.textContent="\u274c Share failed: "+(err.message||err); setTimeout(cleanup,2500); }
+                });
+            } else {
+              var url = URL.createObjectURL(blob);
+              var a = document.createElement("a"); a.href = url; a.download = fileName;
+              document.body.appendChild(a); a.click(); document.body.removeChild(a);
+              setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+              toast.textContent="\u2713 Image downloaded";
+              setTimeout(cleanup,1500);
+            }
+          }, "image/jpeg", 0.92);
         }).catch(function(err){
           toast.textContent="\u274C Image export failed: "+(err.message||err);
           setTimeout(cleanup,2500);
@@ -7601,6 +7620,11 @@ function renderMain(){
       var lastLabel = S.talkHistory[S.talkHistory.length-1].label;
       h+='<button id="undoEditBtn" title="Undo last '+esc(lastLabel)+'" style="background:none;border:none;color:var(--plum);cursor:pointer;padding:5px 8px;border-radius:7px;line-height:0;display:inline-flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg></button>';
     }
+    // Order (Jenni 2026-06-11): Edit goes BEFORE the Save indicator so the pencil reads as "do
+    // something" and Saved reads as a passive status next to it. New ordering: Edit · Saved · ⋮
+    if(!S.sharedTalk){
+      h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit</span></button>';
+    }
     // Save button — three modes:
     //   (a) Public viewer + signed in + not the original author → "★ Save copy" (Phase 5 flywheel)
     //   (b) Public viewer + signed in + IS original author → hide (it's your own talk)
@@ -7622,10 +7646,7 @@ function renderMain(){
       var _saveTitle = S.isSampleTalk ? "Save this as a new talk in your library" : "Save to library";
       h+='<button id="saveTalkBtnTop" class="cap-save" title="'+_saveTitle+'">★ <span class="hide-mobile-text">Save</span></button>';
     }
-    // Capsule action row — Save · Edit · ⋮ all secondary (white), so + New talk on the left can be
-    // the obvious purple primary "what next" action. (Jenni 2026-06-08 redesign.)
     if(!S.sharedTalk){
-      h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit</span></button>';
       h+='<button id="overflowBtn" class="cap-more" title="More options" aria-label="More options">⋮</button>';
     }
     // Overflow menu — rendered INSIDE cap-actions so it anchors to the ⋮ button instead of the
@@ -7654,7 +7675,8 @@ function renderMain(){
       h+='<button id="copyAllTalkBtn">📋 Copy entire talk</button>';
       h+='<button id="pdfTalkBtn">📄 Export PDF</button>';
       h+='<button id="pngTalkBtn">📸 Save as image</button>';
-      h+='<button id="jsonTalkBtn">{} Export JSON</button>';
+      // Export JSON removed 2026-06-11 (Jenni) — power-user feature, almost no one used it.
+      // Library export-all JSON via export-jsonTalkBtnExport in the Account drawer stays for backup.
       // Delete — only when the user owns a persisted copy (saved local/cloud); hidden for unsaved,
       // sample, and shared read-only talks. Last item, divider above, red, to match the Library card kebab.
       if(S.talkIsSaved && S.loadedTalkId && !S.isSampleTalk && !S.sharedTalk){
@@ -8113,10 +8135,20 @@ function renderMain(){
 
     // ---------------- AUDIO TAB ----------------
     if(S.tab==="audio"){
-      h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow-soft)">';
+      h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow-soft);margin-bottom:10px">';
       h+='<div style="display:flex;align-items:center;gap:11px;margin-bottom:14px"><span style="background:var(--lavender-soft);color:var(--plum);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px">🎧</span><div><div style="font-size:14px;font-weight:700;color:var(--ink)">Audio Podcast</div><div style="font-size:11.5px;color:var(--ink-muted)">'+(S.podScript?"Listen while walking or driving":"Generate narrated version")+'</div></div></div>';
       if(!S.podScript){h+='<button id="podGenBtn" '+(S.podBusy?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:13px;color:#fff;font-size:14px;font-weight:600;cursor:pointer">'+(S.podBusy?"Writing…":"✨ Generate Podcast")+'</button>'}
       else{var wc=S.podScript.split(/\s+/).length;var mn=Math.floor(wc/150);var sc=Math.round((wc/150-mn)*60);var dur=mn+":"+(sc<10?"0"+sc:sc);h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:8px;background:var(--paper);border-radius:12px"><button id="podPlayBtn" style="background:'+(S.podPlaying?"#c0392b":"var(--plum-deep)")+';border:none;border-radius:50%;width:48px;height:48px;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">'+(S.podPlaying?"⏸":"▶")+'</button><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:var(--ink)">'+(S.podPlaying?"Playing…":"Ready to play")+'</div><div style="font-size:11.5px;color:var(--ink-muted)">'+dur+' min · Uses your device speaker</div></div></div>';h+='<div style="display:flex;gap:5px;margin-bottom:10px"><span style="font-size:11px;color:var(--ink-muted);align-self:center;margin-right:5px">Speed</span>';[0.75,1,1.25,1.5].forEach(function(r){h+='<button class="rateBtn" data-r="'+r+'" style="flex:1;background:'+(S.podRate===r?"var(--plum-deep)":"var(--cream)")+';color:'+(S.podRate===r?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.podRate===r?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:6px 4px;font-size:11px;font-weight:600;cursor:pointer">'+r+'x</button>'});h+='</div><button id="podToggle" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0">'+(S.podShow?"▾ Hide script":"▸ Show script")+'</button>';if(S.podShow)h+='<div style="background:var(--paper);border-radius:8px;padding:11px 13px;font-size:12px;color:var(--ink);line-height:1.65;max-height:280px;overflow-y:auto;white-space:pre-wrap;margin-top:6px">'+esc(S.podScript)+'</div>'}
+      h+='</div>';
+      // NotebookLM bridge (Jenni 2026-06-11) — one-tap to copy the talk content + jump to Google
+      // NotebookLM. User pastes into a new notebook and gets the Deep Dive audio + Q&A features.
+      h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow-soft)">';
+      h+='<div style="display:flex;align-items:center;gap:11px;margin-bottom:12px"><span style="background:#e6efff;color:#1e4a8a;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px">📓</span><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:var(--ink)">NotebookLM Deep Dive</div><div style="font-size:11.5px;color:var(--ink-muted);line-height:1.4">Copy the talk, then open NotebookLM to generate a two-host audio overview, ask follow-up questions, or sync with your other notes.</div></div></div>';
+      h+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
+      h+='  <button id="notebookCopyBtn" style="flex:1;min-width:130px;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">📋 Copy talk text</button>';
+      h+='  <a href="https://notebooklm.google.com/" target="_blank" rel="noopener" style="flex:1;min-width:130px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px">📓 Open NotebookLM →</a>';
+      h+='</div>';
+      h+='<div style="font-size:10.5px;color:var(--ink-soft);margin-top:9px;line-height:1.4">Tip: tap Copy first → tap Open NotebookLM → New notebook → paste as a Text source.</div>';
       h+='</div>';
     }
 
@@ -8688,6 +8720,47 @@ function bindMain(){
 
   // ─── Podcast (audio narration) ─────────────────────────────────────────
   var pg=document.getElementById("podGenBtn");if(pg)pg.onclick=genPodcast;
+  // NotebookLM bridge (Jenni 2026-06-11) — Copy the full talk text in a NotebookLM-friendly format,
+  // then user taps the Open button to jump to NotebookLM in a new tab.
+  var nbCopy=document.getElementById("notebookCopyBtn");
+  if(nbCopy) nbCopy.onclick=function(){
+    if(!S.talk) return;
+    var t=S.talk;
+    var lines=[];
+    lines.push(t.title || "Chalk Talk");
+    if(t.subtitle) lines.push(t.subtitle);
+    lines.push("");
+    (t.sections||[]).forEach(function(s, i){
+      lines.push((i+1) + ". " + (s.heading || ""));
+      (s.points||[]).forEach(function(p){ lines.push("  • " + p); });
+      if(s.teaching_pearl) lines.push("  💡 Teaching pearl: " + s.teaching_pearl);
+      if(s.board_tip) lines.push("  🎯 Board tip: " + s.board_tip);
+      lines.push("");
+    });
+    if((t.board_pearls||[]).length){
+      lines.push("Board pearls:");
+      t.board_pearls.forEach(function(p){ lines.push("  • " + p); });
+      lines.push("");
+    }
+    if((t.summary_points||[]).length){
+      lines.push("Summary:");
+      t.summary_points.forEach(function(p){ lines.push("  • " + p); });
+      lines.push("");
+    }
+    if((t.references||[]).length){
+      lines.push("References:");
+      t.references.forEach(function(r){
+        lines.push("  [" + (r.id || "?") + "] " + [r.source, r.year, r.society, r.url].filter(Boolean).join(" · "));
+      });
+    }
+    var fullText = lines.join("\n");
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(fullText).then(function(){
+        nbCopy.textContent = "✓ Copied — open NotebookLM →";
+        setTimeout(function(){ nbCopy.textContent = "📋 Copy talk text" }, 3500);
+      }).catch(function(){ prompt("Copy this text to paste into NotebookLM:", fullText); });
+    } else { prompt("Copy this text to paste into NotebookLM:", fullText); }
+  };
   var pp=document.getElementById("podPlayBtn");if(pp)pp.onclick=playPod;
   document.querySelectorAll(".rateBtn").forEach(function(b){b.onclick=function(){S.podRate=parseFloat(b.dataset.r);if(S.podPlaying){speechSynthesis.cancel();S.podPlaying=false}render()}});
   var pt=document.getElementById("podToggle");if(pt)pt.onclick=function(){S.podShow=!S.podShow;render()};
