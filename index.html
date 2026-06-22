@@ -5567,11 +5567,12 @@ function isRadicalRevision(msg){
 // bypass restructure/expand/compress and go straight to weave — so phrases like
 // "add more detail about FOURIER" or "include the SPRINT trial" route as additions, not as
 // whole-talk operations. (Jenni 2026-06-11)
+// AUDIT FIX 2026-06-11: dropped "cover", "note", "address" — they were ambiguous and collided with
+// compression keywords ("cover fewer points", "address the wordiness"). The kept list is now
+// unambiguously additive — every keyword implies the user is naming new content to add.
 function isAdditiveIntent(msg){
   var m = String(msg||"").toLowerCase();
-  // Strong addition signals: starts with "add", contains "include", "incorporate", "mention",
-  // "talk about", "say something about", "discuss", "what about", "also cover", etc.
-  return /\b(add\b|include\b|incorporate\b|mention\b|talk about|say (?:something|more) about|discuss\b|what about|also cover|don't forget|remember to|consider adding|address\b|cover\b|note\b|include the)\b/.test(m);
+  return /\b(add\b|include\b|incorporate\b|mention\b|talk about|say (?:something|more) about|discuss\b|what about|also cover|don't forget|remember to|consider adding|include the|append\b|insert\b)\b/.test(m);
 }
 
 // Detect a "compress this existing talk" intent — different from radical revision because the user
@@ -5875,19 +5876,33 @@ async function weaveRevision(userMsg){
   return { kind: "patch", patch: patch };
 }
 
-// Deterministic merge of a patch into a talk. Returns a NEW object — does not mutate the input.
-// Existing fields are appended-to, never overwritten or removed. (Jenni 2026-06-10)
+// Deterministic merge of a patch into a talk. Returns { talk, applied, warnings } — does NOT
+// mutate the input. Existing fields are appended-to, never overwritten or removed.
+// (Jenni 2026-06-11 audit fix: now tracks what actually applied vs what was silently dropped,
+// AND flags verbose bullets in concise mode so confirmation messages can't lie.)
 function applyWeavePatch(talk, patch){
   var t = JSON.parse(JSON.stringify(talk));
-  if(!patch || typeof patch !== "object") return t;
+  var applied = { pearls:0, teaching_points:0, summary_points:0, references:0, section_bullets:0, sections:0 };
+  var warnings = [];
+  if(!patch || typeof patch !== "object") return { talk: t, applied: applied, warnings: warnings };
 
-  function appendList(field, items){
+  // Length budget for concise talks (chars/bullet). Verbose adds trigger a warning so the user
+  // can manually tighten them — they're still merged, never dropped. (Jenni 2026-06-11)
+  var conciseBudget = (talk._sourceDepth === "concise" || (typeof S !== "undefined" && S && S.depth === "concise")) ? 220 : Infinity;
+  var verboseCount = 0;
+
+  function appendList(field, items, counterKey){
     if(!Array.isArray(items) || items.length === 0) return;
-    t[field] = (t[field] || []).concat(items.filter(function(x){return x && (typeof x === "string" || typeof x === "object")}));
+    var clean = items.filter(function(x){return x && (typeof x === "string" || typeof x === "object")});
+    t[field] = (t[field] || []).concat(clean);
+    applied[counterKey] += clean.length;
+    if(conciseBudget !== Infinity){
+      clean.forEach(function(x){ if(typeof x === "string" && x.length > conciseBudget) verboseCount++; });
+    }
   }
-  appendList("board_pearls", patch.add_pearls);
-  appendList("teaching_points", patch.add_teaching_points);
-  appendList("summary_points", patch.add_summary_points);
+  appendList("board_pearls", patch.add_pearls, "pearls");
+  appendList("teaching_points", patch.add_teaching_points, "teaching_points");
+  appendList("summary_points", patch.add_summary_points, "summary_points");
 
   if(Array.isArray(patch.add_references) && patch.add_references.length > 0){
     var maxId = (t.references || []).reduce(function(m, r){return Math.max(m, parseInt(r.id) || 0)}, 0);
@@ -5899,17 +5914,31 @@ function applyWeavePatch(talk, patch){
         id: ref.id || maxId,
         type: ref.type || "user-upload"
       }));
+      applied.references++;
     });
   }
 
   if(Array.isArray(patch.add_section_bullets)){
+    var sectionCount = (t.sections || []).length;
     patch.add_section_bullets.forEach(function(addition){
       if(!addition || typeof addition !== "object") return;
       var idx = addition.section_index;
-      if(typeof idx !== "number" || !t.sections || !t.sections[idx]) return;
       var bullets = (addition.bullets || []).filter(function(b){return typeof b === "string" && b.trim()});
+      if(typeof idx !== "number" || !t.sections || !t.sections[idx]){
+        // Silent drop — record a warning so the success message doesn't lie.
+        if(bullets.length > 0){
+          warnings.push(bullets.length + " bullet" + (bullets.length===1?"":"s") +
+            " couldn't be placed — section_index " + idx + " is invalid (talk has " +
+            sectionCount + " section" + (sectionCount===1?"":"s") + ", indices 0–" + (sectionCount-1) + ")");
+        }
+        return;
+      }
       if(bullets.length === 0) return;
       t.sections[idx].points = (t.sections[idx].points || []).concat(bullets);
+      applied.section_bullets += bullets.length;
+      if(conciseBudget !== Infinity){
+        bullets.forEach(function(b){ if(b.length > conciseBudget) verboseCount++; });
+      }
     });
   }
 
@@ -5923,21 +5952,47 @@ function applyWeavePatch(talk, patch){
         insertAt = (t.sections || []).length;
       }
       t.sections = t.sections || [];
+      var cleanPts = (newSec.points || []).filter(function(p){return typeof p === "string" && p.trim()});
       t.sections.splice(insertAt, 0, {
         heading: String(newSec.heading),
-        points: (newSec.points || []).filter(function(p){return typeof p === "string" && p.trim()}),
+        points: cleanPts,
         teaching_pearl: newSec.teaching_pearl || "",
         board_tip: newSec.board_tip || ""
       });
+      applied.sections++;
+      if(conciseBudget !== Infinity){
+        cleanPts.forEach(function(p){ if(p.length > conciseBudget) verboseCount++; });
+      }
     });
   }
 
-  return t;
+  // Flag verbose bullets so the user knows to manually tighten if they care about concise style.
+  if(verboseCount > 0){
+    warnings.push(verboseCount + " new bullet" + (verboseCount===1?"":"s") +
+      " came back longer than the concise budget (" + conciseBudget + " chars) — they were kept as-is, but you may want to tighten them by hand.");
+  }
+
+  return { talk: t, applied: applied, warnings: warnings };
 }
 
-// Human-readable summary of what the patch will add — for the chat confirmation message.
+// Human-readable summary of what ACTUALLY landed — uses the applied counts from applyWeavePatch,
+// not the raw patch fields. So silent drops are visible in the confirmation message.
+function describeApplied(applied){
+  if(!applied) return "no changes";
+  var bits = [];
+  if(applied.pearls) bits.push(applied.pearls + " pearl" + (applied.pearls===1?"":"s"));
+  if(applied.teaching_points) bits.push(applied.teaching_points + " teaching point" + (applied.teaching_points===1?"":"s"));
+  if(applied.summary_points) bits.push(applied.summary_points + " summary point" + (applied.summary_points===1?"":"s"));
+  if(applied.references) bits.push(applied.references + " reference" + (applied.references===1?"":"s"));
+  if(applied.section_bullets) bits.push(applied.section_bullets + " bullet" + (applied.section_bullets===1?"":"s"));
+  if(applied.sections) bits.push(applied.sections + " new section" + (applied.sections===1?"":"s"));
+  return bits.length === 0 ? "no changes" : bits.join(", ");
+}
+
+// Legacy alias — keep for any external callers; routes through the new flow.
 function describePatchChanges(patch){
   if(!patch) return "no changes";
+  // For pre-merge estimation (just looking at the patch JSON), count optimistically.
   var bits = [];
   if(Array.isArray(patch.add_pearls) && patch.add_pearls.length) bits.push(patch.add_pearls.length + " pearl" + (patch.add_pearls.length===1?"":"s"));
   if(Array.isArray(patch.add_teaching_points) && patch.add_teaching_points.length) bits.push(patch.add_teaching_points.length + " teaching point" + (patch.add_teaching_points.length===1?"":"s"));
@@ -5971,7 +6026,10 @@ async function sendChat(){
   // straight to the weave path even if their phrasing happens to contain words like "more detail"
   // or "split" that would otherwise trip the structural intent detectors. Addition is the most
   // common refine intent \u2014 make sure it always works.
-  var _isAdditiveSignal = isAdditiveIntent(msg);
+  // AUDIT FIX 2026-06-11: an EXPLICIT compression / expansion intent overrides additive when both
+  // fire. Rationale: if the user uses a compression keyword (concise, shorten, trim, condense),
+  // that's a deliberate signal \u2014 additive shouldn't silently override it. (Same logic for expansion.)
+  var _isAdditiveSignal = isAdditiveIntent(msg) && !isCompressionIntent(msg) && !isExpansionIntent(msg);
   // Restructure-intent path (Jenni 2026-06-11) \u2014 splits / merges / reorders / renames sections
   // without losing any bullet, fact, or citation. Checked BEFORE expansion/compression because
   // restructure intent words can overlap (e.g. "break this into smaller sections" sounds compressive
@@ -6117,18 +6175,26 @@ async function sendChat(){
     var result = await weaveRevision(msg);
     var patch = result && result.patch;
     if(patch && typeof patch === "object"){
-      var changes = describePatchChanges(patch);
-      if(patch.skip_reason || changes === "no changes"){
-        var reason = patch.skip_reason || "couldn't find anything new to add";
-        S.msgs.push({r:"a",t:"\u2139\ufe0f No changes \u2014 " + reason + ". Say \"rewrite [thing]\" if you want to modify existing content instead of adding."});
+      if(patch.skip_reason){
+        S.msgs.push({r:"a",t:"\u2139\ufe0f No changes \u2014 " + patch.skip_reason + ". Say \"rewrite [thing]\" if you want to modify existing content instead of adding."});
       } else {
-        S.talk = applyWeavePatch(S.talk, patch);
-        // Don't reset section index / mode \u2014 user stays where they were in the talk.
-        if(S.dg && S.dg.imgB64) S.visualStale = true;
-        else { S.dg = null; S.dgErr = ""; }
-        S.podScript = "";
-        S.talkIsSaved = false;
-        S.msgs.push({r:"a",t:"\u2713 Added " + changes + ". Existing content preserved. Say \"rewrite [thing]\" if you want to modify what was already there."});
+        // applyWeavePatch returns { talk, applied, warnings } \u2014 applied is the ACTUAL merge counts,
+        // not the optimistic patch field counts. So if the model wrote a bad section_index, the
+        // success message reflects what really landed. (Jenni 2026-06-11 audit fix.)
+        var merge = applyWeavePatch(S.talk, patch);
+        var changes = describeApplied(merge.applied);
+        if(changes === "no changes"){
+          var warnMsg = (merge.warnings && merge.warnings.length) ? " \u2014 " + merge.warnings.join("; ") : "";
+          S.msgs.push({r:"a",t:"\u2139\ufe0f Nothing landed" + warnMsg + ". Try a more specific phrasing or say \"rewrite\" for a full regenerate."});
+        } else {
+          S.talk = merge.talk;
+          if(S.dg && S.dg.imgB64) S.visualStale = true;
+          else { S.dg = null; S.dgErr = ""; }
+          S.podScript = "";
+          S.talkIsSaved = false;
+          var warnSuffix = (merge.warnings && merge.warnings.length) ? "\n\n\u26a0 " + merge.warnings.join("\n\u26a0 ") : "";
+          S.msgs.push({r:"a",t:"\u2713 Added " + changes + ". Existing content preserved." + warnSuffix});
+        }
       }
       S._composerOpen = false;
     } else {
