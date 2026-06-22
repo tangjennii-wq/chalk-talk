@@ -5773,6 +5773,14 @@ function isAdditiveIntent(msg){
   return /\b(add\b|include\b|incorporate\b|mention\b|talk about|say (?:something|more) about|discuss\b|what about|also cover|don't forget|remember to|consider adding|include the|append\b|insert\b)\b/.test(m);
 }
 
+// Detect a SURGICAL-EDIT intent — the user wants to fix / correct / replace / delete specific
+// existing content (often after proofreading in OpenEvidence), NOT reshape the whole talk. Routes
+// to the weave path, which now applies precise add/edit/delete ops by index. (Jenni 2026-06-22)
+function isSurgicalEditIntent(msg){
+  var m = String(msg||"").toLowerCase();
+  return /\b(fix|fixes|fixed|correct|corrected|correction|wrong|incorrect|inaccurate|error|errors|mistake|mistakes|typo|typos|should (?:be|say|read)|replace|delete|remove|edit|edits|proofread|reconcile|update the|revise the)\b/.test(m) || /\bchange\b.+\bto\b/.test(m);
+}
+
 // Detect a "compress this existing talk" intent — different from radical revision because the user
 // wants to KEEP all sections + clinical details, just tighten phrasing. Routes to compressTalk(),
 // NOT generate(). (Jenni 2026-06-11 — "it cuts way too short and drops sections" was the bug.)
@@ -6009,9 +6017,14 @@ function undoLastEdit(){
 // the user's explicit add request. Result: users hit "add X" and lost their existing content
 // OR got nothing back. Both failure modes are catastrophic for a tool people trust to KEEP work.
 //
-// Fix: model returns ONLY a JSON patch describing what to ADD. JS code merges the patch into the
-// existing S.talk. Existing content is mathematically untouchable through this path. For corrections
-// or rewrites of existing content, isRadicalRevision routes to the full regenerate path instead.
+// Fix: model returns ONLY a JSON patch of SURGICAL ops — add / edit / delete — each targeting an
+// exact coordinate (section_index, bullet_index, list index). JS merges deterministically via a
+// tombstone-then-compact pass, so every index the model emits stays valid against the snapshot it
+// saw, and any content the model does NOT name is preserved verbatim. The model never returns the
+// whole talk, so it can't truncate or lose work. This lets the user proofread elsewhere (e.g.
+// OpenEvidence), paste a corrected block, and have Claude reconcile it bullet-by-bullet. Whole-talk
+// reshapes (rewrite / shorten / expand / restructure) still route to their dedicated paths.
+// (Surgical add/edit/delete: Jenni 2026-06-22. Was add-only before.)
 async function weaveRevision(userMsg){
   if(!S.talk) return null;
   // Refines count as 1 talk against free-tier quota (FREE_TIER_SPEC.md, LOCKED).
@@ -6023,9 +6036,25 @@ async function weaveRevision(userMsg){
       return null;
     }
   }
-  var existingJson = JSON.stringify(S.talk);
   var sectionHeadings = (S.talk.sections||[]).map(function(s,i){return i+": "+s.heading}).join("\n  ");
   var nextRefId = ((S.talk.references||[]).reduce(function(m,r){return Math.max(m,parseInt(r.id)||0)},0)+1);
+
+  // Indexed snapshot of the CURRENT talk. Replaces dumping raw JSON labelled "do not echo" (which
+  // made the model treat a pasted correction as reference text to ignore, not edits to apply). Every
+  // item is tagged with the exact coordinate the patch must use, so edits/deletes land precisely.
+  // (Jenni 2026-06-22)
+  var _snapLines = [];
+  (S.talk.sections||[]).forEach(function(s,si){
+    _snapLines.push("SECTION ["+si+"]: " + (s.heading||"(untitled)"));
+    (s.points||[]).forEach(function(b,bi){ _snapLines.push("  bullet["+si+"]["+bi+"]: " + b); });
+    if(s.teaching_pearl) _snapLines.push("  section_pearl["+si+"]: " + s.teaching_pearl);
+    if(s.board_tip) _snapLines.push("  section_board_tip["+si+"]: " + s.board_tip);
+  });
+  (S.talk.board_pearls||[]).forEach(function(p,i){ if(p&&String(p).trim()) _snapLines.push("board_pearl["+i+"]: " + p); });
+  (S.talk.teaching_points||[]).forEach(function(p,i){ if(p&&String(p).trim()) _snapLines.push("teaching_point["+i+"]: " + p); });
+  (S.talk.summary_points||[]).forEach(function(p,i){ if(p&&String(p).trim()) _snapLines.push("summary_point["+i+"]: " + p); });
+  (S.talk.references||[]).forEach(function(r){ _snapLines.push("reference[id="+(r.id||"?")+"]: " + (r.title||r.source||"") + (r.year?(" ("+r.year+")"):"")); });
+  var indexedState = _snapLines.join("\n");
 
   // Style-match: additions inherit the talk's current depth so concise talks stay terse and detailed
   // talks stay rich. The model gets this hint in the system prompt. (Jenni 2026-06-11)
@@ -6037,18 +6066,33 @@ async function weaveRevision(userMsg){
     : "STYLE: This talk is in DETAILED mode \u2014 fuller explanations welcome, multi-sentence bullets OK, " +
       "include mechanism and rationale alongside facts. Your new additions should match that depth. ";
 
-  var sys = "You are refining an existing chalk talk for an internal medicine educator. " +
-    "ITERATIVE REFINEMENT IS THE NORM \u2014 users will refine this talk many times over days/weeks " +
-    "as they pull in new references, MKSAP excerpts, society guideline updates, and their own clinical " +
-    "experience. Every educator has their own teaching style; your job is to RESPECT what they've " +
-    "already built and ADD to it. " +
-    "The user wants to ADD content. Your job is to return a JSON PATCH describing the additions. " +
-    "You CANNOT modify or remove existing content through this path \u2014 JS code merges your patch into " +
-    "the existing talk, and the existing content is preserved exactly as-is.\n\n" +
+  var sys = "You are SURGICALLY refining an existing chalk talk for an internal medicine educator. " +
+    "ITERATIVE REFINEMENT IS THE NORM \u2014 the user refines this talk many times, often by proofreading " +
+    "it elsewhere (e.g. OpenEvidence) and pasting back a corrected/annotated block for you to reconcile. " +
+    "Your job: ASSESS the user's input against the CURRENT TALK, then return a JSON PATCH of surgical " +
+    "operations \u2014 ADD, EDIT, and/or DELETE \u2014 each targeting an EXACT coordinate. Deterministic JS applies " +
+    "your patch; anything you do NOT explicitly name is preserved verbatim. NEVER return the whole talk. " +
+    "NEVER touch content that is already correct \u2014 only change what is wrong, missing, or what the user asked to change.\n\n" +
     _depthHint + "\n\n" +
-    "PATCH SCHEMA (return exactly this \u2014 omit fields you don't need, all are optional):\n" +
+    "COORDINATES: The CURRENT TALK is shown indexed. Sections are 0-based (SECTION [i]). Within a section, " +
+    "bullets are 0-based (bullet[i][b]). Top-level lists are 0-based (board_pearl[i], teaching_point[i], " +
+    "summary_point[i]). Use these EXACT indices. All indices refer to the current state shown to you, " +
+    "BEFORE your patch is applied.\n\n" +
+    "PATCH SCHEMA (return exactly this shape \u2014 every field optional, omit what you don't use):\n" +
     "{\n" +
     '  "skip_reason": null,\n' +
+    '  "edit_section_bullets":   [{"section_index": 0, "bullet_index": 2, "new_text": "corrected bullet text [N]"}],\n' +
+    '  "delete_section_bullets": [{"section_index": 0, "bullet_indices": [3, 5]}],\n' +
+    '  "edit_section_heading":   [{"section_index": 1, "new_heading": "..."}],\n' +
+    '  "edit_section_pearl":     [{"section_index": 1, "new_text": "..."}],\n' +
+    '  "edit_section_board_tip": [{"section_index": 1, "new_text": "..."}],\n' +
+    '  "delete_sections":        [4],\n' +
+    '  "edit_pearls":            [{"index": 0, "new_text": "..."}],\n' +
+    '  "delete_pearls":          [2],\n' +
+    '  "edit_teaching_points":   [{"index": 0, "new_text": "..."}],\n' +
+    '  "delete_teaching_points": [1],\n' +
+    '  "edit_summary_points":    [{"index": 0, "new_text": "..."}],\n' +
+    '  "delete_summary_points":  [1],\n' +
     '  "add_pearls": ["board pearl 1", "..."],\n' +
     '  "add_teaching_points": ["teaching point 1", "..."],\n' +
     '  "add_summary_points": ["summary point 1", "..."],\n' +
@@ -6056,21 +6100,24 @@ async function weaveRevision(userMsg){
     '  "add_section_bullets": [{"section_index": 0, "bullets": ["new bullet 1", "..."]}],\n' +
     '  "add_sections": [{"after_index": 2, "heading": "...", "points": ["..."], "teaching_pearl": "...", "board_tip": "..."}]\n' +
     "}\n\n" +
-    "EXISTING SECTION HEADINGS (use these 0-based indices for add_section_bullets / after_index):\n  " + sectionHeadings + "\n\n" +
+    "EXISTING SECTION HEADINGS (0-based):\n  " + sectionHeadings + "\n\n" +
     "RULES:\n" +
-    "- DEFAULT TO ADDING what the user asked for. Trust them \u2014 they know their teaching. Even if a concept is briefly mentioned elsewhere, if the user asks to add detail, ADD IT.\n" +
-    "- Place new bullets in the topically-relevant section using `section_index` (0-based, see headings above). If physiology bullet \u2192 physiology section. If treatment \u2192 treatment section.\n" +
-    "- ONLY skip if the user's request is 100% verbatim redundant. Be VERY conservative about skipping. When in doubt, add.\n" +
-    "- If the user wants to CORRECT or REPLACE existing content (e.g. 'the dose is wrong, should be 10mg'), set skip_reason to 'this is a correction \u2014 say rewrite [thing] to be... so I can do a full regen' and omit all add_* fields.\n" +
-    "- If the user wants to SHORTEN, MAKE CONCISE, TRIM, CONDENSE, or otherwise REDUCE existing content, set skip_reason to 'this is a concision request \u2014 patch mode can only add. Say \"rewrite to be more concise\" and I will do a full regenerate at concise depth.' and omit all add_* fields. DO NOT try to satisfy concision by adding a summary bullet alongside the original \u2014 that makes it longer, not shorter.\n" +
-    "- Uploaded refs are PRIMARY sources. When a fact comes from one, add it to `add_references` and cite it inline in the bullet using [N] where N is the new citation ID. Next free ID: " + nextRefId + ".\n" +
-    "- Inline cite ALL new clinical claims with [N] using existing citation IDs when applicable, or new IDs you're adding via add_references.\n" +
-    "- Keep bullets / pearls / tips concise and standalone (one teaching point per item).\n\n" +
+    "- SURGICAL, NOT WHOLESALE. Emit ops ONLY for content that is wrong, missing, or that the user named. If a bullet is already correct, leave it alone (no op for it).\n" +
+    "- TO FIX AN ERROR: use edit_section_bullets (or edit_pearls / edit_teaching_points / edit_summary_points / edit_section_pearl / edit_section_board_tip / edit_section_heading) with the exact index and the corrected text. Fix only what's wrong; preserve the rest of the item's meaning and its [N] citations.\n" +
+    "- TO REMOVE wrong / outdated / redundant content: use delete_section_bullets (list bullet_indices) or delete_sections. Be conservative \u2014 only delete what is clearly wrong or what the user told you to remove. Never delete merely to shorten.\n" +
+    "- TO ADD new content: use the add_* ops, placing new bullets in the topically-correct section via section_index (0-based, see headings).\n" +
+    "- WHEN THE USER PASTES A CORRECTED / PROOFREAD VERSION OR A LARGE CHUNK OF TEXT: read it fully and DIFF it against the current talk. For each real difference emit the matching edit / delete / add op. Do NOT re-add content that already matches, and do NOT re-emit unchanged bullets.\n" +
+    "- IF THE USER NAMES A SECTION (e.g. 'fix section 2' or 'in the treatment section'): confine your ops to that section's indices.\n" +
+    "- CITATIONS: keep existing [N] on edited bullets unless the underlying fact changed. New clinical claims need a [N] \u2014 reuse an existing reference id when applicable, or add one via add_references (next free id: " + nextRefId + ") and cite it inline.\n" +
+    "- Uploaded refs are PRIMARY sources; when a fact comes from one, add it to add_references and cite it.\n" +
+    "- Keep edited/added bullets / pearls / tips concise and standalone (one teaching point each).\n" +
+    "- ONLY set skip_reason (and omit all other fields) if the input needs NO change \u2014 e.g. it is already reflected verbatim, or it is a request to reshape the WHOLE talk (make it shorter/longer/restructured), in which case say: 'that reshapes the whole talk \u2014 say \"shorten\", \"add more detail\", \"restructure\", or \"rewrite\".'\n\n" +
     "Return ONLY the JSON patch object. No markdown fences, no commentary, no preamble. Start with { and end with }.";
   var weaveTrialContext = buildTrialExpansionContext(userMsg, "");
   var contentParts = [{
     type: "text",
-    text: "USER REQUEST: " + userMsg + weaveTrialContext + "\n\nEXISTING TALK (for context — DO NOT echo this back, just return the patch):\n" + existingJson
+    text: "USER REQUEST / PROOFREAD INPUT (may be a short instruction OR a long pasted block of corrected/annotated text \u2014 read it fully and reconcile it against the CURRENT TALK below): " + userMsg + weaveTrialContext +
+      "\n\n===== CURRENT TALK (indexed \u2014 use these exact coordinates in your patch) =====\n" + indexedState
   }].concat(buildReferenceParts(S.files));
   // Patches are small (~1500 tokens for generous additions), but cap as high as Sonnet supports
   // so a verbose addition (e.g., a long PDF of refs the user wants fully woven in) never truncates.
@@ -6084,14 +6131,72 @@ async function weaveRevision(userMsg){
 }
 
 // Deterministic merge of a patch into a talk. Returns { talk, applied, warnings } — does NOT
-// mutate the input. Existing fields are appended-to, never overwritten or removed.
-// (Jenni 2026-06-11 audit fix: now tracks what actually applied vs what was silently dropped,
-// AND flags verbose bullets in concise mode so confirmation messages can't lie.)
+// mutate the input. Supports surgical ADD / EDIT / DELETE. Edits apply in place; deletes tombstone
+// the target; a final compaction pass removes tombstones + deleted sections. This ordering means
+// every coordinate the model emitted (add, edit, AND delete) stays valid against the snapshot it
+// saw — nothing untargeted can shift or vanish. (Jenni 2026-06-11 audit; surgical ops 2026-06-22.)
 function applyWeavePatch(talk, patch){
   var t = JSON.parse(JSON.stringify(talk));
-  var applied = { pearls:0, teaching_points:0, summary_points:0, references:0, section_bullets:0, sections:0 };
+  var applied = { pearls:0, teaching_points:0, summary_points:0, references:0, section_bullets:0, sections:0, edits:0, deletes:0 };
   var warnings = [];
   if(!patch || typeof patch !== "object") return { talk: t, applied: applied, warnings: warnings };
+
+  // ---- SURGICAL EDITS (in place — no length change, all original indices stay valid) ----
+  var TOMB = "\u0000__WEAVE_DELETE__";
+  function _inSec(i){ return typeof i === "number" && t.sections && t.sections[i]; }
+  if(Array.isArray(patch.edit_section_bullets)){
+    patch.edit_section_bullets.forEach(function(e){
+      if(!e || typeof e !== "object") return;
+      var si=e.section_index, bi=e.bullet_index, nt=e.new_text;
+      if(!_inSec(si) || !Array.isArray(t.sections[si].points) || typeof bi!=="number" || bi<0 || bi>=t.sections[si].points.length || typeof nt!=="string" || !nt.trim()){
+        warnings.push("Couldn't edit bullet ["+si+"]["+bi+"] — coordinate out of range; left as-is."); return;
+      }
+      t.sections[si].points[bi]=nt; applied.edits++;
+    });
+  }
+  if(Array.isArray(patch.edit_section_heading)){
+    patch.edit_section_heading.forEach(function(e){
+      if(e && _inSec(e.section_index) && typeof e.new_heading==="string" && e.new_heading.trim()){ t.sections[e.section_index].heading=e.new_heading; applied.edits++; }
+      else warnings.push("Couldn't edit a section heading — bad index.");
+    });
+  }
+  if(Array.isArray(patch.edit_section_pearl)){
+    patch.edit_section_pearl.forEach(function(e){ if(e && _inSec(e.section_index) && typeof e.new_text==="string"){ t.sections[e.section_index].teaching_pearl=e.new_text; applied.edits++; } });
+  }
+  if(Array.isArray(patch.edit_section_board_tip)){
+    patch.edit_section_board_tip.forEach(function(e){ if(e && _inSec(e.section_index) && typeof e.new_text==="string"){ t.sections[e.section_index].board_tip=e.new_text; applied.edits++; } });
+  }
+  function _editList(field, ops){
+    if(!Array.isArray(ops)) return;
+    ops.forEach(function(e){
+      if(!e || typeof e!=="object") return;
+      var i=e.index, nt=e.new_text;
+      if(Array.isArray(t[field]) && typeof i==="number" && i>=0 && i<t[field].length && typeof nt==="string" && nt.trim()){ t[field][i]=nt; applied.edits++; }
+      else warnings.push("Couldn't edit "+field+"["+i+"] — coordinate out of range; left as-is.");
+    });
+  }
+  _editList("board_pearls", patch.edit_pearls);
+  _editList("teaching_points", patch.edit_teaching_points);
+  _editList("summary_points", patch.edit_summary_points);
+
+  // ---- SURGICAL DELETES (tombstone now; compacted after the ADD pass below) ----
+  if(Array.isArray(patch.delete_section_bullets)){
+    patch.delete_section_bullets.forEach(function(d){
+      if(!d || !_inSec(d.section_index) || !Array.isArray(d.bullet_indices)) return;
+      var pts = t.sections[d.section_index].points || [];
+      d.bullet_indices.forEach(function(bi){ if(typeof bi==="number" && bi>=0 && bi<pts.length && pts[bi]!==TOMB){ pts[bi]=TOMB; applied.deletes++; } });
+    });
+  }
+  if(Array.isArray(patch.delete_sections)){
+    patch.delete_sections.forEach(function(si){ if(_inSec(si) && !t.sections[si]._deleted){ t.sections[si]._deleted=true; applied.deletes++; } });
+  }
+  function _delList(field, idxs){
+    if(!Array.isArray(idxs) || !Array.isArray(t[field])) return;
+    idxs.forEach(function(i){ if(typeof i==="number" && i>=0 && i<t[field].length && t[field][i]!==TOMB){ t[field][i]=TOMB; applied.deletes++; } });
+  }
+  _delList("board_pearls", patch.delete_pearls);
+  _delList("teaching_points", patch.delete_teaching_points);
+  _delList("summary_points", patch.delete_summary_points);
 
   // Length budget for concise talks (chars/bullet). Verbose adds trigger a warning so the user
   // can manually tighten them — they're still merged, never dropped. (Jenni 2026-06-11)
@@ -6179,6 +6284,19 @@ function applyWeavePatch(talk, patch){
       " came back longer than the concise budget (" + conciseBudget + " chars) — they were kept as-is, but you may want to tighten them by hand.");
   }
 
+  // ---- COMPACTION (Jenni 2026-06-22): physically remove tombstoned bullets/points + deleted
+  // sections. Runs LAST so the ADD/EDIT passes above could all reference original coordinates. ----
+  if(Array.isArray(t.sections)){
+    t.sections = t.sections.filter(function(s){ return !(s && s._deleted); });
+    t.sections.forEach(function(s){
+      if(Array.isArray(s.points)) s.points = s.points.filter(function(b){ return b !== TOMB; });
+      if(s && s._deleted !== undefined) delete s._deleted;
+    });
+  }
+  ["board_pearls","teaching_points","summary_points"].forEach(function(f){
+    if(Array.isArray(t[f])) t[f] = t[f].filter(function(x){ return x !== TOMB; });
+  });
+
   return { talk: t, applied: applied, warnings: warnings };
 }
 
@@ -6187,6 +6305,8 @@ function applyWeavePatch(talk, patch){
 function describeApplied(applied){
   if(!applied) return "no changes";
   var bits = [];
+  if(applied.edits) bits.push(applied.edits + " edit" + (applied.edits===1?"":"s"));
+  if(applied.deletes) bits.push(applied.deletes + " deletion" + (applied.deletes===1?"":"s"));
   if(applied.pearls) bits.push(applied.pearls + " pearl" + (applied.pearls===1?"":"s"));
   if(applied.teaching_points) bits.push(applied.teaching_points + " teaching point" + (applied.teaching_points===1?"":"s"));
   if(applied.summary_points) bits.push(applied.summary_points + " summary point" + (applied.summary_points===1?"":"s"));
@@ -6237,11 +6357,19 @@ async function sendChat(){
   // fire. Rationale: if the user uses a compression keyword (concise, shorten, trim, condense),
   // that's a deliberate signal \u2014 additive shouldn't silently override it. (Same logic for expansion.)
   var _isAdditiveSignal = isAdditiveIntent(msg) && !isCompressionIntent(msg) && !isExpansionIntent(msg);
+  // Surgical-edit / large-paste signal (Jenni 2026-06-22): a long pasted block (e.g. a proofread
+  // version from OpenEvidence) OR an explicit fix/correct/replace/delete request goes straight to
+  // the weave, which now applies precise add/edit/delete ops. This bypasses the keyword routers
+  // (restructure/expand/compress/rewrite) — they're tuned for short commands and would misfire on a
+  // long paste (e.g. a paste that happens to contain "shorten" or "rewrite"). Short, explicit
+  // "shorten"/"rewrite"/etc. commands are unaffected and still route to their dedicated paths.
+  var _isLargePaste = msg.length > 600;
+  var _isSurgicalEdit = _isLargePaste || isSurgicalEditIntent(msg);
   // Restructure-intent path (Jenni 2026-06-11) \u2014 splits / merges / reorders / renames sections
   // without losing any bullet, fact, or citation. Checked BEFORE expansion/compression because
   // restructure intent words can overlap (e.g. "break this into smaller sections" sounds compressive
   // but is actually structural).
-  if(!_isAdditiveSignal && isRestructureIntent(msg)){
+  if(!_isAdditiveSignal && !_isSurgicalEdit && isRestructureIntent(msg)){
     pushTalkHistory("restructure");
     S.chatBusy = true;
     S.msgs.push({r:"a",t:"Restructuring sections \u2014 keeping every bullet, every fact, every citation\u2026"});
@@ -6288,7 +6416,7 @@ async function sendChat(){
   // Expansion-intent path (Jenni 2026-06-11) \u2014 keeps every section + every existing fact, enriches
   // bullets with mechanism / doses / trial details. Mirror of compression. Listen to the user when
   // they explicitly want more detail.
-  if(!_isAdditiveSignal && isExpansionIntent(msg)){
+  if(!_isAdditiveSignal && !_isSurgicalEdit && isExpansionIntent(msg)){
     pushTalkHistory("expand");
     S.chatBusy = true;
     S.msgs.push({r:"a",t:"Deepening each section \u2014 keeping every existing fact, adding mechanism + evidence\u2026"});
@@ -6326,7 +6454,7 @@ async function sendChat(){
   // Compression-intent path (Jenni 2026-06-11) \u2014 keeps every section + every fact, just tightens
   // phrasing. Distinct from full regenerate (which would start from scratch and lose details) AND
   // from additive weave (which can only add, not shorten).
-  if(!_isAdditiveSignal && isCompressionIntent(msg)){
+  if(!_isAdditiveSignal && !_isSurgicalEdit && isCompressionIntent(msg)){
     pushTalkHistory("compress");
     S.chatBusy = true;
     S.msgs.push({r:"a",t:"Tightening phrasing \u2014 keeping every section, every fact, every citation\u2026"});
@@ -6362,7 +6490,7 @@ async function sendChat(){
     render();
     return;
   }
-  if(isRadicalRevision(msg)){
+  if(!_isSurgicalEdit && isRadicalRevision(msg)){
     // User signalled they want a fresh take \u2014 full regenerate path (RAG + peer review + everything).
     pushTalkHistory("rewrite"); // snapshot for undo
     S.refineContext = (S.refineContext && S.refineContext.trim() ? S.refineContext.trim() + "\n\nAlso: " : "") + msg;
@@ -6372,10 +6500,11 @@ async function sendChat(){
     return;
   }
 
-  // Default \u2014 additive weave. Keep what's working, add the requested content.
+  // Default \u2014 surgical weave. Edit, add, or delete the targeted content; everything else is preserved.
+  // (Jenni 2026-06-22: now supports editing/deleting bullets, not just adding \u2014 for OpenEvidence proofread paste-back.)
   pushTalkHistory("refine"); // snapshot for undo
   S.chatBusy=true;
-  S.msgs.push({r:"a",t:"Weaving in your update (preserving the rest of the lesson)\u2026"});
+  S.msgs.push({r:"a",t:"Reading your notes and editing the lesson surgically (everything else stays put)\u2026"});
   render();
   try{
     // weaveRevision now returns { kind: "patch", patch }. Existing content is preserved by applyWeavePatch.
@@ -6383,7 +6512,7 @@ async function sendChat(){
     var patch = result && result.patch;
     if(patch && typeof patch === "object"){
       if(patch.skip_reason){
-        S.msgs.push({r:"a",t:"\u2139\ufe0f No changes \u2014 " + patch.skip_reason + ". Say \"rewrite [thing]\" if you want to modify existing content instead of adding."});
+        S.msgs.push({r:"a",t:"\u2139\ufe0f No changes \u2014 " + patch.skip_reason + ". Try naming the section or pasting the exact text to fix, or say \"rewrite\" for a full regenerate."});
       } else {
         // applyWeavePatch returns { talk, applied, warnings } \u2014 applied is the ACTUAL merge counts,
         // not the optimistic patch field counts. So if the model wrote a bad section_index, the
@@ -6400,7 +6529,7 @@ async function sendChat(){
           S.podScript = "";
           S.talkIsSaved = false;
           var warnSuffix = (merge.warnings && merge.warnings.length) ? "\n\n\u26a0 " + merge.warnings.join("\n\u26a0 ") : "";
-          S.msgs.push({r:"a",t:"\u2713 Added " + changes + ". Existing content preserved." + warnSuffix});
+          S.msgs.push({r:"a",t:"\u2713 Applied " + changes + ". Everything else untouched \u2014 tap Undo to revert." + warnSuffix});
         }
       }
       S._composerOpen = false;
