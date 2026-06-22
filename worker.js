@@ -11,14 +11,35 @@
  */
 
 const ALLOWED_MODELS = [
+  "claude-opus-4-8",            // current MODEL_MAIN in index.html (was being rejected)
   "claude-opus-4-6",
+  "claude-sonnet-4-6",
   "claude-sonnet-4-20250514",
   "claude-haiku-4-5-20251001",
 ];
 const ALLOWED_TOOL_TYPES = ["web_search_20250305"];
 const DEFAULT_DAILY_LIMIT = 10;
-const MAX_TOKENS_CAP = 6144;
+// Raised from 6144 → 32768: the app legitimately requests up to 16384 (detailed talks)
+// and 32768 (refines). The old cap silently truncated talks routed through the proxy.
+const MAX_TOKENS_CAP = 32768;
 const MAX_REQUEST_BYTES = 5_000_000;
+
+// ── Free tier (FREE_TIER_SPEC.md) ──────────────────────────────────────────
+// Signed-in users get N free talks + N free images on Jenni's key, metered against
+// a system-wide monthly spend cap. After that they bring their own key (BYOK goes
+// direct to Anthropic, never touches this Worker). Defaults overridable via env vars.
+const FREE_TALKS_DEFAULT = 5;
+const FREE_IMAGES_DEFAULT = 5;
+const MAX_MONTHLY_SPEND_USD_DEFAULT = 400;
+// Per-million-token prices in USD (2026-06). Update if Anthropic pricing changes.
+const MODEL_PRICES = {
+  "claude-opus-4-8":            { in: 15.0, out: 75.0, cache: 1.5 },
+  "claude-opus-4-6":            { in: 15.0, out: 75.0, cache: 1.5 },
+  "claude-sonnet-4-6":          { in: 3.0,  out: 15.0, cache: 0.3 },
+  "claude-sonnet-4-20250514":   { in: 3.0,  out: 15.0, cache: 0.3 },
+  "claude-haiku-4-5-20251001":  { in: 0.8,  out: 4.0,  cache: 0.08 },
+};
+const IMAGE_FLAT_CENTS = 8;   // gpt-image-1.5 high quality ≈ $0.08/image
 const EMBEDDING_MODEL = "text-embedding-3-small";
 const EMBEDDING_DIM = 1536;
 const RETRIEVE_DEFAULT_MATCH_COUNT = 12;
@@ -65,6 +86,17 @@ export default {
       return handleImageGeneration(request, env, ctx, origin);
     }
 
+    // ── Free tier endpoints (FREE_TIER_SPEC.md §5) ──────────────────────────
+    if (request.method === "GET" && url.pathname === "/v1/free-tier/status") {
+      return handleFreeTierStatus(request, env, origin);
+    }
+    if (request.method === "POST" && url.pathname === "/v1/free-tier/consume") {
+      return handleFreeTierConsume(request, env, origin);
+    }
+    if (request.method === "POST" && url.pathname === "/v1/free-tier/admin/bonus") {
+      return handleFreeTierBonus(request, env, origin);
+    }
+
     // Sharing route is handled above (before Origin allowlist) since public viewers
     // legitimately have no Origin header (direct visits, curl, embeds).
 
@@ -101,6 +133,60 @@ export default {
       }
     }
 
+    // ── Free-tier path ──────────────────────────────────────────────────────
+    // The frontend sends X-Supabase-Auth (the user's access token) for signed-in
+    // users who haven't set their own key. We verify the user, enforce the
+    // system-wide spend cap, consume 1 talk of quota for primary generations
+    // (X-CT-Meter: talk), forward on Jenni's key, and meter actual cost async.
+    const supaToken = request.headers.get("X-Supabase-Auth");
+    if (supaToken && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+      const meterKind = request.headers.get("X-CT-Meter") || "aux";   // 'talk' | 'aux'
+      const monthKey = new Date().toISOString().slice(0, 7);
+
+      const user = await verifySupabaseUser(env, supaToken);
+      if (!user) return jsonError(401, "auth_invalid", "Sign-in token was rejected. Sign in again.", origin);
+
+      // System-wide spend cap — backstop so cost can't run away.
+      const capCents = freeCapCents(env);
+      const spentCents = await getMonthlySpendCents(env, monthKey);
+      if (spentCents >= capCents) {
+        return jsonError(503, "free_tier_paused",
+          "Chalk Talk's free tier is paused for this month. Add your own Anthropic key to keep going.",
+          origin, { resumes_on: nextMonthFirstDayUTC() });
+      }
+
+      // NOTE: quota is consumed exactly once per generation via POST /v1/free-tier/consume
+      // (called by the frontend before it starts). We do NOT consume here, because a single
+      // generation makes several /v1/messages calls (draft + peer review, plus 529 retries and
+      // model fallbacks) — charging per call would burn multiple talks for one generation.
+      let upstreamF;
+      try {
+        upstreamF = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": env.ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify(body),
+        });
+      } catch (err) {
+        return jsonError(502, "upstream_unreachable", "Could not reach Anthropic API: " + err.message, origin);
+      }
+      if (!upstreamF.ok && upstreamF.status === 401) {
+        return jsonError(503, "upstream_auth_failed", "Free tier is temporarily unavailable. Add your own key to continue.", origin);
+      }
+      // Meter real cost from the response (works for both streamed + non-streamed) — async.
+      if (upstreamF.ok) {
+        ctx.waitUntil(meterCost(env, upstreamF.clone(), body.model, meterKind === "talk" ? "talk" : "aux", monthKey));
+      }
+      const fHeaders = new Headers(upstreamF.headers);
+      fHeaders.set("Access-Control-Allow-Origin", origin || "*");
+      fHeaders.set("Vary", "Origin");
+      return new Response(upstreamF.body, { status: upstreamF.status, statusText: upstreamF.statusText, headers: fHeaders });
+    }
+
+    // ── Legacy / demo path (per-IP daily limit on Jenni's key) ──────────────
     let upstream;
     try {
       upstream = await fetch("https://api.anthropic.com/v1/messages", {
@@ -130,6 +216,217 @@ export default {
     });
   },
 };
+
+// ───────────────────────────────────────────────────────────────────────────
+// Free tier helpers (Jenni 2026-06-22)
+// ───────────────────────────────────────────────────────────────────────────
+function freeTalks(env)  { return parseInt(env.FREE_TALKS  || FREE_TALKS_DEFAULT); }
+function freeImages(env) { return parseInt(env.FREE_IMAGES || FREE_IMAGES_DEFAULT); }
+function freeCapCents(env) { return parseInt(env.MAX_MONTHLY_SPEND_USD || MAX_MONTHLY_SPEND_USD_DEFAULT) * 100; }
+function nextMonthFirstDayUTC() {
+  const d = new Date();
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)).toISOString();
+}
+
+// Verify a Supabase access token by asking Supabase who it belongs to. Robust to
+// HS256 *or* asymmetric (ES256/RS256) signing — we let Supabase do the crypto.
+async function verifySupabaseUser(env, token) {
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "apikey": env.SUPABASE_ANON_KEY || env.SUPABASE_SERVICE_ROLE_KEY,
+      },
+    });
+    if (!res.ok) return null;
+    const u = await res.json();
+    return (u && u.id) ? { id: u.id, email: u.email } : null;
+  } catch (e) { return null; }
+}
+
+async function supaServiceRPC(env, fn, params) {
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      "apikey": env.SUPABASE_SERVICE_ROLE_KEY,
+      "Authorization": `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`RPC ${fn} ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  return await res.json();
+}
+
+async function getMonthlySpendCents(env, monthKey) {
+  try {
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/spend_ledger?month_key=eq.${monthKey}&select=total_cents`,
+      { headers: { "apikey": env.SUPABASE_SERVICE_ROLE_KEY, "Authorization": `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` } }
+    );
+    if (!res.ok) return 0;
+    const rows = await res.json();
+    return (rows && rows[0] && rows[0].total_cents) || 0;
+  } catch (e) { return 0; }
+}
+
+// Atomic consume. Returns true if quota was available (and was decremented).
+async function consumeQuota(env, userId, kind, envForBase) {
+  try {
+    const base = kind === "image" ? freeImages(envForBase || env) : freeTalks(envForBase || env);
+    const r = await supaServiceRPC(env, "free_tier_consume", {
+      p_user_id: userId, p_kind: kind, p_amount: 1, p_base: base,
+    });
+    return r === true;
+  } catch (e) { return false; }
+}
+
+function estimateCostCents(model, usage) {
+  const p = MODEL_PRICES[model] || MODEL_PRICES["claude-sonnet-4-6"];
+  const inTok = usage.input_tokens || 0;
+  const outTok = usage.output_tokens || 0;
+  const cacheTok = usage.cache_read_input_tokens || 0;
+  const dollars = (inTok / 1e6) * p.in + (outTok / 1e6) * p.out + (cacheTok / 1e6) * p.cache;
+  return Math.ceil(dollars * 100);
+}
+
+async function extractUsage(resp) {
+  const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0 };
+  try {
+    const text = await resp.text();
+    if (text.indexOf("message_start") >= 0 || (text.indexOf("data:") >= 0 && text.indexOf("message_delta") >= 0)) {
+      // SSE stream — pull input from message_start, output from message_delta.
+      const lines = text.split("\n");
+      for (const line of lines) {
+        const ln = line.trim();
+        if (!ln.startsWith("data:")) continue;
+        const payload = ln.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          const e = JSON.parse(payload);
+          if (e.type === "message_start" && e.message && e.message.usage) {
+            usage.input_tokens = e.message.usage.input_tokens || 0;
+            usage.cache_read_input_tokens = e.message.usage.cache_read_input_tokens || 0;
+          }
+          if (e.type === "message_delta" && e.usage && typeof e.usage.output_tokens === "number") {
+            usage.output_tokens = e.usage.output_tokens;
+          }
+        } catch (_) {}
+      }
+    } else {
+      const j = JSON.parse(text);
+      if (j.usage) {
+        usage.input_tokens = j.usage.input_tokens || 0;
+        usage.output_tokens = j.usage.output_tokens || 0;
+        usage.cache_read_input_tokens = j.usage.cache_read_input_tokens || 0;
+      }
+    }
+  } catch (e) {}
+  return usage;
+}
+
+async function meterCost(env, respClone, model, kind, monthKey) {
+  try {
+    const usage = await extractUsage(respClone);
+    const cents = estimateCostCents(model, usage);
+    if (cents > 0) {
+      await supaServiceRPC(env, "ledger_add", {
+        p_month: monthKey, p_kind: kind === "talk" ? "talk" : "aux",
+        p_cost_cents: cents, p_cap_cents: freeCapCents(env),
+      });
+      // (Phase 2) if the RPC returns a crossed threshold, fire an alert email here.
+    }
+  } catch (e) { /* metering is best-effort; never block the user */ }
+}
+
+async function handleFreeTierStatus(request, env, origin) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)
+    return jsonError(503, "free_tier_unconfigured", "Free tier is not configured on this proxy.", origin);
+  const token = request.headers.get("X-Supabase-Auth");
+  if (!token) return jsonOK({ signed_in: false }, origin);
+  const user = await verifySupabaseUser(env, token);
+  if (!user) return jsonOK({ signed_in: false }, origin);
+
+  let talksRemaining = freeTalks(env), imagesRemaining = freeImages(env);
+  try {
+    const r = await supaServiceRPC(env, "free_tier_remaining", {
+      p_user_id: user.id, p_base_talks: freeTalks(env), p_base_images: freeImages(env),
+    });
+    const row = Array.isArray(r) ? r[0] : r;
+    if (row) { talksRemaining = row.talks_remaining; imagesRemaining = row.images_remaining; }
+  } catch (e) {}
+
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const capCents = freeCapCents(env);
+  const spentCents = await getMonthlySpendCents(env, monthKey);
+  return jsonOK({
+    signed_in: true,
+    talks_remaining: talksRemaining,
+    images_remaining: imagesRemaining,
+    talks_total: freeTalks(env),
+    images_total: freeImages(env),
+    cap_hit: spentCents >= capCents,
+    cap_pct_used: Math.min(100, Math.round((spentCents / capCents) * 100)),
+  }, origin);
+}
+
+// Consume exactly one unit of quota for a generation. Called once by the frontend
+// before it kicks off a talk (or image). Idempotent w.r.t. the multi-call generation
+// pipeline because the frontend calls it once, not per API request.
+async function handleFreeTierConsume(request, env, origin) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)
+    return jsonError(503, "free_tier_unconfigured", "Free tier is not configured on this proxy.", origin);
+  const token = request.headers.get("X-Supabase-Auth");
+  if (!token) return jsonError(401, "auth_required", "Sign in to use the free tier.", origin);
+  const user = await verifySupabaseUser(env, token);
+  if (!user) return jsonError(401, "auth_invalid", "Sign-in token was rejected. Sign in again.", origin);
+
+  let kind = "talk";
+  try { const b = JSON.parse(await request.text() || "{}"); if (b.kind === "image") kind = "image"; } catch (e) {}
+
+  // System spend cap backstop.
+  const monthKey = new Date().toISOString().slice(0, 7);
+  if ((await getMonthlySpendCents(env, monthKey)) >= freeCapCents(env))
+    return jsonError(503, "free_tier_paused", "Chalk Talk's free tier is paused for this month. Add your own key to continue.", origin, { resumes_on: nextMonthFirstDayUTC() });
+
+  const ok = await consumeQuota(env, user.id, kind, env);
+  if (!ok) {
+    const msg = kind === "image"
+      ? "You've used your free images. Add your own key to keep generating illustrations."
+      : "You've used your free talks. Add your own Anthropic key (~$5 covers ~30 talks) to continue.";
+    return jsonError(429, kind === "image" ? "image_quota_exceeded" : "quota_exceeded", msg, origin);
+  }
+  // Report remaining for the badge.
+  let remaining = null;
+  try {
+    const r = await supaServiceRPC(env, "free_tier_remaining", {
+      p_user_id: user.id, p_base_talks: freeTalks(env), p_base_images: freeImages(env),
+    });
+    const row = Array.isArray(r) ? r[0] : r;
+    if (row) remaining = { talks_remaining: row.talks_remaining, images_remaining: row.images_remaining };
+  } catch (e) {}
+  return jsonOK({ consumed: true, kind, remaining }, origin);
+}
+
+async function handleFreeTierBonus(request, env, origin) {
+  if (!env.ADMIN_TOKEN) return jsonError(503, "admin_unconfigured", "Admin endpoint not configured.", origin);
+  if (request.headers.get("X-Admin-Token") !== env.ADMIN_TOKEN)
+    return jsonError(403, "admin_forbidden", "Bad admin token.", origin);
+  let body;
+  try { body = JSON.parse(await request.text()); }
+  catch { return jsonError(400, "invalid_json", "Body is not valid JSON.", origin); }
+  if (!body.user_email) return jsonError(400, "missing_email", "user_email is required.", origin);
+  try {
+    const ok = await supaServiceRPC(env, "free_tier_grant_bonus", {
+      p_email: String(body.user_email).toLowerCase(),
+      p_bonus_talks: parseInt(body.bonus_talks) || 0,
+      p_bonus_images: parseInt(body.bonus_images) || 0,
+    });
+    return jsonOK({ granted: ok === true }, origin);
+  } catch (e) {
+    return jsonError(502, "grant_failed", "Bonus grant failed: " + e.message, origin);
+  }
+}
 
 async function handleRetrieve(request, env, origin) {
   if (!env.OPENAI_API_KEY || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY)
@@ -213,6 +510,21 @@ async function handleImageGeneration(request, env, ctx, origin) {
   const quality = ALLOWED_IMAGE_QUALITIES.includes(body.quality) ? body.quality : "high";
   const n = Math.max(1, Math.min(parseInt(body.n) || 1, 1));
 
+  // Free-tier image quota — when the user is signed in and on Jenni's key.
+  const supaToken = request.headers.get("X-Supabase-Auth");
+  const isFreeTier = !!(supaToken && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
+  let freeUser = null, monthKey = null;
+  if (isFreeTier) {
+    monthKey = new Date().toISOString().slice(0, 7);
+    freeUser = await verifySupabaseUser(env, supaToken);
+    if (!freeUser) return jsonError(401, "auth_invalid", "Sign-in token was rejected. Sign in again.", origin);
+    const spentCents = await getMonthlySpendCents(env, monthKey);
+    if (spentCents >= freeCapCents(env))
+      return jsonError(503, "free_tier_paused", "Free tier is paused for this month. Add your own key to continue.", origin, { resumes_on: nextMonthFirstDayUTC() });
+    const ok = await consumeQuota(env, freeUser.id, "image", env);
+    if (!ok) return jsonError(429, "image_quota_exceeded", "You've used your free images. Add your own key to keep generating illustrations.", origin);
+  }
+
   let upstream;
   try {
     upstream = await fetch("https://api.openai.com/v1/images/generations", {
@@ -227,7 +539,14 @@ async function handleImageGeneration(request, env, ctx, origin) {
     return jsonError(502, "upstream_unreachable", "Could not reach OpenAI Images API: " + err.message, origin);
   }
 
-  if (upstream.ok) ctx.waitUntil(incrementDailyCount(env, ip));
+  if (upstream.ok && isFreeTier) {
+    // Flat image cost into the same monthly spend ledger.
+    ctx.waitUntil(supaServiceRPC(env, "ledger_add", {
+      p_month: monthKey, p_kind: "image", p_cost_cents: IMAGE_FLAT_CENTS, p_cap_cents: freeCapCents(env),
+    }).catch(() => {}));
+  } else if (upstream.ok) {
+    ctx.waitUntil(incrementDailyCount(env, ip));
+  }
 
   const text = await upstream.text();
   return new Response(text, {
@@ -285,7 +604,7 @@ function corsPreflight(origin, allowedOrigins) {
     headers: {
       "Access-Control-Allow-Origin": allowedOrigin,
       "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Headers": "Content-Type, X-Supabase-Auth, X-CT-Meter, X-Admin-Token, Authorization",
       "Access-Control-Max-Age": "86400",
       "Vary": "Origin",
     },
