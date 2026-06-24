@@ -7136,15 +7136,16 @@ function renderGlobalModals(){
     h+='<div class="drawer-backdrop open" id="signInBackdrop"></div>';
     h+='<div class="drawer open" style="max-height:auto" id="signInDrawer">';
     h+='<div class="drawer-handle"></div>';
-    h+='<div class="drawer-head"><div class="drawer-title">Sign in</div><button class="drawer-close" id="signInCloseBtn">×</button></div>';
+    h+='<div class="drawer-head"><div class="drawer-title">Sign in or sign up</div><button class="drawer-close" id="signInCloseBtn">×</button></div>';
     h+='<div class="drawer-body" style="padding:18px 20px 28px">';
-    h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.5;margin:0 0 18px">Sign in to save your library across devices and personalize your profile. Anonymous use still works without an account.</p>';
+    h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.5;margin:0 0 18px">Sign in \u2014 or create a free account \u2014 to save your library across devices and personalize your profile. New here? Either option below sets you up instantly. Anonymous use still works without an account.</p>';
     h+='<button id="googleSignInBtn" '+(S.authBusy?"disabled":"")+' style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease"><svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.32A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3.01 2.33A5.4 5.4 0 0 1 9 3.58z"/></svg>Continue with Google</button>';
     h+='<div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--ink-soft);font-size:11px;letter-spacing:0.05em"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>';
     h+='<form id="magicLinkForm" style="display:flex;flex-direction:column;gap:8px">';
-    h+='<label style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 0 4px">Email magic link</label>';
+    h+='<label style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 0 4px">Continue with email</label>';
+    h+='<span style="font-size:11.5px;color:var(--ink-soft);line-height:1.4;margin:0 0 2px 4px">New or returning \u2014 we\'ll email you a one-time sign-in link. No password to set up or remember.</span>';
     h+='<input id="authEmailInput" type="email" placeholder="you@hospital.edu" value="'+esc(S.authEmail||"")+'" required style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:16px;color:var(--ink);outline:none;font-family:inherit">';
-    h+='<button type="submit" '+(S.authBusy?"disabled":"")+' style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:'+(S.authBusy?"wait":"pointer")+';opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease">'+(S.authBusy?"Sending…":"Send magic link →")+'</button>';
+    h+='<button type="submit" '+(S.authBusy?"disabled":"")+' style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:'+(S.authBusy?"wait":"pointer")+';opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease">'+(S.authBusy?"Sending…":"Email me a sign-in link →")+'</button>';
     h+='</form>';
     if(S.authMsg){
       var isErr = /error|fail|wrong|invalid/i.test(S.authMsg);
@@ -7234,7 +7235,7 @@ function renderGlobalModals(){
   var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){S.signInOpen=false;render()};
   var sibd=document.getElementById("signInBackdrop");if(sibd)sibd.onclick=function(){S.signInOpen=false;render()};
   var aei=document.getElementById("authEmailInput");if(aei)aei.oninput=function(e){S.authEmail=e.target.value};
-  var mlf=document.getElementById("magicLinkForm");if(mlf)mlf.onsubmit=async function(e){e.preventDefault();var em=(S.authEmail||"").trim();if(!em){S.authMsg="Enter your email";render();return}S.authBusy=true;S.authMsg="";render();try{await signInWithMagicLink(em);S.authMsg="Check "+em+" — we sent you a magic link.";S.authBusy=false;render()}catch(err){S.authMsg=err.message||"Could not send magic link";S.authBusy=false;render()}};
+  var mlf=document.getElementById("magicLinkForm");if(mlf)mlf.onsubmit=async function(e){e.preventDefault();var em=(S.authEmail||"").trim();if(!em){S.authMsg="Enter your email";render();return}S.authBusy=true;S.authMsg="";render();try{await signInWithMagicLink(em);S.authMsg="Check "+em+" — we emailed you a one-time sign-in link.";S.authBusy=false;render()}catch(err){S.authMsg=err.message||"Could not send the sign-in link";S.authBusy=false;render()}};
   var gsb=document.getElementById("googleSignInBtn");if(gsb)gsb.onclick=async function(){S.authBusy=true;render();try{await signInWithGoogle()}catch(err){S.authMsg=err.message||"Google sign-in failed";S.authBusy=false;render()}};
 }
 
@@ -7774,7 +7775,7 @@ function renderMain(){
     // Logged out: "Sign in" link with a small person icon so it's recognizable as an account affordance.
     h+='<button id="signInBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--plum);font-size:13px;font-weight:600;padding:2px 0;display:inline-flex;align-items:center;gap:6px">';
     h+='  <span style="background:var(--lavender-bg);color:var(--plum);width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px">👤</span>';
-    h+='  <span style="text-decoration:underline;text-underline-offset:2px">Sign in</span>';
+    h+='  <span style="text-decoration:underline;text-underline-offset:2px">Sign in / Sign up</span>';
     h+='</button>';
   }
   // Library — saved talks + Jenni's featured showcase lectures + pre-made Boards samples.
@@ -8837,18 +8838,19 @@ function renderMain(){
     h+='<div class="drawer-backdrop open" id="signInBackdrop"></div>';
     h+='<div class="drawer open" style="max-height:auto" id="signInDrawer">';
     h+='<div class="drawer-handle"></div>';
-    h+='<div class="drawer-head"><div class="drawer-title">Sign in</div><button class="drawer-close" id="signInCloseBtn">×</button></div>';
+    h+='<div class="drawer-head"><div class="drawer-title">Sign in or sign up</div><button class="drawer-close" id="signInCloseBtn">×</button></div>';
     h+='<div class="drawer-body" style="padding:18px 20px 28px">';
-    h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.5;margin:0 0 18px">Sign in to save your library across devices and personalize your profile. Anonymous use still works without an account.</p>';
+    h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.5;margin:0 0 18px">Sign in \u2014 or create a free account \u2014 to save your library across devices and personalize your profile. New here? Either option below sets you up instantly. Anonymous use still works without an account.</p>';
     // Google
     h+='<button id="googleSignInBtn" '+(S.authBusy?"disabled":"")+' style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease"><svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.32A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3.01 2.33A5.4 5.4 0 0 1 9 3.58z"/></svg>Continue with Google</button>';
     // Divider
     h+='<div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--ink-soft);font-size:11px;letter-spacing:0.05em"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>';
     // Email magic link
     h+='<form id="magicLinkForm" style="display:flex;flex-direction:column;gap:8px">';
-    h+='<label style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 0 4px">Email magic link</label>';
+    h+='<label style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 0 4px">Continue with email</label>';
+    h+='<span style="font-size:11.5px;color:var(--ink-soft);line-height:1.4;margin:0 0 2px 4px">New or returning \u2014 we\'ll email you a one-time sign-in link. No password to set up or remember.</span>';
     h+='<input id="authEmailInput" type="email" placeholder="you@hospital.edu" value="'+esc(S.authEmail||"")+'" required style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--ink);outline:none;font-family:inherit">';
-    h+='<button type="submit" '+(S.authBusy?"disabled":"")+' style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:'+(S.authBusy?"wait":"pointer")+';opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease">'+(S.authBusy?"Sending…":"Send magic link →")+'</button>';
+    h+='<button type="submit" '+(S.authBusy?"disabled":"")+' style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:'+(S.authBusy?"wait":"pointer")+';opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease">'+(S.authBusy?"Sending…":"Email me a sign-in link →")+'</button>';
     h+='</form>';
     if(S.authMsg){
       var isErr = /error|fail|wrong|invalid/i.test(S.authMsg);
@@ -9127,7 +9129,7 @@ function bindMain(){
   var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){S.signInOpen=false;render()};
   var sibd=document.getElementById("signInBackdrop");if(sibd)sibd.onclick=function(){S.signInOpen=false;render()};
   var aei=document.getElementById("authEmailInput");if(aei)aei.oninput=function(e){S.authEmail=e.target.value};
-  var mlf=document.getElementById("magicLinkForm");if(mlf)mlf.onsubmit=async function(e){e.preventDefault();var em=(S.authEmail||"").trim();if(!em){S.authMsg="Enter your email";render();return}S.authBusy=true;S.authMsg="";render();try{await signInWithMagicLink(em);S.authMsg="Check "+em+" — we sent you a magic link.";S.authBusy=false;render()}catch(err){S.authMsg=err.message||"Could not send magic link";S.authBusy=false;render()}};
+  var mlf=document.getElementById("magicLinkForm");if(mlf)mlf.onsubmit=async function(e){e.preventDefault();var em=(S.authEmail||"").trim();if(!em){S.authMsg="Enter your email";render();return}S.authBusy=true;S.authMsg="";render();try{await signInWithMagicLink(em);S.authMsg="Check "+em+" — we emailed you a one-time sign-in link.";S.authBusy=false;render()}catch(err){S.authMsg=err.message||"Could not send the sign-in link";S.authBusy=false;render()}};
   var gsb=document.getElementById("googleSignInBtn");if(gsb)gsb.onclick=async function(){S.authBusy=true;render();try{await signInWithGoogle()}catch(err){S.authMsg=err.message||"Google sign-in failed";S.authBusy=false;render()}};
   // J / account avatar click → open the full profile drawer (was: small dropdown)
   var acb=document.getElementById("accountBtn");if(acb)acb.onclick=function(e){e.stopPropagation();S.accountMenuOpen=false;S.profileEditOpen=true;S.profileForm=Object.assign({},S.profile||{});render()};
