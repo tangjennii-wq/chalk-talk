@@ -264,6 +264,11 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
 .overflow-menu button:last-child{border-bottom:none}
 .overflow-menu button:hover{background:var(--lavender-bg)}
 .overflow-menu button.danger{color:#c0392b}
+/* Undo placement (Jenni 2026-06-25): on desktop the undo control lives in the toolbar with a
+   visible "Undo" label (less mysterious); on mobile the toolbar row is too crowded, so the
+   toolbar undo is hidden and an "Undo last edit" item appears in the ⋮ overflow menu instead. */
+.undo-overflow{display:none !important}
+@media (max-width:640px){.undo-toolbar{display:none !important}.undo-overflow{display:flex !important}}
 /* Library card kebab — faint at rest, brightens into a circular hit-state on hover so the affordance reads as a button. */
 .libCardMenuBtn{opacity:0.5;transition:opacity .12s ease,background .12s ease}
 .libCardMenuBtn:hover,.libCardMenuBtn:focus-visible{opacity:1;background:var(--lavender-bg) !important;color:var(--plum) !important;outline:none}
@@ -398,11 +403,11 @@ textarea,input[type=text]{font-family:inherit}
   .outline-head > div { width: 100%; justify-content: space-between !important; margin-top: 2px !important; }
   /* Mobile chrome de-cluttering (Jenni 2026-06-11) — too many stacked elements above the actual
      content. On phones, drop the redundant ones: subtitle (eats 2 lines), "Lesson outline" label
-     (purely decorative), Lecture/Boards pill (emoji now lives in title), and the "Shared by author"
-     banner row (capsule already has Save copy). */
+     (purely decorative), and the "Shared by author" banner row (capsule already has Save copy).
+     The Lecture/Boards pill stays on mobile now that the graduation-cap title emoji is gone — it's
+     the only remaining mode indicator on phones. (Jenni 2026-06-25) */
   .ttl-sub { display: none !important; }
   .outline-head > span:first-child { display: none !important; }
-  .tk-pill-modetype { display: none !important; }
   .tk-shared-banner { display: none !important; }
   /* With the outline-head label hidden, controls span the full width. Depth toggle anchors to the
      LEFT; Expand all + Copy all anchor to the RIGHT. (Jenni 2026-06-11) */
@@ -8133,7 +8138,7 @@ function renderMain(){
     // Undo button — standard inline SVG (curved arrow looping back), matches what every app uses.
     if(S.talkHistory && S.talkHistory.length > 0){
       var lastLabel = S.talkHistory[S.talkHistory.length-1].label;
-      h+='<button id="undoEditBtn" title="Undo last '+esc(lastLabel)+'" style="background:none;border:none;color:var(--plum);cursor:pointer;padding:5px 8px;border-radius:7px;line-height:0;display:inline-flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg></button>';
+      h+='<button id="undoEditBtn" class="undo-toolbar" title="Undo last '+esc(lastLabel)+'" style="background:none;border:none;color:var(--plum);cursor:pointer;padding:5px 8px;border-radius:7px;display:inline-flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg><span class="hide-mobile-text">Undo</span></button>';
     }
     // Order (Jenni 2026-06-11): Edit goes BEFORE the Save indicator so the pencil reads as "do
     // something" and Saved reads as a passive status next to it. New ordering: Edit · Saved · ⋮
@@ -8168,6 +8173,12 @@ function renderMain(){
     // viewport. (Jenni 2026-06-09 fix — menu used to float far from the kebab on wide screens.)
     if(S.overflowOpen){
       h+='<div class="overflow-menu" id="overflowMenu">';
+      // Undo — mobile-only entry. On desktop undo lives in the toolbar (with its "Undo" label);
+      // on mobile that row is too cramped, so undo moves in here. (Jenni 2026-06-25)
+      if(S.talkHistory && S.talkHistory.length > 0){
+        var _undoMenuLabel = S.talkHistory[S.talkHistory.length-1].label;
+        h+='<button id="undoEditMenuBtn" class="undo-overflow" title="Undo last '+esc(_undoMenuLabel)+'">↩ Undo last edit</button>';
+      }
       // Privacy actions — only for saved cloud talks. Unified Share modal replaces the older
       // Publish/Unpublish pair. Public talks also get a quick Copy link + Make private. (Jenni 2026-06-08 Phase 1+2)
       if(S.user && S.loadedTalkId && !String(S.loadedTalkId).startsWith("t_") && !S.isSampleTalk && !S.sharedTalk){
@@ -8208,10 +8219,10 @@ function renderMain(){
     if(S.savedFlash)h+='<div style="margin-bottom:10px;padding:8px 12px;background:#f0f7f0;border:1px solid #b8d8b8;border-radius:8px;color:#2d6a2d;font-size:12px;font-weight:600;text-align:center">'+esc(S.savedFlash)+'</div>';
 
     // === Lesson title block ===
-    // Emoji prefix on the title (Jenni 2026-06-11) — replaces the standalone "🎓 Lecture" pill on
-    // mobile, where chrome is over-crowded. The pill stays in the meta row on desktop for parity.
-    var _titleEmoji = isBQ ? "📋" : "🎓";
-    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="tk-title-emoji" aria-hidden="true" style="flex-shrink:0">'+_titleEmoji+'</span><span class="tk-title-text">'+esc(t.title||"")+'</span><button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0">✎</button></h1>';
+    // Title is clamped to a single line on both desktop and mobile (Jenni 2026-06-25): the text
+    // truncates with an ellipsis (full title on hover via the title attr) and the ✎ edit button
+    // stays pinned to its right instead of wrapping below. Graduation-cap emoji prefix removed.
+    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap"><span class="tk-title-text" title="'+esc(t.title||"")+'" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto">'+esc(t.title||"")+'</span><button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0">✎</button></h1>';
     if(t.subtitle)h+='<p class="ttl-sub">'+esc(t.subtitle)+'</p>';
     // Pills
     var spec=(S.glRef&&S.glRef.specialties&&S.glRef.specialties[0])||"";
@@ -8219,7 +8230,8 @@ function renderMain(){
     // Pills — time + Evidence-grounded removed per Jenni 2026-06-08. The "10-min evidence-based"
     // framing already lives in the "How it works" disclosure; the per-talk pill was redundant.
     h+='<div class="ttl-pills">';
-    // tk-pill-modetype class lets us hide this pill on mobile, since the emoji now lives in the title.
+    // Mode pill — shown on both desktop and mobile (it's the mode indicator now that the title
+    // graduation-cap emoji is gone). (Jenni 2026-06-25)
     h+='<span class="tk-pill tk-pill-modetype">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
     // Background citation audit indicator (Jenni 2026-06-09 #4)
     if(S.citationAuditPending){
@@ -9341,6 +9353,7 @@ function bindMain(){
   // Per-section copy buttons (lecture mode)
   // Undo button (capsule)
   var udb=document.getElementById("undoEditBtn");if(udb)udb.onclick=undoLastEdit;
+  var udmb=document.getElementById("undoEditMenuBtn");if(udmb)udmb.onclick=function(){S.overflowOpen=false;undoLastEdit();};
   // === Per-section edit mode handlers (Jenni 2026-06-04) ===
   // Enter edit mode — clone the section into a working draft
   document.querySelectorAll(".secEditBtn").forEach(function(b){b.onclick=function(e){
