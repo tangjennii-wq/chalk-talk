@@ -4,10 +4,10 @@ Everything is built and committed. This is the ~15-minute deploy. You already ha
 Cloudflare (the `chalk-talk-proxy` Worker) and Supabase, so this is config + one migration,
 not new infrastructure.
 
-What the free tier does: a signed-in user with **no key of their own** gets **5 free talks +
+What the free tier does: a signed-in user with **no key of their own** gets **10 free talks +
 5 free images** on your Anthropic key, routed through the Worker. After that they're prompted
 to add their own key (BYOK goes straight to Anthropic, never touches the Worker). A system-wide
-**$400/month spend cap** auto-pauses the free tier if it's ever hit.
+**$250/month spend cap** auto-pauses the free tier if it's ever hit.
 
 ---
 
@@ -16,7 +16,7 @@ to add their own key (BYOK goes straight to Anthropic, never touches the Worker)
 In the Supabase SQL editor (or CLI), run:
 
 ```
-supabase/migration_v3_free_tier.sql
+supabase/migration_v3_free_tier.sql   ← ✅ APPLIED 2026-07-03 via Supabase MCP
 ```
 
 This creates `free_tier_usage` + `spend_ledger` and the helper functions
@@ -45,8 +45,8 @@ wrangler secret put ADMIN_TOKEN            # only if you want the /admin/bonus e
 Optional `[vars]` in `wrangler.toml` (defaults shown):
 
 ```toml
-MAX_MONTHLY_SPEND_USD = "400"   # system-wide free-tier cap
-FREE_TALKS  = "5"
+MAX_MONTHLY_SPEND_USD = "250"   # system-wide free-tier cap
+FREE_TALKS  = "10"
 FREE_IMAGES = "5"
 ```
 

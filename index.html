@@ -1387,8 +1387,9 @@ var RAG_CONFIG = {
 //   2) wrangler secret put SUPABASE_SERVICE_ROLE_KEY ; wrangler deploy
 // THEN set enabled:true and push. With it false, the app behaves exactly as before
 // (signed-in users without a key are asked for their own Anthropic key). (Jenni 2026-06-22)
+// Enabled 2026-07-03 — backend live: migration v3 applied, quotas 10 talks / 5 images.
 var FREE_TIER_CONFIG = {
-  enabled: false
+  enabled: true
 };
 
 // ═══════════ TRIAL EXPANSIONS ═══════════
@@ -5306,10 +5307,10 @@ function buildReferenceParts(files) {
 async function generate(){
   if(!S.topic.trim()||S.loading)return;
   // Discovery nudge: a logged-out visitor with no key of their own gets the free-tier offer
-  // (sign in → 5 free talks) instead of a bare API-key prompt. BYOK users are unaffected.
+  // (sign in → 10 free talks) instead of a bare API-key prompt. BYOK users are unaffected.
   if(FREE_TIER_CONFIG.enabled && !S.user && !hasOwnClaudeKey() && !S.useByok){
     S.signInOpen = true;
-    S.authMsg = "Sign in to use your 5 free talks — no API key needed.";
+    S.authMsg = "Sign in to use your 10 free talks — no API key needed.";
     if(typeof render === "function") render();
     return;
   }

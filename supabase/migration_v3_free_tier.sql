@@ -50,7 +50,7 @@ CREATE POLICY "spend_ledger_read" ON spend_ledger FOR SELECT TO authenticated US
 -- ── Effective remaining quota (one round trip for the badge) ───────────────
 CREATE OR REPLACE FUNCTION free_tier_remaining(
   p_user_id      UUID,
-  p_base_talks   INT DEFAULT 5,
+  p_base_talks   INT DEFAULT 10,
   p_base_images  INT DEFAULT 5
 )
 RETURNS TABLE(talks_remaining INT, images_remaining INT) AS $$
@@ -105,7 +105,7 @@ CREATE OR REPLACE FUNCTION ledger_add(
   p_month      TEXT,
   p_kind       TEXT,           -- 'talk' or 'image' (for counters)
   p_cost_cents INT,
-  p_cap_cents  INT DEFAULT 40000
+  p_cap_cents  INT DEFAULT 25000
 )
 RETURNS TABLE(new_total_cents INT, threshold_crossed INT) AS $$
 DECLARE

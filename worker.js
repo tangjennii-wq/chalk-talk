@@ -28,9 +28,9 @@ const MAX_REQUEST_BYTES = 5_000_000;
 // Signed-in users get N free talks + N free images on Jenni's key, metered against
 // a system-wide monthly spend cap. After that they bring their own key (BYOK goes
 // direct to Anthropic, never touches this Worker). Defaults overridable via env vars.
-const FREE_TALKS_DEFAULT = 5;
+const FREE_TALKS_DEFAULT = 10;
 const FREE_IMAGES_DEFAULT = 5;
-const MAX_MONTHLY_SPEND_USD_DEFAULT = 400;
+const MAX_MONTHLY_SPEND_USD_DEFAULT = 250;
 // Per-million-token prices in USD (2026-06). Update if Anthropic pricing changes.
 const MODEL_PRICES = {
   "claude-opus-4-8":            { in: 15.0, out: 75.0, cache: 1.5 },
