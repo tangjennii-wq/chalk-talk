@@ -8223,7 +8223,8 @@ function renderMain(){
     // Title is clamped to a single line on both desktop and mobile (Jenni 2026-06-25): the text
     // truncates with an ellipsis (full title on hover via the title attr) and the ✎ edit button
     // stays pinned to its right instead of wrapping below. Graduation-cap emoji prefix removed.
-    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap"><span class="tk-title-text" title="'+esc(t.title||"")+'" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto">'+esc(t.title||"")+'</span><button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0">✎</button></h1>';
+    // Mode pill lives inline right of the title (Jenni 2026-07-03 — saves a vertical row; was in ttl-pills).
+    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap"><span class="tk-title-text" title="'+esc(t.title||"")+'" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto">'+esc(t.title||"")+'</span><span class="tk-pill tk-pill-modetype" style="flex-shrink:0;font-size:10.5px;padding:1px 8px;opacity:0.85">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span><button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0;margin-left:auto">✎</button></h1>';
     if(t.subtitle)h+='<p class="ttl-sub">'+esc(t.subtitle)+'</p>';
     // Pills
     var spec=(S.glRef&&S.glRef.specialties&&S.glRef.specialties[0])||"";
@@ -8231,9 +8232,7 @@ function renderMain(){
     // Pills — time + Evidence-grounded removed per Jenni 2026-06-08. The "10-min evidence-based"
     // framing already lives in the "How it works" disclosure; the per-talk pill was redundant.
     h+='<div class="ttl-pills">';
-    // Mode pill — shown on both desktop and mobile (it's the mode indicator now that the title
-    // graduation-cap emoji is gone). (Jenni 2026-06-25)
-    h+='<span class="tk-pill tk-pill-modetype">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
+    // Mode pill moved inline next to the title (Jenni 2026-07-03) — see tk-lessontitle h1 above.
     // Background citation audit indicator (Jenni 2026-06-09 #4)
     if(S.citationAuditPending){
       h+='<span class="tk-pill" style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;display:inline-flex;align-items:center;gap:5px"><span class="spinner" style="width:9px;height:9px;border-width:1.5px"></span>Verifying citations…</span>';
