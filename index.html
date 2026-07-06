@@ -9146,7 +9146,23 @@ function bindMain(){
       }
     };
   }
-  var rsd=document.getElementById("reviseSend");if(rsd)rsd.onclick=function(){if(!String(S.reviseIn||"").trim())return;S.chatIn=S.reviseIn;S.reviseIn="";if(typeof sendChat==="function")sendChat()};
+  // Send-arrow fix (Jenni 2026-07-03): the old per-render onclick was unreliable — render() rebuilds
+  // the DOM wholesale, and any background tick (regen counter, citation audit, free-tier poll) that
+  // fires between mousedown and mouseup replaces the button mid-click, so the click event never
+  // dispatches. ⌘/Ctrl+Enter worked because keydown fires instantly on the textarea. Fix: ONE
+  // document-level pointerdown listener (bound once, survives every re-render). The empty-input
+  // guard also makes accidental double-fires no-ops.
+  if(!window.__reviseSendBound){
+    window.__reviseSendBound = true;
+    document.addEventListener("pointerdown", function(e){
+      var b = e.target && e.target.closest ? e.target.closest("#reviseSend") : null;
+      if(!b || b.disabled) return;
+      e.preventDefault(); // keep focus state stable; we're handling the action now
+      if(!String(S.reviseIn||"").trim()) return;
+      S.chatIn=S.reviseIn; S.reviseIn="";
+      if(typeof sendChat==="function") sendChat();
+    });
+  }
 
   // ─── Auth (sign-in modal + Google + account menu + profile editor) ─────
   var sib=document.getElementById("signInBtn");if(sib)sib.onclick=function(){S.signInOpen=true;S.authMsg="";render()};
