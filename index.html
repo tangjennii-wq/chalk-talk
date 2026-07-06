@@ -595,7 +595,7 @@ function segBtn(cls, dataAttr, val, current, icon, label, opts){
     '<span'+(compact?'':' style="font-size:13px"')+'>'+icon+'</span>'+label+
     // Optional micro-badge — tiny corner tag floating on the top-right border, so the button
     // face stays IDENTICAL to its siblings (Jenni 2026-07-03; v2 after inline pill looked cramped).
-    (opts.badge?'<span style="position:absolute;top:-7px;right:8px;font-size:7.5px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;color:#a07d1a;background:#fff;border:1px solid #e6d49a;border-radius:8px;padding:1px 6px;line-height:1.4;pointer-events:none">★ '+opts.badge+'</span>':'')+
+    (opts.badge?'<span style="position:absolute;top:-7px;left:8px;font-size:7.5px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;color:#a07d1a;background:#fff;border:1px solid #e6d49a;border-radius:8px;padding:1px 6px;line-height:1.4;pointer-events:none">★ '+opts.badge+'</span>':'')+
     '</button>';
 }
 
@@ -7955,8 +7955,8 @@ function renderMain(){
   h+='<div style="flex:1 1 220px;min-width:0;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesnt apply to Boards":"5 min vs 10 min")+'">';
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span></div>';
   h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
-  h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass. Recommended: generate concise first, then upgrade.",badge:"recommended"});
-  h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:(S.talk?"~10 min":"Generate the concise talk first — then upgrade to Detailed"),disabled:!S.talk});
+  h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass, generates fastest. Recommended.",badge:"recommended"});
+  h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:"~10 min — full chalk talk with deeper mechanism and evidence (generates slower, ~40-50s)"});
   h+='</div></div>';
   h+='</div>';
 
@@ -8062,8 +8062,8 @@ function renderMain(){
       h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink)">Depth</span>';
       h+='<div style="display:inline-flex;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:2px;font-size:11px;font-weight:600">';
       h+='<button class="loadingDepthBtn" data-d="concise"  style="background:'+(_dC?"#fff":"transparent")+';color:'+(_dC?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dC?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dC?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dC?"700":"500")+'">Concise</button>';
-      // Detailed is gated until the concise talk exists — you upgrade after it generates. (Jenni)
-      h+='<button class="loadingDepthBtn" data-d="detailed" disabled title="Generate the concise talk first — then upgrade to Detailed" style="background:transparent;color:var(--ink-muted);border:1px solid transparent;border-radius:7px;padding:4px 10px;cursor:not-allowed;opacity:0.4;pointer-events:none;font-family:inherit;font-size:11px;font-weight:500">Detailed</button>';
+      // Un-gated 2026-07-03 (Jenni): switching to Detailed mid-generation restarts at full depth.
+      h+='<button class="loadingDepthBtn" data-d="detailed" title="Switch to full depth — restarts this generation (~40-50s)" style="background:'+(_dD?"#fff":"transparent")+';color:'+(_dD?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dD?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dD?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dD?"700":"500")+'">Detailed</button>';
       h+='</div></div>';
       // Verify toggle — restarts generation on toggle (in either direction)
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
@@ -8782,7 +8782,7 @@ function renderMain(){
     var dInact2=(S.style==="boards");
     h+='<div style="margin-bottom:14px;opacity:'+(dInact2?"0.4":"1")+';pointer-events:'+(dInact2?"none":"auto")+'"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth</div><div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px">';
     h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{compact:true});
-    h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true,disabled:!S.talk,title:(S.talk?"~10 min":"Generate the concise talk first — then upgrade to Detailed")});
+    h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true,title:"~10 min — full depth"});
     h+='</div></div>';
     // References manager (in drawer)
     h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer">';
@@ -9029,7 +9029,10 @@ function bindMain(){
   // chatInput/chatSend handlers deleted — those IDs are no longer rendered. The
   // sendChat() function is still reachable via the reviseIn/reviseSend bindings below.
   document.querySelectorAll(".styleBtn").forEach(function(b){b.onclick=function(){if(S.style!==b.dataset.s){S.style=b.dataset.s;S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.error="";speechSynthesis.cancel()}render()}});
-  document.querySelectorAll(".depthBtn").forEach(function(b){b.onclick=function(){if(b.disabled)return; /* Detailed gated until a concise talk exists */ if(b.dataset.d==="detailed"&&!S.talk)return;if(S.depth!==b.dataset.d){S.depth=b.dataset.d;S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.error="";speechSynthesis.cancel()}render()}});
+  // Un-gated 2026-07-03 (Jenni): Detailed is a first-class pre-generation choice now — the detailed
+  // prompt is standalone (no dependency on a concise talk existing). Concise stays "recommended"
+  // for speed, but users who know they want full depth shouldn't be blocked.
+  document.querySelectorAll(".depthBtn").forEach(function(b){b.onclick=function(){if(b.disabled)return;if(S.depth!==b.dataset.d){S.depth=b.dataset.d;S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.error="";speechSynthesis.cancel()}render()}});
   var dz=document.getElementById("dropZone");if(dz)dz.onclick=function(){document.getElementById("fileInput").click()};
   var fi=document.getElementById("fileInput");if(fi)fi.onchange=async function(e){
     for(var i=0;i<e.target.files.length;i++){var f=e.target.files[i];try{
@@ -9045,9 +9048,9 @@ function bindMain(){
   // Audio toggle just sets a flag (no restart) — fires after the current generation completes.
   document.querySelectorAll(".loadingDepthBtn").forEach(function(b){
     b.onclick=function(){
-      if(b.disabled) return;                 // Detailed gated mid-generation
+      if(b.disabled) return;
       var d=b.dataset.d;
-      if(d==="detailed" && !S.talk) return;  // can't upgrade until concise exists
+      // Un-gated 2026-07-03: detailed-from-scratch is supported; switching restarts generation.
       if(!d || S.depth===d) return;
       S.depth=d;
       restartGen();
