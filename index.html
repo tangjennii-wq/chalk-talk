@@ -3090,21 +3090,32 @@ window.onSupabaseReady = function(client){
       if(!wasSignedIn) maybeOfferLocalMigration();
     } else {
       S.profile = null; S.freeTier = null;
+      _profileLoadedForUser = null; // signed out — next sign-in reloads profile/talks/favorites
     }
     if(typeof render === "function") render();
   });
 };
 
-async function loadProfile(){
+// Dedupe guard (Jenni 2026-07-03): on page load, getSession() AND onAuthStateChange (INITIAL_SESSION,
+// SIGNED_IN, TOKEN_REFRESHED) each called loadProfile → profiles/talks/favorites fetched 3× per load.
+// Track which user we've loaded (and in-flight loads) so repeat auth events are no-ops. A real
+// sign-out → sign-in resets the guard via the onAuthStateChange else-branch.
+var _profileLoadedForUser = null;
+var _profileLoadInflight = null;
+async function loadProfile(force){
   if(!window.sb || !S.user) return;
+  if(!force && (_profileLoadedForUser === S.user.id || _profileLoadInflight === S.user.id)) return;
+  _profileLoadInflight = S.user.id;
   try{
     var r = await window.sb.from("profiles").select("*").eq("id", S.user.id).maybeSingle();
     S.profile = r.data || null;
+    _profileLoadedForUser = S.user.id;
     if(typeof render === "function") render();
     // Also refresh cloud talks + favorites on profile load
     refreshCloudTalks();
     refreshFavorites();
   }catch(e){ console.warn("loadProfile failed", e) }
+  finally{ _profileLoadInflight = null; }
 }
 
 // === Cloud talks (Supabase-backed library) ===
@@ -3371,12 +3382,10 @@ function openShareModal(talkId){
   var row = (S.cloudTalks||[]).find(function(x){return x.id===talkId});
   S.shareModalToken = (row && row.share_token) || null;
   if(typeof render === "function") render();
-  // Auto-feature on Share-from-private: most common intent is "put this on my profile."
-  // Modal still opens so user can downgrade to link-only / private if they want a different tier.
-  // (Jenni 2026-06-08: Share defaults to star, not link.)
-  if(row && !row.is_public && !row.is_featured){
-    applyShareTier(talkId, "profile");
-  }
+  // NOTE (Jenni 2026-07-03, was 2026-06-08 "auto-feature on open"): opening the modal no longer
+  // publishes anything. A private talk stays private until the user explicitly picks a tier —
+  // clicking the 🔗 icon just to look must never publish. One extra click to feature is worth it
+  // now that free-tier users (strangers) are in the app.
 }
 
 // Apply a tier change from the share modal. tier ∈ "private" | "link" | "profile".
