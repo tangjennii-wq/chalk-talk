@@ -592,7 +592,10 @@ function segBtn(cls, dataAttr, val, current, icon, label, opts){
     (disabled?'opacity:0.4;pointer-events:none;':'')+
     (compact ? '' : 'box-shadow:'+(active?"var(--shadow-soft)":"none")+';transition:all .15s ease;')+
     'display:inline-flex;align-items:center;justify-content:center;gap:6px">'+
-    '<span'+(compact?'':' style="font-size:13px"')+'>'+icon+'</span>'+label+'</button>';
+    '<span'+(compact?'':' style="font-size:13px"')+'>'+icon+'</span>'+label+
+    // Optional micro-badge, e.g. "★ recommended" on the Concise depth (Jenni 2026-07-03)
+    (opts.badge?'<span style="font-size:8px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;color:'+(active?"#a07d1a":"var(--ink-muted)")+';background:'+(active?"#fff6dd":"transparent")+';border:1px solid '+(active?"#eeddaa":"transparent")+';border-radius:7px;padding:1px 5px;line-height:1.5">★ '+opts.badge+'</span>':'')+
+    '</button>';
 }
 
 // Image-generation prompt shared by both OpenAI gpt-image-2 and Gemini image branches in genDiagram().
@@ -7951,7 +7954,7 @@ function renderMain(){
   h+='<div style="flex:1 1 220px;min-width:0;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesnt apply to Boards":"5 min vs 10 min")+'">';
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span></div>';
   h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
-  h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min"});
+  h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass. Recommended: generate concise first, then upgrade.",badge:"recommended"});
   h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:(S.talk?"~10 min":"Generate the concise talk first — then upgrade to Detailed"),disabled:!S.talk});
   h+='</div></div>';
   h+='</div>';
