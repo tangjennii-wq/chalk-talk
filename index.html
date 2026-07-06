@@ -591,10 +591,11 @@ function segBtn(cls, dataAttr, val, current, icon, label, opts){
     ';cursor:'+(disabled?"not-allowed":"pointer")+';'+
     (disabled?'opacity:0.4;pointer-events:none;':'')+
     (compact ? '' : 'box-shadow:'+(active?"var(--shadow-soft)":"none")+';transition:all .15s ease;')+
-    'display:inline-flex;align-items:center;justify-content:center;gap:6px">'+
+    'display:inline-flex;align-items:center;justify-content:center;gap:6px;position:relative">'+
     '<span'+(compact?'':' style="font-size:13px"')+'>'+icon+'</span>'+label+
-    // Optional micro-badge, e.g. "★ recommended" on the Concise depth (Jenni 2026-07-03)
-    (opts.badge?'<span style="font-size:8px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;color:'+(active?"#a07d1a":"var(--ink-muted)")+';background:'+(active?"#fff6dd":"transparent")+';border:1px solid '+(active?"#eeddaa":"transparent")+';border-radius:7px;padding:1px 5px;line-height:1.5">★ '+opts.badge+'</span>':'')+
+    // Optional micro-badge — tiny corner tag floating on the top-right border, so the button
+    // face stays IDENTICAL to its siblings (Jenni 2026-07-03; v2 after inline pill looked cramped).
+    (opts.badge?'<span style="position:absolute;top:-7px;right:8px;font-size:7.5px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;color:#a07d1a;background:#fff;border:1px solid #e6d49a;border-radius:8px;padding:1px 6px;line-height:1.4;pointer-events:none">★ '+opts.badge+'</span>':'')+
     '</button>';
 }
 
