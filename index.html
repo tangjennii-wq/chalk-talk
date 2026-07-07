@@ -8571,7 +8571,10 @@ function renderMain(){
             h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Bullets</div>';
             var pts = draft.points || [];
             for(var bpi=0;bpi<pts.length;bpi++){
-              h+='<div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:6px"><button class="secEditDelBulletBtn" data-i="'+bpi+'" title="Remove this bullet" style="background:#fff;border:1px solid #e8c8c0;border-radius:50%;width:22px;height:22px;color:#c0392b;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;margin-top:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center">×</button><textarea class="secEditBulletTA" data-i="'+bpi+'" rows="2" style="flex:1;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--ink);outline:none;font-family:inherit;resize:vertical;line-height:1.45;min-height:36px">'+esc(pts[bpi]||"")+'</textarea></div>';
+              h+='<div class="secEditBulletRow" data-i="'+bpi+'" style="display:flex;gap:6px;align-items:flex-start;margin-bottom:6px">'+
+                '<span class="secEditDragHandle" draggable="true" data-i="'+bpi+'" title="Drag to reorder" aria-label="Drag to reorder bullet" style="cursor:grab;color:var(--ink-soft);font-size:15px;line-height:1;flex-shrink:0;margin-top:6px;padding:0 2px;user-select:none">⠿</span>'+
+                '<button class="secEditDelBulletBtn" data-i="'+bpi+'" title="Remove this bullet" style="background:#fff;border:1px solid #e8c8c0;border-radius:50%;width:22px;height:22px;color:#c0392b;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;margin-top:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center">×</button>'+
+                '<textarea class="secEditBulletTA" data-i="'+bpi+'" rows="2" style="flex:1;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--ink);outline:none;font-family:inherit;resize:vertical;line-height:1.45;min-height:36px">'+esc(pts[bpi]||"")+'</textarea></div>';
             }
             h+='<button id="secEditAddBulletBtn" style="background:var(--lavender-bg);border:1px dashed var(--plum);color:var(--plum);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-top:4px;width:100%">+ Add bullet</button>';
             // Teaching pearl
@@ -9701,6 +9704,33 @@ function bindMain(){
     var i=parseInt(b.dataset.i,10);
     if(i>=0 && i<S.editingDraft.points.length){S.editingDraft.points.splice(i,1);render()}
   }});
+  // Drag-to-reorder bullets (Jenni 2026-07-03) — HTML5 DnD from the ⠿ grip handle. Live-sync keeps
+  // editingDraft.points current per keystroke, so reordering the array and re-rendering preserves
+  // every in-progress edit. Only the handle is draggable, so dragging inside a textarea still selects
+  // text normally.
+  document.querySelectorAll(".secEditDragHandle").forEach(function(gh){
+    gh.ondragstart=function(e){
+      window._dragBulletFrom=parseInt(gh.dataset.i,10);
+      if(e.dataTransfer){ e.dataTransfer.effectAllowed="move"; try{ e.dataTransfer.setData("text/plain",String(window._dragBulletFrom)); }catch(_){} }
+    };
+    gh.ondragend=function(){ window._dragBulletFrom=null; document.querySelectorAll(".secEditBulletRow").forEach(function(r){r.style.borderTop="";}); };
+  });
+  document.querySelectorAll(".secEditBulletRow").forEach(function(row){
+    row.ondragover=function(e){ if(window._dragBulletFrom==null) return; e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect="move"; row.style.borderTop="2px solid var(--plum)"; row.style.paddingTop="2px"; };
+    row.ondragleave=function(){ row.style.borderTop=""; row.style.paddingTop=""; };
+    row.ondrop=function(e){
+      e.preventDefault(); row.style.borderTop=""; row.style.paddingTop="";
+      var from=window._dragBulletFrom, to=parseInt(row.dataset.i,10);
+      window._dragBulletFrom=null;
+      if(!S.editingDraft||!Array.isArray(S.editingDraft.points)) return;
+      if(from==null||isNaN(from)||isNaN(to)||from===to) return;
+      var arr=S.editingDraft.points;
+      if(from<0||from>=arr.length||to<0||to>=arr.length) return;
+      var moved=arr.splice(from,1)[0];
+      arr.splice(to,0,moved);
+      render();
+    };
+  });
   // Add new bullet
   var seab=document.getElementById("secEditAddBulletBtn");if(seab)seab.onclick=function(){
     if(!S.editingDraft)return;
