@@ -3134,7 +3134,11 @@ async function refreshCloudTalks(){
     // the new columns don't exist and PostgREST returns 42703 / "column does not exist" — fall back
     // to the prior query so the user still sees their saved talks. (Jenni 2026-06-09)
     var FULL_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, talk_json->>subtitle";
-    var LEGACY_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, talk_json->>subtitle";
+    // Fallback query. Includes the curation columns (specialty_override / is_pinned / pinned_at /
+    // sort_order) too — they exist in every migrated DB, so keeping them here means a transient
+    // FULL_COLS error can't silently DROP a user's recategorization / pin / manual order on reload.
+    // (Jenni 2026-07-03 — recategorize-doesn't-persist fix.)
+    var LEGACY_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, talk_json->>subtitle";
     var r = await window.sb.from("talks").select(FULL_COLS).order("created_at", { ascending: false });
     if(r.error){
       var msg = (r.error && (r.error.message||"")) + " " + (r.error.code||"");
@@ -6933,7 +6937,10 @@ function loadFromShowcaseHash(){
 // Full talk JSON is still fetched only on-click via loadPublicTalkByToken. (Jenni 2026-06-09)
 function loadLandingFeatured(){
   if(!window.sb) return;
-  loadShowcaseTalks(10).then(function(rows){
+  // Load the FULL featured set (Jenni 2026-07-03 — was capped at 10, so a visitor's Library/showcase
+  // showed only 10 of a larger portfolio). Payload is tiny metadata; the landing row still slices to
+  // a few visually, but counts + the visitor library now reflect every featured talk.
+  loadShowcaseTalks(100).then(function(rows){
     if(!rows) rows = [];
     S.landingFeatured = rows;
     if(typeof render === "function") render();
