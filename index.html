@@ -9034,7 +9034,7 @@ function renderMain(){
       // Busy state: textarea is replaced by a centered progress block, footer is hidden
       h+='    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px;color:var(--plum);font-weight:500"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span><span style="font-size:13px;line-height:1.5">'+(S.loading?'Regenerating lesson… '+(S.loadSec||0)+'s':'Weaving in your update…')+'</span><span style="font-size:11px;color:var(--ink-muted);max-width:200px">'+(S.loading?'Building from scratch with your direction':'Preserving existing content')+'</span></div>';
     } else {
-      h+='    <textarea class="revise-input" id="reviseIn" placeholder="Add detail, paste an MKSAP question, drop a PDF — your existing content stays, only NEW content is added.">'+esc(S.reviseIn||"")+'</textarea>';
+      h+='    <textarea class="revise-input" id="reviseIn" placeholder="Add detail, paste an MKSAP question, or drop a PDF — your existing content stays, only new content is added.&#10;&#10;Pasting a big chunk of reviewer feedback (e.g. from OpenEvidence)? Hit “Apply proofread” below to fold its corrections into the talk while keeping everything else.">'+esc(S.reviseIn||"")+'</textarea>';
       // Show currently-attached refs so the user can confirm what's going up and remove if needed.
       // (Jenni 2026-06-10 — refine is iterative + first-class, users should see their attached refs.)
       if(S.files && S.files.length){
@@ -9055,7 +9055,7 @@ function renderMain(){
       h+='      <button class="send-btn" id="reviseSend" '+(!String(S.reviseIn||"").trim()?"disabled":"")+' title="Send (⌘/Ctrl+Enter)">→</button>';
       h+='      </div>';
       h+='    </div>';
-      h+='    <div class="composer-hint">⌘/Ctrl+Enter to send · 🩺 Apply proofread = paste reviewer feedback to incorporate it</div>';
+      h+='    <div class="composer-hint">⌘/Ctrl+Enter to send</div>';
     }
     h+='  </div>';
     h+='</div>';
@@ -9441,7 +9441,14 @@ function bindMain(){
   var cfi=document.getElementById("composerFileInput");if(cfi)cfi.onchange=function(e){var fi2=document.getElementById("fileInput");if(fi2){var dt=new DataTransfer();for(var i=0;i<e.target.files.length;i++)dt.items.add(e.target.files[i]);fi2.files=dt.files;fi2.dispatchEvent(new Event("change",{bubbles:true}))}};
   // Send: ⌘/Ctrl+Enter only. Plain Enter inserts a newline (we always have room — fixed-height textarea with internal scroll).
   var rin=document.getElementById("reviseIn");if(rin){
-    rin.oninput=function(e){S.reviseIn=e.target.value;var sb=document.getElementById("reviseSend");if(sb)sb.disabled=!e.target.value.trim()};
+    rin.oninput=function(e){
+      S.reviseIn=e.target.value;
+      var has=!!e.target.value.trim();
+      var sb=document.getElementById("reviseSend");if(sb)sb.disabled=!has;
+      // Also refresh the Apply-proofread button live (Jenni 2026-07-03 bug fix — typing updated only
+      // the send arrow, so the proofread button stayed greyed until an unrelated re-render).
+      var pb=document.getElementById("applyProofreadBtn");if(pb){pb.disabled=!has;pb.style.opacity=has?"1":"0.4";pb.style.cursor=has?"pointer":"not-allowed";}
+    };
     rin.onkeydown=function(e){
       var modSend=(e.metaKey||e.ctrlKey)&&e.key==="Enter";
       if(modSend && String(S.reviseIn||"").trim()){
