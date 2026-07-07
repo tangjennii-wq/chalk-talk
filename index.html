@@ -3048,7 +3048,7 @@ var S = {
   podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false,
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
-  showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libCardMenuId:null,
+  showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null,
   gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false,
   talkHistory:[], editingSection:null, editingDraft:null,
   loadingFromHash:false,
@@ -7474,13 +7474,20 @@ function renderSaved(){
   var byTab = (tab==="visuals") ? all.filter(function(x){return x._hasVisuals})
             : all.filter(function(x){return x._kind === (tab==="boards" ? "boards" : "lecture")});
   // Specialty filter (applied after tab, before search)
+  var onProfileFn = function(x){return !!(x._isFeatured || x._isPublic)};
   var bySpec = S.libSpec ? byTab.filter(function(x){return x._spec===S.libSpec}) : byTab;
+  // Profile filter (Jenni 2026-07-03) — "on profile" = published/featured; STACKS on the specialty
+  // filter (a separate axis), so "Nephrology + on profile" works, not just one or the other.
+  var byProfile = S.libProfileOnly ? bySpec.filter(onProfileFn) : bySpec;
   // Search filter
-  var filtered=bySpec;
-  if(S.savedSearch.trim()){var q=S.savedSearch.toLowerCase();filtered=bySpec.filter(function(x){return(x.topic||"").toLowerCase().indexOf(q)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(q)>=0||(x.specialty||"").toLowerCase().indexOf(q)>=0})}
-  // Counts per specialty (reflect current tab + search but ignore active spec filter so other counts stay meaningful)
-  var specSourceForCounts = byTab;
-  if(S.savedSearch.trim()){var qs=S.savedSearch.toLowerCase();specSourceForCounts=byTab.filter(function(x){return(x.topic||"").toLowerCase().indexOf(qs)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(qs)>=0||(x.specialty||"").toLowerCase().indexOf(qs)>=0})}
+  var filtered=byProfile;
+  if(S.savedSearch.trim()){var q=S.savedSearch.toLowerCase();filtered=byProfile.filter(function(x){return(x.topic||"").toLowerCase().indexOf(q)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(q)>=0||(x.specialty||"").toLowerCase().indexOf(q)>=0})}
+  // Counts base: current tab + search (ignore active spec filter so other spec counts stay meaningful).
+  var byTabSearched = byTab;
+  if(S.savedSearch.trim()){var qs=S.savedSearch.toLowerCase();byTabSearched=byTab.filter(function(x){return(x.topic||"").toLowerCase().indexOf(qs)>=0||(x.talk&&x.talk.title||"").toLowerCase().indexOf(qs)>=0||(x.specialty||"").toLowerCase().indexOf(qs)>=0})}
+  var profileCount = byTabSearched.filter(onProfileFn).length;
+  // Specialty counts reflect the profile toggle when it's on, so the numbers stay truthful.
+  var specSourceForCounts = S.libProfileOnly ? byTabSearched.filter(onProfileFn) : byTabSearched;
   var specCounts = {};
   for(var sci=0;sci<specSourceForCounts.length;sci++){var sk=specSourceForCounts[sci]._spec||"Other";specCounts[sk]=(specCounts[sk]||0)+1}
   // Counts per tab (after search, before tab) \u2014 used in the tab pills
@@ -7511,8 +7518,18 @@ function renderSaved(){
     var cursor = disabled ? "default" : "pointer";
     return '<button class="libSpecBtn" data-spec="'+(specKey===null?"":esc(specKey))+'" '+(disabled?"disabled":"")+' style="background:'+bg+';color:'+fg+';border:1px solid '+br+';border-radius:14px;padding:5px 11px;font-size:11.5px;font-weight:'+(active?"600":"500")+';cursor:'+cursor+';opacity:'+op+';white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-family:inherit;line-height:1.3">'+esc(label)+(count!=null?' <span style="opacity:0.65;font-size:10.5px;font-weight:500">'+count+'</span>':'')+'</button>';
   }
+  // Profile toggle (Jenni 2026-07-03) — sits right after "All". Distinct gold styling because it's a
+  // separate filter axis (a toggle) not another specialty; ⭐ matches the "On profile" card badge.
+  function profilePill(count){
+    var active = !!S.libProfileOnly;
+    var bg = active ? "#fff6dd" : "transparent";
+    var fg = active ? "#a07d1a" : "var(--ink-muted)";
+    var br = active ? "#e6d49a" : "var(--line)";
+    return '<button class="libProfileBtn" title="Show only talks published on your public profile" aria-pressed="'+active+'" style="background:'+bg+';color:'+fg+';border:1px solid '+br+';border-radius:14px;padding:5px 11px;font-size:11.5px;font-weight:'+(active?"700":"500")+';cursor:pointer;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-family:inherit;line-height:1.3">⭐ On profile <span style="opacity:0.65;font-size:10.5px;font-weight:500">'+count+'</span></button>';
+  }
   h+='<div class="libSpecStrip" style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding:2px 0;scrollbar-width:none;-ms-overflow-style:none;mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 24px),transparent 100%);-webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 24px),transparent 100%)">';
-  h+=specPill(null, "All", byTab.length);
+  h+=specPill(null, "All", specSourceForCounts.length);
+  h+=profilePill(profileCount);
   for(var spi=0;spi<SPEC_ORDER.length;spi++){
     var specOpt = SPEC_ORDER[spi];
     h+=specPill(specOpt, (SPEC_ICONS[specOpt]||"") + " " + specOpt, specCounts[specOpt]||0);
@@ -7521,8 +7538,9 @@ function renderSaved(){
   // Hide scrollbar on webkit
   h+='<style>.libSpecStrip::-webkit-scrollbar{display:none}</style>';
   // "Showing X \u00B7 Clear" line when a filter is active
-  if(S.libSpec){
-    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding:6px 10px;background:var(--lavender-bg);border-radius:8px;font-size:11.5px"><span style="color:var(--ink)"><b style="color:var(--plum-deep)">Showing '+esc(S.libSpec)+'</b> \u00B7 '+filtered.length+' '+(filtered.length===1?"item":"items")+'</span><button id="libSpecClearBtn" style="background:none;border:none;color:var(--plum);font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 6px;border-radius:6px">\u00D7 Clear</button></div>';
+  if(S.libSpec || S.libProfileOnly){
+    var _showLbl = [S.libSpec?esc(S.libSpec):null, S.libProfileOnly?"On profile":null].filter(Boolean).join(" \u00B7 ");
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding:6px 10px;background:var(--lavender-bg);border-radius:8px;font-size:11.5px"><span style="color:var(--ink)"><b style="color:var(--plum-deep)">Showing '+_showLbl+'</b> \u00B7 '+filtered.length+' '+(filtered.length===1?"item":"items")+'</span><button id="libSpecClearBtn" style="background:none;border:none;color:var(--plum);font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 6px;border-radius:6px">\u00D7 Clear</button></div>';
   }
 
   // Loading state (cloud)
@@ -7534,8 +7552,8 @@ function renderSaved(){
   h+='<div style="display:flex;gap:8px;margin-bottom:14px;justify-content:flex-end"><button id="exportLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:7px 12px;color:#702b9d;font-size:11.5px;font-weight:600;cursor:pointer">\u2B07 Export</button><button id="importLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:7px 12px;color:#702b9d;font-size:11.5px;font-weight:600;cursor:pointer">\u2B06 Import</button><input type="file" id="importLibInput" accept=".json" style="display:none"></div>';
   // Group filtered items by specialty, render in canonical order (SPEC_ORDER).
   if(filtered.length===0){
-    var emptyMsg = (all.length===0) ? "No items yet" : "No matches in "+(tab==="all"?"the library":tab);
-    var emptySub = (S.savedSearch.trim()) ? "Try a different search term." : (tab==="boards" ? "Generate a Boards-style talk to add it here." : "Generate a chalk talk and click \u2605 Save to add it here.");
+    var emptyMsg = (all.length===0) ? "No items yet" : (S.libProfileOnly ? "Nothing on your profile here yet" : "No matches in "+(tab==="all"?"the library":tab));
+    var emptySub = (S.savedSearch.trim()) ? "Try a different search term." : (S.libProfileOnly ? "Open a talk and share it to your profile to see it here." : (tab==="boards" ? "Generate a Boards-style talk to add it here." : "Generate a chalk talk and click \u2605 Save to add it here."));
     h+='<div style="background:#fff;border:1px dashed #d0cce0;border-radius:12px;padding:40px 20px;text-align:center;color:#9490a6"><div style="font-size:42px;margin-bottom:10px">\uD83D\uDCD6</div><div style="font-size:14px;font-weight:600;color:#6b6780;margin-bottom:6px">'+emptyMsg+'</div><div style="font-size:12px">'+emptySub+'</div></div>';
   } else {
     if(S.libSpec){
@@ -7567,10 +7585,11 @@ function bindSaved(){
   document.getElementById("savedBack").onclick=function(){S.showSaved=false;render()};
   var ss=document.getElementById("savedSearchIn");if(ss)ss.oninput=function(e){S.savedSearch=e.target.value;render();var f=document.getElementById("savedSearchIn");if(f){f.focus();f.setSelectionRange(f.value.length,f.value.length)}};
   // Tab pills — All / Lectures / Boards
-  document.querySelectorAll(".libTabBtn").forEach(function(b){b.onclick=function(){S.libTab=b.dataset.tab||"lectures";S.libSpec=null;render()}});
+  document.querySelectorAll(".libTabBtn").forEach(function(b){b.onclick=function(){S.libTab=b.dataset.tab||"lectures";S.libSpec=null;S.libProfileOnly=false;render()}});
+  var lpb=document.getElementById("libProfileBtn");if(lpb)lpb.onclick=function(){S.libProfileOnly=!S.libProfileOnly;render();window.scrollTo(0,0)};
   // Specialty pill strip + clear + section-header shortcut
   document.querySelectorAll(".libSpecBtn").forEach(function(b){b.onclick=function(){var v=b.dataset.spec||"";S.libSpec=v||null;render();window.scrollTo(0,0)}});
-  var lscb=document.getElementById("libSpecClearBtn");if(lscb)lscb.onclick=function(){S.libSpec=null;render();window.scrollTo(0,0)};
+  var lscb=document.getElementById("libSpecClearBtn");if(lscb)lscb.onclick=function(){S.libSpec=null;S.libProfileOnly=false;render();window.scrollTo(0,0)};
   document.querySelectorAll(".libSpecHeaderBtn").forEach(function(b){b.onclick=function(){S.libSpec=b.dataset.spec||null;render();window.scrollTo(0,0)}});
   // Unified Open handler — routes to sample-load or saved-load based on data-source
   // libOpenBtn is now an <a target="_blank"> — let the browser handle the click natively. No onclick.
