@@ -3624,7 +3624,7 @@ function renderLibCard(x){
   var _cardSpec = x._spec || "Other";
   var h = '<div class="libCard" data-libid="'+esc(x._id||"")+'" data-libspec="'+esc(_cardSpec)+'" style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">';
   if(_reorderable){
-    h += '<span class="libDragHandle" draggable="true" data-libid="'+esc(x._id)+'" data-libspec="'+esc(_cardSpec)+'" title="Drag to reorder within '+esc(_cardSpec)+'" aria-label="Drag to reorder" style="cursor:grab;color:var(--ink-soft);font-size:15px;line-height:1;flex-shrink:0;user-select:none;padding:0 2px;margin:-2px 0">⠿</span>';
+    h += '<span class="libDragHandle" data-libid="'+esc(x._id)+'" data-libspec="'+esc(_cardSpec)+'" title="Drag to reorder within '+esc(_cardSpec)+'" aria-label="Drag to reorder" style="cursor:grab;color:var(--ink-soft);font-size:15px;line-height:1;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none;padding:2px 4px;margin:-2px 0">⠿</span>';
   }
 
   // Optional small thumbnail (only on Visuals tab — elsewhere the badge in the meta row indicates an image)
@@ -7890,56 +7890,73 @@ function renderSaved(){
 // each own-cloud card. Order is read from the live DOM (= exactly what's visible after filters/sort),
 // the moved card gets a sort_order midway between its new neighbors, and it's persisted — which also
 // reorders the public showcase, since both read the same sort_order.
+// Pointer-based reorder (Jenni 2026-07-03 rewrite): HTML5 drag-and-drop was unreliable inside the
+// cards (nested link + buttons swallow the drag). Pointer events work consistently on desktop AND
+// touch. Grab the ⠿ handle and drag; the card under the pointer (same specialty) highlights, and
+// release drops the card there.
 function bindLibraryReorder(){
   document.querySelectorAll(".libDragHandle").forEach(function(gh){
-    gh.ondragstart=function(e){
-      window._dragLibId = gh.dataset.libid || null;
-      window._dragLibSpec = gh.dataset.libspec || null;
-      if(e.dataTransfer){ e.dataTransfer.effectAllowed="move"; try{ e.dataTransfer.setData("text/plain", window._dragLibId||""); }catch(_){} }
-    };
-    gh.ondragend=function(){ window._dragLibId=null; window._dragLibSpec=null; document.querySelectorAll(".libCard").forEach(function(c){c.style.boxShadow="";}); };
-  });
-  document.querySelectorAll(".libCard").forEach(function(card){
-    card.ondragover=function(e){
-      if(!window._dragLibId) return;
-      if(card.dataset.libspec !== window._dragLibSpec) return;                 // same specialty only
-      if(!card.dataset.libid || card.dataset.libid.indexOf("t_")===0) return;  // skip samples/drafts
-      e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect="move";
-      card.style.boxShadow="0 -2px 0 var(--plum) inset";
-    };
-    card.ondragleave=function(){ card.style.boxShadow=""; };
-    card.ondrop=function(e){
-      card.style.boxShadow="";
-      var fromId=window._dragLibId, spec=window._dragLibSpec, toId=card.dataset.libid;
-      window._dragLibId=null; window._dragLibSpec=null;
-      if(!fromId||!toId||fromId===toId) return;
-      if(card.dataset.libspec !== spec) return;                                // no cross-specialty moves
+    gh.onpointerdown=function(e){
       e.preventDefault();
-      // Live displayed order of this group's reorderable cards (post-filter, post-sort).
-      var cards = Array.prototype.slice.call(document.querySelectorAll(".libCard")).filter(function(c){
-        return c.dataset.libspec===spec && c.dataset.libid && c.dataset.libid.indexOf("t_")!==0;
-      });
-      var ids = cards.map(function(c){ return c.dataset.libid; });
-      var fromPos = ids.indexOf(fromId);
-      if(fromPos<0 || ids.indexOf(toId)<0) return;
-      ids.splice(fromPos,1);
-      ids.splice(ids.indexOf(toId), 0, fromId);                               // insert BEFORE the drop target
-      // Effective sort keys from the data model, to place the moved card between its new neighbors.
-      var disp = (typeof getDisplayLibrary==="function") ? getDisplayLibrary() : [];
-      var keyMap = {}; disp.forEach(function(it){ if(it._id) keyMap[it._id] = libSortKey(it._sortOrder, it.savedAt); });
-      var mi = ids.indexOf(fromId);
-      var prevId = mi>0 ? ids[mi-1] : null, nextId = mi<ids.length-1 ? ids[mi+1] : null;
-      var prevKey = (prevId!=null && keyMap[prevId]!=null) ? keyMap[prevId] : null;
-      var nextKey = (nextId!=null && keyMap[nextId]!=null) ? keyMap[nextId] : null;
-      var newKey;
-      if(prevKey==null && nextKey==null) newKey = 0;
-      else if(prevKey==null) newKey = nextKey - 1e6;
-      else if(nextKey==null) newKey = prevKey + 1e6;
-      else newKey = (prevKey + nextKey) / 2;
-      cloudSetSortOrder(fromId, newKey);   // optimistic local update is synchronous; DB write follows
-      render();
+      var fromId = gh.dataset.libid, spec = gh.dataset.libspec;
+      if(!fromId) return;
+      var card = gh.closest(".libCard");
+      var moved = false;
+      window._libDropTarget = null;
+      try{ gh.setPointerCapture(e.pointerId); }catch(_){}
+      if(card) card.style.opacity = "0.55";
+      function clearHints(){ document.querySelectorAll(".libCard").forEach(function(c){ c.style.boxShadow=""; }); }
+      function onMove(ev){
+        moved = true;
+        var el = document.elementFromPoint(ev.clientX, ev.clientY);
+        var over = (el && el.closest) ? el.closest(".libCard") : null;
+        clearHints();
+        if(over && over !== card && over.dataset.libspec === spec && over.dataset.libid && over.dataset.libid.indexOf("t_")!==0){
+          over.style.boxShadow = "0 -3px 0 var(--plum) inset";
+          window._libDropTarget = over.dataset.libid;
+        } else {
+          window._libDropTarget = null;
+        }
+      }
+      function onUp(){
+        gh.removeEventListener("pointermove", onMove);
+        gh.removeEventListener("pointerup", onUp);
+        gh.removeEventListener("pointercancel", onUp);
+        clearHints();
+        if(card) card.style.opacity = "";
+        var toId = window._libDropTarget; window._libDropTarget = null;
+        if(moved && toId && toId !== fromId) _reorderLibraryCard(fromId, spec, toId);
+      }
+      gh.addEventListener("pointermove", onMove);
+      gh.addEventListener("pointerup", onUp);
+      gh.addEventListener("pointercancel", onUp);
     };
   });
+}
+
+// Move fromId to just before toId within its specialty group, compute a midpoint sort_order, persist.
+function _reorderLibraryCard(fromId, spec, toId){
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".libCard")).filter(function(c){
+    return c.dataset.libspec===spec && c.dataset.libid && c.dataset.libid.indexOf("t_")!==0;
+  });
+  var ids = cards.map(function(c){ return c.dataset.libid; });
+  var fromPos = ids.indexOf(fromId);
+  if(fromPos<0 || ids.indexOf(toId)<0) return;
+  ids.splice(fromPos,1);
+  ids.splice(ids.indexOf(toId), 0, fromId);            // insert before the drop target
+  var disp = (typeof getDisplayLibrary==="function") ? getDisplayLibrary() : [];
+  var keyMap = {}; disp.forEach(function(it){ if(it._id) keyMap[it._id] = libSortKey(it._sortOrder, it.savedAt); });
+  var mi = ids.indexOf(fromId);
+  var prevId = mi>0 ? ids[mi-1] : null, nextId = mi<ids.length-1 ? ids[mi+1] : null;
+  var prevKey = (prevId!=null && keyMap[prevId]!=null) ? keyMap[prevId] : null;
+  var nextKey = (nextId!=null && keyMap[nextId]!=null) ? keyMap[nextId] : null;
+  var newKey;
+  if(prevKey==null && nextKey==null) newKey = 0;
+  else if(prevKey==null) newKey = nextKey - 1e6;
+  else if(nextKey==null) newKey = prevKey + 1e6;
+  else newKey = (prevKey + nextKey) / 2;
+  cloudSetSortOrder(fromId, newKey);   // optimistic local update is synchronous; DB write follows
+  render();
 }
 
 function bindSaved(){
