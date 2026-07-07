@@ -3790,10 +3790,15 @@ async function signInWithMagicLink(email){
 }
 
 async function signInWithGoogle(){
-  var sb = await _waitForSb();
+  // Mobile fix (Jenni 2026-07-03): on phones, letting the SDK auto-redirect after a DOM rebuild +
+  // async gap gets blocked by Safari's user-activation rules, so "nothing happens." Instead we get
+  // the auth URL back (skipBrowserRedirect) and do the top-level navigation ourselves, immediately.
+  var sb = window.sb || await _waitForSb();
   var redirectTo = window.location.origin + window.location.pathname;
-  var r = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo } });
+  var r = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo, skipBrowserRedirect: true } });
   if(r.error) throw r.error;
+  if(r.data && r.data.url){ window.location.assign(r.data.url); return; }
+  throw new Error("Could not start Google sign-in — try the email link instead.");
 }
 
 async function signOut(){
@@ -7544,7 +7549,12 @@ function renderGlobalModals(){
   var sibd=document.getElementById("signInBackdrop");if(sibd)sibd.onclick=function(){S.signInOpen=false;render()};
   var aei=document.getElementById("authEmailInput");if(aei)aei.oninput=function(e){S.authEmail=e.target.value};
   var mlf=document.getElementById("magicLinkForm");if(mlf)mlf.onsubmit=async function(e){e.preventDefault();var em=(S.authEmail||"").trim();if(!em){S.authMsg="Enter your email";render();return}S.authBusy=true;S.authMsg="";render();try{await signInWithMagicLink(em);S.authMsg="Check "+em+" — we emailed you a one-time sign-in link.";S.authBusy=false;render()}catch(err){S.authMsg=err.message||"Could not send the sign-in link";S.authBusy=false;render()}};
-  var gsb=document.getElementById("googleSignInBtn");if(gsb)gsb.onclick=async function(){S.authBusy=true;render();try{await signInWithGoogle()}catch(err){S.authMsg=err.message||"Google sign-in failed";S.authBusy=false;render()}};
+  // Don't render() before initiating OAuth (Jenni 2026-07-03 mobile fix) — rebuilding the DOM in the
+  // tap handler breaks Safari's user-activation and the redirect silently fails. Kick off directly;
+  // only re-render if it errors (to show the message).
+  var gsb=document.getElementById("googleSignInBtn");if(gsb)gsb.onclick=function(){
+    signInWithGoogle().catch(function(err){ S.authMsg=(err&&err.message)||"Google sign-in failed — try the email link below."; S.authBusy=false; render(); });
+  };
 }
 
 // ═══════════ SHOWCASE / PORTFOLIO ═══════════
@@ -9609,7 +9619,12 @@ function bindMain(){
   var sibd=document.getElementById("signInBackdrop");if(sibd)sibd.onclick=function(){S.signInOpen=false;render()};
   var aei=document.getElementById("authEmailInput");if(aei)aei.oninput=function(e){S.authEmail=e.target.value};
   var mlf=document.getElementById("magicLinkForm");if(mlf)mlf.onsubmit=async function(e){e.preventDefault();var em=(S.authEmail||"").trim();if(!em){S.authMsg="Enter your email";render();return}S.authBusy=true;S.authMsg="";render();try{await signInWithMagicLink(em);S.authMsg="Check "+em+" — we emailed you a one-time sign-in link.";S.authBusy=false;render()}catch(err){S.authMsg=err.message||"Could not send the sign-in link";S.authBusy=false;render()}};
-  var gsb=document.getElementById("googleSignInBtn");if(gsb)gsb.onclick=async function(){S.authBusy=true;render();try{await signInWithGoogle()}catch(err){S.authMsg=err.message||"Google sign-in failed";S.authBusy=false;render()}};
+  // Don't render() before initiating OAuth (Jenni 2026-07-03 mobile fix) — rebuilding the DOM in the
+  // tap handler breaks Safari's user-activation and the redirect silently fails. Kick off directly;
+  // only re-render if it errors (to show the message).
+  var gsb=document.getElementById("googleSignInBtn");if(gsb)gsb.onclick=function(){
+    signInWithGoogle().catch(function(err){ S.authMsg=(err&&err.message)||"Google sign-in failed — try the email link below."; S.authBusy=false; render(); });
+  };
   // J / account avatar click → open the full profile drawer (was: small dropdown)
   var acb=document.getElementById("accountBtn");if(acb)acb.onclick=function(e){e.stopPropagation();S.accountMenuOpen=false;S.profileEditOpen=true;S.profileForm=Object.assign({},S.profile||{});render()};
   var ftcChip=document.getElementById("freeTierChip");if(ftcChip)ftcChip.onclick=function(){ if(S.freeTier && S.freeTier.talks_remaining<=0){ S.showOutOfFreeModal=true; render(); } };
