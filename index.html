@@ -3132,7 +3132,7 @@ async function refreshCloudTalks(){
     // Try the full query first (includes Pattern A columns). If the migration hasn't been run yet,
     // the new columns don't exist and PostgREST returns 42703 / "column does not exist" — fall back
     // to the prior query so the user still sees their saved talks. (Jenni 2026-06-09)
-    var FULL_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, talk_json->>subtitle";
+    var FULL_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, talk_json->>subtitle";
     var LEGACY_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, talk_json->>subtitle";
     var r = await window.sb.from("talks").select(FULL_COLS).order("created_at", { ascending: false });
     if(r.error){
@@ -3270,6 +3270,17 @@ async function cloudSetPinned(id, makePinned){
     return Object.assign({}, x, {is_pinned: r.data.is_pinned, pinned_at: r.data.pinned_at});
   });
   return r.data;
+}
+
+// Manual drag order (Jenni 2026-07-03). Persists a float sort_order that drives BOTH the library
+// and the public showcase order. Updates the local cloudTalks row so the next render re-sorts.
+async function cloudSetSortOrder(id, value){
+  if(!window.sb || !S.user || !id) return false;
+  // Optimistic local update so the drop feels instant; DB write follows.
+  S.cloudTalks = (S.cloudTalks || []).map(function(x){ return x.id === id ? Object.assign({}, x, {sort_order: value}) : x; });
+  var r = await window.sb.from("talks").update({sort_order: value}).eq("id", id);
+  if(r.error){ console.warn("cloudSetSortOrder", r.error); return false; }
+  return true;
 }
 
 async function cloudDeleteTalk(id){
@@ -3438,14 +3449,26 @@ async function applyShareTier(talkId, tier){
 async function loadShowcaseTalks(limit){
   if(!window.sb) return [];
   var q = window.sb.from("talks")
-    .select("id,title,topic,style,depth,share_token,featured_at,user_id,has_visuals,talk_json->>subtitle")
+    .select("id,title,topic,style,depth,share_token,featured_at,created_at,sort_order,user_id,has_visuals,talk_json->>subtitle")
     .eq("is_public", true)
     .eq("is_featured", true)
     .order("featured_at", {ascending:false});
   if(limit) q = q.limit(limit);
   var r = await q;
   if(r.error){ console.warn("loadShowcaseTalks", r.error); return []; }
-  return r.data || [];
+  var rows = r.data || [];
+  // Apply the SAME manual order as the library (Jenni 2026-07-03): sort by sort_order, falling back
+  // to created_at (newest first) for talks that haven't been manually placed. Keeps the public
+  // profile order in sync with drag-reordering done in the library.
+  rows.sort(function(a,b){ return libSortKey(a.sort_order, a.created_at) - libSortKey(b.sort_order, b.created_at); });
+  return rows;
+}
+
+// Shared ordering key: an explicit sort_order wins; otherwise fall back to newest-first by date
+// (negated epoch so newer = smaller = higher in the list). One axis for library + showcase.
+function libSortKey(sortOrder, dateStr){
+  if(typeof sortOrder === "number") return sortOrder;
+  return -(new Date(dateStr||0).getTime());
 }
 
 // Load a public talk via the Worker /share/:token route (works without sign-in)
@@ -3590,7 +3613,14 @@ function renderLibCard(x){
     iconBtns += '</div>';
   }
 
-  var h = '<div style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">';
+  // Reorderable = the user's own cloud-saved talk (not a sample, not a showcase pull-in, not an
+  // unsaved local draft). Drag is constrained to WITHIN its specialty group. (Jenni 2026-07-03)
+  var _reorderable = !isSample && !isShowcase && x._id && !String(x._id).startsWith("t_");
+  var _cardSpec = x._spec || "Other";
+  var h = '<div class="libCard" data-libid="'+esc(x._id||"")+'" data-libspec="'+esc(_cardSpec)+'" style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">';
+  if(_reorderable){
+    h += '<span class="libDragHandle" draggable="true" data-libid="'+esc(x._id)+'" data-libspec="'+esc(_cardSpec)+'" title="Drag to reorder within '+esc(_cardSpec)+'" aria-label="Drag to reorder" style="cursor:grab;color:var(--ink-soft);font-size:15px;line-height:1;flex-shrink:0;user-select:none;padding:0 2px;margin:-2px 0">⠿</span>';
+  }
 
   // Optional small thumbnail (only on Visuals tab — elsewhere the badge in the meta row indicates an image)
   if(visuals && S.libTab === "visuals"){
@@ -3672,7 +3702,8 @@ function getDisplayLibrary(){
       // Pattern A (Jenni 2026-06-09) — user-controlled curation
       _specialtyOverride: row.specialty_override || null,
       _isPinned: !!row.is_pinned,
-      _pinnedAt: row.pinned_at || null
+      _pinnedAt: row.pinned_at || null,
+      _sortOrder: (typeof row.sort_order === "number") ? row.sort_order : null
     };
   });
   return loadSavedTalks().filter(_notSoftDeleted);
@@ -7729,15 +7760,19 @@ function renderSaved(){
     var emptySub = (S.savedSearch.trim()) ? "Try a different search term." : (S.libProfileOnly ? "Open a talk and share it to your profile to see it here." : (tab==="boards" ? "Generate a Boards-style talk to add it here." : "Generate a chalk talk and click \u2605 Save to add it here."));
     h+='<div style="background:#fff;border:1px dashed #d0cce0;border-radius:12px;padding:40px 20px;text-align:center;color:#9490a6"><div style="font-size:42px;margin-bottom:10px">\uD83D\uDCD6</div><div style="font-size:14px;font-weight:600;color:#6b6780;margin-bottom:6px">'+emptyMsg+'</div><div style="font-size:12px">'+emptySub+'</div></div>';
   } else {
+    // Manual order (Jenni 2026-07-03): within any group, sort by libSortKey \u2014 explicit drag order
+    // first, else newest-first by date. Applies to both the flat (filtered) view and each spec group.
+    var _libCmp = function(a,b){ return libSortKey(a._sortOrder, a.savedAt) - libSortKey(b._sortOrder, b.savedAt); };
     if(S.libSpec){
       // Specialty filter is active \u2014 flat list, no section headers (they'd just repeat the filter label).
-      for(var ci=0;ci<filtered.length;ci++){ h += renderLibCard(filtered[ci]); }
+      filtered.slice().sort(_libCmp).forEach(function(it){ h += renderLibCard(it); });
     } else {
       // No specialty filter \u2014 group + render section headers in canonical order.
       var bySpecGroup={};
       for(var fi=0;fi<filtered.length;fi++){var sp=filtered[fi]._spec||"Other";if(!bySpecGroup[sp])bySpecGroup[sp]=[];bySpecGroup[sp].push(filtered[fi])}
       for(var oi=0;oi<SPEC_ORDER.length;oi++){
         var specName=SPEC_ORDER[oi];var items=bySpecGroup[specName];if(!items||items.length===0)continue;
+        items.sort(_libCmp);
         var icon=SPEC_ICONS[specName]||"\uD83D\uDCDA";
         // Section header (also acts as a quick filter \u2014 tap to jump into that specialty)
         h+='<button class="libSpecHeaderBtn" data-spec="'+esc(specName)+'" style="width:100%;display:flex;align-items:baseline;gap:8px;margin:18px 0 8px;padding:0 4px 6px;border:none;border-bottom:1px solid var(--line-soft);background:none;cursor:pointer;text-align:left">';
@@ -7754,8 +7789,65 @@ function renderSaved(){
   return h;
 }
 
+// Drag-to-reorder library cards WITHIN a specialty group (Jenni 2026-07-03). Uses the ⠿ handle on
+// each own-cloud card. Order is read from the live DOM (= exactly what's visible after filters/sort),
+// the moved card gets a sort_order midway between its new neighbors, and it's persisted — which also
+// reorders the public showcase, since both read the same sort_order.
+function bindLibraryReorder(){
+  document.querySelectorAll(".libDragHandle").forEach(function(gh){
+    gh.ondragstart=function(e){
+      window._dragLibId = gh.dataset.libid || null;
+      window._dragLibSpec = gh.dataset.libspec || null;
+      if(e.dataTransfer){ e.dataTransfer.effectAllowed="move"; try{ e.dataTransfer.setData("text/plain", window._dragLibId||""); }catch(_){} }
+    };
+    gh.ondragend=function(){ window._dragLibId=null; window._dragLibSpec=null; document.querySelectorAll(".libCard").forEach(function(c){c.style.boxShadow="";}); };
+  });
+  document.querySelectorAll(".libCard").forEach(function(card){
+    card.ondragover=function(e){
+      if(!window._dragLibId) return;
+      if(card.dataset.libspec !== window._dragLibSpec) return;                 // same specialty only
+      if(!card.dataset.libid || card.dataset.libid.indexOf("t_")===0) return;  // skip samples/drafts
+      e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect="move";
+      card.style.boxShadow="0 -2px 0 var(--plum) inset";
+    };
+    card.ondragleave=function(){ card.style.boxShadow=""; };
+    card.ondrop=function(e){
+      card.style.boxShadow="";
+      var fromId=window._dragLibId, spec=window._dragLibSpec, toId=card.dataset.libid;
+      window._dragLibId=null; window._dragLibSpec=null;
+      if(!fromId||!toId||fromId===toId) return;
+      if(card.dataset.libspec !== spec) return;                                // no cross-specialty moves
+      e.preventDefault();
+      // Live displayed order of this group's reorderable cards (post-filter, post-sort).
+      var cards = Array.prototype.slice.call(document.querySelectorAll(".libCard")).filter(function(c){
+        return c.dataset.libspec===spec && c.dataset.libid && c.dataset.libid.indexOf("t_")!==0;
+      });
+      var ids = cards.map(function(c){ return c.dataset.libid; });
+      var fromPos = ids.indexOf(fromId);
+      if(fromPos<0 || ids.indexOf(toId)<0) return;
+      ids.splice(fromPos,1);
+      ids.splice(ids.indexOf(toId), 0, fromId);                               // insert BEFORE the drop target
+      // Effective sort keys from the data model, to place the moved card between its new neighbors.
+      var disp = (typeof getDisplayLibrary==="function") ? getDisplayLibrary() : [];
+      var keyMap = {}; disp.forEach(function(it){ if(it._id) keyMap[it._id] = libSortKey(it._sortOrder, it.savedAt); });
+      var mi = ids.indexOf(fromId);
+      var prevId = mi>0 ? ids[mi-1] : null, nextId = mi<ids.length-1 ? ids[mi+1] : null;
+      var prevKey = (prevId!=null && keyMap[prevId]!=null) ? keyMap[prevId] : null;
+      var nextKey = (nextId!=null && keyMap[nextId]!=null) ? keyMap[nextId] : null;
+      var newKey;
+      if(prevKey==null && nextKey==null) newKey = 0;
+      else if(prevKey==null) newKey = nextKey - 1e6;
+      else if(nextKey==null) newKey = prevKey + 1e6;
+      else newKey = (prevKey + nextKey) / 2;
+      cloudSetSortOrder(fromId, newKey);   // optimistic local update is synchronous; DB write follows
+      render();
+    };
+  });
+}
+
 function bindSaved(){
   document.getElementById("savedBack").onclick=function(){S.showSaved=false;render()};
+  bindLibraryReorder();
   var ss=document.getElementById("savedSearchIn");if(ss)ss.oninput=function(e){S.savedSearch=e.target.value;render();var f=document.getElementById("savedSearchIn");if(f){f.focus();f.setSelectionRange(f.value.length,f.value.length)}};
   // Tab pills — All / Lectures / Boards
   document.querySelectorAll(".libTabBtn").forEach(function(b){b.onclick=function(){S.libTab=b.dataset.tab||"lectures";S.libSpec=null;S.libProfileOnly=false;render()}});
