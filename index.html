@@ -3048,7 +3048,7 @@ var S = {
   podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false,
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
-  showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null,
+  showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false,
   gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false,
   talkHistory:[], editingSection:null, editingDraft:null,
   loadingFromHash:false,
@@ -5362,7 +5362,7 @@ async function generate(){
   // checks for this case and renders a small banner instead of a full takeover. New draft swaps in
   // when ready (or on cancel/error, the old content stays).
   var _hadExistingTalk = !!S.talk;
-  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;
+  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;S.vmcStale=false;
   S.streamingTitle="";S.streamingSubtitle="";S.streamingSections=[];S.streamingStem="";S.streamingChars=0;  // clear stale preview from prior gen (Jenni 2026)
   speechSynthesis.cancel();
   if(!_hadExistingTalk) S.talk = null;   // only blank the view when there's no prior content to read
@@ -5465,21 +5465,31 @@ async function generate(){
     // Step 2: Combined critique-and-fix in a single Haiku call
     // Split critique prompts (Jenni 2026-06-09 #3) — Lecture mode uses a focused review
     // prompt (~600 tokens instead of ~2500), Boards keeps the full UWorld verification.
-    var LECTURE_CRITIQUE_PROMPT = "You are a senior IM attending peer-reviewing a chalk talk. Review for substantive accuracy only — do NOT flag stylistic preferences. Check: (1) factual errors in physiology or pharmacology, (2) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/USPSTF/AAHPM), (3) internal contradictions, (4) wrong landmark trial attributions, (5) shallow physiology that misses a key mechanism, (6) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug MUST be corrected. If unsure of generic spelling, replace with the brand name.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk is accurate and needs no changes:\n{\"verdict\":\"clean\"}\n\nIF you find substantive accuracy issues, return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all your fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
+    var LECTURE_CRITIQUE_PROMPT = "You are a senior IM attending peer-reviewing a chalk talk. Review for substantive accuracy only — do NOT flag stylistic preferences. Work through this checklist explicitly before deciding:\n\n(1) NUMERIC AUDIT (highest priority — these errors are dangerous): find EVERY numeric threshold, dose, rate, target, and cutoff in the talk (e.g. sodium correction rates, potassium thresholds for starting/stopping drugs, BP targets, eGFR cutoffs, drug doses). Re-derive each from the GUIDELINE / SOURCE CONTEXT if provided, otherwise from first principles. Fix any number that is wrong OR that contradicts a table/another bullet elsewhere in the SAME talk.\n(2) INTERNAL CONSISTENCY: scan for two statements that contradict each other about the same drug, mechanism, indication, or number (e.g. a drug called both first-line and refractory-only, or a mechanism labeled two different ways). Reconcile to the single correct version and delete the wrong one.\n(3) GROUNDING: where the GUIDELINE / SOURCE CONTEXT states a specific tier list, regimen, threshold, or recommendation, verify the talk matches it in substance. If the talk paraphrased it wrong or omitted an agent the guideline lists, correct it to match the source.\n(4) COMPLETENESS / REQUIRED FIELDS: the talk MUST have a non-empty summary_points array (4-6 items) AND all four visual_memory_card quadrants (top_left, top_right, bottom_left, bottom_right) non-empty, AND a management/treatment section if the topic warrants one. If any required field is empty or the talk is missing its treatment/management content, WRITE the missing content — do not return it empty.\n(5) factual errors in physiology or pharmacology, (6) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/USPSTF/AAHPM), (7) wrong landmark trial attributions, (8) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug MUST be corrected. If unsure of generic spelling, replace with the brand name.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk passes every check above with no changes needed:\n{\"verdict\":\"clean\"}\n\nIF you find ANY issue (including an empty required field), return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
     var BOARDS_CRITIQUE_PROMPT = "You are a senior board-certified Internal Medicine attending acting as a peer reviewer for a chalk talk. Review for: (1) factual errors in physiology or pharmacology, (2) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/AAAAI/AAD/APA/AGS/ACOG/USPSTF/AAHPM), (3) internal contradictions, (4) wrong landmark trial attributions, (5) shallow physiology, (6) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug or known investigational compound MUST be corrected. If unsure of generic spelling, replace with the brand name. Do NOT flag stylistic preferences.\n\nBOARDS-MODE ANSWER VERIFICATION (when the input contains a 'question' field): EXPLICITLY re-derive the correct answer. (a) Restate the discriminating clinical features in the stem. (b) Identify the most relevant guideline and year (KDIGO, AHA/ACC, ADA, etc.) or landmark trial. (c) Confirm whether the marked correct_letter is truly best per that guideline. (d) If a different choice is better, fix correct_letter and rewrite explanation + wrong_explanations accordingly. Do not allow ambiguous or 'defensibly correct' answers to stand \u2014 the correct answer must be UNAMBIGUOUSLY best per current guidelines.\n\nSTEM STYLE VERIFICATION (boards mode): Also verify the stem follows UWorld / ABIM / MKSAP style. Check: (a) demographic + presentation opener \u2014 EITHER USMLE phrasing (A [age]-year-old [man/woman] comes to the physician because of...) OR MKSAP phrasing (...is evaluated in the office/emergency department for...) is acceptable; do not force one style, (b) quantitative symptom detail (frequency, duration, character, location, timing), (c) explicit pertinent positives AND key pertinent negatives stated together, (d) social/medical history quantified where relevant (e.g., 8-10 beers/week, 1 pack/day for 30 years), (e) specific vital signs with numbers and lab values with units, (f) imaging or diagnostic findings stated specifically, (g) ending phrase: Which of the following is the most [likely diagnosis / appropriate next step in management / appropriate initial test / likely cause]?, (h) 5 choices, parallel grammatical structure (all diagnoses OR all treatments OR all tests, not mixed), (i) each choice 2-8 words, no 'all of the above', no 'none of the above', no vague catch-alls, (j) distractors are plausible alternatives a less-prepared resident might pick \u2014 not throwaway, (k) CHOICE ORDER: the 5 choices MUST be sorted alphabetically by choice text (or ascending numeric/dose value) \u2014 if they are not, re-sort them, reassign letters A-E, and update correct_letter + wrong_explanations letters to match, (l) KEY POINT: a non-empty key_point field must exist (one standalone \u226430-word clinical-rule sentence) \u2014 if missing, write one. If the stem fails ANY criterion, REWRITE the stem and choices to match UWorld/MKSAP style while preserving the same correct answer and clinical scenario. Do not change the medical content; tighten the format.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk is accurate and needs no changes:\n{\"verdict\":\"clean\"}\n\nIF you find substantive accuracy issues, return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all your fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
     var critiqueSystem = (S.style === "boards") ? BOARDS_CRITIQUE_PROMPT : LECTURE_CRITIQUE_PROMPT;
-    var critiqueInput = "Topic: " + S.topic + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
+    // Feed the SAME guideline + RAG context the draft was written from INTO the critique, so the
+    // reviewer has ground truth to check numbers/tiers/regimens against instead of its own memory.
+    // (Jenni 2026-07-03 — the critique was previously blind to this, so it couldn't catch grounding errors.)
+    var critiqueGrounding = (guidelineContext || ragContext)
+      ? ("\n\n═══ GUIDELINE / SOURCE CONTEXT (ground truth — the talk MUST match these for every number, drug, tier list, and recommendation) ═══" + guidelineContext + ragContext + "\n═══ END CONTEXT ═══")
+      : "";
+    var critiqueInput = "Topic: " + S.topic + critiqueGrounding + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
     var finalTalk = draftTalk;
     // ALWAYS run critique — accuracy > a few seconds saved. Concise uses Sonnet draft + Haiku review,
     // so total still ~25-30s. Detailed: Opus draft + Haiku review. Boards: Opus draft + Opus review fallback chain.
     try {
       // Boards-mode review prefers Opus (high-stakes accuracy); falls back to Sonnet then Haiku on overload.
-      // Lecture-mode review just uses Haiku (sufficient for prose accuracy review).
+      // Lecture-mode review now uses SONNET first (Haiku fallback) — Haiku couldn't reliably re-derive
+      // numeric thresholds/doses or catch internal contradictions (Jenni 2026-07-03 accuracy fix).
       var criticModels = (S.style === "boards")
         ? [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]
-        : [MODEL_CRITIC];
-      var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, (S.style==="boards")?6144:4096, criticModels);
+        : [MODEL_SONNET_FALLBACK, MODEL_CRITIC];
+      // Token budget: when the critic finds issues it returns the FULL corrected talk, so the cap must
+      // fit a whole talk or the corrected JSON truncates (dropping trailing summary_points / VMC — a
+      // cause of "incomplete" talks). Give lecture the same room as the draft. (Jenni 2026-07-03)
+      var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, (S.style==="boards")?6144:16384, criticModels);
       var critTxt = critResult.txt;
       if (critResult.fellBack) console.info("Critique done by " + critResult.modelUsed + " (Opus was overloaded)");
       if (critTxt && critTxt.trim()) {
@@ -6116,13 +6126,15 @@ async function weaveRevision(userMsg){
     '  "add_summary_points": ["summary point 1", "..."],\n' +
     '  "add_references": [{"type": "user-upload"|"guideline"|"trial"|"review", "source": "filename or paper title", "year": 2024, "society": "AHA/ACC", "url": "https://...", "title": "..."}],\n' +
     '  "add_section_bullets": [{"section_index": 0, "bullets": ["new bullet 1", "..."]}],\n' +
-    '  "add_sections": [{"after_index": 2, "heading": "...", "points": ["..."], "teaching_pearl": "...", "board_tip": "..."}]\n' +
+    '  "add_sections": [{"after_index": 2, "heading": "...", "points": ["..."], "teaching_pearl": "...", "board_tip": "..."}],\n' +
+    '  "edit_vmc": {"top_left": "...", "top_right": "...", "bottom_left": "...", "bottom_right": "..."}\n' +
     "}\n\n" +
     "EXISTING SECTION HEADINGS (0-based):\n  " + sectionHeadings + "\n\n" +
     "RULES:\n" +
     "- SURGICAL, NOT WHOLESALE. Emit ops ONLY for content that is wrong, missing, or that the user named. If a bullet is already correct, leave it alone (no op for it).\n" +
     "- TO FIX AN ERROR: use edit_section_bullets (or edit_pearls / edit_teaching_points / edit_summary_points / edit_section_pearl / edit_section_board_tip / edit_section_heading) with the exact index and the corrected text. Fix only what's wrong; preserve the rest of the item's meaning and its [N] citations.\n" +
     "- TO REMOVE wrong / outdated / redundant content: use delete_section_bullets (list bullet_indices) or delete_sections. Be conservative \u2014 only delete what is clearly wrong or what the user told you to remove. Never delete merely to shorten.\n" +
+    "- KEEP THE VISUAL MEMORY CARD IN SYNC: if your edits change the core MECHANISM, key FINDINGS, the WORKUP move, or the first-line TREATMENT, emit edit_vmc with ONLY the quadrant(s) that changed (top_left=mechanism, top_right=findings, bottom_left=workup, bottom_right=treatment; each \u22648 words). If your edit doesn't touch any of those four, omit edit_vmc entirely.\n" +
     "- TO ADD new content: use the add_* ops, placing new bullets in the topically-correct section via section_index (0-based, see headings).\n" +
     "- WHEN THE USER PASTES A CORRECTED / PROOFREAD VERSION OR A LARGE CHUNK OF TEXT: read it fully and DIFF it against the current talk. For each real difference emit the matching edit / delete / add op. Do NOT re-add content that already matches, and do NOT re-emit unchanged bullets.\n" +
     "- IF THE USER NAMES A SECTION (e.g. 'fix section 2' or 'in the treatment section'): confine your ops to that section's indices.\n" +
@@ -6155,7 +6167,7 @@ async function weaveRevision(userMsg){
 // saw — nothing untargeted can shift or vanish. (Jenni 2026-06-11 audit; surgical ops 2026-06-22.)
 function applyWeavePatch(talk, patch){
   var t = JSON.parse(JSON.stringify(talk));
-  var applied = { pearls:0, teaching_points:0, summary_points:0, references:0, section_bullets:0, sections:0, edits:0, deletes:0 };
+  var applied = { pearls:0, teaching_points:0, summary_points:0, references:0, section_bullets:0, sections:0, edits:0, deletes:0, vmc:0 };
   var warnings = [];
   if(!patch || typeof patch !== "object") return { talk: t, applied: applied, warnings: warnings };
 
@@ -6300,6 +6312,18 @@ function applyWeavePatch(talk, patch){
       applied.sections++;
       if(conciseBudget !== Infinity){
         cleanPts.forEach(function(p){ if(p.length > conciseBudget) verboseCount++; });
+      }
+    });
+  }
+
+  // Visual memory card sync (Jenni 2026-07-03) — apply edit_vmc quadrant patches so the memory card
+  // stays consistent with edited content. Only the quadrants the model provided change.
+  if(patch.edit_vmc && typeof patch.edit_vmc === "object"){
+    t.visual_memory_card = t.visual_memory_card || {};
+    ["top_left","top_right","bottom_left","bottom_right"].forEach(function(q){
+      if(typeof patch.edit_vmc[q] === "string" && patch.edit_vmc[q].trim()){
+        t.visual_memory_card[q] = patch.edit_vmc[q].trim();
+        applied.vmc++;
       }
     });
   }
@@ -6550,6 +6574,11 @@ async function sendChat(){
           S.msgs.push({r:"a",t:"\u2139\ufe0f Nothing landed" + warnMsg + ". Try a more specific phrasing or say \"rewrite\" for a full regenerate."});
         } else {
           S.talk = merge.talk;
+          // VMC staleness (Jenni 2026-07-03): if the refine changed content but the model didn't
+          // update the memory card, flag it so the reader knows the card may lag the latest edits.
+          // An explicit VMC edit clears the flag.
+          if(merge.applied && merge.applied.vmc > 0) S.vmcStale = false;
+          else if(changes !== "no changes") S.vmcStale = true;
           if(S.dg && S.dg.imgB64) S.visualStale = true;
           else { S.dg = null; S.dgErr = ""; }
           S.podScript = "";
@@ -7525,7 +7554,7 @@ function renderSaved(){
     var bg = active ? "#fff6dd" : "transparent";
     var fg = active ? "#a07d1a" : "var(--ink-muted)";
     var br = active ? "#e6d49a" : "var(--line)";
-    return '<button class="libProfileBtn" title="Show only talks published on your public profile" aria-pressed="'+active+'" style="background:'+bg+';color:'+fg+';border:1px solid '+br+';border-radius:14px;padding:5px 11px;font-size:11.5px;font-weight:'+(active?"700":"500")+';cursor:pointer;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-family:inherit;line-height:1.3">⭐ On profile <span style="opacity:0.65;font-size:10.5px;font-weight:500">'+count+'</span></button>';
+    return '<button id="libProfileBtn" class="libProfileBtn" title="Show only talks published on your public profile" aria-pressed="'+active+'" style="background:'+bg+';color:'+fg+';border:1px solid '+br+';border-radius:14px;padding:5px 11px;font-size:11.5px;font-weight:'+(active?"700":"500")+';cursor:pointer;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-family:inherit;line-height:1.3">⭐ On profile <span style="opacity:0.65;font-size:10.5px;font-weight:500">'+count+'</span></button>';
   }
   h+='<div class="libSpecStrip" style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding:2px 0;scrollbar-width:none;-ms-overflow-style:none;mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 24px),transparent 100%);-webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 24px),transparent 100%)">';
   h+=specPill(null, "All", specSourceForCounts.length);
@@ -8724,6 +8753,9 @@ function renderMain(){
       if(vm){
         h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)">';
         h+='<div style="display:flex;align-items:center;gap:11px;margin-bottom:11px"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px">📸</span><div><div style="font-size:13.5px;font-weight:700;color:var(--ink)">Visual Memory Card</div><div style="font-size:11px;color:var(--ink-muted)">Download for slides or share to Twitter</div></div></div>';
+        // Lightweight staleness note (Jenni 2026-07-03) — shown when a refine changed content but the
+        // memory card wasn't updated with it. Subtle, not a blocking banner.
+        if(S.vmcStale){ h+='<div style="font-size:11px;color:#8a6d1a;background:#fff7e0;border:1px solid #f0d59a;border-radius:8px;padding:6px 10px;margin-bottom:10px;line-height:1.4">⚠️ This card may not reflect your latest edits.</div>'; }
         h+='<div id="vmcCard" style="background:linear-gradient(145deg,var(--plum-deep) 0%,#4a1a7a 50%,var(--plum-rich) 100%);border-radius:12px;padding:14px;color:#fff;margin-bottom:12px"><div style="font-size:14px;font-weight:700;text-align:center;margin-bottom:10px">'+esc(t.title)+'</div>';
         var vmcLabels2=isBQ?[["Vignette",vm.top_left],["Mechanism",vm.top_right],["Pearl",vm.bottom_left],["Pitfall",vm.bottom_right]]:[["Mechanism",vm.top_left],["Findings",vm.top_right],["Workup",vm.bottom_left],["Treatment",vm.bottom_right]];
         h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
