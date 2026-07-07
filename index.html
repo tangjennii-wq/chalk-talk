@@ -3048,7 +3048,7 @@ var S = {
   podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false,
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
-  showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false,
+  showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false,
   gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false,
   talkHistory:[], editingSection:null, editingDraft:null,
   loadingFromHash:false,
@@ -5903,6 +5903,111 @@ async function restructureTalk(userMsg){
   return restructured;
 }
 
+// ── APPLY PROOFREAD FEEDBACK (Jenni 2026-07-03) ──────────────────────────────────────────────
+// The user's real workflow: paste her talk into OpenEvidence, get back PROSE feedback (assessments
+// + recommended corrections), then paste that feedback here to incorporate the changes while
+// PRESERVING everything else. The surgical differ (weaveRevision) fails at this — it treats a big
+// feedback paste as a whole-talk reshape and bails, or mis-maps prose to bullet coordinates. This
+// path instead returns the FULL corrected talk (edit-in-place, no coordinate math) and guards it
+// with the restructure-style content-loss check so nothing can be silently dropped.
+
+// Detect "reviewer feedback to apply" — substantial prose with multiple corrective/recommendation
+// markers. Short "fix X" stays on the surgical path. An explicit button (S._applyProofreadMode)
+// always wins regardless of this heuristic.
+function isProofreadFeedback(msg){
+  var m = String(msg||"").toLowerCase();
+  if(m.length < 300) return false;
+  var markers = /should (?:be|say|read|include|consider)|recommend|correction|consider (?:adding|revising|removing)|is (?:incorrect|wrong|inaccurate)|the (?:correct|accurate)|assessment|inaccurac|overstat|understat|misstat|not supported|per (?:the )?guideline|update(?:d)? to|revise (?:the|to)|reviewer|flag(?:ged)?|suggest/g;
+  return (m.match(markers) || []).length >= 2;
+}
+
+// Model call: apply the feedback, return the FULL corrected talk in the same schema. Returns
+// { talk, applied[], vmcTouched }. Consumes 1 free-tier talk (a refine = 1 talk), guarded.
+async function weaveFeedbackTalk(userMsg){
+  if(!S.talk) return { talk:null };
+  if(freeTierActive()){
+    var _ftc = await consumeFreeTier("talk");
+    if(!_ftc.ok && (_ftc.code==="quota_exceeded" || _ftc.code==="free_tier_paused")){
+      if(_ftc.code==="free_tier_paused") S.freePausedMsg = _ftc.message||"";
+      S.showOutOfFreeModal = true; if(typeof render==="function") render();
+      return { talk:null, quotaBlocked:true };
+    }
+  }
+  var existingJson = JSON.stringify(S.talk);
+  var totalBullets = 0; (S.talk.sections||[]).forEach(function(s){ totalBullets += (s.points||[]).length; });
+  var refCount = (S.talk.references||[]).length;
+  var secCount = (S.talk.sections||[]).length;
+  var sys =
+    "You are applying EXTERNAL REVIEWER FEEDBACK to an existing medical chalk talk. The user pasted a list of assessments and recommended corrections (e.g. from OpenEvidence) ABOUT this talk. The feedback is a CRITIQUE, not a rewrite and not a replacement talk. Your job: incorporate every ACTIONABLE recommended change into the talk, and PRESERVE everything else verbatim.\n\n" +
+    "PRESERVATION IS THE #1 RULE:\n" +
+    "- Return the COMPLETE talk in the SAME JSON schema. Do NOT drop, shorten, or omit ANY bullet, section, pearl, tip, or reference the feedback did not ask you to change.\n" +
+    "- Total bullet count MUST be >= " + totalBullets + " unless the feedback EXPLICITLY says to delete specific content (then remove only that).\n" +
+    "- The references array MUST have >= " + refCount + " entries (never fewer). Keep every [N] citation inline on its fact. A new clinical claim from the feedback needs a [N] — reuse an existing reference id or add a new reference entry and cite it.\n" +
+    "- Sections MUST be >= " + secCount + " unless deletion was explicitly requested.\n\n" +
+    "HOW TO APPLY:\n" +
+    "- For each recommendation, find the affected bullet/pearl/section and EDIT IT IN PLACE (fix the wrong value/threshold/figure, add the recommended item). Leave all other text identical.\n" +
+    "- If the feedback recommends ADDING content, add it to the topically-correct section, matching the talk's existing depth and style.\n" +
+    "- If a recommendation is vague, non-actionable, or merely confirms the talk is correct, SKIP it — do NOT invent changes.\n" +
+    "- If a correction changes the core mechanism / key findings / workup / first-line treatment, update the matching visual_memory_card quadrant; otherwise leave the card unchanged.\n\n" +
+    "SELF-CHECK BEFORE RETURNING: bullet count >= " + totalBullets + " (unless explicit deletion)? references >= " + refCount + "? every original [N] still inline? every drug/dose/trial/lab value preserved except where the feedback corrected it?\n\n" +
+    "Return a JSON OBJECT: { \"talk\": <the complete updated talk in the exact schema>, \"applied\": [\"short description of each change you made\", ...], \"vmc_touched\": true|false }. If NOTHING in the feedback was actionable, return the talk UNCHANGED with \"applied\": []. ONLY JSON — no markdown fences, no commentary.";
+  var contentParts = [{
+    type:"text",
+    text: "REVIEWER FEEDBACK TO APPLY:\n" + userMsg +
+      "\n\n===== CURRENT TALK JSON (apply the feedback; preserve everything else verbatim) =====\n" + existingJson
+  }].concat(buildReferenceParts(S.files));
+  var txt = await callAPI(sys, contentParts, 32768, { model:"claude-sonnet-4-6", meterKind:"talk" });
+  var parsed = JSON.parse(fixJSON(txt));
+  var revised = parsed.talk || parsed;
+  if(typeof deepCleanCitations === "function") revised = deepCleanCitations(revised);
+  if(typeof pruneFakeReferences === "function") revised = pruneFakeReferences(revised);
+  return { talk: revised, applied: Array.isArray(parsed.applied)?parsed.applied:[], vmcTouched: parsed.vmc_touched===true };
+}
+
+// Orchestrator: history snapshot, model call, safety guard (keep original if content dropped),
+// messaging, Undo, and staleness flags — mirrors the restructure block's conventions exactly.
+async function applyProofreadFeedback(userMsg){
+  if(!S.talk) return;
+  pushTalkHistory("proofread");
+  S.chatBusy = true;
+  S.msgs.push({r:"a",t:"Reading the feedback and applying each recommended correction — keeping every other bullet, section, and citation…"});
+  render();
+  try{
+    var origBullets = 0, origRefs = (S.talk.references||[]).length, origSecs = (S.talk.sections||[]).length;
+    (S.talk.sections||[]).forEach(function(s){ origBullets += (s.points||[]).length; });
+    var result = await weaveFeedbackTalk(userMsg);
+    if(result && result.quotaBlocked){ S.chatBusy=false; render(); return; }
+    var revised = result && result.talk;
+    if(revised && revised.title){
+      var newBullets = 0, newRefs = (revised.references||[]).length, newSecs = (revised.sections||[]).length;
+      (revised.sections||[]).forEach(function(s){ newBullets += (s.points||[]).length; });
+      if(newBullets < origBullets){
+        S.msgs.push({r:"a",t:"⚠ Applying that would have dropped content ("+origBullets+" → "+newBullets+" bullets), so I kept your original untouched. If the feedback asked to REMOVE something, say e.g. \"delete the epidemiology section\" and I'll do exactly that."});
+      } else if(newRefs < origRefs){
+        S.msgs.push({r:"a",t:"⚠ That would have dropped a reference ("+origRefs+" → "+newRefs+"). Kept your original. Try applying the corrections one at a time."});
+      } else if(newSecs < origSecs){
+        S.msgs.push({r:"a",t:"⚠ That would have dropped a section ("+origSecs+" → "+newSecs+"). Kept your original. If a deletion was intended, name the section explicitly."});
+      } else if(!result.applied || result.applied.length === 0){
+        S.msgs.push({r:"a",t:"ℹ️ I read the feedback but didn't find a concrete change to make — it either confirms the talk is accurate or is too general to act on. If there's a specific fix, quote the exact bullet or tell me what it should say."});
+      } else {
+        S.talk = revised;
+        if(S.dg && S.dg.imgB64) S.visualStale = true;
+        else { S.dg = null; S.dgErr = ""; }
+        S.podScript = ""; S.talkIsSaved = false;
+        S.vmcStale = !(result.vmcTouched === true);
+        var summary = result.applied.slice(0,8).map(function(x){return "• "+x}).join("\n");
+        var more = result.applied.length > 8 ? "\n…and "+(result.applied.length-8)+" more" : "";
+        S.msgs.push({r:"a",t:"✓ Applied "+result.applied.length+" correction"+(result.applied.length===1?"":"s")+" from the feedback. Everything else untouched — tap Undo to revert.\n\n"+summary+more});
+      }
+    } else {
+      S.msgs.push({r:"a",t:"Couldn't parse the corrected version — your original is intact. Try again, or apply the feedback one point at a time."});
+    }
+  } catch(e){
+    S.msgs.push({r:"a",t:"Applying the feedback failed: "+e.message+". Your original is intact."});
+  }
+  S.chatBusy = false; S._composerOpen = false; render();
+}
+
 // Compress an existing talk — keeps every section, every clinical detail, every citation; just
 // rewrites bullets/pearls/tips in fewer words. Returns the full updated talk JSON.
 // Uses Sonnet 4.6 with high max_tokens so nothing gets squeezed out. (Jenni 2026-06-11)
@@ -6415,6 +6520,15 @@ async function sendChat(){
   // "shorten"/"rewrite"/etc. commands are unaffected and still route to their dedicated paths.
   var _isLargePaste = msg.length > 600;
   var _isSurgicalEdit = _isLargePaste || isSurgicalEditIntent(msg);
+  // APPLY-PROOFREAD path (Jenni 2026-07-03) \u2014 the user pasted OpenEvidence-style reviewer feedback
+  // (or tapped "Apply proofread"). Runs FIRST so a big feedback paste can't be swallowed by the
+  // surgical/restructure/compress routers (which is exactly what used to make it a silent no-op).
+  var _applyProofread = (S._applyProofreadMode === true) || isProofreadFeedback(msg);
+  S._applyProofreadMode = false; // one-shot flag
+  if(_applyProofread){
+    await applyProofreadFeedback(msg);
+    return;
+  }
   // Restructure-intent path (Jenni 2026-06-11) \u2014 splits / merges / reorders / renames sections
   // without losing any bullet, fact, or citation. Checked BEFORE expansion/compression because
   // restructure intent words can overlap (e.g. "break this into smaller sections" sounds compressive
@@ -7078,7 +7192,33 @@ function linkifyPMIDs(root) {
 // so users recognize it instantly. Sized to inherit the parent button's color via currentColor.
 var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 
+// Focus/caret/scroll-preserving wrapper (Jenni 2026-07-03 quality fix #2). The app rebuilds the
+// whole DOM on every render(), which otherwise drops the focused input and its caret whenever a
+// BACKGROUND render fires while you're typing (loading-timer tick, free-tier poll, citation audit,
+// etc.). Capture focus + selection before the rebuild and restore it after. Scroll is only restored
+// if the rebuild moved it unexpectedly, so intentional scrollTo() calls by handlers still win.
 function render(){
+  var active = document.activeElement;
+  var focusId = (active && active.id) ? active.id : null;
+  var selStart = null, selEnd = null;
+  if(focusId && active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")){
+    try{ selStart = active.selectionStart; selEnd = active.selectionEnd; }catch(_){}
+  }
+  var scrollY = window.scrollY;
+  _renderInner();
+  if(focusId){
+    var el = document.getElementById(focusId);
+    if(el && el !== document.activeElement){
+      try{ el.focus({preventScroll:true}); }catch(_){ try{ el.focus(); }catch(__){} }
+      if(selStart != null && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")){
+        try{ el.setSelectionRange(selStart, selEnd); }catch(_){}
+      }
+    }
+  }
+  if(Math.abs(window.scrollY - scrollY) > 2) window.scrollTo(0, scrollY);
+}
+
+function _renderInner(){
   var root=document.getElementById("root");
   // Full-page loading state while a deep-link (#t=<id>) is fetching from Supabase.
   // Without this the user briefly sees the compose form before the talk loads — confusing.
@@ -8806,9 +8946,14 @@ function renderMain(){
       // Footer row: Reference pill (left) + send circle (right)
       h+='    <div class="composer-footer">';
       h+='      <button class="ref-btn" id="composerRefBtn" title="Upload a reference (PDF, image, text)"><span style="font-size:14px;line-height:1">+</span> '+(S.files && S.files.length ? "Add another" : "Reference")+'</button>';
+      h+='      <div style="display:flex;align-items:center;gap:8px">';
+      // Apply proofread — paste OpenEvidence-style feedback and incorporate its corrections while
+      // preserving the rest of the talk. (Jenni 2026-07-03)
+      h+='      <button class="ref-btn" id="applyProofreadBtn" '+(!String(S.reviseIn||"").trim()?"disabled style=\"opacity:.4;cursor:not-allowed\"":"")+' title="Paste reviewer feedback (e.g. from OpenEvidence) and apply its corrections — keeps everything else">🩺 Apply proofread</button>';
       h+='      <button class="send-btn" id="reviseSend" '+(!String(S.reviseIn||"").trim()?"disabled":"")+' title="Send (⌘/Ctrl+Enter)">→</button>';
+      h+='      </div>';
       h+='    </div>';
-      h+='    <div class="composer-hint">⌘/Ctrl+Enter to send · Refines are iterative — keep adding</div>';
+      h+='    <div class="composer-hint">⌘/Ctrl+Enter to send · 🩺 Apply proofread = paste reviewer feedback to incorporate it</div>';
     }
     h+='  </div>';
     h+='</div>';
@@ -9213,7 +9358,19 @@ function bindMain(){
   if(!window.__reviseSendBound){
     window.__reviseSendBound = true;
     document.addEventListener("pointerdown", function(e){
-      var b = e.target && e.target.closest ? e.target.closest("#reviseSend") : null;
+      if(!e.target || !e.target.closest) return;
+      // Apply-proofread button: same delegated pattern; sets the one-shot flag so sendChat routes
+      // to applyProofreadFeedback. (Jenni 2026-07-03)
+      var pb = e.target.closest("#applyProofreadBtn");
+      if(pb && !pb.disabled){
+        e.preventDefault();
+        if(!String(S.reviseIn||"").trim()) return;
+        S._applyProofreadMode = true;
+        S.chatIn=S.reviseIn; S.reviseIn="";
+        if(typeof sendChat==="function") sendChat();
+        return;
+      }
+      var b = e.target.closest("#reviseSend");
       if(!b || b.disabled) return;
       e.preventDefault(); // keep focus state stable; we're handling the action now
       if(!String(S.reviseIn||"").trim()) return;
@@ -9736,6 +9893,36 @@ function bindMain(){
   var jtbE=document.getElementById("jsonTalkBtnExport");if(jtbE)jtbE.onclick=function(){exportTalkJSON(null)};
   var shrE=document.getElementById("shareTalkBtnExport");if(shrE)shrE.onclick=function(){shareTalk()};
 }
+
+// ═══════════ GLOBAL ERROR HANDLERS (Jenni 2026-07-03 quality fix #3) ═══════════
+// Before this, a stray promise rejection or error outside a wrapped try/catch died silently — no
+// telemetry, no user feedback, stuck UI. These handlers log to console and show ONE dismissible
+// toast (via direct DOM, never render(), to avoid re-entrancy loops). They never swallow errors.
+(function installGlobalErrorHandlers(){
+  var _lastToastAt = 0;
+  function showErrToast(label){
+    var now = Date.now();
+    if(now - _lastToastAt < 4000) return;      // throttle so a burst can't stack toasts
+    _lastToastAt = now;
+    try{
+      var t = document.createElement("div");
+      t.setAttribute("role","alert");
+      t.style.cssText = "position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:2000;background:#fdf0ee;color:#8a3a2a;border:1px solid #e6b8ab;border-radius:10px;padding:10px 14px;font-size:12.5px;font-family:inherit;box-shadow:0 4px 14px rgba(0,0,0,.12);max-width:340px;line-height:1.4;cursor:pointer";
+      t.textContent = "⚠️ " + label + " — if something looks stuck, reload the page. (Tap to dismiss.)";
+      t.onclick = function(){ try{ t.remove(); }catch(_){} };
+      document.body.appendChild(t);
+      setTimeout(function(){ try{ t.remove(); }catch(_){} }, 8000);
+    }catch(_){}
+  }
+  window.addEventListener("error", function(e){
+    console.error("[global error]", e && (e.error || e.message || e));
+    showErrToast("Something hit an unexpected error");
+  });
+  window.addEventListener("unhandledrejection", function(e){
+    console.error("[unhandled rejection]", e && e.reason);
+    showErrToast("A background task failed");
+  });
+})();
 
 // ═══════════ INIT ═══════════
 loadFromShareHash();
