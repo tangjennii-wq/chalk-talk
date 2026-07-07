@@ -5972,33 +5972,71 @@ async function weaveFeedbackTalk(userMsg){
   var totalBullets = 0; (S.talk.sections||[]).forEach(function(s){ totalBullets += (s.points||[]).length; });
   var refCount = (S.talk.references||[]).length;
   var secCount = (S.talk.sections||[]).length;
+  // CHANGED-SECTIONS-ONLY (Jenni 2026-07-03 speed fix): instead of re-emitting the WHOLE talk (slow —
+  // output length is the bottleneck), the model reads the whole talk but returns ONLY the sections it
+  // actually changed (fully, with all their bullets) + any changed summary / VMC / references. We
+  // splice those into a clone and keep every untouched section verbatim. If the feedback is genuinely
+  // global it'll return most sections (appropriately slower); if it touches 1-2, it's fast.
   var sys =
-    "You are applying EXTERNAL REVIEWER FEEDBACK to an existing medical chalk talk. The user pasted a list of assessments and recommended corrections (e.g. from OpenEvidence) ABOUT this talk. The feedback is a CRITIQUE, not a rewrite and not a replacement talk. Your job: incorporate every ACTIONABLE recommended change into the talk, and PRESERVE everything else verbatim.\n\n" +
-    "PRESERVATION IS THE #1 RULE:\n" +
-    "- Return the COMPLETE talk in the SAME JSON schema. Do NOT drop, shorten, or omit ANY bullet, section, pearl, tip, or reference the feedback did not ask you to change.\n" +
-    "- Total bullet count MUST be >= " + totalBullets + " unless the feedback EXPLICITLY says to delete specific content (then remove only that).\n" +
-    "- The references array MUST have >= " + refCount + " entries (never fewer). Keep every [N] citation inline on its fact. A new clinical claim from the feedback needs a [N] — reuse an existing reference id or add a new reference entry and cite it.\n" +
-    "- Sections MUST be >= " + secCount + " unless deletion was explicitly requested.\n\n" +
-    "HOW TO APPLY:\n" +
-    "- For each recommendation, find the affected bullet/pearl/section and EDIT IT IN PLACE (fix the wrong value/threshold/figure, add the recommended item). Leave all other text identical.\n" +
-    "- If the feedback recommends ADDING content, add it to the topically-correct section, matching the talk's existing depth and style.\n" +
-    "- If a recommendation is vague, non-actionable, or merely confirms the talk is correct, SKIP it — do NOT invent changes.\n" +
-    "- If a correction changes the core mechanism / key findings / workup / first-line treatment, update the matching visual_memory_card quadrant; otherwise leave the card unchanged.\n\n" +
-    "SELF-CHECK BEFORE RETURNING: bullet count >= " + totalBullets + " (unless explicit deletion)? references >= " + refCount + "? every original [N] still inline? every drug/dose/trial/lab value preserved except where the feedback corrected it?\n\n" +
-    "Return a JSON OBJECT: { \"talk\": <the complete updated talk in the exact schema>, \"applied\": [\"short description of each change you made\", ...], \"vmc_touched\": true|false }. If NOTHING in the feedback was actionable, return the talk UNCHANGED with \"applied\": []. ONLY JSON — no markdown fences, no commentary.";
+    "You are applying EXTERNAL REVIEWER FEEDBACK to an existing medical chalk talk. The user pasted assessments and recommended corrections (e.g. from OpenEvidence) ABOUT this talk — a CRITIQUE, not a rewrite. Incorporate every ACTIONABLE correction; leave everything else untouched.\n\n" +
+    "TO KEEP THIS FAST, RETURN ONLY WHAT YOU CHANGED — never the whole talk. Emit a JSON object:\n" +
+    "{\n" +
+    '  "changed_sections": [ { "index": <0-based section index from the talk below>, "heading": "...", "points": ["...all bullets of this section, corrected..."], "mechanism": "...", "teaching_pearl": "...", "board_tip": "..." } ],\n' +
+    '  "changed_summary_points": ["...full updated array..."] ,   // include ONLY if a correction affects the summary; else omit\n' +
+    '  "changed_vmc": {"top_left":"...","top_right":"...","bottom_left":"...","bottom_right":"..."},  // ONLY the quadrant(s) that changed; else omit\n' +
+    '  "add_references": [ {"id":<int>,"source":"...","year":2024,"society":"...","url":"...","type":"guideline"} ],  // any NEW references a correction introduced; else omit\n' +
+    '  "changed_key_point": "..." ,  // boards only, if the key point changed; else omit\n' +
+    '  "applied": ["short description of each change you made", ...],\n' +
+    '  "global": true|false\n' +
+    "}\n\n" +
+    "RULES:\n" +
+    "- List a section in changed_sections ONLY if you changed something in it. Do NOT list unchanged sections.\n" +
+    "- When you DO include a section, return its FULL corrected content — ALL its bullets, keeping every bullet and [N] citation you didn't need to change. A changed section must keep at least as many bullets as it had, unless the feedback explicitly says to remove specific content.\n" +
+    "- NEVER drop a reference. A new clinical claim needs a [N] — reuse an existing reference id or add one via add_references.\n" +
+    "- If a correction changes the core mechanism/findings/workup/first-line treatment, include the affected changed_vmc quadrant(s).\n" +
+    "- If a recommendation is vague, non-actionable, or merely confirms the talk is correct, SKIP it (do not invent changes). If NOTHING is actionable, return \"changed_sections\": [] and \"applied\": [].\n" +
+    "- Set \"global\": true only if the feedback genuinely requires changing most/all sections.\n" +
+    "ONLY JSON — no markdown fences, no commentary.";
   var contentParts = [{
     type:"text",
     text: "REVIEWER FEEDBACK TO APPLY:\n" + userMsg +
-      "\n\n===== CURRENT TALK JSON (apply the feedback; preserve everything else verbatim) =====\n" + existingJson
+      "\n\n===== CURRENT TALK JSON (0-based section indices; apply the feedback, return only changes) =====\n" + existingJson
   }].concat(buildReferenceParts(S.files));
   var txt = await callAPI(sys, contentParts, 32768, { model:"claude-sonnet-4-6", meterKind:"talk" });
   // Charge-after: the model call succeeded (owner billed), so consume 1 talk now.
   if(freeTierActive()){ try{ await consumeFreeTier("talk"); }catch(_){} }
   var parsed = JSON.parse(fixJSON(txt));
-  var revised = parsed.talk || parsed;
+  // Reconstruct: clone the original, splice in only the changed pieces — untouched content is
+  // literally carried over, so it can't be lost.
+  var revised = JSON.parse(JSON.stringify(S.talk));
+  var vmcTouched = false;
+  if(Array.isArray(parsed.changed_sections)){
+    parsed.changed_sections.forEach(function(cs){
+      if(!cs || typeof cs.index !== "number") return;
+      if(cs.index < 0 || cs.index >= (revised.sections||[]).length) return;
+      var tgt = revised.sections[cs.index];
+      if(Array.isArray(cs.points) && cs.points.length) tgt.points = cs.points;
+      if(typeof cs.heading === "string" && cs.heading.trim()) tgt.heading = cs.heading;
+      if(typeof cs.mechanism === "string") tgt.mechanism = cs.mechanism;
+      if(typeof cs.teaching_pearl === "string") tgt.teaching_pearl = cs.teaching_pearl;
+      if(typeof cs.board_tip === "string") tgt.board_tip = cs.board_tip;
+    });
+  }
+  if(Array.isArray(parsed.changed_summary_points) && parsed.changed_summary_points.length) revised.summary_points = parsed.changed_summary_points;
+  if(parsed.changed_vmc && typeof parsed.changed_vmc === "object"){
+    revised.visual_memory_card = revised.visual_memory_card || {};
+    ["top_left","top_right","bottom_left","bottom_right"].forEach(function(q){
+      if(typeof parsed.changed_vmc[q] === "string" && parsed.changed_vmc[q].trim()){ revised.visual_memory_card[q] = parsed.changed_vmc[q].trim(); vmcTouched = true; }
+    });
+  }
+  if(Array.isArray(parsed.add_references) && parsed.add_references.length){
+    var seen = {}; (revised.references||[]).forEach(function(r){ if(r && r.id!=null) seen[r.id] = true; });
+    parsed.add_references.forEach(function(r){ if(r && r.id!=null && !seen[r.id]){ revised.references = (revised.references||[]).concat([r]); seen[r.id] = true; } });
+  }
+  if(typeof parsed.changed_key_point === "string" && parsed.changed_key_point.trim()) revised.key_point = parsed.changed_key_point;
   if(typeof deepCleanCitations === "function") revised = deepCleanCitations(revised);
   if(typeof pruneFakeReferences === "function") revised = pruneFakeReferences(revised);
-  return { talk: revised, applied: Array.isArray(parsed.applied)?parsed.applied:[], vmcTouched: parsed.vmc_touched===true };
+  return { talk: revised, applied: Array.isArray(parsed.applied)?parsed.applied:[], vmcTouched: vmcTouched };
 }
 
 // Orchestrator: history snapshot, model call, safety guard (keep original if content dropped),
