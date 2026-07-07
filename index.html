@@ -3038,7 +3038,7 @@ var S = {
   // Default stays false (single-section accordion behavior preserved) — only
   // the toggle pill in the capsule header flips this.
   allExpanded:false,
-  showAns:false, userPick:"", reviseIn:"", chatIn:"", chatBusy:false, msgs:[],
+  showAns:false, userPick:"", reviseIn:"", chatIn:"", chatBusy:false, msgs:[], refineSec:0, _proofreadRunning:false,
   isSampleTalk:false, sampleSlug:"", sharedTalk:false, sharedAuthor:null, shareModalOpen:false, shareModalToken:null, shareModalTalkId:null, shareModalBusy:false, talkIsSaved:false,
   // — RAG retrieval
   glRef:null, ragOpen:false, ragChunks:[],
@@ -4392,6 +4392,7 @@ function exportTalkImage(){
 }
 function escapeHtml(s){if(s==null)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 var loadTimer = null;
+var refineTimer = null; // ticks S.refineSec during a refine/proofread so the wait shows progress
 
 // ═══════════ UTILS ═══════════
 function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
@@ -6006,6 +6007,11 @@ async function applyProofreadFeedback(userMsg){
   if(!S.talk) return;
   pushTalkHistory("proofread");
   S.chatBusy = true;
+  // Live progress (Jenni 2026-07-03): proofread rewrites the WHOLE talk to apply corrections in place,
+  // so it takes ~20-40s on a detailed talk. Show a ticking timer so it doesn't feel stuck.
+  S._proofreadRunning = true; S.refineSec = 0;
+  if(refineTimer) clearInterval(refineTimer);
+  refineTimer = setInterval(function(){ S.refineSec++; render(); }, 1000);
   S.msgs.push({r:"a",t:"Reading the feedback and applying each recommended correction — keeping every other bullet, section, and citation…"});
   render();
   try{
@@ -6041,6 +6047,8 @@ async function applyProofreadFeedback(userMsg){
   } catch(e){
     S.msgs.push({r:"a",t:"Applying the feedback failed: "+e.message+". Your original is intact."});
   }
+  if(refineTimer){ clearInterval(refineTimer); refineTimer = null; }
+  S._proofreadRunning = false;
   S.chatBusy = false; S._composerOpen = false; render();
 }
 
@@ -9032,7 +9040,11 @@ function renderMain(){
     h+='    </div>';
     if(_refineBusy){
       // Busy state: textarea is replaced by a centered progress block, footer is hidden
-      h+='    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px;color:var(--plum);font-weight:500"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span><span style="font-size:13px;line-height:1.5">'+(S.loading?'Regenerating lesson… '+(S.loadSec||0)+'s':'Weaving in your update…')+'</span><span style="font-size:11px;color:var(--ink-muted);max-width:200px">'+(S.loading?'Building from scratch with your direction':'Preserving existing content')+'</span></div>';
+      var _busyTitle, _busySub;
+      if(S.loading){ _busyTitle='Regenerating lesson… '+(S.loadSec||0)+'s'; _busySub='Building from scratch with your direction'; }
+      else if(S._proofreadRunning){ _busyTitle='Applying your proofread… '+(S.refineSec||0)+'s'; _busySub='Rewriting the full talk with your corrections — usually ~20–40s. Everything not flagged is preserved.'; }
+      else { _busyTitle='Weaving in your update…'; _busySub='Preserving existing content'; }
+      h+='    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px;color:var(--plum);font-weight:500"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span><span style="font-size:13px;line-height:1.5">'+_busyTitle+'</span><span style="font-size:11px;color:var(--ink-muted);max-width:220px;line-height:1.45">'+_busySub+'</span></div>';
     } else {
       h+='    <textarea class="revise-input" id="reviseIn" placeholder="Add detail, paste an MKSAP question, or drop a PDF — your existing content stays, only new content is added.&#10;&#10;Pasting a big chunk of reviewer feedback (e.g. from OpenEvidence)? Hit “Apply proofread” below to fold its corrections into the talk while keeping everything else.">'+esc(S.reviseIn||"")+'</textarea>';
       // Show currently-attached refs so the user can confirm what's going up and remove if needed.
