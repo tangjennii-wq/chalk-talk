@@ -4322,6 +4322,39 @@ function exportSlidesImage(){
   }
 }
 
+// ── PRINT helpers (Jenni 2026-07-03) ────────────────────────────────────────────────────────
+// Open a print window containing a single image sized to the page and fire the print dialog.
+function _printImageDataURL(dataURL, title){
+  var w = window.open("", "_blank");
+  if(!w){ alert("Please allow pop-ups for this site to print."); return; }
+  w.document.write('<!doctype html><html><head><title>'+esc(title||"Print")+'</title><meta charset="utf-8"><style>@page{margin:10mm}html,body{margin:0;padding:0}body{display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;max-height:100vh;height:auto}</style></head><body><img src="'+dataURL+'" onload="setTimeout(function(){try{window.focus();window.print();}catch(e){}},250)"></body></html>');
+  w.document.close();
+}
+// Print the Visual aid image (from the live gen or the talk's saved visual).
+function printVisual(){
+  var img = (S.dg && S.dg.imgB64) ? S.dg.imgB64
+          : (S.talk && S.talk.savedVisuals && S.talk.savedVisuals.length ? S.talk.savedVisuals[S.talk.savedVisuals.length-1].imgB64 : null);
+  if(!img){ alert("No visual to print — generate one on the Visual tab first."); return; }
+  _printImageDataURL("data:image/png;base64,"+img, (S.talk && S.talk.title) || "Visual");
+}
+// Print the Slides poster as an image (captures the live #slidesCapture; switches to the tab if needed).
+function printSlides(){
+  if(!S.talk) return;
+  var doCapture = function(){
+    var target = document.getElementById("slidesCapture");
+    if(!target){ alert("Couldn't find the slides to print — try again."); return; }
+    var run = function(){
+      window.html2canvas(target,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false}).then(function(canvas){
+        _printImageDataURL(canvas.toDataURL("image/jpeg",0.95), (S.talk.title||"Slides"));
+      }).catch(function(err){ alert("Slides print failed: "+(err.message||err)); });
+    };
+    if(window.html2canvas){ run(); }
+    else{ var dl=Date.now()+8000; (function wait(){ if(window.html2canvas) return run(); if(Date.now()>dl){ alert("Image library not loaded — refresh and try again."); return; } setTimeout(wait,150); })(); }
+  };
+  if(S.tab !== "slides"){ S.tab="slides"; render(); setTimeout(doCapture, 300); }
+  else { doCapture(); }
+}
+
 function exportTalkImage(){
   if(!S.talk)return;
   var t=S.talk;
@@ -8544,6 +8577,14 @@ function renderMain(){
       h+='<button id="copyAllTalkBtn">📋 Copy entire talk</button>';
       h+='<button id="pdfTalkBtn">📄 Export PDF</button>';
       h+='<button id="pngTalkBtn">📸 Save as image</button>';
+      // Print submenu (Jenni 2026-07-03) — send Overview / Slides poster / Visual to the printer.
+      h+='<div style="height:1px;background:var(--line);margin:4px 0"></div>';
+      h+='<button id="printOverviewBtn">🖨 Print overview</button>';
+      if(!isBQ){
+        h+='<button id="printSlidesBtn">🖨 Print slides (as image)</button>';
+        var _hasVisForPrint = (S.dg && S.dg.imgB64) || (S.talk && S.talk.savedVisuals && S.talk.savedVisuals.length);
+        if(_hasVisForPrint) h+='<button id="printVisualBtn">🖨 Print visual</button>';
+      }
       // Export JSON removed 2026-06-11 (Jenni) — power-user feature, almost no one used it.
       // Library export-all JSON via export-jsonTalkBtnExport in the Account drawer stays for backup.
       // Delete — only when the user owns a persisted copy (saved local/cloud); hidden for unsaved,
@@ -10030,6 +10071,10 @@ function bindMain(){
   var ptbBot=document.getElementById("pdfTalkBtnBottom");if(ptbBot)ptbBot.onclick=exportTalkPDF;
   var ptb=document.getElementById("pdfTalkBtn");if(ptb)ptb.onclick=exportTalkPDF;
   var pngb=document.getElementById("pngTalkBtn");if(pngb)pngb.onclick=function(){S.overflowOpen=false;render();setTimeout(exportTalkImage,50)};
+  // Print submenu (Jenni 2026-07-03)
+  var prO=document.getElementById("printOverviewBtn");if(prO)prO.onclick=function(){S.overflowOpen=false;render();setTimeout(exportTalkPDF,50)};
+  var prS=document.getElementById("printSlidesBtn");if(prS)prS.onclick=function(){S.overflowOpen=false;render();setTimeout(printSlides,60)};
+  var prV=document.getElementById("printVisualBtn");if(prV)prV.onclick=function(){S.overflowOpen=false;render();setTimeout(printVisual,60)};
   var sib=document.getElementById("saveSlidesImgBtn");if(sib)sib.onclick=exportSlidesImage;
   // Overview's bottom CTA → switch to Slides tab + jump to top (Jenni 2026-06-08)
   var o2s=document.getElementById("overviewToSlidesBtn");if(o2s)o2s.onclick=function(){S.tab="slides";window.scrollTo(0,0);render()};
