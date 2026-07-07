@@ -3048,7 +3048,7 @@ var S = {
   podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false,
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
-  showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false,
+  showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false, proofreadArmed:false,
   gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false,
   talkHistory:[], editingSection:null, editingDraft:null,
   loadingFromHash:false,
@@ -9051,11 +9051,12 @@ function renderMain(){
       h+='      <div style="display:flex;align-items:center;gap:8px">';
       // Apply proofread — paste OpenEvidence-style feedback and incorporate its corrections while
       // preserving the rest of the talk. (Jenni 2026-07-03)
-      h+='      <button class="ref-btn" id="applyProofreadBtn" '+(!String(S.reviseIn||"").trim()?"disabled style=\"opacity:.4;cursor:not-allowed\"":"")+' title="Paste reviewer feedback (e.g. from OpenEvidence) and apply its corrections — keeps everything else">🩺 Apply proofread</button>';
+      var _pArmed=!!S.proofreadArmed, _pDisabled=!String(S.reviseIn||"").trim();
+      h+='      <button class="ref-btn" id="applyProofreadBtn" aria-pressed="'+_pArmed+'" '+(_pDisabled?"disabled":"")+' style="'+(_pDisabled?"opacity:.4;cursor:not-allowed;":"")+(_pArmed?"background:var(--plum);border-color:var(--plum);color:#fff;":"")+'" title="Toggle proofread mode: paste reviewer feedback, arm this, then Send to fold its corrections in (keeps everything else)">'+(_pArmed?"🩺 Proofread ✓":"🩺 Apply proofread")+'</button>';
       h+='      <button class="send-btn" id="reviseSend" '+(!String(S.reviseIn||"").trim()?"disabled":"")+' title="Send (⌘/Ctrl+Enter)">→</button>';
       h+='      </div>';
       h+='    </div>';
-      h+='    <div class="composer-hint">⌘/Ctrl+Enter to send</div>';
+      h+='    <div class="composer-hint">'+(S.proofreadArmed?"🩺 Proofread mode on — Send to fold in the feedback":"⌘/Ctrl+Enter to send")+'</div>';
     }
     h+='  </div>';
     h+='</div>';
@@ -9436,7 +9437,7 @@ function bindMain(){
   var dbk=document.getElementById("drawerBackdrop");if(dbk)dbk.onclick=function(){S.editSettings=false;render()};
   // Floating bubble open/close
   var cob=document.getElementById("composerOpenBtn");if(cob)cob.onclick=function(){S._composerOpen=true;render();setTimeout(function(){var r=document.getElementById("reviseIn");if(r)r.focus()},50)};
-  var ccb=document.getElementById("composerCloseBtn");if(ccb)ccb.onclick=function(){S._composerOpen=false;render()};
+  var ccb=document.getElementById("composerCloseBtn");if(ccb)ccb.onclick=function(){S._composerOpen=false;S.proofreadArmed=false;render()};
   var crb=document.getElementById("composerRefBtn");if(crb)crb.onclick=function(){var fi=document.getElementById("composerFileInput")||document.getElementById("fileInput");if(fi)fi.click()};
   var cfi=document.getElementById("composerFileInput");if(cfi)cfi.onchange=function(e){var fi2=document.getElementById("fileInput");if(fi2){var dt=new DataTransfer();for(var i=0;i<e.target.files.length;i++)dt.items.add(e.target.files[i]);fi2.files=dt.files;fi2.dispatchEvent(new Event("change",{bubbles:true}))}};
   // Send: ⌘/Ctrl+Enter only. Plain Enter inserts a newline (we always have room — fixed-height textarea with internal scroll).
@@ -9453,6 +9454,7 @@ function bindMain(){
       var modSend=(e.metaKey||e.ctrlKey)&&e.key==="Enter";
       if(modSend && String(S.reviseIn||"").trim()){
         e.preventDefault();
+        if(S.proofreadArmed){ S._applyProofreadMode = true; S.proofreadArmed = false; }
         S.chatIn=S.reviseIn;S.reviseIn="";
         if(typeof sendChat==="function")sendChat();
       }
@@ -9472,17 +9474,18 @@ function bindMain(){
       // to applyProofreadFeedback. (Jenni 2026-07-03)
       var pb = e.target.closest("#applyProofreadBtn");
       if(pb && !pb.disabled){
+        // TOGGLE (Jenni 2026-07-03): arm/disarm proofread mode so the user sees it's selected BEFORE
+        // sending. The actual apply happens on Send (below) while armed.
         e.preventDefault();
-        if(!String(S.reviseIn||"").trim()) return;
-        S._applyProofreadMode = true;
-        S.chatIn=S.reviseIn; S.reviseIn="";
-        if(typeof sendChat==="function") sendChat();
+        S.proofreadArmed = !S.proofreadArmed;
+        render();
         return;
       }
       var b = e.target.closest("#reviseSend");
       if(!b || b.disabled) return;
       e.preventDefault(); // keep focus state stable; we're handling the action now
       if(!String(S.reviseIn||"").trim()) return;
+      if(S.proofreadArmed){ S._applyProofreadMode = true; S.proofreadArmed = false; }
       S.chatIn=S.reviseIn; S.reviseIn="";
       if(typeof sendChat==="function") sendChat();
     });
