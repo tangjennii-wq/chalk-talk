@@ -4,16 +4,16 @@
 
 Chalk Talk is a single-page web app that produces a structured, mechanism-first chalk talk on any internal-medicine topic — anchored to current society guidelines (KDIGO, AHA/ACC, ATS, IDSA, ACG, AASLD, ADA, ACR, AAN, SCCM, ASH, ASCO/NCCN), peer-reviewed by a second model before display, and rendered with a Visual Memory Card learners can screenshot. Built to bring formal bedside teaching back into a time-starved residency.
 
-> **Live demo:** *(coming soon — paste your GitHub Pages URL here)*
+> **Live demo:** https://tangjennii-wq.github.io/chalk-talk/
 
 ## What it does
 
 - **Two modes** — `Lecture` (physiology-first, 3–4 sections) or `Boards` (UWorld-style vignette with five distractors and explanations)
-- **Two-step accuracy pipeline** — a stronger model drafts the talk, then a second model AI-checks and corrects it before display
-- **Guideline grounding** — topic auto-mapped to the relevant society's open-access guidelines and landmark trials
+- **Two-step accuracy pipeline** — Claude Opus 4.8 drafts the talk, then a guideline-aware Sonnet critique pass (Haiku fallback) re-derives every number, scans for internal contradictions, and corrects the talk before display
+- **Guideline grounding from the first draft** — the topic is auto-mapped to the relevant society's guideline summaries AND live PubMed abstracts (vector retrieval), both injected into the very first draft — not a second pass
 - **Optional web verification** — opt-in `web_search` step against PubMed / society sites
 - **Reference upload** — attach PDFs, images, or text notes as source context for a specific teaching session
-- **Visual aid** — pick AI illustration (Gemini Nano Banana 2) or a no-key SVG flowchart
+- **Visual aid** — pick an AI illustration (Gemini Nano Banana Pro or OpenAI gpt-image-1.5) or a no-key SVG flowchart
 - **Audio podcast** — converts the talk into a 1-2 minute conversational narration
 - **Visual Memory Card** — screenshot-ready 4-quadrant summary
 - **Save to library** + JSON / PDF export
@@ -39,7 +39,7 @@ The 10 example talks ship pre-baked in `index.html`. To regenerate them (e.g. wh
 ANTHROPIC_API_KEY=sk-ant-... node generate_samples.js
 ```
 
-Requires Node 18+. The script runs the same Sonnet-draft → Haiku-peer-review pipeline as the live app, writes `samples.json`, and embeds the result back into `index.html` via the `// __SAMPLES_MARKER__` comment.
+Requires Node 18+. The script runs the same draft → peer-review pipeline as the live app (Opus draft → Sonnet review), writes `samples.json`, and embeds the result back into `index.html` via the `// __SAMPLES_MARKER__` comment.
 
 Useful flags:
 - `--only=hyponatremia,hfref` — regenerate just specific topic slugs
@@ -62,15 +62,25 @@ Because the app is a single HTML file with no build step, GitHub Pages is the si
 
 ### Architecture
 
+Full end-to-end walkthrough (state model, generation pipeline, RAG, refine, Worker, Supabase, free tier, sharing) lives in **[ARCHITECTURE.md](ARCHITECTURE.md)**. Quick map:
+
 ```
-User
+User (browser)
  ↓
-index.html (single-file SPA, vanilla JS, no framework)
- ├─ TOPICS         — ABIM-blueprint-aligned taxonomy
- ├─ GUIDELINES     — telegraphic society-guideline summaries
- ├─ SAMPLES        — pre-baked demo talks (auto-populated)
- └─ generate()     — Anthropic API: Sonnet draft → Haiku critique
-                    Optional web_search tool, optional Gemini for images
+index.html — single-file app, vanilla JS, no framework, no build step (GitHub Pages)
+ ├─ S + render()   — one global state object; render() rebuilds the DOM from it
+ ├─ GUIDELINES     — telegraphic society-guideline summaries (shipped inline)
+ ├─ generate()     — Opus 4.8 draft → guideline-aware Sonnet critique → citation prune
+ └─ weaveRevision()— refine = surgical JSON patch, not regeneration
+ ↓                        ↓                          ↓
+Cloudflare Worker    Supabase (Postgres)        Anthropic + OpenAI
+(worker.js)          - auth (magic link/Google)  - Claude (draft+critique)
+- holds the API key  - talks / profiles (RLS)    - gpt-image (illustrations)
+- origin allowlist   - free_tier_usage,          - text-embedding (RAG)
+- rate limit         -   spend_ledger
+- free-tier metering - documents/chunks (RAG, pgvector)
+- $250/mo spend cap
+- /retrieve (RAG)
 ```
 
 ## License
@@ -82,7 +92,7 @@ index.html (single-file SPA, vanilla JS, no framework)
 
 This application calls Anthropic's Claude API to generate chalk talks at runtime. Outputs are model-generated and may contain errors. **This tool is intended for educator-facilitated teaching contexts and is NOT a substitute for primary clinical references, peer-reviewed literature, or clinical judgment.** All clinical recommendations should be verified against original guidelines before application to patient care.
 
-The second-model review step is a stylistic / factuality check, not a substitute for human medical review.
+The second-model review step (a guideline-aware numeric/consistency/completeness check) reduces errors but is not a substitute for human medical review. All published talks should be verified against primary guidelines before teaching.
 
 ## Attribution
 
