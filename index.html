@@ -3044,7 +3044,7 @@ var S = {
   // — RAG retrieval
   glRef:null, ragOpen:false, ragChunks:[],
   // — Diagram / visual aid
-  dg:null, dgBusy:false, dgErr:"", dgMode:"ai", lightbox:false,
+  dg:null, dgBusy:false, dgErr:"", dgMode:"ai", _dgModeUserSet:false, lightbox:false,
   // — Podcast (audio narration)
   podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false,
   // — UI flags (drawers, modals, overflow menus)
@@ -8979,18 +8979,31 @@ function renderMain(){
 
     // ---------------- VISUAL TAB ----------------
     if(S.tab==="visual"&&!isBQ){
+      // Provider default (Jenni 2026-07-03): Gemini needs the user's own Google key, so it's a dead
+      // end for free-tier users — default them to the OpenAI/proxy path that the free 5 images use.
+      // Only default to Gemini when they actually have a Gemini key. A manual switch sticks.
+      if(!S._dgModeUserSet && !localStorage.getItem("gemini_api_key")) S.dgMode = "openai";
+      // Show a saved visual to ANYONE viewing this talk (Jenni 2026-07-03): on load S.dg is empty, but
+      // if the talk carries a saved image (persisted in savedVisuals, kept on publish), hydrate it so
+      // it renders here for the owner on reload AND for viewers of a shared/featured talk.
+      if(!S.dg && S.talk && S.talk.savedVisuals && S.talk.savedVisuals.length){
+        var _lv = S.talk.savedVisuals[S.talk.savedVisuals.length-1];
+        if(_lv && _lv.imgB64) S.dg = { imgB64: _lv.imgB64, mode: _lv.mode || "ai" };
+      }
       h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)">';
       h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px">🎨</span><div><div style="font-size:14px;font-weight:700;color:var(--ink)">Visual Aid</div><div style="font-size:11px;color:var(--ink-muted)">'+(S.dgMode==="ai"?(S.dg&&S.dg.imgB64?"Generated with Nano Banana Pro":"Gemini Nano Banana Pro"):(S.dg&&S.dg.imgB64?"Generated with gpt-image-1.5":"OpenAI gpt-image-1.5"))+'</div></div></div>';
       // Flowchart (SVG) mode removed — autoLayout produced overlapping/clipped output. Only raster modes remain.
       // Guard: if S.dgMode is stuck on "svg" from a previous session, fall back to "ai".
       if(S.dgMode==="svg")S.dgMode="ai";
-      h+='<div style="display:flex;gap:5px;margin-bottom:10px"><button class="dgModeBtn" data-m="ai" style="flex:1;background:'+(S.dgMode==="ai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="ai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="ai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">🎨 Gemini (Nano Banana Pro)</button><button class="dgModeBtn" data-m="openai" style="flex:1;background:'+(S.dgMode==="openai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="openai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="openai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">💬 ChatGPT (gpt-image-1.5)</button></div>';
+      // Provider toggle + generation controls are for the OWNER only. A shared/showcase viewer just
+      // sees the saved image (+ download). (Jenni 2026-07-03)
+      if(!S.sharedTalk) h+='<div style="display:flex;gap:5px;margin-bottom:10px"><button class="dgModeBtn" data-m="ai" style="flex:1;background:'+(S.dgMode==="ai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="ai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="ai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">🎨 Gemini (Nano Banana Pro)</button><button class="dgModeBtn" data-m="openai" style="flex:1;background:'+(S.dgMode==="openai"?"var(--plum-deep)":"var(--cream)")+';color:'+(S.dgMode==="openai"?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.dgMode==="openai"?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:8px;font-size:11px;font-weight:600;cursor:pointer">💬 ChatGPT (gpt-image-1.5)</button></div>';
       // Inline notice when neither key is present — tells user they need to add one to use this tab.
       var _hasGeminiKey = !!localStorage.getItem("gemini_api_key");
       var _hasOpenAIKey = !!(localStorage.getItem("openai_api_key") || getImageProxyURL());
       var _needGem = (S.dgMode==="ai" && !_hasGeminiKey);
       var _needOA  = (S.dgMode==="openai" && !_hasOpenAIKey);
-      if(_needGem || _needOA){
+      if(!S.sharedTalk && (_needGem || _needOA)){
         var _which = _needGem ? "Gemini" : "OpenAI";
         var _url   = _needGem ? "https://aistudio.google.com/apikey" : "https://platform.openai.com/api-keys";
         h+='<div style="background:var(--lavender-bg);border:1px solid #d8cfe6;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11.5px;color:var(--ink);line-height:1.45"><div style="font-weight:600;color:var(--plum-deep);margin-bottom:3px">🔑 '+_which+' API key needed</div>Visual generation uses the '+_which+' image model. You will be prompted to paste a key when you tap Generate. <a href="'+_url+'" target="_blank" rel="noopener" style="color:var(--plum);font-weight:600">Get a free '+_which+' key →</a></div>';
@@ -9009,12 +9022,16 @@ function renderMain(){
         var _imgKey = S.dg.imgB64.slice(0, 60);
         var _alreadySaved = _savedVis.some(function(v){return v.imgB64 && v.imgB64.slice(0,60) === _imgKey});
         h+='<div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">';
-        h+='  <button id="dgSaveImgBtn" '+(_alreadySaved?'disabled':'')+' style="flex:1;min-width:110px;background:'+(_alreadySaved?'var(--lavender-bg)':'linear-gradient(135deg,var(--plum-rich),var(--plum-deep))')+';border:none;border-radius:10px;padding:11px;color:'+(_alreadySaved?'var(--plum)':'#fff')+';font-size:13px;font-weight:600;cursor:'+(_alreadySaved?'default':'pointer')+'">'+(_alreadySaved?'★ Saved to library':'★ Save to library')+'</button>';
+        // Owner-only actions: save to library (→ shows on profile once the talk is shared) + regenerate.
+        if(!S.sharedTalk){
+          h+='  <button id="dgSaveImgBtn" '+(_alreadySaved?'disabled':'')+' style="flex:1;min-width:110px;background:'+(_alreadySaved?'var(--lavender-bg)':'linear-gradient(135deg,var(--plum-rich),var(--plum-deep))')+';border:none;border-radius:10px;padding:11px;color:'+(_alreadySaved?'var(--plum)':'#fff')+';font-size:13px;font-weight:600;cursor:'+(_alreadySaved?'default':'pointer')+'">'+(_alreadySaved?'★ Saved — on your profile when shared':'★ Save to library')+'</button>';
+        }
         h+='  <button id="dgDownloadBtn" style="flex:1;min-width:110px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">⬇ Download PNG</button>';
-        h+='  <button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="flex:1;min-width:110px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">↻ Regenerate</button>';
+        if(!S.sharedTalk) h+='  <button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="flex:1;min-width:110px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">↻ Regenerate</button>';
         h+='</div>';
       }
-      else{h+='<button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:13px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer">'+(S.dgBusy?"Generating…":"✨ Generate Visual")+'</button>'}
+      else if(!S.sharedTalk){h+='<button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:13px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer">'+(S.dgBusy?"Generating…":"✨ Generate Visual")+'</button>'}
+      else{h+='<div style="text-align:center;padding:16px;color:var(--ink-muted);font-size:12.5px">No visual attached to this talk.</div>'}
       h+='</div>';
     }
 
@@ -9646,7 +9663,7 @@ function bindMain(){
       URL.revokeObjectURL(url);
     }catch(e){alert("Download failed: "+e.message)}
   };
-  document.querySelectorAll(".dgModeBtn").forEach(function(b){b.onclick=function(){if(S.dgMode!==b.dataset.m){S.dgMode=b.dataset.m;S.dg=null;S.dgErr="";render()}}});
+  document.querySelectorAll(".dgModeBtn").forEach(function(b){b.onclick=function(){S._dgModeUserSet=true;if(S.dgMode!==b.dataset.m){S.dgMode=b.dataset.m;S.dg=null;S.dgErr="";render()}}});
   // resetKey/resetClaudeKey handlers deleted — those IDs no longer rendered.
   // ─── Boards-mode answer choices ────────────────────────────────────────
   document.querySelectorAll(".choiceBtn").forEach(function(b){b.onclick=function(){if(!S.showAns){S.userPick=b.dataset.letter;render()}}});
