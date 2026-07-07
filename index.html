@@ -221,9 +221,10 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
 .composer-bubble .composer-panel-head .cp-close{background:none;border:none;color:var(--ink-muted);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;border-radius:6px}
 .composer-bubble .composer-panel-head .cp-close:hover{background:var(--cream);color:var(--plum)}
 /* Textarea fills the middle, internal scroll for very long pastes */
-/* Textarea — small default (75 px ≈ 4 lines), grows with content up to 50vh, plus a vertical
-   resize handle so heavy typers can drag the bottom edge to expand. (Jenni 2026-06-09) */
-.composer-bubble .revise-input{flex:0 1 auto;min-height:75px;max-height:55vh;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13.5px;color:var(--ink);outline:none;font-family:inherit;resize:vertical;line-height:1.5;overflow-y:auto;box-sizing:border-box}
+/* Textarea — roomy default on DESKTOP (220px, so the full placeholder shows and there's space to
+   paste reviewer feedback), grows with content up to 55vh, vertical resize handle to expand more.
+   Mobile overrides this to a tight 44px below. (Jenni 2026-06-09; desktop default enlarged 2026-07-03) */
+.composer-bubble .revise-input{flex:0 1 auto;min-height:220px;max-height:55vh;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13.5px;color:var(--ink);outline:none;font-family:inherit;resize:vertical;line-height:1.5;overflow-y:auto;box-sizing:border-box}
 .composer-bubble .revise-input:focus{border-color:var(--plum)}
 /* Footer row: Reference pill left, send circle right */
 .composer-bubble .composer-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;flex-shrink:0}
