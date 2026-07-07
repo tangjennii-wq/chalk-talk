@@ -9085,6 +9085,10 @@ function renderMain(){
       h+='    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px;color:var(--plum);font-weight:500"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span><span style="font-size:13px;line-height:1.5">'+_busyTitle+'</span><span style="font-size:11px;color:var(--ink-muted);max-width:220px;line-height:1.45">'+_busySub+'</span></div>';
     } else {
       h+='    <textarea class="revise-input" id="reviseIn" placeholder="Add detail, paste an MKSAP question, or drop a PDF — your existing content stays, only new content is added.&#10;&#10;Pasting a big chunk of reviewer feedback (e.g. from OpenEvidence)? Hit “Apply proofread” below to fold its corrections into the talk while keeping everything else.">'+esc(S.reviseIn||"")+'</textarea>';
+      // Big-paste nudge (Jenni 2026-07-03): if the box holds a large paste and proofread isn't armed,
+      // suggest Apply proofread. Toggled live in the reviseIn oninput handler (no full re-render).
+      var _showPr = (String(S.reviseIn||"").trim().length > 600) && !S.proofreadArmed;
+      h+='    <div id="proofreadSuggest" style="display:'+(_showPr?'block':'none')+';font-size:11px;color:#8a6d1a;background:#fff7e0;border:1px solid #f0d59a;border-radius:8px;padding:6px 10px;margin-top:6px;line-height:1.45">📋 That’s a big paste — if it’s reviewer feedback, tap <b>🩺 Apply proofread</b> to fold in its corrections (rewrites the changed sections, can take ~20–40s). Otherwise Send just adds it as new content.</div>';
       // Show currently-attached refs so the user can confirm what's going up and remove if needed.
       // (Jenni 2026-06-10 — refine is iterative + first-class, users should see their attached refs.)
       if(S.files && S.files.length){
@@ -9499,6 +9503,7 @@ function bindMain(){
       // Also refresh the Apply-proofread button live (Jenni 2026-07-03 bug fix — typing updated only
       // the send arrow, so the proofread button stayed greyed until an unrelated re-render).
       var pb=document.getElementById("applyProofreadBtn");if(pb){pb.disabled=!has;pb.style.opacity=has?"1":"0.4";pb.style.cursor=has?"pointer":"not-allowed";}
+      var ps=document.getElementById("proofreadSuggest");if(ps){ps.style.display=(e.target.value.trim().length>600 && !S.proofreadArmed)?"block":"none";}
     };
     rin.onkeydown=function(e){
       var modSend=(e.metaKey||e.ctrlKey)&&e.key==="Enter";
