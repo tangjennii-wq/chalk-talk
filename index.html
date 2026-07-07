@@ -9103,11 +9103,11 @@ function renderMain(){
       // Footer row: Reference pill (left) + send circle (right)
       h+='    <div class="composer-footer">';
       h+='      <button class="ref-btn" id="composerRefBtn" title="Upload a reference (PDF, image, text)"><span style="font-size:14px;line-height:1">+</span> '+(S.files && S.files.length ? "Add another" : "Reference")+'</button>';
-      h+='      <div style="display:flex;align-items:center;gap:8px">';
-      // Apply proofread — paste OpenEvidence-style feedback and incorporate its corrections while
-      // preserving the rest of the talk. (Jenni 2026-07-03)
-      var _pArmed=!!S.proofreadArmed, _pDisabled=!String(S.reviseIn||"").trim();
-      h+='      <button class="ref-btn" id="applyProofreadBtn" aria-pressed="'+_pArmed+'" '+(_pDisabled?"disabled":"")+' style="'+(_pDisabled?"opacity:.4;cursor:not-allowed;":"")+(_pArmed?"background:var(--plum);border-color:var(--plum);color:#fff;":"")+'" title="Toggle proofread mode: paste reviewer feedback, arm this, then Send to fold its corrections in (keeps everything else)">'+(_pArmed?"🩺 Proofread ✓":"🩺 Apply proofread")+'</button>';
+      h+='      <div style="display:flex;align-items:center;gap:10px">';
+      // Apply proofread — a mode TOGGLE (styled like "Verify with current literature"): flip it on,
+      // paste OpenEvidence-style feedback, then Send folds its corrections in while preserving the
+      // rest. (Jenni 2026-07-03 — was a button, now a switch.)
+      h+='      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:11.5px;font-weight:600;color:'+(S.proofreadArmed?"var(--plum-deep)":"var(--ink-muted)")+'" title="Proofread mode: paste reviewer feedback, then Send folds its corrections into the talk (keeps everything else)"><span>🩺 Proofread</span><span class="toggle-sw"><input type="checkbox" id="proofreadToggle" '+(S.proofreadArmed?"checked":"")+'><span class="slider"></span></span></label>';
       h+='      <button class="send-btn" id="reviseSend" '+(!String(S.reviseIn||"").trim()?"disabled":"")+' title="Send (⌘/Ctrl+Enter)">→</button>';
       h+='      </div>';
       h+='    </div>';
@@ -9493,6 +9493,7 @@ function bindMain(){
   // Floating bubble open/close
   var cob=document.getElementById("composerOpenBtn");if(cob)cob.onclick=function(){S._composerOpen=true;render();setTimeout(function(){var r=document.getElementById("reviseIn");if(r)r.focus()},50)};
   var ccb=document.getElementById("composerCloseBtn");if(ccb)ccb.onclick=function(){S._composerOpen=false;S.proofreadArmed=false;render()};
+  var prt=document.getElementById("proofreadToggle");if(prt)prt.onchange=function(){S.proofreadArmed=prt.checked;render()};
   var crb=document.getElementById("composerRefBtn");if(crb)crb.onclick=function(){var fi=document.getElementById("composerFileInput")||document.getElementById("fileInput");if(fi)fi.click()};
   var cfi=document.getElementById("composerFileInput");if(cfi)cfi.onchange=function(e){var fi2=document.getElementById("fileInput");if(fi2){var dt=new DataTransfer();for(var i=0;i<e.target.files.length;i++)dt.items.add(e.target.files[i]);fi2.files=dt.files;fi2.dispatchEvent(new Event("change",{bubbles:true}))}};
   // Send: ⌘/Ctrl+Enter only. Plain Enter inserts a newline (we always have room — fixed-height textarea with internal scroll).
@@ -9503,7 +9504,6 @@ function bindMain(){
       var sb=document.getElementById("reviseSend");if(sb)sb.disabled=!has;
       // Also refresh the Apply-proofread button live (Jenni 2026-07-03 bug fix — typing updated only
       // the send arrow, so the proofread button stayed greyed until an unrelated re-render).
-      var pb=document.getElementById("applyProofreadBtn");if(pb){pb.disabled=!has;pb.style.opacity=has?"1":"0.4";pb.style.cursor=has?"pointer":"not-allowed";}
       var ps=document.getElementById("proofreadSuggest");if(ps){ps.style.display=(e.target.value.trim().length>600 && !S.proofreadArmed)?"block":"none";}
     };
     rin.onkeydown=function(e){
@@ -9528,15 +9528,6 @@ function bindMain(){
       if(!e.target || !e.target.closest) return;
       // Apply-proofread button: same delegated pattern; sets the one-shot flag so sendChat routes
       // to applyProofreadFeedback. (Jenni 2026-07-03)
-      var pb = e.target.closest("#applyProofreadBtn");
-      if(pb && !pb.disabled){
-        // TOGGLE (Jenni 2026-07-03): arm/disarm proofread mode so the user sees it's selected BEFORE
-        // sending. The actual apply happens on Send (below) while armed.
-        e.preventDefault();
-        S.proofreadArmed = !S.proofreadArmed;
-        render();
-        return;
-      }
       var b = e.target.closest("#reviseSend");
       if(!b || b.disabled) return;
       e.preventDefault(); // keep focus state stable; we're handling the action now
