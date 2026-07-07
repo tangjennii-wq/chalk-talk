@@ -5331,19 +5331,17 @@ async function generate(){
     if(typeof render === "function") render();
     return;
   }
-  // Free tier: consume 1 talk up front (once per generation). If out of quota or the
-  // month is paused, show the upsell instead of starting. BYOK users skip this entirely.
-  if(freeTierActive()){
-    var _ftc = await consumeFreeTier("talk");
-    // Block ONLY on real quota/paused signals. Network/config errors fail open (proceed) —
-    // the Worker's spend-cap check still backstops cost, and we never falsely accuse a user.
-    if(!_ftc.ok && (_ftc.code === "quota_exceeded" || _ftc.code === "free_tier_paused")){
-      if(_ftc.code === "free_tier_paused") S.freePausedMsg = _ftc.message || "Chalk Talk's free tier is paused for this month.";
-      else S.freePausedMsg = "";
-      S.showOutOfFreeModal = true;
-      if(typeof render === "function") render();
-      return;
-    }
+  // Free tier — CHARGE-AFTER model (Jenni 2026-07-03, quality fix #1 option 3): quota is NOT
+  // consumed until the draft actually succeeds (see the post-draft consume below), so a failed or
+  // cancelled generation never burns a credit. Up front we only do a cheap, non-consuming CHECK so
+  // an obviously-exhausted user is stopped before we spend anything. Trade-off: a user who tampers
+  // with the client could bypass this check; that's bounded by the Worker's $250/mo spend cap, and
+  // we accepted it for fairness. (Revisit if abuse ever appears.)
+  if(freeTierActive() && S.freeTier && typeof S.freeTier.talks_remaining === "number" && S.freeTier.talks_remaining <= 0){
+    S.freePausedMsg = "";
+    S.showOutOfFreeModal = true;
+    if(typeof render === "function") render();
+    return;
   }
   // Reset cancel flag at the START of every generation. (Jenni 2026-06-08)
   S.genCancelled=false;
@@ -5526,6 +5524,14 @@ async function generate(){
   // Step 3b: render the talk NOW. Show "🔄 verifying citations" badge. The slow semantic audit
   // runs in the background and replaces the talk when done. (Jenni 2026-06-09 #4 — big perceived
   // speedup; user can read while the audit runs.)
+  // CHARGE-AFTER consume (Jenni 2026-07-03): we're past the cancel + stale-gen guards, the draft
+  // succeeded and the talk is real — NOW consume 1 talk. A failed/cancelled/superseded generation
+  // returned earlier and never reaches here, so it never charges. If the atomic decrement reports
+  // paused/exhausted at this point, we still show this already-generated talk (the owner was billed);
+  // the counter just floors at 0.
+  if(freeTierActive()){
+    try{ await consumeFreeTier("talk"); }catch(_){}
+  }
   S.citationAuditPending = true;
   S.talk = finalTalk;
     S.sec=0;S.dg=null;S.dgErr="";S.podScript="";
@@ -5925,13 +5931,10 @@ function isProofreadFeedback(msg){
 // { talk, applied[], vmcTouched }. Consumes 1 free-tier talk (a refine = 1 talk), guarded.
 async function weaveFeedbackTalk(userMsg){
   if(!S.talk) return { talk:null };
-  if(freeTierActive()){
-    var _ftc = await consumeFreeTier("talk");
-    if(!_ftc.ok && (_ftc.code==="quota_exceeded" || _ftc.code==="free_tier_paused")){
-      if(_ftc.code==="free_tier_paused") S.freePausedMsg = _ftc.message||"";
-      S.showOutOfFreeModal = true; if(typeof render==="function") render();
-      return { talk:null, quotaBlocked:true };
-    }
+  // Charge-after pre-check (Jenni 2026-07-03): block only if visibly exhausted; consume after success.
+  if(freeTierActive() && S.freeTier && typeof S.freeTier.talks_remaining === "number" && S.freeTier.talks_remaining <= 0){
+    S.freePausedMsg = ""; S.showOutOfFreeModal = true; if(typeof render==="function") render();
+    return { talk:null, quotaBlocked:true };
   }
   var existingJson = JSON.stringify(S.talk);
   var totalBullets = 0; (S.talk.sections||[]).forEach(function(s){ totalBullets += (s.points||[]).length; });
@@ -5957,6 +5960,8 @@ async function weaveFeedbackTalk(userMsg){
       "\n\n===== CURRENT TALK JSON (apply the feedback; preserve everything else verbatim) =====\n" + existingJson
   }].concat(buildReferenceParts(S.files));
   var txt = await callAPI(sys, contentParts, 32768, { model:"claude-sonnet-4-6", meterKind:"talk" });
+  // Charge-after: the model call succeeded (owner billed), so consume 1 talk now.
+  if(freeTierActive()){ try{ await consumeFreeTier("talk"); }catch(_){} }
   var parsed = JSON.parse(fixJSON(txt));
   var revised = parsed.talk || parsed;
   if(typeof deepCleanCitations === "function") revised = deepCleanCitations(revised);
@@ -6160,14 +6165,11 @@ function undoLastEdit(){
 // (Surgical add/edit/delete: Jenni 2026-06-22. Was add-only before.)
 async function weaveRevision(userMsg){
   if(!S.talk) return null;
-  // Refines count as 1 talk against free-tier quota (FREE_TIER_SPEC.md, LOCKED).
-  if(freeTierActive()){
-    var _wftc = await consumeFreeTier("talk");
-    if(!_wftc.ok && (_wftc.code === "quota_exceeded" || _wftc.code === "free_tier_paused")){
-      if(_wftc.code === "free_tier_paused") S.freePausedMsg = _wftc.message || "";
-      S.showOutOfFreeModal = true; if(typeof render === "function") render();
-      return null;
-    }
+  // Refines count as 1 talk (FREE_TIER_SPEC.md). Charge-AFTER (Jenni 2026-07-03): pre-check only if
+  // visibly exhausted; the actual consume happens after the model call succeeds (see below).
+  if(freeTierActive() && S.freeTier && typeof S.freeTier.talks_remaining === "number" && S.freeTier.talks_remaining <= 0){
+    S.freePausedMsg = ""; S.showOutOfFreeModal = true; if(typeof render === "function") render();
+    return null;
   }
   var sectionHeadings = (S.talk.sections||[]).map(function(s,i){return i+": "+s.heading}).join("\n  ");
   var nextRefId = ((S.talk.references||[]).reduce(function(m,r){return Math.max(m,parseInt(r.id)||0)},0)+1);
@@ -6260,6 +6262,8 @@ async function weaveRevision(userMsg){
   // task where Haiku was occasionally dropping bullets. Worth ~$0.02/refine for the bump in
   // reliability. (Jenni 2026-06-10 "increase the cap for refine".)
   var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6", meterKind: "talk" });
+  // Charge-after: the refine model call succeeded (owner billed), so consume 1 talk now.
+  if(freeTierActive()){ try{ await consumeFreeTier("talk"); }catch(_){} }
   var patch = JSON.parse(fixJSON(txt));
   // Returns the patch — caller applies it via applyWeavePatch().
   return { kind: "patch", patch: patch };
