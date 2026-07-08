@@ -3781,7 +3781,11 @@ function _waitForSb(){
   });
 }
 
+// Stash the current topic before any auth redirect so a signed-out user who typed a topic and hit
+// Generate gets it back after the sign-in round-trip (fix #2). Restored on init.
+function _stashPendingTopic(){ try{ if(S.topic && S.topic.trim()) localStorage.setItem("ct_pending_topic", S.topic); }catch(_){} }
 async function signInWithMagicLink(email){
+  _stashPendingTopic();
   var sb = await _waitForSb();
   var redirectTo = window.location.origin + window.location.pathname;
   var r = await sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: redirectTo } });
@@ -3790,6 +3794,7 @@ async function signInWithMagicLink(email){
 }
 
 async function signInWithGoogle(){
+  _stashPendingTopic();
   // Mobile fix (Jenni 2026-07-03): on phones, letting the SDK auto-redirect after a DOM rebuild +
   // async gap gets blocked by Safari's user-activation rules, so "nothing happens." Instead we get
   // the auth URL back (skipBrowserRedirect) and do the top-level navigation ourselves, immediately.
@@ -8220,6 +8225,8 @@ function renderMain(){
     h+='<details class="howit" id="howitDetails"'+(S.howitOpen?' open':'')+'>';
     h+='<summary><span>✦ How it works · 10-min evidence-based teaching</span><span class="howit-caret">⌄</span></summary>';
     h+='<div class="howit-body">';
+    // Free-tier pitch — front and center (combines the "10 free talks" message; fix #1 + #4).
+    h+='<div style="background:#fff6dd;border:1px solid #e6d49a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#7a5b1a;line-height:1.5;text-align:center"><b>✨ Free to try — 10 talks + 5 images on us.</b> Just sign in (email or Google), no credit card. After that, add your own Anthropic key (~$5 covers ~30 talks) to keep going.</div>';
     h+='<div class="howit-step"><span class="howit-num">1</span><div><b>You enter a topic.</b> We pull matching evidence from PubMed and current society guidelines.</div></div>';
     h+='<div class="howit-step"><span class="howit-num">2</span><div><b>An AI drafts the talk</b> with inline citations for every clinical claim. Optional: cross-checks against current literature on the open web.</div></div>';
     h+='<div class="howit-step"><span class="howit-num">3</span><div><b>A second AI double-checks</b> the draft for errors, outdated guidelines, and drug-name mistakes before you see it.</div></div>';
@@ -8258,13 +8265,22 @@ function renderMain(){
     }
     var sampleSlotsNeeded = Math.max(0, TARGET - recentForLanding.length);
     var sampleForLanding = availableSamples.slice(0, sampleSlotsNeeded);
-    var landingTotal = recentForLanding.length + sampleForLanding.length;
+    // Fallback so the onboarding row NEVER goes empty (fix #3): if cloud featured talks are missing
+    // or slow to load, pad the remaining slots with the bundled SAMPLES that ship inside the app.
+    var _remainingSlots = Math.max(0, TARGET - recentForLanding.length - sampleForLanding.length);
+    var bundledForLanding = [];
+    if(_remainingSlots > 0 && typeof SAMPLES !== "undefined" && SAMPLES.length){
+      var _bl = SAMPLES.filter(function(s){ return s && s.slug; });
+      for(var _bi=_bl.length-1;_bi>0;_bi--){ var _bj=Math.floor(Math.random()*(_bi+1)); var _bt=_bl[_bi]; _bl[_bi]=_bl[_bj]; _bl[_bj]=_bt; }
+      bundledForLanding = _bl.slice(0, _remainingSlots);
+    }
+    var landingTotal = recentForLanding.length + sampleForLanding.length + bundledForLanding.length;
 
     if(landingTotal > 0){
       // Context-aware header: bright-gold "Try a sample" for new users (no recent),
       // mixed when both, "Your lectures" when the user has filled the row themselves.
       var _hasRecent = recentForLanding.length > 0;
-      var _hasSamples = sampleForLanding.length > 0;
+      var _hasSamples = sampleForLanding.length > 0 || bundledForLanding.length > 0;
       var _headerHtml, _seeAllHtml;
       if(!_hasRecent && _hasSamples){
         // New-user energy: bright gold ✨
@@ -8310,6 +8326,20 @@ function renderMain(){
         h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
         if(ftSpec) h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(ftSpec)+'</span>';
         h+='<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid var(--lavender-soft);padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;line-height:1.55">Sample</span>';
+        h+='</div></div>';
+      }
+      // Bundled-sample fallback cards (open the built-in sample by slug). (fix #3)
+      for(var bfi=0; bfi<bundledForLanding.length; bfi++){
+        var bs = bundledForLanding[bfi];
+        var bsTitle = bs.topic || bs.title || 'Sample talk';
+        var bsSpec = bs.specialty || inferSpecialty(bs.topic, {title:bsTitle}, null);
+        var bsIco = SPEC_ICONS[bsSpec] || '●';
+        h+='<div class="landingSampleBtn" data-slug="'+esc(bs.slug)+'" style="background:#fffdf5;border:1px solid #f0d8a0;border-left:2px solid #e8a91f;border-radius:10px;padding:10px 11px;display:flex;flex-direction:column;gap:7px;min-height:84px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer">';
+        h+='<div style="display:flex;align-items:flex-start;gap:7px;min-width:0"><span style="background:#fff3d6;color:#7a5b1a;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">'+bsIco+'</span>';
+        h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(bsTitle)+'</span></div>';
+        h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
+        if(bsSpec) h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(bsSpec)+'</span>';
+        h+='<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid var(--lavender-soft);padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;line-height:1.55">'+(bs.style==="boards"?"Boards":"Sample")+'</span>';
         h+='</div></div>';
       }
       h+='</div></div>';
@@ -9810,6 +9840,11 @@ function bindMain(){
     var token = b.dataset.token;
     if(token) loadPublicTalkByToken(token);
   }});
+  // Bundled-sample fallback cards (fix #3) — open the built-in sample by slug.
+  document.querySelectorAll(".landingSampleBtn").forEach(function(b){b.onclick=function(){
+    var slug = b.dataset.slug;
+    if(slug && typeof loadSample === "function") loadSample(slug);
+  }});
   var lsl=document.getElementById("landingShowcaseLinkBtn");
   if(lsl)lsl.onclick=function(){
     S.showcase=true;S.showcaseLoading=true;S.showcaseTalks=[];render();
@@ -10212,6 +10247,11 @@ function bindMain(){
 })();
 
 // ═══════════ INIT ═══════════
+// First-visit onboarding (Jenni 2026-07-03): expand "How it works" (with the free-tier pitch) only
+// the FIRST time someone lands on this device. Returning users get it collapsed.
+try{ if(!localStorage.getItem("ct_seen_v1")){ S.howitOpen = true; localStorage.setItem("ct_seen_v1","1"); } }catch(_){}
+// Restore a topic the user typed before being bounced to sign-in (which reloads the page). (fix #2)
+try{ var _pendTopic = localStorage.getItem("ct_pending_topic"); if(_pendTopic){ S.topic = _pendTopic; localStorage.removeItem("ct_pending_topic"); } }catch(_){}
 loadFromShareHash();
 loadFromPublicShareHash();
 loadFromShowcaseHash();
