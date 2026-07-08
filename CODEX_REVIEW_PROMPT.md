@@ -26,8 +26,11 @@ landed since, ask me for the correct base commit before reviewing.** Then:
 
 ```
 git --no-pager diff a93c75f..HEAD -- index.html worker.js wrangler.toml
-git --no-pager diff a93c75f..HEAD -- supabase/    # if any migrations changed; else note schema is out of scope
+git --no-pager diff --name-only a93c75f..HEAD -- supabase/   # then, if migrations changed:
+git --no-pager diff a93c75f..HEAD -- supabase/migrations/ supabase/*.sql
 ```
+If no SQL changed, note that DB schema is out of scope (verify against deployed state — see the
+Cannot-verify section).
 
 Read the full diff before judging any single hunk — several features touch the same functions
 (`generate()`, `callAPI()`, `render()`).
@@ -66,6 +69,10 @@ Read the full diff before judging any single hunk — several features touch the
      succeeds while user never reconnects; (b) async job succeeds and user IS watching; (c) reload
      mid-job then reconnect; (d) restart (genId bump) during an async poll; (e) cancel during draft vs
      during critique. For each, state how many times quota is consumed.
+   - **Also trace REFINE and IMAGE quota separately.** Refine consumes 1 *talk* (frontend, after the
+     patch JSON parses); the 5-image pool is separate. Refine and image go through the SYNCHRONOUS path
+     only — confirm the async talk-quota rules (server-side consume, `_useAsync` skip) do NOT leak into
+     the refine or image paths, and that neither is charged on a failed/malformed result.
 6. **Library drag-to-reorder** — pointer-events, within a specialty group, persisted to a `sort_order`
    column, drives both the library and the public showcase order.
 7. **Apply-proofread refine mode** — a toggle; applies external (OpenEvidence) feedback as a
