@@ -3069,7 +3069,7 @@ var S = {
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false, proofreadArmed:false,
-  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude",
+  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude", modelPickerOpen:false,
   talkHistory:[], editingSection:null, editingDraft:null,
   loadingFromHash:false,
   // — Auth + cloud
@@ -8523,10 +8523,16 @@ function renderMain(){
   h+='</div></div>';
   h+='</div>';
 
-  // Model provider row (Jenni 2026-07-03) — Claude default (free tier + BYOK); ChatGPT/Gemini BYOK.
-  // Styled to mirror the Style/Depth segmented controls above (Fable polish pass).
+  // Model provider (Jenni 2026-07-03) — minimal friction: Claude just works (free tier), so by
+  // default this is ONE faint line, not a segmented control. It expands to the full picker only when
+  // the user clicks it OR is already on a non-Claude provider. Key entry stays fully on-demand.
   (function(){
     var _gp = S.genProvider || "claude";
+    var _expanded = S.modelPickerOpen || (_gp !== "claude");
+    if(!_expanded){
+      h+='<div style="margin:0 4px 14px"><button id="modelPickerToggle" title="Prefer ChatGPT or Gemini? Use your own key." style="background:none;border:none;padding:0;color:var(--ink-soft);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Model: <b style="color:var(--ink-muted)">Claude</b> · use ChatGPT or Gemini instead ›</button></div>';
+      return;
+    }
     function provBtn(val,icon,label){
       var on=(_gp===val);
       var hasKey=false;
@@ -9671,6 +9677,7 @@ function bindMain(){
   // for speed, but users who know they want full depth shouldn't be blocked.
   // Generation provider toggle (Jenni 2026-07-03). Claude = free tier + BYOK; ChatGPT/Gemini = BYOK,
   // so switching to one without a key opens the key modal for it.
+  var mpt=document.getElementById("modelPickerToggle");if(mpt)mpt.onclick=function(){S.modelPickerOpen=true;render();};
   document.querySelectorAll(".genProvBtn").forEach(function(b){b.onclick=function(){
     var p=b.dataset.p||"claude";
     S.genProvider=p; try{ localStorage.setItem("ct_gen_provider", p); }catch(_){}
