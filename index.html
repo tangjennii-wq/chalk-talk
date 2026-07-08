@@ -628,6 +628,14 @@ function promptForNewClaudeKey(reasonMsg){
   }
   return null;
 }
+// Smooth in-app key entry (Jenni 2026-07-03) — opens the #keyModal instead of a native prompt().
+function openKeyModal(){
+  S.keyModalOpen = true; S.keyModalInput = ""; S.keyModalErr = "";
+  // Close the out-of-free upsell if it was showing, so the key modal isn't stacked behind it.
+  S.showOutOfFreeModal = false;
+  if(typeof render === "function") render();
+  setTimeout(function(){ var el=document.getElementById("keyModalInput"); if(el) el.focus(); }, 60);
+}
 
 // ═══════════ FREE TIER (FREE_TIER_SPEC.md) ═══════════
 // Signed-in users with no key of their own get N free talks on Jenni's key, routed
@@ -3050,7 +3058,7 @@ var S = {
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false, proofreadArmed:false,
-  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false,
+  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"",
   talkHistory:[], editingSection:null, editingDraft:null,
   loadingFromHash:false,
   // — Auth + cloud
@@ -7386,6 +7394,20 @@ function renderGlobalModals(){
   }
   var h = "";
 
+  // ── API key modal (Jenni 2026-07-03) — smooth in-app key entry, replaces native prompt() ──
+  if(S.keyModalOpen){
+    h+='<div class="drawer-backdrop open" id="keyModalBackdrop" style="z-index:130"></div>';
+    h+='<div class="drawer open" id="keyModal" style="z-index:131;max-width:440px;width:calc(100% - 32px);margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
+    h+='<div class="drawer-head" style="padding:18px 20px 8px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🔑</span> Add your Anthropic API key</div><button class="drawer-close" id="keyModalCloseBtn">×</button></div>';
+    h+='<div style="padding:0 20px 20px">';
+    h+='<p style="font-size:12.5px;color:var(--ink-muted);line-height:1.55;margin:0 0 12px">Stored only in this browser, sent only to Anthropic — never to us. About <b>$5 covers ~30 talks</b>. Paste a key that starts with <code style="background:var(--cream);padding:1px 5px;border-radius:5px">sk-ant-</code>.</p>';
+    h+='<input id="keyModalInput" type="text" autocomplete="off" spellcheck="false" placeholder="sk-ant-..." value="'+esc(S.keyModalInput||"")+'" style="width:100%;background:#fff;border:1.5px solid '+(S.keyModalErr?"#c0392b":"#e2dfe8")+';border-radius:12px;padding:12px 14px;font-size:14px;font-family:ui-monospace,Menlo,monospace;outline:none;box-sizing:border-box;margin-bottom:'+(S.keyModalErr?"6px":"12px")+'">';
+    if(S.keyModalErr) h+='<div style="font-size:11.5px;color:#c0392b;margin-bottom:12px">'+esc(S.keyModalErr)+'</div>';
+    h+='<button id="keyModalSaveBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px">Save key</button>';
+    h+='<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:12px;color:var(--plum);font-weight:600;text-decoration:none">Get a key (free signup, ~2 min) →</a>';
+    h+='</div></div>';
+  }
+
   // ── Share modal — three-tier audience-framed (Phase 1+2) ─────────────────
   if(S.shareModalOpen && S.shareModalTalkId){
     var _smRow = (S.cloudTalks||[]).find(function(x){return x.id===S.shareModalTalkId});
@@ -7496,9 +7518,23 @@ function renderGlobalModals(){
   var fmc=document.getElementById("freeModalCloseBtn");if(fmc)fmc.onclick=function(){S.showOutOfFreeModal=false;S.freePausedMsg="";render()};
   var fmb=document.getElementById("freeModalBackdrop");if(fmb)fmb.onclick=function(){S.showOutOfFreeModal=false;S.freePausedMsg="";render()};
   var fml=document.getElementById("freeMaybeLaterBtn");if(fml)fml.onclick=function(){S.showOutOfFreeModal=false;S.freePausedMsg="";render()};
-  var fak=document.getElementById("freeAddKeyBtn");if(fak)fak.onclick=function(){
-    var nk=promptForNewClaudeKey("Add your Anthropic API key to keep generating.");
-    if(nk){ S.showOutOfFreeModal=false;S.freePausedMsg="";S.freeTier=null; if(typeof refreshFreeTierStatus==="function")refreshFreeTierStatus(); render(); }
+  var fak=document.getElementById("freeAddKeyBtn");if(fak)fak.onclick=function(){ openKeyModal(); };
+  // ── API key modal handlers (Jenni 2026-07-03) ──
+  var kmc=document.getElementById("keyModalCloseBtn");if(kmc)kmc.onclick=function(){S.keyModalOpen=false;S.keyModalErr="";render()};
+  var kmbd=document.getElementById("keyModalBackdrop");if(kmbd)kmbd.onclick=function(){S.keyModalOpen=false;S.keyModalErr="";render()};
+  var kmi=document.getElementById("keyModalInput");if(kmi)kmi.oninput=function(e){S.keyModalInput=e.target.value;};
+  if(kmi)kmi.onkeydown=function(e){ if(e.key==="Enter"){ e.preventDefault(); var sb=document.getElementById("keyModalSaveBtn"); if(sb) sb.click(); } };
+  var kms=document.getElementById("keyModalSaveBtn");if(kms)kms.onclick=function(){
+    var k=(S.keyModalInput||"").trim();
+    if(!k){ S.keyModalErr="Paste your key first."; render(); return; }
+    if(k.indexOf("sk-ant-")!==0){ S.keyModalErr="That doesn't look like an Anthropic key — it should start with sk-ant-."; render(); return; }
+    localStorage.setItem("claude_api_key", k);
+    S.keyModalOpen=false; S.keyModalInput=""; S.keyModalErr="";
+    S.showOutOfFreeModal=false; S.freePausedMsg=""; S.freeTier=null;
+    if(typeof refreshFreeTierStatus==="function") refreshFreeTierStatus();
+    S.savedFlash="✓ Key saved — you're all set";
+    render();
+    setTimeout(function(){ S.savedFlash=""; render(); }, 2200);
   };
 
   // Re-bind handlers (each render they need to attach fresh since innerHTML wipes them)
