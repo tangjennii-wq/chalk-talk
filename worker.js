@@ -718,16 +718,24 @@ async function runGeneration(jobId, body, env) {
       const crit = await callAnthropicText(env, body.critique.sys, [{ type: "text", text: critInput }], body.critique.maxTok || 16384, body.critique.models);
       critText = crit.text; critUsage = crit.usage; critModel = crit.modelUsed;
     }
-    // Meter real spend into the ledger (server-side, authoritative for the $/mo cap) — best-effort.
-    // NOTE: we intentionally do NOT consume the 10-talk quota here. The frontend consumes it once per
-    // generation (charge-after render), same as the synchronous path — doing it in both places would
-    // double-count. (Jenni 2026-07-03)
+    // Final cancel check before we charge/finalize — a cancel that landed during critique must not
+    // consume quota or mark done. (Jenni 2026-07-03)
+    let curFinal = {};
+    try { curFinal = JSON.parse((await env.JOBS_KV.get("job:" + jobId)) || "{}"); } catch (_) {}
+    if (curFinal.cancelled) return;
+    // Meter real spend into the ledger (authoritative for the $/mo cap).
     try {
       const monthKey = new Date().toISOString().slice(0, 7);
       let cents = estimateCostCents(draft.modelUsed, draft.usage || {});
       if (critUsage) cents += estimateCostCents(critModel, critUsage);
       if (cents > 0) await supaServiceRPC(env, "ledger_add", { p_month: monthKey, p_kind: "talk", p_cost_cents: cents, p_cap_cents: freeCapCents(env) });
     } catch (_) {}
+    // Consume the user's 10-talk quota SERVER-SIDE for the async path. This is the fix for the async
+    // quota invariant: the job runs to completion even if the user backgrounds/closes the tab and never
+    // reconnects, so quota must be decremented here (not on the client) or a closed-tab job would be
+    // a free talk. The SYNC path still consumes on the client; the frontend skips its consume when the
+    // async path was used, so each generation charges exactly once. (Jenni 2026-07-03)
+    try { if (body.userId) await consumeQuota(env, body.userId, "talk", env); } catch (_) {}
     await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
   } catch (err) {
     const msg = (err && err.message) || "Generation failed";
@@ -745,6 +753,14 @@ async function handleGenerateAsync(request, env, ctx, origin) {
   const monthKey = new Date().toISOString().slice(0, 7);
   if ((await getMonthlySpendCents(env, monthKey)) >= freeCapCents(env))
     return jsonError(503, "free_tier_paused", "Free tier is paused for this month. Add your own key to continue.", origin, { resumes_on: nextMonthFirstDayUTC() });
+  // Enforce the per-user talk quota at submit time so a tampered client can't bypass the frontend's
+  // out-of-quota gate by POSTing here directly. (The job also consumes atomically on success.)
+  try {
+    const rem = await supaServiceRPC(env, "free_tier_remaining", { p_user_id: user.id, p_base_talks: freeTalks(env), p_base_images: freeImages(env) });
+    const row = Array.isArray(rem) ? rem[0] : rem;
+    if (row && typeof row.talks_remaining === "number" && row.talks_remaining <= 0)
+      return jsonError(403, "quota_exceeded", "You've used all your free talks. Add your own key to keep generating.", origin);
+  } catch (_) { /* if the check fails, fall through — the atomic consume on completion is the backstop */ }
   const raw = await request.text();
   if (raw.length > 2_000_000) return jsonError(413, "request_too_large", "Request too large.", origin);
   let body;

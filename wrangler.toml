@@ -14,8 +14,8 @@ MAX_MONTHLY_SPEND_USD = "250"
 #   1) wrangler kv namespace create JOBS_KV
 #   2) uncomment the block below and paste the printed id
 #   3) wrangler deploy
-# Left commented so `wrangler deploy` keeps working before setup — the app falls back to
-# synchronous generation whenever JOBS_KV is absent (the Worker returns 503 async_unconfigured).
-# [[kv_namespaces]]
-# binding = "JOBS_KV"
-# id = "PASTE_JOBS_KV_NAMESPACE_ID_HERE"
+# App falls back to synchronous generation whenever JOBS_KV is absent (Worker returns 503
+# async_unconfigured), so this is safe to keep enabled.
+[[kv_namespaces]]
+binding = "JOBS_KV"
+id = "3c522ea175134ad0aba27e96bdfce2c1"

@@ -1495,7 +1495,13 @@ async function pollAsyncGeneration(jobId, onStage, checkAbort){
     if(!r.ok){ continue; }
     var job; try{ job = await r.json(); }catch(_){ continue; }
     if(job.stage && job.stage !== lastStage){ lastStage = job.stage; if(onStage) try{ onStage(job.stage); }catch(_){} }
-    if(job.status === "done" && job.result){ return job.result; }
+    if(job.status === "done" && job.result){
+      // Re-check abort on the SAME tick we got the result: if a restart superseded us during this
+      // poll interval, don't let the stale invocation proceed to the success path (which would run an
+      // unguarded localStorage.removeItem and clobber the new gen's reconnect key). (Jenni 2026-07-03)
+      if(checkAbort && checkAbort()){ var da = new Error("Generation cancelled"); da.code = "cancelled"; throw da; }
+      return job.result;
+    }
     if(job.status === "error"){ throw new Error((job.error && job.error.message) || "Background generation failed."); }
     if(job.status === "cancelled"){ var xe = new Error("Generation cancelled"); xe.code = "cancelled"; throw xe; }
     // else still running — loop
@@ -1550,8 +1556,8 @@ async function resumeAsyncJobIfAny(){
     }
     finalTalk = pruneFakeReferences(finalTalk);
     if(S.genCancelled || _myGenId !== S.genId) return;
-    // Charge the talk now that it succeeded (charge-after model).
-    if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
+    // NOTE: no client consume here — the background job already consumed quota SERVER-SIDE on success
+    // (worker runGeneration). We only refresh the badge below. (Jenni 2026-07-03)
     S.citationAuditPending = true;
     S.talk = finalTalk;
     S.glRef = getGuidelinesForTopic(S.topic) || null;
@@ -5910,8 +5916,14 @@ async function generate(){
   // returned earlier and never reaches here, so it never charges. If the atomic decrement reports
   // paused/exhausted at this point, we still show this already-generated talk (the owner was billed);
   // the counter just floors at 0.
-  if(genUsesFreeTier()){
+  // ASYNC EXCEPTION: the background path consumes quota SERVER-SIDE (see worker runGeneration), so the
+  // charge happens even if the user never reconnects. Skip the client consume here to avoid
+  // double-charging. Only the synchronous path consumes on the client. (Jenni 2026-07-03)
+  if(genUsesFreeTier() && !_useAsync){
     try{ await consumeFreeTier("talk"); }catch(_){}
+  } else if(_useAsync && typeof refreshFreeTierStatus === "function"){
+    // Quota was decremented on the server — refresh the badge so the client count stays in sync.
+    try{ refreshFreeTierStatus(); }catch(_){}
   }
   S.citationAuditPending = true;
   S.talk = finalTalk;
@@ -5929,8 +5941,10 @@ async function generate(){
       });
     }
   }catch(e){
-    // Clear any persisted background job so a stale one isn't resumed on next load.
-    try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){}
+    // Clear THIS gen's persisted background job so a stale one isn't resumed on next load — but only
+    // if we're still the current generation. If a restart superseded us (genId bumped), the NEW gen
+    // already wrote its own jobId here; don't clobber it. (Jenni 2026-07-03)
+    if(_myGenId === S.genId){ try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){} }
     // "cancelled" (from the async poll, on user-cancel OR a superseding restart) and stale-gen are
     // silent — not real errors. (Jenni 2026-07-03)
     if(!S.genCancelled && !(e && e.code === "cancelled") && _myGenId === S.genId){
@@ -5945,6 +5959,11 @@ async function generate(){
       }
     }
   }
+  // If a restart superseded this generation (genId bumped), a NEW generate() already owns the loading
+  // UI + timer. Bail out so this stale invocation's teardown doesn't clear the new gen's spinner/timer
+  // or stomp its state. (Critical for the async path: our poll loop isn't killed by the abort signal,
+  // so a superseded invocation lives on until its next poll tick. Jenni 2026-07-03)
+  if(_myGenId !== S.genId) return;
   // Keep the quota badge fresh after every generation attempt.
   if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
   clearInterval(loadTimer);S.loading=false;render();
@@ -6119,7 +6138,10 @@ async function genDiagram(){
       });
       if(!oaRes.ok){
         var oaErrTxt=await oaRes.text();
-        if(oaRes.status===401||oaRes.status===403&&!freeTierActive()){
+        // Precedence fix (Jenni 2026-07-03): parenthesize the OR. Without it this was
+        // `401 || (403 && !free)`, so ANY 401 \u2014 including a free-tier user's 401 from the owner's
+        // proxy \u2014 wiped their own saved openai_api_key. Only clear the key for BYOK auth failures.
+        if((oaRes.status===401||oaRes.status===403) && !freeTierActive()){
           localStorage.removeItem("openai_api_key");
           throw new Error("OpenAI API key rejected ("+oaRes.status+"). Cleared \u2014 try again to re-enter.");
         }
@@ -6365,9 +6387,10 @@ async function weaveFeedbackTalk(userMsg){
       "\n\n===== CURRENT TALK JSON (0-based section indices; apply the feedback, return only changes) =====\n" + existingJson
   }].concat(buildReferenceParts(S.files));
   var txt = await callAPI(sys, contentParts, 32768, { model:"claude-sonnet-4-6", meterKind:"talk" });
-  // Charge-after: the model call succeeded (owner billed), so consume 1 talk now.
-  if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
+  // Charge-after: parse FIRST — if the model returned malformed JSON the refine failed and we throw
+  // below without charging. Only consume once we have a usable result. (Jenni 2026-07-03)
   var parsed = JSON.parse(fixJSON(txt));
+  if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
   // Reconstruct: clone the original, splice in only the changed pieces — untouched content is
   // literally carried over, so it can't be lost.
   var revised = JSON.parse(JSON.stringify(S.talk));
