@@ -5184,9 +5184,14 @@ async function _callOpenAIText(sys, content, maxTok, opts){
     messages: [{role:"system",content:_sysToText(sys)},{role:"user",content:_contentToText(content)}],
     response_format: {type:"json_object"}
   };
-  var fo = {method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:JSON.stringify(body)};
+  // OpenAI blocks direct browser calls (CORS), so route through the Worker proxy, passing the user's
+  // OWN key in X-Provider-Key (never stored; no free-tier quota). (Jenni 2026-07-03)
+  var _proxy = (typeof getImageProxyURL==="function" ? getImageProxyURL() : "") || (RAG_CONFIG && RAG_CONFIG.url) || "";
+  if(!_proxy){ throw new Error("ChatGPT needs the proxy to be configured. Switch to Claude or Gemini."); }
+  var _oaEndpoint = _proxy.replace(/\/$/,"") + "/v1/openai/chat";
+  var fo = {method:"POST",headers:{"Content-Type":"application/json","X-Provider-Key":key},body:JSON.stringify(body)};
   if(opts.signal) fo.signal = opts.signal;
-  var r = await fetch("https://api.openai.com/v1/chat/completions", fo);
+  var r = await fetch(_oaEndpoint, fo);
   if(!r.ok){
     var ed={}; try{ ed=await r.json(); }catch(_){}
     var m=(ed.error&&ed.error.message)||("OpenAI API error "+r.status);

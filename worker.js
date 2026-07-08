@@ -86,6 +86,12 @@ export default {
       return handleImageGeneration(request, env, ctx, origin);
     }
 
+    // BYOK ChatGPT text — proxy only (OpenAI blocks browser CORS). Uses the USER's own key from the
+    // X-Provider-Key header; never stored, no free-tier quota. (Jenni 2026-07-03)
+    if (request.method === "POST" && url.pathname === "/v1/openai/chat") {
+      return handleOpenAIChat(request, env, origin);
+    }
+
     // ── Free tier endpoints (FREE_TIER_SPEC.md §5) ──────────────────────────
     if (request.method === "GET" && url.pathname === "/v1/free-tier/status") {
       return handleFreeTierStatus(request, env, origin);
@@ -597,6 +603,42 @@ function isOriginAllowed(origin, list) {
   if (!origin) return false;
   return list.includes(origin);
 }
+
+// BYOK ChatGPT text proxy (Jenni 2026-07-03). OpenAI blocks direct browser calls (no CORS), so the
+// browser sends the user's OWN key in X-Provider-Key and we forward it server-side. The key is used
+// for this one request and never stored; this path has NO free-tier quota (it's the user's account).
+async function handleOpenAIChat(request, env, origin) {
+  const allowed = (env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim());
+  const corsOrigin = isOriginAllowed(origin, allowed) ? origin : "";
+  const userKey = request.headers.get("X-Provider-Key") || "";
+  if (userKey.indexOf("sk-") !== 0)
+    return jsonError(400, "missing_key", "Missing or invalid OpenAI API key.", origin);
+  const raw = await request.text();
+  if (raw.length > 2_000_000)
+    return jsonError(413, "request_too_large", "Request body too large.", origin);
+  let body;
+  try { body = JSON.parse(raw); }
+  catch { return jsonError(400, "invalid_json", "Body is not valid JSON.", origin); }
+  let upstream;
+  try {
+    upstream = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${userKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    return jsonError(502, "upstream_error", "Could not reach OpenAI: " + (e && e.message || e), origin);
+  }
+  const text = await upstream.text();
+  return new Response(text, {
+    status: upstream.status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": corsOrigin,
+      "Vary": "Origin",
+    },
+  });
+}
 function corsPreflight(origin, allowedOrigins) {
   const allowedOrigin = isOriginAllowed(origin, allowedOrigins) ? origin : "";
   return new Response(null, {
@@ -604,7 +646,7 @@ function corsPreflight(origin, allowedOrigins) {
     headers: {
       "Access-Control-Allow-Origin": allowedOrigin,
       "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, X-Supabase-Auth, X-CT-Meter, X-Admin-Token, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type, X-Supabase-Auth, X-CT-Meter, X-Admin-Token, X-Provider-Key, Authorization",
       "Access-Control-Max-Age": "86400",
       "Vary": "Origin",
     },
