@@ -6201,7 +6201,7 @@ async function applyProofreadFeedback(userMsg){
     var origBullets = 0, origRefs = (S.talk.references||[]).length, origSecs = (S.talk.sections||[]).length;
     (S.talk.sections||[]).forEach(function(s){ origBullets += (s.points||[]).length; });
     var result = await weaveFeedbackTalk(userMsg);
-    if(result && result.quotaBlocked){ S.chatBusy=false; render(); return; }
+    if(result && result.quotaBlocked){ if(refineTimer){ clearInterval(refineTimer); refineTimer=null; } S._proofreadRunning=false; S.chatBusy=false; render(); return; }   // bug fix: was leaking the 1s timer + stuck _proofreadRunning on this early return
     var revised = result && result.talk;
     if(revised && revised.title){
       var newBullets = 0, newRefs = (revised.references||[]).length, newSecs = (revised.sections||[]).length;
@@ -7900,6 +7900,7 @@ function renderSaved(){
       _spec: resolvedSpec,
       _isPublic: !!e._isPublic, _shareToken: e._shareToken || null,
       _isPinned: !!e._isPinned, _pinnedAt: e._pinnedAt || null,
+      _sortOrder: (typeof e._sortOrder==="number") ? e._sortOrder : null,   // bug fix: was dropped, so library never re-sorted by manual order
       _specialtyOverride: e._specialtyOverride || null,
       topic:e.topic||"",talk:et,savedAt:e.savedAt,specialty:"",generated_at:""});
   }
@@ -8082,7 +8083,7 @@ function _reorderLibraryCard(fromId, spec, toId){
   ids.splice(fromPos,1);
   ids.splice(ids.indexOf(toId), 0, fromId);            // insert before the drop target
   var disp = (typeof getDisplayLibrary==="function") ? getDisplayLibrary() : [];
-  var keyMap = {}; disp.forEach(function(it){ if(it._id) keyMap[it._id] = libSortKey(it._sortOrder, it.savedAt); });
+  var keyMap = {}; disp.forEach(function(it){ if(it.id) keyMap[it.id] = libSortKey(it._sortOrder, it.savedAt); });   // bug fix: getDisplayLibrary items are keyed 'id', not '_id' — keyMap was always empty → every reorder wrote sort_order=0
   var mi = ids.indexOf(fromId);
   var prevId = mi>0 ? ids[mi-1] : null, nextId = mi<ids.length-1 ? ids[mi+1] : null;
   var prevKey = (prevId!=null && keyMap[prevId]!=null) ? keyMap[prevId] : null;
