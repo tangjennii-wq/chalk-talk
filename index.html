@@ -573,6 +573,11 @@ var MODEL_MAIN = "claude-opus-4-8";  // Bumped 2026-06-11 (Jenni). If 4-8 isn't 
 var MODEL_CRITIC = "claude-haiku-4-5-20251001";
 var MODEL_SONNET_FALLBACK = "claude-sonnet-4-20250514"; // middle-tier fallback when Opus is overloaded
 var MODEL = MODEL_CRITIC; // legacy fallback for non-critical calls (diagrams, podcast, chat)
+// Generation provider (Jenni 2026-07-03): the app defaults to Claude (free tier + BYOK). Users who
+// prefer ChatGPT or Gemini bring their OWN key — those never touch the free tier / owner's budget.
+// Model strings are easy to bump here as providers release new versions.
+var GEN_OPENAI_MODEL = "gpt-5";        // ChatGPT (BYOK) — user's OpenAI key
+var GEN_GEMINI_MODEL = "gemini-3-pro"; // Gemini (BYOK) — user's Google AI Studio key
 
 // Segmented-control button helper. Used by Style/Depth on the compose form AND in the
 // edit-settings drawer. Keeps the look consistent and lets us tune the segmented style
@@ -629,10 +634,16 @@ function promptForNewClaudeKey(reasonMsg){
   return null;
 }
 // Smooth in-app key entry (Jenni 2026-07-03) — opens the #keyModal instead of a native prompt().
-function openKeyModal(){
+// provider ∈ "claude" | "openai" | "gemini" (defaults to claude).
+var KEY_PROVIDERS = {
+  claude: { label:"Anthropic (Claude)", store:"claude_api_key", prefix:"sk-ant-", ph:"sk-ant-...", url:"https://console.anthropic.com/settings/keys", note:"About $5 covers ~30 talks." },
+  openai: { label:"OpenAI (ChatGPT)", store:"openai_api_key", prefix:"sk-", ph:"sk-...", url:"https://platform.openai.com/api-keys", note:"Uses your OpenAI credits/plan." },
+  gemini: { label:"Google (Gemini)", store:"gemini_api_key", prefix:"", ph:"AIza...", url:"https://aistudio.google.com/apikey", note:"Gemini has a generous free tier at Google AI Studio." }
+};
+function openKeyModal(provider){
+  S.keyModalProvider = (provider && KEY_PROVIDERS[provider]) ? provider : "claude";
   S.keyModalOpen = true; S.keyModalInput = ""; S.keyModalErr = "";
-  // Close the out-of-free upsell if it was showing, so the key modal isn't stacked behind it.
-  S.showOutOfFreeModal = false;
+  S.showOutOfFreeModal = false; // don't stack behind the upsell
   if(typeof render === "function") render();
   setTimeout(function(){ var el=document.getElementById("keyModalInput"); if(el) el.focus(); }, 60);
 }
@@ -3058,7 +3069,7 @@ var S = {
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false, proofreadArmed:false,
-  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"",
+  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude",
   talkHistory:[], editingSection:null, editingDraft:null,
   loadingFromHash:false,
   // — Auth + cloud
@@ -5151,8 +5162,74 @@ function autoLayout(nodes,arrows){
 }
 
 // ═══════════ API ═══════════
+// ── MULTI-PROVIDER GENERATION (Jenni 2026-07-03) ─────────────────────────────────────────────
+// Claude is the default (free tier + BYOK). Users can pick ChatGPT or Gemini, which run on their
+// OWN key (BYOK) and never touch the free tier. The three provider calls live behind callAPI() so
+// every caller (generate / critique / refine / proofread) stays identical.
+function getOpenAIKeyRaw(){ return (localStorage.getItem("openai_api_key")||"").trim(); }
+function getGeminiKeyRaw(){ return (localStorage.getItem("gemini_api_key")||"").trim(); }
+function _sysToText(sys){ if(typeof sys==="string") return sys; if(Array.isArray(sys)) return sys.map(function(p){return (p&&p.text)||"";}).filter(Boolean).join("\n\n"); return String(sys||""); }
+function _contentToText(content){ if(typeof content==="string") return content; if(Array.isArray(content)) return content.map(function(p){return (p&&p.type==="text")?p.text:"";}).filter(Boolean).join("\n\n"); return String(content||""); }
+// Does THIS generation draw from the free tier? Only when the provider is Claude AND the user is a
+// free-tier user. BYOK ChatGPT/Gemini never consume free-tier quota.
+function genUsesFreeTier(){ return freeTierActive() && (S.genProvider||"claude")==="claude"; }
+
+async function _callOpenAIText(sys, content, maxTok, opts){
+  opts = opts || {};
+  var key = getOpenAIKeyRaw();
+  if(!key) { var e1=new Error("Add your OpenAI (ChatGPT) API key to generate with ChatGPT — or switch the model back to Claude."); e1.code="need_openai_key"; throw e1; }
+  var body = {
+    model: GEN_OPENAI_MODEL,
+    max_completion_tokens: maxTok,
+    messages: [{role:"system",content:_sysToText(sys)},{role:"user",content:_contentToText(content)}],
+    response_format: {type:"json_object"}
+  };
+  var fo = {method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:JSON.stringify(body)};
+  if(opts.signal) fo.signal = opts.signal;
+  var r = await fetch("https://api.openai.com/v1/chat/completions", fo);
+  if(!r.ok){
+    var ed={}; try{ ed=await r.json(); }catch(_){}
+    var m=(ed.error&&ed.error.message)||("OpenAI API error "+r.status);
+    if(r.status===401||r.status===403) throw new Error("Your OpenAI key was rejected. Update it, or switch the model to Claude.");
+    if(r.status===429) throw new Error("OpenAI rate limit or out of credits. Top up your OpenAI account, or switch to Claude.");
+    throw new Error(m);
+  }
+  var d = await r.json();
+  return (d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || "";
+}
+
+async function _callGeminiText(sys, content, maxTok, opts){
+  opts = opts || {};
+  var key = getGeminiKeyRaw();
+  if(!key) { var e2=new Error("Add your Google Gemini API key to generate with Gemini — or switch the model back to Claude."); e2.code="need_gemini_key"; throw e2; }
+  var body = {
+    systemInstruction: {parts:[{text:_sysToText(sys)}]},
+    contents: [{role:"user",parts:[{text:_contentToText(content)}]}],
+    generationConfig: { maxOutputTokens: maxTok, responseMimeType: "application/json" }
+  };
+  var fo = {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)};
+  if(opts.signal) fo.signal = opts.signal;
+  var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+GEN_GEMINI_MODEL+":generateContent?key="+encodeURIComponent(key), fo);
+  if(!r.ok){
+    var ed2={}; try{ ed2=await r.json(); }catch(_){}
+    var m2=(ed2.error&&ed2.error.message)||("Gemini API error "+r.status);
+    if(r.status===400 && /API key|API_KEY/i.test(m2)) throw new Error("Your Gemini key was rejected. Update it, or switch the model to Claude.");
+    if(r.status===429) throw new Error("Gemini rate limit. Wait a moment, or switch to Claude.");
+    throw new Error(m2);
+  }
+  var d2 = await r.json();
+  var parts = (d2.candidates && d2.candidates[0] && d2.candidates[0].content && d2.candidates[0].content.parts) || [];
+  var txt=""; for(var i=0;i<parts.length;i++){ if(parts[i].text) txt += parts[i].text; }
+  return txt;
+}
+
 async function callAPI(sys, content, maxTok, opts) {
   opts = opts || {};
+  // Provider dispatch: BYOK ChatGPT/Gemini route to their own API; Claude falls through to the
+  // existing (free-tier-or-BYOK) logic below. (Jenni 2026-07-03)
+  var _prov = S.genProvider || "claude";
+  if(_prov === "openai") return await _callOpenAIText(sys, content, maxTok, opts);
+  if(_prov === "gemini") return await _callGeminiText(sys, content, maxTok, opts);
   // Anthropic prompt caching: wrap the (static, ~5000-token) system prompt in a single block with
   // cache_control:ephemeral so subsequent calls within 5 min hit the cache. ~80% cheaper + faster
   // on cache-hit. Strings are still accepted for backward compat; we only upgrade if sys is long
@@ -5305,6 +5382,13 @@ async function callAPI(sys, content, maxTok, opts) {
 // Returns {txt, modelUsed} so the UI can show which model produced the result.
 async function callAPIWithFallback(sys, content, maxTok, models, opts) {
   opts = opts || {};
+  // Non-Claude providers (ChatGPT/Gemini) have no Claude model chain to fall through — call once.
+  // (Jenni 2026-07-03)
+  var _prov = S.genProvider || "claude";
+  if(_prov !== "claude"){
+    var t = await callAPI(sys, content, maxTok, opts);
+    return { txt: t, modelUsed: (_prov==="openai"?GEN_OPENAI_MODEL:GEN_GEMINI_MODEL), fellBack: false };
+  }
   var lastError;
   for (var i = 0; i < models.length; i++) {
     try {
@@ -5413,7 +5497,12 @@ async function generate(){
   if(!S.topic.trim()||S.loading)return;
   // Discovery nudge: a logged-out visitor with no key of their own gets the free-tier offer
   // (sign in → 10 free talks) instead of a bare API-key prompt. BYOK users are unaffected.
-  if(FREE_TIER_CONFIG.enabled && !S.user && !hasOwnClaudeKey() && !S.useByok){
+  // Provider-aware (Jenni 2026-07-03): a ChatGPT/Gemini user needs THAT key, not a sign-in — if it's
+  // missing, open the key modal for their provider instead of the free-tier nudge.
+  var _gp = S.genProvider || "claude";
+  if(_gp === "openai" && !getOpenAIKeyRaw()){ if(typeof openKeyModal==="function") openKeyModal("openai"); return; }
+  if(_gp === "gemini" && !getGeminiKeyRaw()){ if(typeof openKeyModal==="function") openKeyModal("gemini"); return; }
+  if(_gp === "claude" && FREE_TIER_CONFIG.enabled && !S.user && !hasOwnClaudeKey() && !S.useByok){
     S.signInOpen = true;
     S.authMsg = "Sign in to use your 10 free talks — no API key needed.";
     if(typeof render === "function") render();
@@ -5425,7 +5514,7 @@ async function generate(){
   // an obviously-exhausted user is stopped before we spend anything. Trade-off: a user who tampers
   // with the client could bypass this check; that's bounded by the Worker's $250/mo spend cap, and
   // we accepted it for fairness. (Revisit if abuse ever appears.)
-  if(freeTierActive() && S.freeTier && typeof S.freeTier.talks_remaining === "number" && S.freeTier.talks_remaining <= 0){
+  if(genUsesFreeTier() && S.freeTier && typeof S.freeTier.talks_remaining === "number" && S.freeTier.talks_remaining <= 0){
     S.freePausedMsg = "";
     S.showOutOfFreeModal = true;
     if(typeof render === "function") render();
@@ -5617,7 +5706,7 @@ async function generate(){
   // returned earlier and never reaches here, so it never charges. If the atomic decrement reports
   // paused/exhausted at this point, we still show this already-generated talk (the owner was billed);
   // the counter just floors at 0.
-  if(freeTierActive()){
+  if(genUsesFreeTier()){
     try{ await consumeFreeTier("talk"); }catch(_){}
   }
   S.citationAuditPending = true;
@@ -6020,7 +6109,7 @@ function isProofreadFeedback(msg){
 async function weaveFeedbackTalk(userMsg){
   if(!S.talk) return { talk:null };
   // Charge-after pre-check (Jenni 2026-07-03): block only if visibly exhausted; consume after success.
-  if(freeTierActive() && S.freeTier && typeof S.freeTier.talks_remaining === "number" && S.freeTier.talks_remaining <= 0){
+  if(genUsesFreeTier() && S.freeTier && typeof S.freeTier.talks_remaining === "number" && S.freeTier.talks_remaining <= 0){
     S.freePausedMsg = ""; S.showOutOfFreeModal = true; if(typeof render==="function") render();
     return { talk:null, quotaBlocked:true };
   }
@@ -6060,7 +6149,7 @@ async function weaveFeedbackTalk(userMsg){
   }].concat(buildReferenceParts(S.files));
   var txt = await callAPI(sys, contentParts, 32768, { model:"claude-sonnet-4-6", meterKind:"talk" });
   // Charge-after: the model call succeeded (owner billed), so consume 1 talk now.
-  if(freeTierActive()){ try{ await consumeFreeTier("talk"); }catch(_){} }
+  if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
   var parsed = JSON.parse(fixJSON(txt));
   // Reconstruct: clone the original, splice in only the changed pieces — untouched content is
   // literally carried over, so it can't be lost.
@@ -6300,7 +6389,7 @@ async function weaveRevision(userMsg){
   if(!S.talk) return null;
   // Refines count as 1 talk (FREE_TIER_SPEC.md). Charge-AFTER (Jenni 2026-07-03): pre-check only if
   // visibly exhausted; the actual consume happens after the model call succeeds (see below).
-  if(freeTierActive() && S.freeTier && typeof S.freeTier.talks_remaining === "number" && S.freeTier.talks_remaining <= 0){
+  if(genUsesFreeTier() && S.freeTier && typeof S.freeTier.talks_remaining === "number" && S.freeTier.talks_remaining <= 0){
     S.freePausedMsg = ""; S.showOutOfFreeModal = true; if(typeof render === "function") render();
     return null;
   }
@@ -6396,7 +6485,7 @@ async function weaveRevision(userMsg){
   // reliability. (Jenni 2026-06-10 "increase the cap for refine".)
   var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6", meterKind: "talk" });
   // Charge-after: the refine model call succeeded (owner billed), so consume 1 talk now.
-  if(freeTierActive()){ try{ await consumeFreeTier("talk"); }catch(_){} }
+  if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
   var patch = JSON.parse(fixJSON(txt));
   // Returns the patch — caller applies it via applyWeavePatch().
   return { kind: "patch", patch: patch };
@@ -7394,17 +7483,18 @@ function renderGlobalModals(){
   }
   var h = "";
 
-  // ── API key modal (Jenni 2026-07-03) — smooth in-app key entry, replaces native prompt() ──
+  // ── API key modal (Jenni 2026-07-03) — smooth in-app key entry for any provider ──
   if(S.keyModalOpen){
+    var _kp = KEY_PROVIDERS[S.keyModalProvider] || KEY_PROVIDERS.claude;
     h+='<div class="drawer-backdrop open" id="keyModalBackdrop" style="z-index:130"></div>';
     h+='<div class="drawer open" id="keyModal" style="z-index:131;max-width:440px;width:calc(100% - 32px);margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
-    h+='<div class="drawer-head" style="padding:18px 20px 8px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🔑</span> Add your Anthropic API key</div><button class="drawer-close" id="keyModalCloseBtn">×</button></div>';
+    h+='<div class="drawer-head" style="padding:18px 20px 8px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🔑</span> Add your '+esc(_kp.label)+' API key</div><button class="drawer-close" id="keyModalCloseBtn">×</button></div>';
     h+='<div style="padding:0 20px 20px">';
-    h+='<p style="font-size:12.5px;color:var(--ink-muted);line-height:1.55;margin:0 0 12px">Stored only in this browser, sent only to Anthropic — never to us. About <b>$5 covers ~30 talks</b>. Paste a key that starts with <code style="background:var(--cream);padding:1px 5px;border-radius:5px">sk-ant-</code>.</p>';
-    h+='<input id="keyModalInput" type="text" autocomplete="off" spellcheck="false" placeholder="sk-ant-..." value="'+esc(S.keyModalInput||"")+'" style="width:100%;background:#fff;border:1.5px solid '+(S.keyModalErr?"#c0392b":"#e2dfe8")+';border-radius:12px;padding:12px 14px;font-size:14px;font-family:ui-monospace,Menlo,monospace;outline:none;box-sizing:border-box;margin-bottom:'+(S.keyModalErr?"6px":"12px")+'">';
+    h+='<p style="font-size:12.5px;color:var(--ink-muted);line-height:1.55;margin:0 0 12px">Stored only in this browser, sent only to the provider — never to us. '+esc(_kp.note)+(_kp.ph?' Paste a key like <code style="background:var(--cream);padding:1px 5px;border-radius:5px">'+esc(_kp.ph)+'</code>.':'')+'</p>';
+    h+='<input id="keyModalInput" type="text" autocomplete="off" spellcheck="false" placeholder="'+esc(_kp.ph)+'" value="'+esc(S.keyModalInput||"")+'" style="width:100%;background:#fff;border:1.5px solid '+(S.keyModalErr?"#c0392b":"#e2dfe8")+';border-radius:12px;padding:12px 14px;font-size:14px;font-family:ui-monospace,Menlo,monospace;outline:none;box-sizing:border-box;margin-bottom:'+(S.keyModalErr?"6px":"12px")+'">';
     if(S.keyModalErr) h+='<div style="font-size:11.5px;color:#c0392b;margin-bottom:12px">'+esc(S.keyModalErr)+'</div>';
     h+='<button id="keyModalSaveBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px">Save key</button>';
-    h+='<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:12px;color:var(--plum);font-weight:600;text-decoration:none">Get a key (free signup, ~2 min) →</a>';
+    h+='<a href="'+esc(_kp.url)+'" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:12px;color:var(--plum);font-weight:600;text-decoration:none">Get a '+esc(_kp.label)+' key →</a>';
     h+='</div></div>';
   }
 
@@ -7525,10 +7615,13 @@ function renderGlobalModals(){
   var kmi=document.getElementById("keyModalInput");if(kmi)kmi.oninput=function(e){S.keyModalInput=e.target.value;};
   if(kmi)kmi.onkeydown=function(e){ if(e.key==="Enter"){ e.preventDefault(); var sb=document.getElementById("keyModalSaveBtn"); if(sb) sb.click(); } };
   var kms=document.getElementById("keyModalSaveBtn");if(kms)kms.onclick=function(){
+    var prov=S.keyModalProvider||"claude"; var cfg=KEY_PROVIDERS[prov]||KEY_PROVIDERS.claude;
     var k=(S.keyModalInput||"").trim();
     if(!k){ S.keyModalErr="Paste your key first."; render(); return; }
-    if(k.indexOf("sk-ant-")!==0){ S.keyModalErr="That doesn't look like an Anthropic key — it should start with sk-ant-."; render(); return; }
-    localStorage.setItem("claude_api_key", k);
+    if(cfg.prefix && k.indexOf(cfg.prefix)!==0){ S.keyModalErr="That doesn't look like a "+cfg.label+" key — it should start with "+cfg.prefix; render(); return; }
+    localStorage.setItem(cfg.store, k);
+    // If they added an OpenAI/Gemini key, switch generation to that provider so it takes effect.
+    if(prov==="openai"||prov==="gemini"){ S.genProvider=prov; try{ localStorage.setItem("ct_gen_provider", prov); }catch(_){} }
     S.keyModalOpen=false; S.keyModalInput=""; S.keyModalErr="";
     S.showOutOfFreeModal=false; S.freePausedMsg=""; S.freeTier=null;
     if(typeof refreshFreeTierStatus==="function") refreshFreeTierStatus();
@@ -8421,6 +8514,23 @@ function renderMain(){
   h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:"~10 min — full chalk talk with deeper mechanism and evidence (generates slower, ~40-50s)"});
   h+='</div></div>';
   h+='</div>';
+
+  // Model provider row (Jenni 2026-07-03) — Claude default (free tier + BYOK); ChatGPT/Gemini BYOK.
+  // NOTE: styling is intentionally minimal here — a Fable pass will polish this UI.
+  (function(){
+    var _gp = S.genProvider || "claude";
+    function provBtn(val,label){
+      var on=(_gp===val);
+      return '<button class="genProvBtn" data-p="'+val+'" style="flex:1;min-width:0;background:'+(on?"#fff":"transparent")+';color:'+(on?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(on?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:7px 6px;font-size:12px;font-weight:'+(on?"600":"500")+';cursor:pointer;box-shadow:'+(on?"var(--shadow-soft)":"none")+';font-family:inherit">'+label+'</button>';
+    }
+    h+='<div style="margin-bottom:14px">';
+    h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Model<span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink-soft);margin-left:6px">ChatGPT &amp; Gemini use your own key</span></div>';
+    h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
+    h+=provBtn("claude","🟣 Claude");
+    h+=provBtn("openai","💬 ChatGPT");
+    h+=provBtn("gemini","✦ Gemini");
+    h+='</div></div>';
+  })();
 
   // References row
   h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .15s ease">';
@@ -9547,6 +9657,15 @@ function bindMain(){
   // Un-gated 2026-07-03 (Jenni): Detailed is a first-class pre-generation choice now — the detailed
   // prompt is standalone (no dependency on a concise talk existing). Concise stays "recommended"
   // for speed, but users who know they want full depth shouldn't be blocked.
+  // Generation provider toggle (Jenni 2026-07-03). Claude = free tier + BYOK; ChatGPT/Gemini = BYOK,
+  // so switching to one without a key opens the key modal for it.
+  document.querySelectorAll(".genProvBtn").forEach(function(b){b.onclick=function(){
+    var p=b.dataset.p||"claude";
+    S.genProvider=p; try{ localStorage.setItem("ct_gen_provider", p); }catch(_){}
+    if(p==="openai" && !getOpenAIKeyRaw()){ openKeyModal("openai"); return; }
+    if(p==="gemini" && !getGeminiKeyRaw()){ openKeyModal("gemini"); return; }
+    render();
+  }});
   document.querySelectorAll(".depthBtn").forEach(function(b){b.onclick=function(){if(b.disabled)return;if(S.depth!==b.dataset.d){S.depth=b.dataset.d;S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.error="";speechSynthesis.cancel()}render()}});
   var dz=document.getElementById("dropZone");if(dz)dz.onclick=function(){document.getElementById("fileInput").click()};
   var fi=document.getElementById("fileInput");if(fi)fi.onchange=async function(e){
@@ -10286,6 +10405,8 @@ function bindMain(){
 // First-visit onboarding (Jenni 2026-07-03): expand "How it works" (with the free-tier pitch) only
 // the FIRST time someone lands on this device. Returning users get it collapsed.
 try{ if(!localStorage.getItem("ct_seen_v1")){ S.howitOpen = true; localStorage.setItem("ct_seen_v1","1"); } }catch(_){}
+// Restore the chosen generation provider (Jenni 2026-07-03).
+try{ var _gp = localStorage.getItem("ct_gen_provider"); if(_gp==="openai"||_gp==="gemini"||_gp==="claude") S.genProvider = _gp; }catch(_){}
 // Restore a topic the user typed before being bounced to sign-in (which reloads the page). (fix #2)
 try{ var _pendTopic = localStorage.getItem("ct_pending_topic"); if(_pendTopic){ S.topic = _pendTopic; localStorage.removeItem("ct_pending_topic"); } }catch(_){}
 loadFromShareHash();
