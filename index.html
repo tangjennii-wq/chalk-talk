@@ -8465,10 +8465,16 @@ function bindLibraryReorder(){
         var over = (el && el.closest) ? el.closest(".libCard") : null;
         clearHints();
         if(over && over !== card && over.dataset.libspec === spec && over.dataset.libid && over.dataset.libid.indexOf("t_")!==0){
-          over.style.boxShadow = "0 -3px 0 var(--plum) inset";
+          // Top half of the target = drop BEFORE it; bottom half = drop AFTER it. This lets you move a
+          // card down a slot (aim the lower card's bottom half) and drop after the last card. (Codex fix)
+          var rect = over.getBoundingClientRect();
+          var after = (ev.clientY - rect.top) > rect.height/2;
+          over.style.boxShadow = after ? "0 3px 0 var(--plum) inset" : "0 -3px 0 var(--plum) inset";
           window._libDropTarget = over.dataset.libid;
+          window._libDropAfter = after;
         } else {
           window._libDropTarget = null;
+          window._libDropAfter = false;
         }
       }
       function onUp(){
@@ -8477,8 +8483,9 @@ function bindLibraryReorder(){
         gh.removeEventListener("pointercancel", onUp);
         clearHints();
         if(card) card.style.opacity = "";
-        var toId = window._libDropTarget; window._libDropTarget = null;
-        if(moved && toId && toId !== fromId) _reorderLibraryCard(fromId, spec, toId);
+        var toId = window._libDropTarget, after = window._libDropAfter;
+        window._libDropTarget = null; window._libDropAfter = false;
+        if(moved && toId && toId !== fromId) _reorderLibraryCard(fromId, spec, toId, after);
       }
       gh.addEventListener("pointermove", onMove);
       gh.addEventListener("pointerup", onUp);
@@ -8487,8 +8494,9 @@ function bindLibraryReorder(){
   });
 }
 
-// Move fromId to just before toId within its specialty group, compute a midpoint sort_order, persist.
-function _reorderLibraryCard(fromId, spec, toId){
+// Move fromId before/after toId within its specialty group, compute a midpoint sort_order, persist.
+// `after` = drop below the target (bottom-half drop / after the last card).
+function _reorderLibraryCard(fromId, spec, toId, after){
   var cards = Array.prototype.slice.call(document.querySelectorAll(".libCard")).filter(function(c){
     return c.dataset.libspec===spec && c.dataset.libid && c.dataset.libid.indexOf("t_")!==0;
   });
@@ -8496,7 +8504,8 @@ function _reorderLibraryCard(fromId, spec, toId){
   var fromPos = ids.indexOf(fromId);
   if(fromPos<0 || ids.indexOf(toId)<0) return;
   ids.splice(fromPos,1);
-  ids.splice(ids.indexOf(toId), 0, fromId);            // insert before the drop target
+  var toPos = ids.indexOf(toId);                        // position of the drop target after removing fromId
+  ids.splice(after ? toPos+1 : toPos, 0, fromId);      // insert before (top half) or after (bottom half)
   var disp = (typeof getDisplayLibrary==="function") ? getDisplayLibrary() : [];
   var keyMap = {}; disp.forEach(function(it){ if(it.id) keyMap[it.id] = libSortKey(it._sortOrder, it.savedAt); });   // bug fix: getDisplayLibrary items are keyed 'id', not '_id' — keyMap was always empty → every reorder wrote sort_order=0
   var mi = ids.indexOf(fromId);
