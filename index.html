@@ -69,6 +69,10 @@ details.howit > summary::marker{display:none}
 details.howit > summary:hover{border-color:var(--plum-rich)}
 details.howit .howit-caret{display:inline-block;color:var(--ink-soft);transition:transform .15s ease;font-size:11px}
 details.howit[open] .howit-caret{transform:rotate(180deg);color:var(--plum)}
+/* Explicit Show/Hide affordance so it's obvious the panel collapses (Jenni 2026-07-03). */
+details.howit .howit-hint{display:inline-flex;align-items:center;gap:3px;background:var(--lavender-bg);color:var(--plum);border-radius:8px;padding:1px 7px;font-size:10.5px;font-weight:700;letter-spacing:0.02em}
+details.howit .howit-hint::after{content:"Show ▾"}
+details.howit[open] .howit-hint::after{content:"Hide ▴"}
 details.howit .howit-body{margin:10px auto 0;max-width:540px;background:var(--cream);border:1px solid var(--line-soft);border-radius:14px;padding:14px 16px;text-align:left;font-size:12.5px;line-height:1.55;color:var(--ink);box-shadow:var(--shadow-soft)}
 details.howit .howit-step{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px}
 details.howit .howit-step:last-child{margin-bottom:0}
@@ -7259,6 +7263,9 @@ function resetAll(){
   S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false; S.talkIsSaved=false;
   // Close any transient drawers/modals so a fresh compose view doesn't flash an open overlay.
   S.editSettings=false; S.overflowOpen=false; S.lightbox=false; S.gldOpen=false; S.ragOpen=false;
+  // Collapse "How it works" on New talk (Jenni 2026-07-03) — it only auto-expands on the very first
+  // landing; an existing user starting another talk shouldn't get the intro re-opened.
+  S.howitOpen=false;
   speechSynthesis.cancel(); render();
 }
 
@@ -8364,7 +8371,7 @@ function renderMain(){
   // Hide while generating so the focus card has the screen (Jenni 2026-06-08).
   if(!S.talk && !S.loading){
     h+='<details class="howit" id="howitDetails"'+(S.howitOpen?' open':'')+'>';
-    h+='<summary><span>✦ How it works · 10-min evidence-based teaching</span><span class="howit-caret">⌄</span></summary>';
+    h+='<summary><span>✦ How it works · 10-min evidence-based teaching</span><span class="howit-hint"></span></summary>';
     h+='<div class="howit-body">';
     // Free-tier pitch — front and center (combines the "10 free talks" message; fix #1 + #4).
     h+='<div style="background:#fff6dd;border:1px solid #e6d49a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#7a5b1a;line-height:1.5;text-align:center"><b>✨ Free to try — 10 talks + 5 images.</b> Just sign in — after that, bring your own key: Claude, ChatGPT, or Gemini (Gemini keys are free from Google AI Studio).</div>';
