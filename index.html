@@ -1424,6 +1424,159 @@ var FREE_TIER_CONFIG = {
   enabled: true
 };
 
+// ═══════════ BACKGROUND (SERVER-SIDE) GENERATION ═══════════
+// Jenni 2026-07-03 (Workers Paid $5/mo). Problem: a synchronous generate() lives entirely in the
+// browser tab — background the tab, lock the phone, or lose focus mid-draft and the fetch/stream
+// dies, so the talk never finishes. Fix: submit the draft+critique to the Worker, which runs them
+// server-side via ctx.waitUntil and stashes the result in KV; the browser just polls (and can
+// disconnect + reconnect freely). Scoped to free-tier Claude only (that's the path that goes through
+// our Worker + key). FAIL-SAFE: if the Worker isn't configured for async (no JOBS_KV → 503) or the
+// submit errors, we transparently fall back to the existing synchronous streaming path, so nothing
+// breaks before Jenni finishes the Cloudflare KV/Paid setup. Once a 503 unconfigured is seen, we
+// remember it for the session (_asyncUnavailable) and skip the wasted submit on later gens.
+var ASYNC_GEN_CONFIG = {
+  enabled: true,          // master switch; sync path is always the fallback
+  pollMs: 2500,           // status poll interval
+  maxPollMs: 240000,      // give up after 4 min of polling (job KV TTL is 10 min)
+  jobKey: "ct_active_job" // localStorage key holding the in-flight jobId for reconnect
+};
+var _asyncUnavailable = false; // set true after a 503 async_unconfigured this session
+
+// Should THIS generation go through the background Worker path?
+function asyncGenApplicable(){
+  return !!(ASYNC_GEN_CONFIG.enabled && !_asyncUnavailable && genUsesFreeTier() && RAG_CONFIG.url && freeTierToken());
+}
+
+// Submit a background job. Returns { jobId } on success, or null to signal "fall back to sync".
+async function submitAsyncGeneration(payload){
+  try{
+    var r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-async", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "X-Supabase-Auth": freeTierToken() },
+      body: JSON.stringify(payload)
+    });
+    if(r.status === 503){
+      var e503 = {}; try{ e503 = await r.json(); }catch(_){}
+      if(((e503.error && e503.error.type) || "") === "async_unconfigured"){ _asyncUnavailable = true; } // KV not set up yet
+      return null; // includes free_tier_paused: let the SYNC path surface it consistently
+    }
+    // ANY non-success (401 auth, 4xx, 5xx) → fall back to the synchronous path, which owns the real
+    // error handling (auth_invalid, quota, paused) and keeps one code path for user-facing errors.
+    if(!r.ok){ return null; }
+    var data = await r.json();
+    return (data && data.jobId) ? data : null;
+  }catch(err){
+    return null; // network/other → sync fallback
+  }
+}
+
+// Poll a job to completion. onStage(stage) fires when the server stage changes (drafting/critique).
+// checkAbort() returns true if the caller wants to stop (cancel / stale gen); we then cancel the job.
+// Returns { draftText, critText, modelUsed }. Throws on server error / timeout / cancel.
+async function pollAsyncGeneration(jobId, onStage, checkAbort){
+  var start = Date.now();
+  var lastStage = "";
+  while(true){
+    if(checkAbort && checkAbort()){
+      try{ fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-cancel/" + encodeURIComponent(jobId), { method:"POST" }); }catch(_){}
+      var ce = new Error("Generation cancelled"); ce.code = "cancelled"; throw ce;
+    }
+    if(Date.now() - start > ASYNC_GEN_CONFIG.maxPollMs){
+      throw new Error("Background generation timed out. Please tap Generate again.");
+    }
+    await new Promise(function(res){ setTimeout(res, ASYNC_GEN_CONFIG.pollMs); });
+    var r;
+    try{
+      r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-status/" + encodeURIComponent(jobId), {
+        headers:{ "X-Supabase-Auth": freeTierToken() }
+      });
+    }catch(netErr){ continue; } // transient network blip — keep polling (this is the whole point)
+    if(r.status === 404){ throw new Error("Generation job expired. Please tap Generate again."); }
+    if(!r.ok){ continue; }
+    var job; try{ job = await r.json(); }catch(_){ continue; }
+    if(job.stage && job.stage !== lastStage){ lastStage = job.stage; if(onStage) try{ onStage(job.stage); }catch(_){} }
+    if(job.status === "done" && job.result){ return job.result; }
+    if(job.status === "error"){ throw new Error((job.error && job.error.message) || "Background generation failed."); }
+    if(job.status === "cancelled"){ var xe = new Error("Generation cancelled"); xe.code = "cancelled"; throw xe; }
+    // else still running — loop
+  }
+}
+
+// RELOAD RECONNECT (Jenni 2026-07-03): the background path persists the in-flight jobId. If the user
+// reloads the page (or the mobile browser killed + relaunched the tab) while a talk was generating,
+// pick the job back up and finish rendering it — the server kept working the whole time. Guarded so
+// it runs at most once and only for a fresh (<TTL) job on the free-tier Claude path. Safe no-op
+// otherwise. Called once auth is restored (token available).
+var _resumeAttempted = false;
+async function resumeAsyncJobIfAny(){
+  if(_resumeAttempted) return;
+  var stored;
+  try{ stored = JSON.parse(localStorage.getItem(ASYNC_GEN_CONFIG.jobKey) || "null"); }catch(_){ stored = null; }
+  if(!stored || !stored.jobId){ return; }
+  // Too old to still be in KV, or a talk is already loading in this tab → drop it.
+  if((Date.now() - (stored.at || 0)) > ASYNC_GEN_CONFIG.maxPollMs || S.loading){
+    try{ localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); }catch(_){}
+    return;
+  }
+  if(!freeTierToken()) return;              // auth not ready yet — a later call will catch it
+  _resumeAttempted = true;
+  S.genId = (S.genId || 0) + 1;
+  var _myGenId = S.genId;
+  S.genCancelled = false;
+  if(stored.topic) S.topic = stored.topic;
+  if(stored.style) S.style = stored.style;
+  if(stored.depth) S.depth = stored.depth;
+  S.loading = true; S.loadSec = 0; S.loadMsg = "Reconnecting to your talk…";
+  if(typeof render === "function") render();
+  if(typeof loadTimer !== "undefined") clearInterval(loadTimer);
+  loadTimer = setInterval(function(){ S.loadSec++; render(); }, 1000);
+  try{
+    var res = await pollAsyncGeneration(stored.jobId,
+      function(stage){ S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Finishing your talk (server-side)…"; render(); },
+      function(){ return S.genCancelled || _myGenId !== S.genId; }
+    );
+    try{ localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); }catch(_){}
+    var txt = (res && res.draftText) || "";
+    if(!txt.trim()) throw new Error("Empty response");
+    var draftTalk = pruneFakeReferences(deepCleanCitations(JSON.parse(fixJSON(txt))));
+    var finalTalk = draftTalk;
+    var critTxt = (res && res.critText) || "";
+    if(critTxt && critTxt.trim()){
+      try{
+        var parsed = deepCleanCitations(JSON.parse(fixJSON(critTxt)));
+        if(parsed.verdict === "clean") finalTalk = draftTalk;
+        else if(parsed.title || parsed.question) finalTalk = parsed;
+      }catch(_){}
+    }
+    finalTalk = pruneFakeReferences(finalTalk);
+    if(S.genCancelled || _myGenId !== S.genId) return;
+    // Charge the talk now that it succeeded (charge-after model).
+    if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
+    S.citationAuditPending = true;
+    S.talk = finalTalk;
+    S.glRef = getGuidelinesForTopic(S.topic) || null;
+    clearInterval(loadTimer); S.loading = false; render();
+    var ts = document.getElementById("talkStart"); if(ts) ts.scrollIntoView({behavior:"smooth", block:"start"});
+    // Background citation audit (same as generate()).
+    var _auditGenId = S.genId;
+    (async function(){
+      try{
+        var audited = await verifyCitations(finalTalk);
+        if(_auditGenId === S.genId && audited){ S.talk = audited; S.citationAuditPending = false; render(); }
+      }catch(_){ if(_auditGenId === S.genId){ S.citationAuditPending = false; render(); } }
+    })();
+    if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
+  }catch(err){
+    try{ localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); }catch(_){}
+    clearInterval(loadTimer); S.loading = false;
+    // Silent on cancel / stale / expired job — the user can just regenerate.
+    if(err && err.code !== "cancelled" && _myGenId === S.genId && !/expired/i.test(err.message||"")){
+      S.error = err.message || "Couldn't reconnect to your talk. Please generate again.";
+    }
+    render();
+  }
+}
+
 // ═══════════ TRIAL EXPANSIONS ═══════════
 // Loaded from rag/trial_expansions.json at boot. Used in generate() to inject richer trial
 // context (NEJM/NephJC/CardioNerds-grounded primary finding, critique, guideline impact)
@@ -3115,6 +3268,8 @@ window.onSupabaseReady = function(client){
       if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
       // First-time-on-this-device prompt: migrate localStorage talks
       if(!wasSignedIn) maybeOfferLocalMigration();
+      // Reconnect to a background talk left mid-generation before a reload (now that we have a token).
+      if(typeof resumeAsyncJobIfAny === "function") resumeAsyncJobIfAny();
     } else {
       S.profile = null; S.freeTier = null;
       _profileLoadedForUser = null; // signed out — next sign-in reloads profile/talks/favorites
@@ -5639,17 +5794,12 @@ async function generate(){
         if (typeof render === "function") render();
       }
     };
-    var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
-    // Clear streaming progress now that the main draft is in hand; critique/audit run after.
-    S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
-    var txt = mainResult.txt;
-    if (mainResult.fellBack) console.info("Draft generated with " + mainResult.modelUsed + " (Opus was overloaded)");
-    if(!txt.trim())throw new Error("Empty response");
-    var draftTalk=JSON.parse(fixJSON(txt));
-    draftTalk = deepCleanCitations(draftTalk);
-    draftTalk = pruneFakeReferences(draftTalk);
+    // NOTE: the actual draft call happens a few lines below, AFTER the critique prompts are set up.
+    // Ordering change (Jenni 2026-07-03): the background (async) path must hand the Worker BOTH the
+    // draft spec AND the critique spec in one submit, so critiqueSystem/critiquePrefix have to exist
+    // before we kick off the draft. The synchronous path is unchanged in behavior — just reordered.
 
-    // Step 2: Combined critique-and-fix in a single Haiku call
+    // Step 2 setup: critique prompts (defined up here so the async submit can include them)
     // Split critique prompts (Jenni 2026-06-09 #3) — Lecture mode uses a focused review
     // prompt (~600 tokens instead of ~2500), Boards keeps the full UWorld verification.
     var LECTURE_CRITIQUE_PROMPT = "You are a senior IM attending peer-reviewing a chalk talk. Review for substantive accuracy only — do NOT flag stylistic preferences. Work through this checklist explicitly before deciding:\n\n(1) NUMERIC AUDIT (highest priority — these errors are dangerous): find EVERY numeric threshold, dose, rate, target, and cutoff in the talk (e.g. sodium correction rates, potassium thresholds for starting/stopping drugs, BP targets, eGFR cutoffs, drug doses). Re-derive each from the GUIDELINE / SOURCE CONTEXT if provided, otherwise from first principles. Fix any number that is wrong OR that contradicts a table/another bullet elsewhere in the SAME talk.\n(2) INTERNAL CONSISTENCY: scan for two statements that contradict each other about the same drug, mechanism, indication, or number (e.g. a drug called both first-line and refractory-only, or a mechanism labeled two different ways). Reconcile to the single correct version and delete the wrong one.\n(3) GROUNDING: where the GUIDELINE / SOURCE CONTEXT states a specific tier list, regimen, threshold, or recommendation, verify the talk matches it in substance. If the talk paraphrased it wrong or omitted an agent the guideline lists, correct it to match the source.\n(4) COMPLETENESS / REQUIRED FIELDS: the talk MUST have a non-empty summary_points array (4-6 items) AND all four visual_memory_card quadrants (top_left, top_right, bottom_left, bottom_right) non-empty, AND a management/treatment section if the topic warrants one. If any required field is empty or the talk is missing its treatment/management content, WRITE the missing content — do not return it empty.\n(5) factual errors in physiology or pharmacology, (6) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/USPSTF/AAHPM), (7) wrong landmark trial attributions, (8) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug MUST be corrected. If unsure of generic spelling, replace with the brand name.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk passes every check above with no changes needed:\n{\"verdict\":\"clean\"}\n\nIF you find ANY issue (including an empty required field), return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
@@ -5661,24 +5811,66 @@ async function generate(){
     var critiqueGrounding = (guidelineContext || ragContext)
       ? ("\n\n═══ GUIDELINE / SOURCE CONTEXT (ground truth — the talk MUST match these for every number, drug, tier list, and recommendation) ═══" + guidelineContext + ragContext + "\n═══ END CONTEXT ═══")
       : "";
-    var critiqueInput = "Topic: " + S.topic + critiqueGrounding + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
+    // Worker appends "\n\nDraft chalk talk to review:\n<draft>" to this prefix (see runGeneration).
+    var critiquePrefix = "Topic: " + S.topic + critiqueGrounding;
+    // Boards-mode review prefers Opus (high-stakes); Lecture uses Sonnet first (Haiku fallback).
+    var criticModels = (S.style === "boards")
+      ? [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]
+      : [MODEL_SONNET_FALLBACK, MODEL_CRITIC];
+    var critMaxTok = (S.style === "boards") ? 6144 : 16384;
+
+    // ── Draft acquisition: background (async) path first, synchronous streaming as fallback ──
+    var txt, _asyncCritTxt = null, _useAsync = false;
+    if (asyncGenApplicable()) {
+      var _job = await submitAsyncGeneration({
+        draft:    { sys: sys, content: uc, maxTok: maxTok, models: mainModels, tools: (mainOpts.tools || null) },
+        critique: { sys: critiqueSystem, prefix: critiquePrefix, maxTok: critMaxTok, models: criticModels }
+      });
+      if (_job && _job.jobId) {
+        _useAsync = true;
+        // Persist for reload-reconnect: if the user reloads mid-gen, boot logic resumes this job.
+        try { localStorage.setItem(ASYNC_GEN_CONFIG.jobKey, JSON.stringify({ jobId: _job.jobId, genId: _myGenId, topic: S.topic, style: S.style, depth: S.depth, at: Date.now() })); } catch(_){}
+        S.loadMsg = "Generating on our servers — safe to switch tabs or lock your phone.";
+        if (typeof render === "function") render();
+        var _res = await pollAsyncGeneration(_job.jobId,
+          function(stage){ S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Drafting your talk (server-side)…"; if (typeof render === "function") render(); },
+          function(){ return S.genCancelled || _myGenId !== S.genId; }
+        );
+        try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){}
+        txt = (_res && _res.draftText) || "";
+        _asyncCritTxt = (_res && _res.critText) || "";
+        S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
+        if (_res && _res.modelUsed) console.info("Background draft via " + _res.modelUsed);
+      }
+    }
+    if (!_useAsync) {
+      var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
+      // Clear streaming progress now that the main draft is in hand; critique/audit run after.
+      S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
+      txt = mainResult.txt;
+      if (mainResult.fellBack) console.info("Draft generated with " + mainResult.modelUsed + " (Opus was overloaded)");
+    }
+    if (!txt || !txt.trim()) throw new Error("Empty response");
+    var draftTalk = JSON.parse(fixJSON(txt));
+    draftTalk = deepCleanCitations(draftTalk);
+    draftTalk = pruneFakeReferences(draftTalk);
+
+    var critiqueInput = critiquePrefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
     var finalTalk = draftTalk;
     // ALWAYS run critique — accuracy > a few seconds saved. Concise uses Sonnet draft + Haiku review,
     // so total still ~25-30s. Detailed: Opus draft + Haiku review. Boards: Opus draft + Opus review fallback chain.
     try {
-      // Boards-mode review prefers Opus (high-stakes accuracy); falls back to Sonnet then Haiku on overload.
-      // Lecture-mode review now uses SONNET first (Haiku fallback) — Haiku couldn't reliably re-derive
-      // numeric thresholds/doses or catch internal contradictions (Jenni 2026-07-03 accuracy fix).
-      var criticModels = (S.style === "boards")
-        ? [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]
-        : [MODEL_SONNET_FALLBACK, MODEL_CRITIC];
-      // Token budget: when the critic finds issues it returns the FULL corrected talk, so the cap must
-      // fit a whole talk or the corrected JSON truncates (dropping trailing summary_points / VMC — a
-      // cause of "incomplete" talks). Give lecture the same room as the draft. (Jenni 2026-07-03)
-      var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, (S.style==="boards")?6144:16384, criticModels);
-      var critTxt = critResult.txt;
-      if (critResult.fellBack) console.info("Critique done by " + critResult.modelUsed + " (Opus was overloaded)");
+      // Async path already ran the critique server-side (reuse it). Sync path calls it now.
+      // criticModels / critMaxTok were set up above alongside the draft spec.
+      var critTxt;
+      if (_useAsync) {
+        critTxt = _asyncCritTxt || "";
+      } else {
+        var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels);
+        critTxt = critResult.txt;
+        if (critResult.fellBack) console.info("Critique done by " + critResult.modelUsed + " (Opus was overloaded)");
+      }
       if (critTxt && critTxt.trim()) {
         var parsed = JSON.parse(fixJSON(critTxt));
         parsed = deepCleanCitations(parsed);
@@ -5737,7 +5929,11 @@ async function generate(){
       });
     }
   }catch(e){
-    if(!S.genCancelled){
+    // Clear any persisted background job so a stale one isn't resumed on next load.
+    try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){}
+    // "cancelled" (from the async poll, on user-cancel OR a superseding restart) and stale-gen are
+    // silent — not real errors. (Jenni 2026-07-03)
+    if(!S.genCancelled && !(e && e.code === "cancelled") && _myGenId === S.genId){
       // Free-tier signals (rare here — quota is pre-consumed — but cap can flip mid-flight).
       if(e && (e.code === "quota_exceeded" || e.code === "free_tier_paused")){
         if(e.code === "free_tier_paused") S.freePausedMsg = e.message || "Chalk Talk's free tier is paused for this month.";
@@ -5805,6 +6001,15 @@ async function generate(){
 function cancelGen(){
   if(!S.loading) return;
   S.genCancelled = true;
+  // Stop any server-side background job immediately (don't wait for the poll loop's next tick) and
+  // drop the persisted job so it isn't resumed after a reload. (Jenni 2026-07-03)
+  try {
+    var _stored = JSON.parse(localStorage.getItem(ASYNC_GEN_CONFIG.jobKey) || "null");
+    if(_stored && _stored.jobId && RAG_CONFIG.url){
+      fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-cancel/" + encodeURIComponent(_stored.jobId), { method:"POST" });
+    }
+  } catch(_){}
+  try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){}
   S.queueAudio = false; // don't carry the audio-queue intent into the next generation
   // Abort the live fetch so we stop paying for tokens we won't use. (Jenni 2026-06-09 #5)
   if (window._lastGenAbort) try { window._lastGenAbort.abort() } catch(_){}

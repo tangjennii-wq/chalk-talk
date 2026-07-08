@@ -8,3 +8,14 @@ DAILY_LIMIT_PER_IP = "10"
 FREE_TALKS = "10"
 FREE_IMAGES = "5"
 MAX_MONTHLY_SPEND_USD = "250"
+
+# Background (server-side) generation job store. Requires the Workers Paid plan (for the longer
+# ctx.waitUntil budget). To turn it on:
+#   1) wrangler kv namespace create JOBS_KV
+#   2) uncomment the block below and paste the printed id
+#   3) wrangler deploy
+# Left commented so `wrangler deploy` keeps working before setup — the app falls back to
+# synchronous generation whenever JOBS_KV is absent (the Worker returns 503 async_unconfigured).
+# [[kv_namespaces]]
+# binding = "JOBS_KV"
+# id = "PASTE_JOBS_KV_NAMESPACE_ID_HERE"

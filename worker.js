@@ -92,6 +92,19 @@ export default {
       return handleOpenAIChat(request, env, origin);
     }
 
+    // Background generation (Jenni 2026-07-03) — survives mobile backgrounding. Submit returns a
+    // jobId instantly; the heavy Claude draft+critique run server-side via ctx.waitUntil; the client
+    // polls. Requires the JOBS_KV binding + Workers Paid plan.
+    if (request.method === "POST" && url.pathname === "/generate-async") {
+      return handleGenerateAsync(request, env, ctx, origin);
+    }
+    if (request.method === "GET" && url.pathname.indexOf("/generate-status/") === 0) {
+      return handleGenerateStatus(decodeURIComponent(url.pathname.slice(17)), env, origin);
+    }
+    if (request.method === "POST" && url.pathname.indexOf("/generate-cancel/") === 0) {
+      return handleGenerateCancel(decodeURIComponent(url.pathname.slice(17)), env, origin);
+    }
+
     // ── Free tier endpoints (FREE_TIER_SPEC.md §5) ──────────────────────────
     if (request.method === "GET" && url.pathname === "/v1/free-tier/status") {
       return handleFreeTierStatus(request, env, origin);
@@ -639,6 +652,132 @@ async function handleOpenAIChat(request, env, origin) {
     },
   });
 }
+
+// ── BACKGROUND GENERATION (Jenni 2026-07-03) ─────────────────────────────────────────────────
+// Thin server-side runner: the browser has already assembled the draft (sys+content+models) and the
+// critique (sys+prefix). We just execute those two Claude calls on the edge and stash the raw texts;
+// the browser does all JSON parsing / citation cleanup on poll-complete (no prompt logic duplicated).
+
+// Anthropic text call with model fallback on overload. Returns { text, modelUsed, usage }.
+async function callAnthropicText(env, sys, content, maxTok, models, tools) {
+  // Enforce the same allowlist + token cap as the synchronous /v1/messages path — a tampered client
+  // can't push us onto an off-list or oversized model via the async route.
+  models = (Array.isArray(models) ? models : []).filter(function(m){ return ALLOWED_MODELS.indexOf(m) >= 0; });
+  if (!models.length) models = ["claude-opus-4-8", "claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"];
+  maxTok = Math.min(Math.max(parseInt(maxTok) || 16384, 256), MAX_TOKENS_CAP);
+  // Only allowlisted tool types survive (currently just web_search). Anything else is dropped.
+  let safeTools = null;
+  if (Array.isArray(tools) && tools.length) {
+    safeTools = tools.filter(function(t){ return t && ALLOWED_TOOL_TYPES.indexOf(t.type) >= 0; });
+    if (!safeTools.length) safeTools = null;
+  }
+  let lastErr;
+  for (let i = 0; i < models.length; i++) {
+    const reqBody = { model: models[i], max_tokens: maxTok || 16384, system: sys, messages: [{ role: "user", content: content }] };
+    if (safeTools) reqBody.tools = safeTools;
+    let r;
+    try {
+      r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify(reqBody),
+      });
+    } catch (e) { lastErr = e; continue; }
+    if (r.ok) {
+      const d = await r.json();
+      // Concatenate ALL text blocks — with web_search the response also carries tool_use / tool_result
+      // blocks, and the talk JSON can be split across multiple text blocks. (index.html does the same.)
+      let text = "";
+      for (const b of (d.content || [])) { if (b && b.type === "text" && b.text) text += b.text; }
+      return { text, modelUsed: models[i], usage: d.usage || {} };
+    }
+    if ((r.status === 529 || r.status >= 500) && i < models.length - 1) { lastErr = new Error("overloaded " + r.status); continue; }
+    let em = ""; try { em = (await r.json()).error?.message || ""; } catch (_) {}
+    throw new Error("Anthropic " + r.status + (em ? ": " + em : ""));
+  }
+  throw lastErr || new Error("Anthropic call failed");
+}
+
+async function runGeneration(jobId, body, env) {
+  const t0 = Date.now();
+  async function updateJob(patch) {
+    let cur = {};
+    try { cur = JSON.parse((await env.JOBS_KV.get("job:" + jobId)) || "{}"); } catch (_) {}
+    if (cur.cancelled) return false;
+    await env.JOBS_KV.put("job:" + jobId, JSON.stringify(Object.assign({}, cur, patch, { updatedAt: new Date().toISOString() })), { expirationTtl: 600 });
+    return true;
+  }
+  try {
+    const d = body.draft || {};
+    if (!(await updateJob({ stage: "drafting" }))) return;
+    const draft = await callAnthropicText(env, d.sys, d.content, d.maxTok || 16384, d.models, d.tools);
+    let critText = "", critUsage = null, critModel = null;
+    if (body.critique && body.critique.sys) {
+      if (!(await updateJob({ stage: "critique" }))) return;
+      const critInput = (body.critique.prefix || "") + "\n\nDraft chalk talk to review:\n" + draft.text;
+      const crit = await callAnthropicText(env, body.critique.sys, [{ type: "text", text: critInput }], body.critique.maxTok || 16384, body.critique.models);
+      critText = crit.text; critUsage = crit.usage; critModel = crit.modelUsed;
+    }
+    // Meter real spend into the ledger (server-side, authoritative for the $/mo cap) — best-effort.
+    // NOTE: we intentionally do NOT consume the 10-talk quota here. The frontend consumes it once per
+    // generation (charge-after render), same as the synchronous path — doing it in both places would
+    // double-count. (Jenni 2026-07-03)
+    try {
+      const monthKey = new Date().toISOString().slice(0, 7);
+      let cents = estimateCostCents(draft.modelUsed, draft.usage || {});
+      if (critUsage) cents += estimateCostCents(critModel, critUsage);
+      if (cents > 0) await supaServiceRPC(env, "ledger_add", { p_month: monthKey, p_kind: "talk", p_cost_cents: cents, p_cap_cents: freeCapCents(env) });
+    } catch (_) {}
+    await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
+  } catch (err) {
+    const msg = (err && err.message) || "Generation failed";
+    const code = /overload|529|5\d\d/.test(msg) ? "upstream_overloaded" : "gen_error";
+    await updateJob({ status: "error", error: { code, message: msg } });
+  }
+}
+
+async function handleGenerateAsync(request, env, ctx, origin) {
+  if (!env.JOBS_KV) return jsonError(503, "async_unconfigured", "Background generation isn't configured (missing JOBS_KV binding).", origin);
+  if (!env.ANTHROPIC_API_KEY) return jsonError(503, "no_key", "Server key not configured.", origin);
+  const token = request.headers.get("X-Supabase-Auth");
+  const user = token ? await verifySupabaseUser(env, token) : null;
+  if (!user) return jsonError(401, "auth_required", "Sign in to use background generation.", origin);
+  const monthKey = new Date().toISOString().slice(0, 7);
+  if ((await getMonthlySpendCents(env, monthKey)) >= freeCapCents(env))
+    return jsonError(503, "free_tier_paused", "Free tier is paused for this month. Add your own key to continue.", origin, { resumes_on: nextMonthFirstDayUTC() });
+  const raw = await request.text();
+  if (raw.length > 2_000_000) return jsonError(413, "request_too_large", "Request too large.", origin);
+  let body;
+  try { body = JSON.parse(raw); } catch { return jsonError(400, "invalid_json", "Body is not valid JSON.", origin); }
+  body.userId = user.id;
+  const jobId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  await env.JOBS_KV.put("job:" + jobId, JSON.stringify({ status: "running", stage: "drafting", createdAt: now, updatedAt: now }), { expirationTtl: 600 });
+  ctx.waitUntil(runGeneration(jobId, body, env));
+  return jsonOK({ jobId, createdAt: now }, origin);
+}
+
+async function handleGenerateStatus(jobId, env, origin) {
+  if (!env.JOBS_KV) return jsonError(503, "async_unconfigured", "Background generation isn't configured.", origin);
+  const raw = await env.JOBS_KV.get("job:" + jobId);
+  if (!raw) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
+  let obj;
+  try { obj = JSON.parse(raw); } catch { return jsonError(500, "bad_job", "Corrupt job record.", origin); }
+  return jsonOK(obj, origin);
+}
+
+async function handleGenerateCancel(jobId, env, origin) {
+  if (!env.JOBS_KV) return jsonOK({ status: "cancelled" }, origin);
+  try {
+    const cur = JSON.parse((await env.JOBS_KV.get("job:" + jobId)) || "{}");
+    cur.cancelled = true;
+    if (cur.status !== "done") cur.status = "cancelled";
+    cur.updatedAt = new Date().toISOString();
+    await env.JOBS_KV.put("job:" + jobId, JSON.stringify(cur), { expirationTtl: 600 });
+  } catch (_) {}
+  return jsonOK({ status: "cancelled" }, origin);
+}
+
 function corsPreflight(origin, allowedOrigins) {
   const allowedOrigin = isOriginAllowed(origin, allowedOrigins) ? origin : "";
   return new Response(null, {
