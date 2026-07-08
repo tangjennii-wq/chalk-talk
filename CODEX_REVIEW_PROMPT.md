@@ -88,12 +88,17 @@ Read the full diff before judging any single hunk — several features touch the
 `handleGenerateStatus`, `handleGenerateCancel`; `index.html`: `asyncGenApplicable`,
 `submitAsyncGeneration`, `pollAsyncGeneration`, `resumeAsyncJobIfAny`, `cancelGen`, and the async
 branch inside `generate()`):
-- Does EVERY async-submit failure (503 `async_unconfigured`, 503 `free_tier_paused`, 403
-  `quota_exceeded`, 401, other 4xx/5xx, network throw) fall back to the sync path silently or surface
-  the right modal — never hang, never a raw error?
+- **Async-submit failure — verify the EXACT branch per error, not just "fall back":**
+  - `async_unconfigured` (no JOBS_KV) / network error / generic 5xx → silent fallback to the sync path.
+  - `free_tier_paused` / spend-cap hit → BYOK modal or provider switch, NOT a silent sync free-tier
+    retry (sync would just hit the same cap).
+  - `quota_exceeded` → the quota/paywall modal, NOT a silent sync fallback (sync would also be out).
+  Confirm each maps to the right UX and never hangs / never shows a raw error.
 - **Quota invariant (§5 above): trace all five scenarios and confirm exactly-once.**
-- **Abuse / direct-endpoint bypass:** can a user with a valid Supabase token bypass quota by calling
-  `/generate-async` or the sync `/v1/messages` endpoint directly (skipping the frontend consume)? What
+- **Abuse / direct-endpoint bypass:** (a) can a user with a valid Supabase token bypass quota by calling
+  `/generate-async` or the sync `/v1/messages` endpoint directly (skipping the frontend consume)? (b)
+  can a request with MISSING or INVALID Supabase auth reach the owner's key on `/generate-async`,
+  `/v1/messages`, or `/v1/openai/chat` (only intended public/demo paths should ever run keyless)? What
   bounds the damage (per-user quota check at submit? the $250 cap? per-IP rate limit)? Is the async
   submit-time `free_tier_remaining` check sufficient, and is there a TOCTOU window if many jobs are
   submitted in parallel before any completes?
@@ -107,6 +112,10 @@ branch inside `generate()`):
   `models`/`maxTok`? Are only **assistant text blocks** concatenated, while `tool_use` / `input_json` /
   web-search-result blocks are ignored (not spliced into the model text)? Are only allowlisted tool
   types forwarded? Does a job cancelled mid-run stop writing to KV and skip the quota consume?
+- **Check BOTH parsers**: the browser STREAMING parser in `callAPI` (SSE `content_block_delta` — the
+  prior bug was `input_json`/`partial_json` tool args leaking into the talk text) AND the Worker
+  NON-STREAMING response parsing in `callAnthropicText`. They're separate code; verify each ignores
+  non-text blocks identically.
 - Route path-slicing for `/generate-status/` and `/generate-cancel/` — any off-by-one in `slice()`?
 - `localStorage` job key (`ct_active_job`) cleaned up on success, cancel, error, expiry — and never
   cleaned up by a *superseded* invocation belonging to a different gen?
@@ -124,8 +133,9 @@ Worker `/v1/free-tier/*`, `estimateCostCents`, `ledger_add`, the $250 cap):
   cleanly to the user WITHOUT falling through to Claude and WITHOUT consuming free-tier quota? Do they
   have their own JSON-repair / error handling, or do they rely on shared code that assumes Claude?
 
-**D. Reorder persistence:** `sort_order` actually written per card (not always 0); ordering survives
-reload and drives showcase; scoped within a specialty group.
+**D. Reorder persistence:** (library) `sort_order` actually written per card (not always 0); ordering
+survives reload and drives showcase; scoped within a specialty group. (section editor) bullet reorder
+preserves in-progress textarea edits and reorders the CURRENT edited array, not a stale draft snapshot.
 
 **E. `render()` churn + stale closures:** handlers are re-bound every render and a background re-render
 can swap a button mid-interaction. The DOM is rebuilt via `innerHTML`, so duplicate DOM listeners are
@@ -138,8 +148,16 @@ button, cancel, key modal, proofread toggle, and the async poll's `onStage`).
 possibly-empty/garbage model output without try/catch; `setInterval` timers leaked on an early return;
 `localStorage` access not wrapped against quota/private-mode exceptions.
 
+**G. Model-output JSON repair (`fixJSON` and callers):** the model sometimes emits a preamble/postscript
+("Looking at the references…") around the JSON, especially when PDFs/images are uploaded or web-search
+runs. Verify the repair strips leading/trailing non-JSON, handles a truncated/maxToken-cut tail, and
+that reference-upload parts (`buildReferenceParts`) can't produce an oversized/invalid request that
+silently fails. Test the upload path end-to-end in your reasoning.
+
 ## Deliverables
 
 The three sections at the top (Bugs / Cannot-verify / Confidence). Call out loudly anything that
 double-charges, charges zero on a successful generation, drops user content, or leaks/persists a key.
 Skip style nits. Do not modify files — report only.
+
+**End with a one-line verdict: SHIP or DO NOT SHIP, plus the top 3 ship-blockers** (or "no blockers").
