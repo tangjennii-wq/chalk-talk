@@ -7486,15 +7486,18 @@ function renderGlobalModals(){
   // ── API key modal (Jenni 2026-07-03) — smooth in-app key entry for any provider ──
   if(S.keyModalOpen){
     var _kp = KEY_PROVIDERS[S.keyModalProvider] || KEY_PROVIDERS.claude;
+    var _kpIco = ({claude:"🟣",openai:"💬",gemini:"✦"})[S.keyModalProvider] || "🔑";
     h+='<div class="drawer-backdrop open" id="keyModalBackdrop" style="z-index:130"></div>';
     h+='<div class="drawer open" id="keyModal" style="z-index:131;max-width:440px;width:calc(100% - 32px);margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
-    h+='<div class="drawer-head" style="padding:18px 20px 8px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🔑</span> Add your '+esc(_kp.label)+' API key</div><button class="drawer-close" id="keyModalCloseBtn">×</button></div>';
-    h+='<div style="padding:0 20px 20px">';
-    h+='<p style="font-size:12.5px;color:var(--ink-muted);line-height:1.55;margin:0 0 12px">Stored only in this browser, sent only to the provider — never to us. '+esc(_kp.note)+(_kp.ph?' Paste a key like <code style="background:var(--cream);padding:1px 5px;border-radius:5px">'+esc(_kp.ph)+'</code>.':'')+'</p>';
-    h+='<input id="keyModalInput" type="text" autocomplete="off" spellcheck="false" placeholder="'+esc(_kp.ph)+'" value="'+esc(S.keyModalInput||"")+'" style="width:100%;background:#fff;border:1.5px solid '+(S.keyModalErr?"#c0392b":"#e2dfe8")+';border-radius:12px;padding:12px 14px;font-size:14px;font-family:ui-monospace,Menlo,monospace;outline:none;box-sizing:border-box;margin-bottom:'+(S.keyModalErr?"6px":"12px")+'">';
-    if(S.keyModalErr) h+='<div style="font-size:11.5px;color:#c0392b;margin-bottom:12px">'+esc(S.keyModalErr)+'</div>';
-    h+='<button id="keyModalSaveBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px">Save key</button>';
-    h+='<a href="'+esc(_kp.url)+'" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:12px;color:var(--plum);font-weight:600;text-decoration:none">Get a '+esc(_kp.label)+' key →</a>';
+    h+='<div class="drawer-head" style="padding:20px 22px 6px"><div class="drawer-title" style="display:flex;align-items:center;gap:10px"><span style="background:var(--lavender-bg);width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+_kpIco+'</span> Add your '+esc(_kp.label)+' key</div><button class="drawer-close" id="keyModalCloseBtn">×</button></div>';
+    h+='<div style="padding:4px 22px 22px">';
+    h+='<p style="font-size:12.5px;color:var(--ink-muted);line-height:1.55;margin:0 0 14px">'+esc(_kp.note)+(_kp.ph?' Keys look like <code style="background:var(--cream);border:1px solid var(--line);padding:1px 6px;border-radius:6px;font-size:11.5px">'+esc(_kp.ph)+'</code>.':'')+'</p>';
+    h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.08em;margin:0 2px 6px">API key</div>';
+    h+='<input id="keyModalInput" type="text" autocomplete="off" spellcheck="false" placeholder="'+esc(_kp.ph)+'" value="'+esc(S.keyModalInput||"")+'" style="width:100%;background:#fff;border:1.5px solid '+(S.keyModalErr?"#c0392b":"#e2dfe8")+';border-radius:12px;padding:12px 14px;font-size:14px;font-family:ui-monospace,Menlo,monospace;outline:none;box-sizing:border-box;margin-bottom:'+(S.keyModalErr?"6px":"8px")+'">';
+    if(S.keyModalErr) h+='<div style="font-size:11.5px;color:#c0392b;margin-bottom:8px">'+esc(S.keyModalErr)+'</div>';
+    h+='<div style="display:flex;align-items:flex-start;gap:6px;font-size:11px;color:var(--ink-soft);line-height:1.45;margin:0 2px 14px"><span style="flex-shrink:0">🔒</span><span>Stored only in this browser and sent directly to '+esc(_kp.label)+' — never to us.</span></div>';
+    h+='<button id="keyModalSaveBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:12px;font-family:inherit">Save key</button>';
+    h+='<a href="'+esc(_kp.url)+'" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:12px;color:var(--plum);font-weight:600;text-decoration:none">Don’t have one? Get a '+esc(_kp.label)+' key →</a>';
     h+='</div></div>';
   }
 
@@ -8516,19 +8519,23 @@ function renderMain(){
   h+='</div>';
 
   // Model provider row (Jenni 2026-07-03) — Claude default (free tier + BYOK); ChatGPT/Gemini BYOK.
-  // NOTE: styling is intentionally minimal here — a Fable pass will polish this UI.
+  // Styled to mirror the Style/Depth segmented controls above (Fable polish pass).
   (function(){
     var _gp = S.genProvider || "claude";
-    function provBtn(val,label){
+    function provBtn(val,icon,label){
       var on=(_gp===val);
-      return '<button class="genProvBtn" data-p="'+val+'" style="flex:1;min-width:0;background:'+(on?"#fff":"transparent")+';color:'+(on?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(on?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:7px 6px;font-size:12px;font-weight:'+(on?"600":"500")+';cursor:pointer;box-shadow:'+(on?"var(--shadow-soft)":"none")+';font-family:inherit">'+label+'</button>';
+      var hasKey=false;
+      try{ hasKey = (val==="openai" && !!localStorage.getItem("openai_api_key")) || (val==="gemini" && !!localStorage.getItem("gemini_api_key")); }catch(e){}
+      return '<button class="genProvBtn" data-p="'+val+'" style="flex:1 1 0;min-width:0;background:'+(on?"#fff":"transparent")+';color:'+(on?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(on?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(on?"600":"500")+';cursor:pointer;box-shadow:'+(on?"var(--shadow-soft)":"none")+';transition:all .15s ease;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:13px">'+icon+'</span>'+label+
+        (hasKey?'<span style="font-size:9px;font-weight:700;color:'+(on?"var(--plum)":"var(--ink-soft)")+';background:'+(on?"var(--lavender-bg)":"transparent")+';border-radius:4px;padding:1px 4px;letter-spacing:0.04em;line-height:1.4">✓ key</span>':'')+
+        '</button>';
     }
     h+='<div style="margin-bottom:14px">';
-    h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Model<span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink-soft);margin-left:6px">ChatGPT &amp; Gemini use your own key</span></div>';
+    h+='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 4px 6px"><span style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em">Model</span><span style="font-size:10.5px;color:var(--ink-soft);font-weight:400;line-height:1.4;text-align:right">ChatGPT &amp; Gemini use your own key</span></div>';
     h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
-    h+=provBtn("claude","🟣 Claude");
-    h+=provBtn("openai","💬 ChatGPT");
-    h+=provBtn("gemini","✦ Gemini");
+    h+=provBtn("claude","🟣","Claude");
+    h+=provBtn("openai","💬","ChatGPT");
+    h+=provBtn("gemini","✦","Gemini");
     h+='</div></div>';
   })();
 
