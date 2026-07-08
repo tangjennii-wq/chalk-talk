@@ -3816,22 +3816,22 @@ function renderLibCard(x){
   // unsaved local draft). Drag is constrained to WITHIN its specialty group. (Jenni 2026-07-03)
   var _reorderable = !isSample && !isShowcase && x._id && !String(x._id).startsWith("t_");
   var _cardSpec = x._spec || "Other";
-  var h = '<div class="libCard" data-libid="'+esc(x._id||"")+'" data-libspec="'+esc(_cardSpec)+'" style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">';
+  var h = '<div class="libCard" data-libid="'+esc(x._id||"")+'" data-libspec="'+esc(_cardSpec)+'" style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:9px;padding:6px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">';
   if(_reorderable){
     h += '<span class="libDragHandle" data-libid="'+esc(x._id)+'" data-libspec="'+esc(_cardSpec)+'" title="Drag to reorder within '+esc(_cardSpec)+'" aria-label="Drag to reorder" style="cursor:grab;color:var(--ink-soft);font-size:15px;line-height:1;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none;padding:2px 4px;margin:-2px 0">⠿</span>';
   }
 
   // Optional small thumbnail (only on Visuals tab — elsewhere the badge in the meta row indicates an image)
   if(visuals && S.libTab === "visuals"){
-    h += '<img src="data:image/png;base64,'+visuals[0].imgB64+'" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1px solid var(--line);flex-shrink:0">';
+    h += '<img src="data:image/png;base64,'+visuals[0].imgB64+'" alt="" style="width:38px;height:38px;object-fit:cover;border-radius:7px;border:1px solid var(--line);flex-shrink:0">';
   }
 
   // Title + meta in a single column, flex:1
   // Samples can carry a local rename override (keyed by slug) since the seed title is immutable.
   var _ovr = isSample ? (loadSampleTitleOverrides()[x._slug]||"") : "";
   var displayTitle = _ovr || t.title || x.topic || "Untitled";
-  h += '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">';
-  h += '<div style="font-size:13.5px;font-weight:700;color:var(--plum-deep);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(displayTitle)+'">'+esc(displayTitle)+'</div>';
+  h += '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">';
+  h += '<div style="font-size:13px;font-weight:700;color:var(--plum-deep);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(displayTitle)+'">'+esc(displayTitle)+'</div>';
   // Compact meta row — type badge + sample/dual/visual badges + date in tiny font
   h += '<div style="display:flex;gap:6px;font-size:10.5px;color:var(--ink-muted);align-items:center;flex-wrap:wrap">';
   h += '<span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;letter-spacing:0.02em">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
