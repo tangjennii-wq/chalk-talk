@@ -762,7 +762,9 @@ async function handleGenerateAsync(request, env, ctx, origin) {
       return jsonError(403, "quota_exceeded", "You've used all your free talks. Add your own key to keep generating.", origin);
   } catch (_) { /* if the check fails, fall through — the atomic consume on completion is the backstop */ }
   const raw = await request.text();
-  if (raw.length > 2_000_000) return jsonError(413, "request_too_large", "Request too large.", origin);
+  // Match the sync /v1/messages ceiling (MAX_REQUEST_BYTES) so uploads that work synchronously can also
+  // use background mode instead of falling back. (Jenni 2026-07)
+  if (raw.length > MAX_REQUEST_BYTES) return jsonError(413, "request_too_large", "Request too large — try a smaller reference file.", origin);
   let body;
   try { body = JSON.parse(raw); } catch { return jsonError(400, "invalid_json", "Body is not valid JSON.", origin); }
   body.userId = user.id;

@@ -1581,7 +1581,7 @@ async function resumeAsyncJobIfAny(){
     clearInterval(loadTimer); S.loading = false;
     // Silent on cancel / stale / expired job — the user can just regenerate.
     if(err && err.code !== "cancelled" && _myGenId === S.genId && !/expired/i.test(err.message||"")){
-      S.error = err.message || "Couldn't reconnect to your talk. Please generate again.";
+      S.error = humanizeError(err) || "Couldn't reconnect to your talk. Please generate again.";
     }
     render();
   }
@@ -5639,6 +5639,76 @@ async function retrieveRAG(topic, opts) {
 }
 
 // ═══════════ ACTIONS ═══════════
+// Reference-upload limits (Jenni 2026-07). The Worker caps request bodies at 5 MB and base64 inflates
+// raw bytes ~33%, and the system prompt + RAG context also share that budget — so cap each file at
+// 3.5 MB raw (~4.7 MB base64) and the whole upload set at 8 files. Text is truncated in buildReferenceParts.
+var MAX_UPLOAD_BYTES = 3.5 * 1024 * 1024;
+var MAX_UPLOAD_FILES = 8;
+var ALLOWED_UPLOAD_RE = /\.(pdf|txt|md|png|jpe?g)$/i;
+
+function _fileToast(msg){ S.savedFlash = msg; if(typeof render==="function") render(); setTimeout(function(){ if(S.savedFlash===msg){ S.savedFlash=""; if(typeof render==="function") render(); } }, 4500); }
+
+// Turn a raw thrown error into a clear, actionable, non-technical message for the user. Our own
+// intentionally-friendly errors (overload notice, key prompts, etc.) pass through unchanged; this only
+// rewrites the leaky ones — JSON SyntaxErrors, "Failed to fetch", raw "API 400: {...}" passthroughs, and
+// stack-ish noise — into plain guidance. (Jenni 2026-07 — Codex reliability pass)
+function humanizeError(e){
+  var m = (e && e.message) ? String(e.message) : String(e || "");
+  if(!m) return "Something went wrong. Please try again.";
+  if(/Unexpected token|Unexpected end of (JSON|input)|in JSON at position|is not valid JSON|JSON\.parse|Empty response/i.test(m))
+    return "The AI returned an incomplete response. Tap Generate again — a retry almost always fixes it.";
+  if(/Failed to fetch|NetworkError|Load failed|ERR_[A-Z]|ECONN|net::/i.test(m))
+    return "Network hiccup — check your connection and tap Generate again.";
+  if(/timed out|timeout|\b408\b|\b504\b/i.test(m))
+    return "That took too long to come back. Tap Generate again.";
+  if(/overloaded|\b529\b|temporarily (unavailable|overloaded)/i.test(m))
+    return "The AI servers are briefly overloaded. Wait a moment, then tap Generate again.";
+  if(/^API \d{3}\b/i.test(m) || /"type":\s*"|\bat <anonymous>|\bTypeError\b|\bReferenceError\b|undefined is not/i.test(m))
+    return "Generation failed (server error). Please try again in a moment.";
+  return m;
+}
+
+// Single robust entry point for BOTH uploaders (drop zone + composer). Validates type/size, reads each
+// file with per-file error handling, dedupes by name+size, and gives the user clear feedback on any
+// reject — instead of the old silent try/catch that dropped bad files without a word. Fixes the
+// closure bug where async onload callbacks all captured the loop's last file. (Jenni 2026-07)
+function addUploadedFiles(fileList){
+  var arr = Array.prototype.slice.call(fileList || []);
+  if(!arr.length) return;
+  var rejected = [];
+  arr.forEach(function(f){
+    if(!f) return;
+    if((S.files||[]).length >= MAX_UPLOAD_FILES){ rejected.push(f.name + " (max " + MAX_UPLOAD_FILES + " files)"); return; }
+    var isText = f.type.indexOf("text")>=0 || /\.(txt|md)$/i.test(f.name);
+    var isPdf  = f.type==="application/pdf" || /\.pdf$/i.test(f.name);
+    var isImg  = f.type.indexOf("image/")===0 || /\.(png|jpe?g)$/i.test(f.name);
+    if(!isText && !isPdf && !isImg && !ALLOWED_UPLOAD_RE.test(f.name||"")){ rejected.push(f.name + " (unsupported type)"); return; }
+    if(f.size > MAX_UPLOAD_BYTES){ rejected.push(f.name + " (too large — max 3.5 MB)"); return; }
+    // Dedupe: same name + size already queued.
+    if((S.files||[]).some(function(x){ return x._name===f.name && x._size===f.size; })){ return; }
+    var reader = new FileReader();
+    reader.onerror = function(){ _fileToast("⚠ Couldn't read " + f.name + " — try re-saving or another file."); };
+    if(isText){
+      reader.onload = function(){
+        try{ S.files.push({ n:f.name, t:"text", c:String(reader.result||"").slice(0,12000), _name:f.name, _size:f.size }); if(typeof render==="function") render(); }
+        catch(_){ _fileToast("⚠ Couldn't attach " + f.name + "."); }
+      };
+      reader.readAsText(f);
+    } else {
+      reader.onload = function(){
+        try{
+          var b64 = String(reader.result||"").split(",")[1] || "";
+          if(!b64){ _fileToast("⚠ " + f.name + " came back empty."); return; }
+          S.files.push({ n:f.name, t: isPdf ? "pdf" : "img", c:b64, m:(f.type|| (isPdf?"application/pdf":"image/png")), _name:f.name, _size:f.size });
+          if(typeof render==="function") render();
+        }catch(_){ _fileToast("⚠ Couldn't attach " + f.name + "."); }
+      };
+      reader.readAsDataURL(f);
+    }
+  });
+  if(rejected.length) _fileToast("⚠ Skipped: " + rejected.join("; "));
+}
+
 function buildReferenceParts(files) {
   var parts = [];
   if (!files || !files.length) return parts;
@@ -5959,7 +6029,7 @@ async function generate(){
       } else if(e && e.code === "auth_invalid"){
         S.error = "Your session expired — please sign in again.";
       } else {
-        S.error = e.message;
+        S.error = humanizeError(e);
       }
     }
   }
@@ -6111,7 +6181,7 @@ async function genDiagram(){
       var p=JSON.parse(fixJSON(txt));
       if(p.nodes&&p.nodes.length>0){autoLayout(p.nodes,p.arrows||[]);S.dg={svg:p}}
       else throw new Error("No nodes returned");
-    }catch(e){S.dgErr="Failed: "+e.message}
+    }catch(e){S.dgErr=humanizeError(e)}
     S.dgBusy=false;render();
     return;
   }
@@ -6201,7 +6271,7 @@ async function genDiagram(){
     }
     if(!imgB64)throw new Error("No image returned. Check that the Image model is enabled for your key.");
     S.dg={imgB64:imgB64};
-  }catch(e){S.dgErr="Failed: "+e.message}
+  }catch(e){S.dgErr=humanizeError(e)}
   S.dgBusy=false;render();
 }
 
@@ -6472,7 +6542,7 @@ async function applyProofreadFeedback(userMsg){
       S.msgs.push({r:"a",t:"Couldn't parse the corrected version — your original is intact. Try again, or apply the feedback one point at a time."});
     }
   } catch(e){
-    S.msgs.push({r:"a",t:"Applying the feedback failed: "+e.message+". Your original is intact."});
+    S.msgs.push({r:"a",t:"Applying the feedback failed — "+humanizeError(e)+" Your original is intact."});
   }
   if(refineTimer){ clearInterval(refineTimer); refineTimer = null; }
   S._proofreadRunning = false;
@@ -7040,7 +7110,7 @@ async function sendChat(){
         S.msgs.push({r:"a",t:"Couldn't parse the restructured version \u2014 your original is intact. Try again."});
       }
     } catch(e){
-      S.msgs.push({r:"a",t:"Restructure failed: "+e.message+". Your original is intact."});
+      S.msgs.push({r:"a",t:"Restructure failed — "+humanizeError(e)+" Your original is intact."});
     }
     S.chatBusy = false;
     S._composerOpen = false;
@@ -7078,7 +7148,7 @@ async function sendChat(){
         S.msgs.push({r:"a",t:"Couldn't parse the expanded version \u2014 your original is intact. Try again."});
       }
     } catch(e){
-      S.msgs.push({r:"a",t:"Expansion failed: "+e.message+". Your original is intact."});
+      S.msgs.push({r:"a",t:"Expansion failed — "+humanizeError(e)+" Your original is intact."});
     }
     S.chatBusy = false;
     S._composerOpen = false;
@@ -7117,7 +7187,7 @@ async function sendChat(){
         S.msgs.push({r:"a",t:"Couldn't parse the compressed version \u2014 your original is intact. Try again or say \"rewrite\"."});
       }
     } catch(e){
-      S.msgs.push({r:"a",t:"Compression failed: "+e.message+". Your original is intact."});
+      S.msgs.push({r:"a",t:"Compression failed — "+humanizeError(e)+" Your original is intact."});
     }
     S.chatBusy = false;
     S._composerOpen = false;
@@ -7176,7 +7246,7 @@ async function sendChat(){
       S.msgs.push({r:"a",t:"Couldn't parse the update \u2014 try again, or say \"rewrite\" for a full regenerate."});
     }
   } catch(e){
-    S.msgs.push({r:"a",t:"Refine failed: "+e.message+". Try \"rewrite\" if you want a full regenerate."});
+    S.msgs.push({r:"a",t:"Refine failed — "+humanizeError(e)+" Or say \"rewrite\" for a full regenerate."});
   }
   S.chatBusy=false;render();
 }
@@ -9930,11 +10000,7 @@ function bindMain(){
   }});
   document.querySelectorAll(".depthBtn").forEach(function(b){b.onclick=function(){if(b.disabled)return;if(S.depth!==b.dataset.d){S.depth=b.dataset.d;S.talk=null;S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.error="";speechSynthesis.cancel()}render()}});
   var dz=document.getElementById("dropZone");if(dz)dz.onclick=function(){document.getElementById("fileInput").click()};
-  var fi=document.getElementById("fileInput");if(fi)fi.onchange=async function(e){
-    for(var i=0;i<e.target.files.length;i++){var f=e.target.files[i];try{
-      if(f.type.indexOf("text")>=0||f.name.endsWith(".txt")){var r=new FileReader();r.onload=function(){S.files.push({n:f.name,t:"text",c:r.result.slice(0,8000)});render()};r.readAsText(f)}
-      else if(f.type==="application/pdf"||f.type.indexOf("image/")===0){var r2=new FileReader();r2.onload=function(){S.files.push({n:f.name,t:f.type==="application/pdf"?"pdf":"img",c:r2.result.split(",")[1],m:f.type});render()};r2.readAsDataURL(f)}
-    }catch(err){}}};
+  var fi=document.getElementById("fileInput");if(fi)fi.onchange=function(e){ addUploadedFiles(e.target.files); try{ e.target.value=""; }catch(_){} };
   document.querySelectorAll(".rmFile").forEach(function(b){b.onclick=function(){S.files.splice(+b.dataset.i,1);render()}});
   // podCheck handler removed (2026-06-08) — toggle was deleted from compose form + drawer.
   var wc=document.getElementById("webCheck");if(wc)wc.onchange=function(e){S.wantWebSearch=e.target.checked};
@@ -10034,7 +10100,7 @@ function bindMain(){
   var ccb=document.getElementById("composerCloseBtn");if(ccb)ccb.onclick=function(){S._composerOpen=false;S.proofreadArmed=false;render()};
   var prt=document.getElementById("proofreadToggle");if(prt)prt.onchange=function(){S.proofreadArmed=prt.checked;render()};
   var crb=document.getElementById("composerRefBtn");if(crb)crb.onclick=function(){var fi=document.getElementById("composerFileInput")||document.getElementById("fileInput");if(fi)fi.click()};
-  var cfi=document.getElementById("composerFileInput");if(cfi)cfi.onchange=function(e){var fi2=document.getElementById("fileInput");if(fi2){var dt=new DataTransfer();for(var i=0;i<e.target.files.length;i++)dt.items.add(e.target.files[i]);fi2.files=dt.files;fi2.dispatchEvent(new Event("change",{bubbles:true}))}};
+  var cfi=document.getElementById("composerFileInput");if(cfi)cfi.onchange=function(e){ addUploadedFiles(e.target.files); try{ e.target.value=""; }catch(_){} };
   // Send: ⌘/Ctrl+Enter only. Plain Enter inserts a newline (we always have room — fixed-height textarea with internal scroll).
   var rin=document.getElementById("reviseIn");if(rin){
     rin.oninput=function(e){
