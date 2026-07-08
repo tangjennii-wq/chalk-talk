@@ -8892,7 +8892,7 @@ function renderMain(){
     var _gp = S.genProvider || "claude";
     var _expanded = S.modelPickerOpen || (_gp !== "claude");
     if(!_expanded){
-      h+='<div style="margin:0 4px 14px"><button id="modelPickerToggle" title="Prefer ChatGPT or Gemini? Use your own key." style="background:none;border:none;padding:0;color:var(--ink-soft);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Model: <b style="color:var(--ink-muted)">Claude</b> · use ChatGPT or Gemini instead ›</button></div>';
+      h+='<div style="margin:0 4px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:12.5px;color:var(--ink);font-weight:500">Model: <b style="color:var(--plum-deep)">Claude</b> ·</span><button id="modelPickerToggle" title="Prefer ChatGPT or Gemini? Use your own key." style="background:var(--lavender-bg);border:1px solid var(--lavender-soft);border-radius:999px;padding:4px 12px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .12s ease">Switch to ChatGPT or Gemini ›</button></div>';
       return;
     }
     function provBtn(val,icon,label){
