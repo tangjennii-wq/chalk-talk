@@ -7600,11 +7600,11 @@ function renderGlobalModals(){
     h+='<div class="drawer-head" style="padding:20px 22px 8px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>✨</span> '+(_paused?"Free tier paused":"You've used your free talks")+'</div><button class="drawer-close" id="freeModalCloseBtn">×</button></div>';
     h+='<div class="drawer-body" style="padding:0 22px 22px">';
     if(_paused){
-      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">'+esc(S.freePausedMsg)+' Bring your own Anthropic key to keep generating right now — it goes straight to Anthropic and isn\'t rate-limited.</p>';
+      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">'+esc(S.freePausedMsg)+' Bring your own key (Claude, ChatGPT, or Gemini) to keep generating right now — it goes straight to the provider and isn\'t rate-limited.</p>';
     } else {
-      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">Thanks for trying Chalk Talk! To keep generating, add your own Anthropic key — about <b style="color:var(--ink)">$5 of credit covers ~30 talks</b>. Your key is stored only in this browser and sent only to Anthropic.</p>';
+      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">Thanks for trying Chalk Talk! To keep generating, bring your own key — <b style="color:var(--ink)">Claude</b> (~$5 covers ~30 talks), <b style="color:var(--ink)">ChatGPT</b>, or <b style="color:var(--ink)">Gemini</b> (free keys at Google AI Studio). Your key is stored only in this browser and sent only to that provider.</p>';
     }
-    h+='<button id="freeAddKeyBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-bottom:10px">Add my Anthropic key →</button>';
+    h+='<button id="freeAddKeyBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-bottom:10px">Add your own key →</button>';
     h+='<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:12px;color:var(--plum);text-decoration:underline;text-underline-offset:2px;margin-bottom:14px">Get a key (free signup, ~2 min)</a>';
     h+='<button id="freeMaybeLaterBtn" style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px;font-size:13px;font-weight:600;color:var(--ink-muted);cursor:pointer">Maybe later</button>';
     h+='</div></div>';
@@ -8364,11 +8364,10 @@ function renderMain(){
     h+='<summary><span>✦ How it works · 10-min evidence-based teaching</span><span class="howit-caret">⌄</span></summary>';
     h+='<div class="howit-body">';
     // Free-tier pitch — front and center (combines the "10 free talks" message; fix #1 + #4).
-    h+='<div style="background:#fff6dd;border:1px solid #e6d49a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#7a5b1a;line-height:1.5;text-align:center"><b>✨ Free to try — 10 talks + 5 images.</b> Just sign in — after that, add your own Anthropic key (~$5 covers ~30 talks).</div>';
+    h+='<div style="background:#fff6dd;border:1px solid #e6d49a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#7a5b1a;line-height:1.5;text-align:center"><b>✨ Free to try — 10 talks + 5 images.</b> Just sign in — after that, bring your own key: Claude, ChatGPT, or Gemini (Gemini keys are free from Google AI Studio).</div>';
     h+='<div class="howit-step"><span class="howit-num">1</span><div><b>You enter a topic.</b> We pull matching evidence from PubMed and current society guidelines.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>An AI drafts the talk</b> with inline citations for every clinical claim. Optional: cross-checks against current literature on the open web.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">3</span><div><b>A second AI double-checks</b> the draft for errors, outdated guidelines, and drug-name mistakes before you see it.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">4</span><div><b>Three ways to view it:</b> the full <i>Overview</i>, a one-screen <i>📊 Slides</i> poster you can screenshot, or commute-friendly <i>🎧 Audio</i>.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>AI drafts the talk from that evidence</b> (RAG) with inline citations for every clinical claim, then verifies it against current guidelines and literature — catching errors, outdated recommendations, and drug-name mistakes — before you see it.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">3</span><div><b>Three ways to view it:</b> the full <i>Overview</i>, a one-screen <i>📊 Slides</i> poster you can screenshot, or commute-friendly <i>🎧 Audio</i>.</div></div>';
     h+='<div class="howit-note">Refine anytime via <i>Ask to revise lesson</i>. Your library stays private until you choose to share.</div>';
     h+='</div>';
     h+='</details>';
