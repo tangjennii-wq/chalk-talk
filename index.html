@@ -584,7 +584,11 @@ var MODEL = MODEL_CRITIC; // legacy fallback for non-critical calls (diagrams, p
 // prefer ChatGPT or Gemini bring their OWN key — those never touch the free tier / owner's budget.
 // Model strings are easy to bump here as providers release new versions.
 var GEN_OPENAI_MODEL = "gpt-5";        // ChatGPT (BYOK) — user's OpenAI key
-var GEN_GEMINI_MODEL = "gemini-3-pro"; // Gemini (BYOK) — user's Google AI Studio key
+// Gemini (BYOK) — user's Google AI Studio key. NOTE: "gemini-3-pro" was never a valid API id and
+// "gemini-3-pro-preview" is now SHUT DOWN — either 404s. Current Pro reasoning model is
+// "gemini-3.1-pro-preview" (per ai.google.dev/gemini-api/docs/models, 2026-06). If Gemini starts
+// failing again, a model deprecation is the first thing to check — bump this string. (Jenni 2026-07)
+var GEN_GEMINI_MODEL = "gemini-3.1-pro-preview";
 
 // Segmented-control button helper. Used by Style/Depth on the compose form AND in the
 // edit-settings drawer. Keeps the look consistent and lets us tune the segmented style
