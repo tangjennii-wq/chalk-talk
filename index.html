@@ -1467,8 +1467,15 @@ async function submitAsyncGeneration(payload){
       if(((e503.error && e503.error.type) || "") === "async_unconfigured"){ _asyncUnavailable = true; } // KV not set up yet
       return null; // includes free_tier_paused: let the SYNC path surface it consistently
     }
-    // ANY non-success (401 auth, 4xx, 5xx) → fall back to the synchronous path, which owns the real
-    // error handling (auth_invalid, quota, paused) and keeps one code path for user-facing errors.
+    // Out of quota: the worker RESERVED and found none left. Don't fall back to sync (that would
+    // generate one more on the owner's key) — surface the paywall. (Codex bug #3)
+    if(r.status === 403){
+      var e403 = {}; try{ e403 = await r.json(); }catch(_){}
+      if(((e403.error && e403.error.type) || "") === "quota_exceeded"){ var qe = new Error((e403.error && e403.error.message) || "You've used all your free talks."); qe.code = "quota_exceeded"; throw qe; }
+      return null;
+    }
+    // ANY other non-success (401 auth, 4xx, 5xx) → fall back to the synchronous path, which owns the
+    // real error handling (auth_invalid, paused) and keeps one code path for user-facing errors.
     if(!r.ok){ return null; }
     var data = await r.json();
     return (data && data.jobId) ? data : null;
@@ -4237,11 +4244,15 @@ async function saveCurrentVisualToLibrary(){
   S.talk.savedVisuals = S.talk.savedVisuals || [];
   S.talk.savedVisuals.push(visual);
   var _flash = function(msg, ms){ S.savedFlash = msg; render(); setTimeout(function(){ if(S.savedFlash===msg){ S.savedFlash=""; render(); } }, ms||2200); };
+  // Roll the just-pushed visual back OUT of memory when persistence fails \u2014 otherwise the in-memory
+  // array falsely reads as "saved" (the \u2713 Saved check + hydration), but a reload loses it. (Codex bug #2)
+  var _rollback = function(){ var i=S.talk.savedVisuals.indexOf(visual); if(i>=0) S.talk.savedVisuals.splice(i,1); };
   var isPersistedCloud = S.user && window.sb && S.loadedTalkId && !String(S.loadedTalkId).startsWith("t_") && !S.isSampleTalk && !S.sharedTalk;
   var isPersistedLocal = S.loadedTalkId && String(S.loadedTalkId).startsWith("t_");
   try{
     if(isPersistedCloud){
       var ok = await cloudUpdateTalk(S.loadedTalkId);   // serializes talk_json (incl. savedVisuals) + refreshes S.cloudTalks
+      if(!ok) _rollback();
       _flash(ok ? "\u2605 Image saved to library" : "\u26a0 Couldn't save the image \u2014 check connection.", ok?2200:3500);
       return;
     }
@@ -4254,13 +4265,19 @@ async function saveCurrentVisualToLibrary(){
         }
       }
       var wrote = found && writeSavedTalks(arr);
+      if(!wrote) _rollback();
       _flash(wrote ? "\u2605 Image saved to library" : "\u26a0 Couldn't save the image locally.", wrote?2200:3500);
       return;
     }
     // Unsaved / sample / shared talk \u2192 route through the normal save (creates a new library row that
-    // now carries the visual). saveCurrentTalk shows its own flash.
-    if(typeof saveCurrentTalk === "function") await saveCurrentTalk();
+    // now carries the visual). saveCurrentTalk sets S.talkIsSaved on success and shows its own flash;
+    // if it didn't persist (cancelled prompt / failure), roll the in-memory visual back.
+    if(typeof saveCurrentTalk === "function"){
+      await saveCurrentTalk();
+      if(!S.talkIsSaved) _rollback();
+    }
   }catch(e){
+    _rollback();
     _flash("\u26a0 Couldn't save the image \u2014 " + (typeof humanizeError==="function"?humanizeError(e):(e&&e.message||"try again.")), 3500);
   }
 }
@@ -5389,6 +5406,40 @@ function getOpenAIKeyRaw(){ return (localStorage.getItem("openai_api_key")||"").
 function getGeminiKeyRaw(){ return (localStorage.getItem("gemini_api_key")||"").trim(); }
 function _sysToText(sys){ if(typeof sys==="string") return sys; if(Array.isArray(sys)) return sys.map(function(p){return (p&&p.text)||"";}).filter(Boolean).join("\n\n"); return String(sys||""); }
 function _contentToText(content){ if(typeof content==="string") return content; if(Array.isArray(content)) return content.map(function(p){return (p&&p.type==="text")?p.text:"";}).filter(Boolean).join("\n\n"); return String(content||""); }
+// Convert Anthropic-style content parts (text + document/image, from buildReferenceParts) into the
+// native shapes ChatGPT and Gemini expect — so uploaded PDFs/images actually reach those models
+// instead of being silently dropped to text-only. (Jenni 2026-07 — Codex bug #1.)
+function _toGeminiParts(content){
+  if(typeof content==="string") return [{text:content}];
+  if(!Array.isArray(content)) return [{text:String(content||"")}];
+  var out=[];
+  content.forEach(function(p){
+    if(!p) return;
+    if(p.type==="text"){ if(p.text) out.push({text:p.text}); }
+    else if((p.type==="document"||p.type==="image") && p.source && p.source.type==="base64" && p.source.data){
+      out.push({inlineData:{mimeType:p.source.media_type||(p.type==="document"?"application/pdf":"image/png"),data:p.source.data}});
+    }
+  });
+  return out.length?out:[{text:""}];
+}
+function _toOpenAIContent(content){
+  if(typeof content==="string") return content;
+  if(!Array.isArray(content)) return String(content||"");
+  var hasMedia = content.some(function(p){return p && (p.type==="document"||p.type==="image") && p.source && p.source.data;});
+  if(!hasMedia) return _contentToText(content); // plain text → simple string
+  var out=[];
+  content.forEach(function(p){
+    if(!p) return;
+    if(p.type==="text"){ if(p.text) out.push({type:"text",text:p.text}); }
+    else if(p.type==="image" && p.source && p.source.data){
+      out.push({type:"image_url",image_url:{url:"data:"+(p.source.media_type||"image/png")+";base64,"+p.source.data}});
+    }
+    else if(p.type==="document" && p.source && p.source.data){
+      out.push({type:"file",file:{filename:(p.title||"reference.pdf"),file_data:"data:"+(p.source.media_type||"application/pdf")+";base64,"+p.source.data}});
+    }
+  });
+  return out.length?out:"";
+}
 // Does THIS generation draw from the free tier? Only when the provider is Claude AND the user is a
 // free-tier user. BYOK ChatGPT/Gemini never consume free-tier quota.
 function genUsesFreeTier(){ return freeTierActive() && (S.genProvider||"claude")==="claude"; }
@@ -5400,7 +5451,7 @@ async function _callOpenAIText(sys, content, maxTok, opts){
   var body = {
     model: GEN_OPENAI_MODEL,
     max_completion_tokens: maxTok,
-    messages: [{role:"system",content:_sysToText(sys)},{role:"user",content:_contentToText(content)}],
+    messages: [{role:"system",content:_sysToText(sys)},{role:"user",content:_toOpenAIContent(content)}],
     response_format: {type:"json_object"}
   };
   // OpenAI blocks direct browser calls (CORS), so route through the Worker proxy, passing the user's
@@ -5428,7 +5479,7 @@ async function _callGeminiText(sys, content, maxTok, opts){
   if(!key) { var e2=new Error("Add your Google Gemini API key to generate with Gemini — or switch the model back to Claude."); e2.code="need_gemini_key"; throw e2; }
   var body = {
     systemInstruction: {parts:[{text:_sysToText(sys)}]},
-    contents: [{role:"user",parts:[{text:_contentToText(content)}]}],
+    contents: [{role:"user",parts:_toGeminiParts(content)}],
     generationConfig: { maxOutputTokens: maxTok, responseMimeType: "application/json" }
   };
   var fo = {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)};

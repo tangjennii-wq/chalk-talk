@@ -300,6 +300,13 @@ async function consumeQuota(env, userId, kind, envForBase) {
   } catch (e) { return false; }
 }
 
+// Refund one reserved talk (best-effort) when an async job fails or is cancelled, so a reserved-at-submit
+// credit isn't burned on work that never produced a talk. grant_bonus is keyed by email. (Jenni 2026-07)
+async function refundQuotaTalk(env, email) {
+  if (!email) return;
+  try { await supaServiceRPC(env, "free_tier_grant_bonus", { p_email: String(email).toLowerCase(), p_bonus_talks: 1, p_bonus_images: 0 }); } catch (_) {}
+}
+
 function estimateCostCents(model, usage) {
   const p = MODEL_PRICES[model] || MODEL_PRICES["claude-sonnet-4-6"];
   const inTok = usage.input_tokens || 0;
@@ -707,22 +714,25 @@ async function runGeneration(jobId, body, env) {
     await env.JOBS_KV.put("job:" + jobId, JSON.stringify(Object.assign({}, cur, patch, { updatedAt: new Date().toISOString() })), { expirationTtl: 600 });
     return true;
   }
+  // Quota model (Codex bug #3): 1 talk is RESERVED atomically at submit (handleGenerateAsync), which
+  // both enforces quota and prevents parallel jobs from over-running it. Here we only REFUND that
+  // reservation if the job never produces a talk (cancel or error) — so a closed-tab success still
+  // charges exactly once, and a failure charges zero.
   try {
     const d = body.draft || {};
-    if (!(await updateJob({ stage: "drafting" }))) return;
+    if (!(await updateJob({ stage: "drafting" }))) { await refundQuotaTalk(env, body.userEmail); return; }
     const draft = await callAnthropicText(env, d.sys, d.content, d.maxTok || 16384, d.models, d.tools);
     let critText = "", critUsage = null, critModel = null;
     if (body.critique && body.critique.sys) {
-      if (!(await updateJob({ stage: "critique" }))) return;
+      if (!(await updateJob({ stage: "critique" }))) { await refundQuotaTalk(env, body.userEmail); return; }
       const critInput = (body.critique.prefix || "") + "\n\nDraft chalk talk to review:\n" + draft.text;
       const crit = await callAnthropicText(env, body.critique.sys, [{ type: "text", text: critInput }], body.critique.maxTok || 16384, body.critique.models);
       critText = crit.text; critUsage = crit.usage; critModel = crit.modelUsed;
     }
-    // Final cancel check before we charge/finalize — a cancel that landed during critique must not
-    // consume quota or mark done. (Jenni 2026-07-03)
+    // Final cancel check before we finalize — a cancel that landed during critique refunds + bails.
     let curFinal = {};
     try { curFinal = JSON.parse((await env.JOBS_KV.get("job:" + jobId)) || "{}"); } catch (_) {}
-    if (curFinal.cancelled) return;
+    if (curFinal.cancelled) { await refundQuotaTalk(env, body.userEmail); return; }
     // Meter real spend into the ledger (authoritative for the $/mo cap).
     try {
       const monthKey = new Date().toISOString().slice(0, 7);
@@ -730,14 +740,9 @@ async function runGeneration(jobId, body, env) {
       if (critUsage) cents += estimateCostCents(critModel, critUsage);
       if (cents > 0) await supaServiceRPC(env, "ledger_add", { p_month: monthKey, p_kind: "talk", p_cost_cents: cents, p_cap_cents: freeCapCents(env) });
     } catch (_) {}
-    // Consume the user's 10-talk quota SERVER-SIDE for the async path. This is the fix for the async
-    // quota invariant: the job runs to completion even if the user backgrounds/closes the tab and never
-    // reconnects, so quota must be decremented here (not on the client) or a closed-tab job would be
-    // a free talk. The SYNC path still consumes on the client; the frontend skips its consume when the
-    // async path was used, so each generation charges exactly once. (Jenni 2026-07-03)
-    try { if (body.userId) await consumeQuota(env, body.userId, "talk", env); } catch (_) {}
     await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
   } catch (err) {
+    await refundQuotaTalk(env, body.userEmail);   // job failed — don't burn the reserved talk
     const msg = (err && err.message) || "Generation failed";
     const code = /overload|529|5\d\d/.test(msg) ? "upstream_overloaded" : "gen_error";
     await updateJob({ status: "error", error: { code, message: msg } });
@@ -753,21 +758,21 @@ async function handleGenerateAsync(request, env, ctx, origin) {
   const monthKey = new Date().toISOString().slice(0, 7);
   if ((await getMonthlySpendCents(env, monthKey)) >= freeCapCents(env))
     return jsonError(503, "free_tier_paused", "Free tier is paused for this month. Add your own key to continue.", origin, { resumes_on: nextMonthFirstDayUTC() });
-  // Enforce the per-user talk quota at submit time so a tampered client can't bypass the frontend's
-  // out-of-quota gate by POSTing here directly. (The job also consumes atomically on success.)
-  try {
-    const rem = await supaServiceRPC(env, "free_tier_remaining", { p_user_id: user.id, p_base_talks: freeTalks(env), p_base_images: freeImages(env) });
-    const row = Array.isArray(rem) ? rem[0] : rem;
-    if (row && typeof row.talks_remaining === "number" && row.talks_remaining <= 0)
-      return jsonError(403, "quota_exceeded", "You've used all your free talks. Add your own key to keep generating.", origin);
-  } catch (_) { /* if the check fails, fall through — the atomic consume on completion is the backstop */ }
   const raw = await request.text();
   // Match the sync /v1/messages ceiling (MAX_REQUEST_BYTES) so uploads that work synchronously can also
   // use background mode instead of falling back. (Jenni 2026-07)
   if (raw.length > MAX_REQUEST_BYTES) return jsonError(413, "request_too_large", "Request too large — try a smaller reference file.", origin);
   let body;
   try { body = JSON.parse(raw); } catch { return jsonError(400, "invalid_json", "Body is not valid JSON.", origin); }
+  // RESERVE 1 talk atomically at submit (Codex bug #3). free_tier_consume decrements only if quota
+  // remains, so N parallel submits with quota=1 → only 1 succeeds; the rest get 403. This both enforces
+  // the quota against a tampered client AND prevents the parallel-job over-run the old (non-atomic)
+  // remaining-check allowed. runGeneration refunds this if the job fails/cancels.
+  let reserved = false;
+  try { reserved = await consumeQuota(env, user.id, "talk", env); } catch (_) { reserved = false; }
+  if (!reserved) return jsonError(403, "quota_exceeded", "You've used all your free talks. Add your own key to keep generating.", origin);
   body.userId = user.id;
+  body.userEmail = user.email || null;   // for refund-on-failure
   const jobId = crypto.randomUUID();
   const now = new Date().toISOString();
   await env.JOBS_KV.put("job:" + jobId, JSON.stringify({ status: "running", stage: "drafting", createdAt: now, updatedAt: now }), { expirationTtl: 600 });
