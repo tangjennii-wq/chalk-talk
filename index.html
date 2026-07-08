@@ -189,11 +189,14 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
 /* Lesson outline header */
 .outline-head{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 6px;padding:0 4px;font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em}
 .outline-head .total{font-size:11px;font-weight:500;color:var(--ink-soft);text-transform:none;letter-spacing:0}
-/* Landing sample-card grid — 4-col desktop, 2-col mobile showing ONLY first 2 cards (HFrEF + Hyponatremia) */
-.msample-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+/* Landing lecture row — horizontal scroller: scroll through your lectures (or tap "See all in library").
+   Fixed-width, non-shrinking cards so a peek of the next card signals it's scrollable. (Jenni 2026-07) */
+.msample-grid{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;padding-bottom:6px;scrollbar-width:thin}
+.msample-grid > *{flex:0 0 240px !important;scroll-snap-align:start}
+.msample-grid::-webkit-scrollbar{height:6px}
+.msample-grid::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
 @media (max-width:640px){
-  .msample-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:8px !important}
-  .msample-grid > *:nth-child(n+3){display:none !important}  /* hide cards 3-4 on mobile; tap "See all" for full list */
+  .msample-grid > *{flex-basis:66% !important}  /* ~1.5 cards visible on phones; swipe for the rest */
 }
 /* Hero card mobile layout — keep Sign-in/Library upper-right, tagline drops below.
    2026-06-08 tightening: tagline column is now empty (merged into "How it works"), hide it on mobile
@@ -8698,11 +8701,13 @@ function renderMain(){
       .sort(function(a,b){ return new Date(b.savedAt||0) - new Date(a.savedAt||0); });
 
     // Single-row landing redesign (Jenni 2026-06-09 + iterations):
-    // Target 4 cards on desktop / 2 on mobile (CSS handles the visibility cap on mobile).
-    // Recent user lectures come first; if fewer than 4, pad with featured/sample cards.
-    // Sample order is SHUFFLED on each render so the same featured talk isn't always card #1.
-    var TARGET = 4;
-    var recentForLanding = _allRecentLectures.slice(0, TARGET);
+    // The lecture row is a horizontal scroller. Show up to LANDING_MAX of the user's OWN recent
+    // lectures so there's something to scroll through; if they have fewer than TARGET, pad the row
+    // with featured/sample cards so it never looks empty for new users. ("See all in library" always
+    // covers the full set.) Sample padding is SHUFFLED so the same featured talk isn't always first.
+    var TARGET = 4;          // minimum cards shown (pad with samples below this)
+    var LANDING_MAX = 12;    // cap on the user's own lectures in the scroller
+    var recentForLanding = _allRecentLectures.slice(0, LANDING_MAX);
     var savedCloudIdSet = {};
     recentForLanding.forEach(function(e){ if(e && e.id) savedCloudIdSet[e.id] = true; });
     var availableSamples = (S.landingFeatured || []).filter(function(row){
