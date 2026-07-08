@@ -4220,6 +4220,50 @@ async function saveCurrentTalk(){
   arr.unshift(entry);
   if(writeSavedTalks(arr)){S.talkIsSaved=true;S.loadedTalkId=entry.id;S.savedFlash="\u2713 Saved to library";render();setTimeout(function(){S.savedFlash="";render()},2200)}
 }
+
+// Persist a generated visual to the talk record + library. (Jenni 2026-07 \u2014 Codex bug fix.)
+// The old path pushed into S.talk.savedVisuals then called saveCurrentTalk(), which EARLY-RETURNS for an
+// already-saved talk \u2014 so the image lived only in memory and vanished on reload. This writes straight to
+// the backing store (cloud row or the specific localStorage entry) so an already-saved talk actually
+// updates, and only flashes success AFTER persistence. Falls back to save-as-new for unsaved/sample/shared.
+async function saveCurrentVisualToLibrary(){
+  if(!S.talk || !S.dg || !S.dg.imgB64) return;
+  var visual = {
+    imgB64: S.dg.imgB64,
+    mode: S.dgMode,                 // "ai" (Gemini) or "openai"
+    savedAt: new Date().toISOString(),
+    label: (S.talk.title || S.topic || "Visual")
+  };
+  S.talk.savedVisuals = S.talk.savedVisuals || [];
+  S.talk.savedVisuals.push(visual);
+  var _flash = function(msg, ms){ S.savedFlash = msg; render(); setTimeout(function(){ if(S.savedFlash===msg){ S.savedFlash=""; render(); } }, ms||2200); };
+  var isPersistedCloud = S.user && window.sb && S.loadedTalkId && !String(S.loadedTalkId).startsWith("t_") && !S.isSampleTalk && !S.sharedTalk;
+  var isPersistedLocal = S.loadedTalkId && String(S.loadedTalkId).startsWith("t_");
+  try{
+    if(isPersistedCloud){
+      var ok = await cloudUpdateTalk(S.loadedTalkId);   // serializes talk_json (incl. savedVisuals) + refreshes S.cloudTalks
+      _flash(ok ? "\u2605 Image saved to library" : "\u26a0 Couldn't save the image \u2014 check connection.", ok?2200:3500);
+      return;
+    }
+    if(isPersistedLocal){
+      var arr = loadSavedTalks(); var found = false;
+      for(var i=0;i<arr.length;i++){
+        if(arr[i].id === S.loadedTalkId){
+          arr[i] = Object.assign({}, arr[i], { talk: S.talk, savedAt: new Date().toISOString() });
+          found = true; break;
+        }
+      }
+      var wrote = found && writeSavedTalks(arr);
+      _flash(wrote ? "\u2605 Image saved to library" : "\u26a0 Couldn't save the image locally.", wrote?2200:3500);
+      return;
+    }
+    // Unsaved / sample / shared talk \u2192 route through the normal save (creates a new library row that
+    // now carries the visual). saveCurrentTalk shows its own flash.
+    if(typeof saveCurrentTalk === "function") await saveCurrentTalk();
+  }catch(e){
+    _flash("\u26a0 Couldn't save the image \u2014 " + (typeof humanizeError==="function"?humanizeError(e):(e&&e.message||"try again.")), 3500);
+  }
+}
 async function deleteSavedTalk(id){
   if(!confirm("Delete this saved chalk talk? This cannot be undone."))return;
   // Cloud path: UUIDs (any string without "t_" prefix)
@@ -10224,21 +10268,7 @@ function bindMain(){
   // Stale-visual banner Regenerate button (Jenni 2026-06-10) — same action as ↻ Regenerate.
   var dsb=document.getElementById("dgStaleRegenBtn");if(dsb)dsb.onclick=genDiagram;
   // Save the current visual to the lesson record + library. Persists with the talk.
-  var dsi=document.getElementById("dgSaveImgBtn");if(dsi)dsi.onclick=function(){
-    if(!S.talk||!S.dg||!S.dg.imgB64)return;
-    S.talk.savedVisuals = S.talk.savedVisuals || [];
-    S.talk.savedVisuals.push({
-      imgB64: S.dg.imgB64,
-      mode: S.dgMode,                 // "ai" (Gemini) or "openai"
-      savedAt: new Date().toISOString(),
-      label: (S.talk.title || S.topic || "Visual")
-    });
-    // Persist by calling the existing saveCurrentTalk path (handles cloud + local).
-    if(typeof saveCurrentTalk === "function") saveCurrentTalk();
-    S.savedFlash = "★ Image saved to library";
-    render();
-    setTimeout(function(){S.savedFlash=""; render()}, 2200);
-  };
+  var dsi=document.getElementById("dgSaveImgBtn");if(dsi)dsi.onclick=function(){ saveCurrentVisualToLibrary(); };
   // Download the generated raster image (Gemini Nano Banana Pro or OpenAI gpt-image-2) as PNG.
   var ddb=document.getElementById("dgDownloadBtn");if(ddb)ddb.onclick=function(){
     if(!S.dg||!S.dg.imgB64)return;
