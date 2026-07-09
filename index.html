@@ -5818,6 +5818,32 @@ function humanizeError(e){
   return m;
 }
 
+// Model-provider picker markup, shared by the compose form AND the Edit-settings (rebuild) drawer so the
+// model can be changed in either place. Collapsed to one faint line for the default Claude path; expands
+// to the 3-way toggle on click or when already on a non-Claude provider. Handlers (#modelPickerToggle,
+// .genProvBtn) are bound once in the shared bind block. (Jenni 2026-07)
+function renderModelPicker(){
+  var _gp = S.genProvider || "claude";
+  var _expanded = S.modelPickerOpen || (_gp !== "claude");
+  if(!_expanded){
+    return '<div style="margin:0 4px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:12.5px;color:var(--ink);font-weight:500">Model: <b style="color:var(--plum-deep)">Claude</b> ·</span><button id="modelPickerToggle" title="Prefer ChatGPT or Gemini? Use your own key." style="background:var(--lavender-bg);border:1px solid var(--lavender-soft);border-radius:999px;padding:4px 12px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .12s ease">Switch to ChatGPT or Gemini ›</button></div>';
+  }
+  function provBtn(val,icon,label){
+    var on=(_gp===val);
+    var hasKey=false;
+    try{ hasKey = (val==="openai" && !!localStorage.getItem("openai_api_key")) || (val==="gemini" && !!localStorage.getItem("gemini_api_key")); }catch(e){}
+    return '<button class="genProvBtn" data-p="'+val+'" style="flex:1 1 0;min-width:0;background:'+(on?"#fff":"transparent")+';color:'+(on?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(on?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(on?"600":"500")+';cursor:pointer;box-shadow:'+(on?"var(--shadow-soft)":"none")+';transition:all .15s ease;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:13px">'+icon+'</span>'+label+
+      (hasKey?'<span style="font-size:9px;font-weight:700;color:'+(on?"var(--plum)":"var(--ink-soft)")+';background:'+(on?"var(--lavender-bg)":"transparent")+';border-radius:4px;padding:1px 4px;letter-spacing:0.04em;line-height:1.4">✓ key</span>':'')+
+      '</button>';
+  }
+  var out='<div style="margin-bottom:14px">';
+  out+='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 4px 6px"><span style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em">Model</span><span style="font-size:10.5px;color:var(--ink-soft);font-weight:400;line-height:1.4;text-align:right">ChatGPT &amp; Gemini use your own key</span></div>';
+  out+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
+  out+=provBtn("claude","🟣","Claude")+provBtn("openai","💬","ChatGPT")+provBtn("gemini","✦","Gemini");
+  out+='</div></div>';
+  return out;
+}
+
 // Single robust entry point for BOTH uploaders (drop zone + composer). Validates type/size, reads each
 // file with per-file error handling, dedupes by name+size, and gives the user clear feedback on any
 // reject — instead of the old silent try/catch that dropped bad files without a word. Fixes the
@@ -9008,29 +9034,7 @@ function renderMain(){
   // Model provider (Jenni 2026-07-03) — minimal friction: Claude just works (free tier), so by
   // default this is ONE faint line, not a segmented control. It expands to the full picker only when
   // the user clicks it OR is already on a non-Claude provider. Key entry stays fully on-demand.
-  (function(){
-    var _gp = S.genProvider || "claude";
-    var _expanded = S.modelPickerOpen || (_gp !== "claude");
-    if(!_expanded){
-      h+='<div style="margin:0 4px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:12.5px;color:var(--ink);font-weight:500">Model: <b style="color:var(--plum-deep)">Claude</b> ·</span><button id="modelPickerToggle" title="Prefer ChatGPT or Gemini? Use your own key." style="background:var(--lavender-bg);border:1px solid var(--lavender-soft);border-radius:999px;padding:4px 12px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .12s ease">Switch to ChatGPT or Gemini ›</button></div>';
-      return;
-    }
-    function provBtn(val,icon,label){
-      var on=(_gp===val);
-      var hasKey=false;
-      try{ hasKey = (val==="openai" && !!localStorage.getItem("openai_api_key")) || (val==="gemini" && !!localStorage.getItem("gemini_api_key")); }catch(e){}
-      return '<button class="genProvBtn" data-p="'+val+'" style="flex:1 1 0;min-width:0;background:'+(on?"#fff":"transparent")+';color:'+(on?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(on?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(on?"600":"500")+';cursor:pointer;box-shadow:'+(on?"var(--shadow-soft)":"none")+';transition:all .15s ease;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:13px">'+icon+'</span>'+label+
-        (hasKey?'<span style="font-size:9px;font-weight:700;color:'+(on?"var(--plum)":"var(--ink-soft)")+';background:'+(on?"var(--lavender-bg)":"transparent")+';border-radius:4px;padding:1px 4px;letter-spacing:0.04em;line-height:1.4">✓ key</span>':'')+
-        '</button>';
-    }
-    h+='<div style="margin-bottom:14px">';
-    h+='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 4px 6px"><span style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em">Model</span><span style="font-size:10.5px;color:var(--ink-soft);font-weight:400;line-height:1.4;text-align:right">ChatGPT &amp; Gemini use your own key</span></div>';
-    h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
-    h+=provBtn("claude","🟣","Claude");
-    h+=provBtn("openai","💬","ChatGPT");
-    h+=provBtn("gemini","✦","Gemini");
-    h+='</div></div>';
-  })();
+  h+=renderModelPicker();
 
   // References row
   h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .15s ease">';
@@ -9909,6 +9913,8 @@ function renderMain(){
     h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{compact:true});
     h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true,title:"~10 min — full depth"});
     h+='</div></div>';
+    // Model picker — lets you rebuild with a different provider (Jenni 2026-07)
+    h+=renderModelPicker();
     // References manager (in drawer)
     h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer">';
     h+='<span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">+</span>';
