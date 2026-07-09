@@ -99,10 +99,10 @@ export default {
       return handleGenerateAsync(request, env, ctx, origin);
     }
     if (request.method === "GET" && url.pathname.indexOf("/generate-status/") === 0) {
-      return handleGenerateStatus(decodeURIComponent(url.pathname.slice(17)), env, origin);
+      return handleGenerateStatus(request, decodeURIComponent(url.pathname.slice(17)), env, origin);
     }
     if (request.method === "POST" && url.pathname.indexOf("/generate-cancel/") === 0) {
-      return handleGenerateCancel(decodeURIComponent(url.pathname.slice(17)), env, origin);
+      return handleGenerateCancel(request, decodeURIComponent(url.pathname.slice(17)), env, origin);
     }
 
     // ── Free tier endpoints (FREE_TIER_SPEC.md §5) ──────────────────────────
@@ -795,7 +795,8 @@ async function handleGenerateAsync(request, env, ctx, origin) {
   // isn't leaked. (Codex bug #1)
   const now = new Date().toISOString();
   try {
-    await env.JOBS_KV.put("job:" + jobId, JSON.stringify({ status: "running", stage: "drafting", createdAt: now, updatedAt: now }), { expirationTtl: 600 });
+    // Store userId ON the record so status/cancel can enforce owner-only access. (Security fix)
+    await env.JOBS_KV.put("job:" + jobId, JSON.stringify({ status: "running", stage: "drafting", userId: user.id, createdAt: now, updatedAt: now }), { expirationTtl: 600 });
   } catch (e) {
     await refundQuotaTalk(env, body.userEmail);
     return jsonError(503, "job_create_failed", "Couldn't start background generation. Please try again.", origin);
@@ -804,19 +805,30 @@ async function handleGenerateAsync(request, env, ctx, origin) {
   return jsonOK({ jobId, createdAt: now }, origin);
 }
 
-async function handleGenerateStatus(jobId, env, origin) {
+// Owner-only: the job record holds the full talk text (and any uploaded reference content), so status +
+// cancel MUST verify the caller owns the job. Without this, anyone with a jobId could read another user's
+// talk or cancel their generation. (Security fix)
+async function handleGenerateStatus(request, jobId, env, origin) {
   if (!env.JOBS_KV) return jsonError(503, "async_unconfigured", "Background generation isn't configured.", origin);
+  const token = request.headers.get("X-Supabase-Auth");
+  const user = token ? await verifySupabaseUser(env, token) : null;
+  if (!user) return jsonError(401, "auth_required", "Sign in to check generation status.", origin);
   const raw = await env.JOBS_KV.get("job:" + jobId);
   if (!raw) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
   let obj;
   try { obj = JSON.parse(raw); } catch { return jsonError(500, "bad_job", "Corrupt job record.", origin); }
+  if (obj.userId && obj.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
   return jsonOK(obj, origin);
 }
 
-async function handleGenerateCancel(jobId, env, origin) {
+async function handleGenerateCancel(request, jobId, env, origin) {
   if (!env.JOBS_KV) return jsonOK({ status: "cancelled" }, origin);
+  const token = request.headers.get("X-Supabase-Auth");
+  const user = token ? await verifySupabaseUser(env, token) : null;
+  if (!user) return jsonError(401, "auth_required", "Sign in to cancel generation.", origin);
   try {
     const cur = JSON.parse((await env.JOBS_KV.get("job:" + jobId)) || "{}");
+    if (cur.userId && cur.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
     cur.cancelled = true;
     if (cur.status !== "done") cur.status = "cancelled";
     cur.updatedAt = new Date().toISOString();
