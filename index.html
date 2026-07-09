@@ -1433,7 +1433,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-09";
+var BUILD_ID = "2026-07-07-10";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3692,7 +3692,9 @@ async function saveHandle(h){
   var v = validateHandle(h); if(!v.ok) return {ok:false, reason:v.reason};
   var r = await window.sb.from("profiles").update({handle:v.handle}).eq("id", S.user.id).select("handle").maybeSingle();
   if(r.error){
-    if(/duplicate|unique|23505/i.test(r.error.message||"")) return {ok:false, reason:"That handle is already taken."};
+    var _em = r.error.message||"";
+    if(/duplicate|unique|23505/i.test(_em)) return {ok:false, reason:"That handle is already taken."};
+    if(/reserved/i.test(_em)) return {ok:false, reason:"That handle is reserved."};
     return {ok:false, reason:"Couldn't save — try again."};
   }
   if(!S.profile) S.profile = {};
@@ -3751,7 +3753,9 @@ async function applyShareTier(talkId, tier){
     // canonical talk_json. Otherwise an instant depth swap (cached) leaves the DB stale and
     // coworkers see a different depth than the curator is viewing. (Jenni 2026-06-09 fix.)
     if(publishing && S.loadedTalkId === talkId && S.talk && S.depth){
-      await cloudUpsertDepthVariant(talkId, S.depth, S.talk);
+      // If this sync fails we'd publish the STALE talk_json — abort rather than serve old content. (Codex fix)
+      var _synced = await cloudUpsertDepthVariant(talkId, S.depth, S.talk);
+      if(_synced === false) throw new Error("depth_sync_failed");
     }
 
     // cloudSetTalkFeatured/Public return null (not throw) on failure — check each so a failed
@@ -3829,6 +3833,7 @@ async function loadPublicTalkByToken(token){
     S.style = data.style || "lecture";
     S.depth = data.depth || "concise";
     S.sharedTalk = true;
+    S.sharedCopySaved = false;   // fresh shared talk → allow one save-copy (Codex fix)
     S.sharedAuthor = data.author || null;
     // Phase 5 — capture origin so the "Save copy" button can stamp attribution + detect own-talk
     S.sharedAuthorUserId = data.author_user_id || null;
@@ -7586,7 +7591,7 @@ function loadFromShareHash(){
     S.topic=data.topic||"";
     S.style=data.style||"lecture";
     S.isSampleTalk=false;S.sampleSlug="";
-    S.sharedTalk=true;
+    S.sharedTalk=true;S.sharedCopySaved=false;
     S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.showAns=false;S.userPick="";
     if(data.talk.guideline_sources&&data.talk.guideline_sources.length){
       S.glRef={specialties:[],context:"",sources:data.talk.guideline_sources,trials:[],conferences:[]};
@@ -7892,7 +7897,7 @@ function resetAll(){
   S.chatIn=""; S.chatBusy=false;
   S.glRef=null; S.ragChunks=[];
   S.depthVariantsCache=null; S._pendingDepthMerge=false;   // clear cached depth variants so a new talk can't show a PRIOR talk's variant on depth-toggle (bug fix)
-  S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false; S.talkIsSaved=false;
+  S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false; S.sharedCopySaved=false; S.talkIsSaved=false;
   // Close any transient drawers/modals so a fresh compose view doesn't flash an open overlay.
   S.editSettings=false; S.overflowOpen=false; S.lightbox=false; S.gldOpen=false; S.ragOpen=false;
   // Collapse "How it works" on New talk (Jenni 2026-07-03) — it only auto-expands on the very first
@@ -8172,10 +8177,15 @@ function renderGlobalModals(){
     h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔗 People I send the link to</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">I get a private URL to DM. Not listed anywhere.</span></span>';
     h+='</button>';
     var _t3Active = (_smTier==="profile");
-    var _heroProfile = window.location.origin + window.location.pathname + "#showcase";
+    // The profile tier lists the talk on the CURRENT USER's public portfolio at #u/<their handle> —
+    // not the hardcoded #showcase (that's only the owner's). If they haven't claimed a handle yet,
+    // tell them how. (Codex fix)
+    var _myHandle = S.profile && S.profile.handle;
     h+='<button class="shareTierBtn" data-tier="profile" style="width:100%;background:'+(_t3Active?"#fff8e6":"#fff")+';border:1.5px solid '+(_t3Active?"#e8a91f":"var(--line)")+';border-radius:14px;padding:13px 14px;margin-bottom:14px;text-align:left;cursor:pointer;display:flex;align-items:flex-start;gap:11px;font-family:inherit;transition:all .15s ease">';
     h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t3Active?"🔵":"⚪")+'</span>';
-    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">⭐ Anyone who finds my profile</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">Shows up at <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--plum)">'+esc(_heroProfile.replace(window.location.origin+window.location.pathname,""))+'</span> alongside your other featured talks.</span></span>';
+    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">⭐ Anyone who finds my profile</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">'+(_myHandle
+      ? 'Shows up on your profile at <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--plum)">#u/'+esc(_myHandle)+'</span> alongside your other featured talks.'
+      : 'Lists it on your public profile. <b>Claim a handle in your profile</b> (avatar → Edit profile) to get your shareable link.')+'</span></span>';
     h+='</button>';
     if(_smUrl && (_t2Active || _t3Active)){
       h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--ink);word-break:break-all;margin-bottom:10px">'+esc(_smUrl)+'</div>';
@@ -8876,14 +8886,15 @@ function bindSaved(){
     var id=b.dataset.id;
     if(!id) return;
     var row=(S.cloudTalks||[]).find(function(x){return x.id===id});
-    if(row && row.is_featured) await cloudSetTalkFeatured(id, false);
+    var featOk = true;
+    if(row && row.is_featured) featOk = (await cloudSetTalkFeatured(id, false)) !== null;   // check unfeature too (Codex fix)
     var data = await cloudSetTalkPublic(id, false);
-    if(data){
+    if(data && featOk){
       S.savedFlash="🔒 Made private · existing share links no longer work";
       render(); setTimeout(function(){S.savedFlash="";render()},3000);
     } else {
-      S.savedFlash="⚠ Couldn't update sharing"; render();
-      setTimeout(function(){S.savedFlash="";render()},2500);
+      S.savedFlash="⚠ Couldn't update sharing — check your connection"; render();
+      setTimeout(function(){S.savedFlash="";render()},3000);
     }
   }});
   document.querySelectorAll(".delTalkBtn").forEach(function(b){b.onclick=function(){
@@ -9383,7 +9394,9 @@ function renderMain(){
       h+='<button id="sharedInfoToggle" title="About this shared talk" style="background:var(--lavender-bg);border:1px solid #d4baea;border-radius:10px;padding:5px 10px;color:var(--plum-deep);font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit">🔗 <span style="font-size:11px;color:var(--ink-muted);font-weight:500">Shared by '+esc(_authorName)+'</span></button>';
       // Promoted Save copy CTA — only when the viewer is NOT the original author. (Jenni 2026-06-09)
       if(!_isOwnSharedTalk){
-        if(S.user){
+        if(S.user && S.sharedCopySaved){
+          h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;border-radius:10px;padding:6px 12px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px">✓ Saved to your library</span>';
+        } else if(S.user){
           h+='<button id="bannerSaveCopyBtn" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;border-radius:10px;padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(75,17,111,0.22)">★ Save your copy</button>';
         } else {
           h+='<button id="bannerSaveCopySignInBtn" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;border-radius:10px;padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(75,17,111,0.22)">★ Sign in to save copy</button>';
@@ -9428,7 +9441,11 @@ function renderMain(){
     if(S.sharedTalk){
       var _isOwnPublicTalk = !!(S.user && S.sharedAuthorUserId && S.user.id === S.sharedAuthorUserId);
       if(!_isOwnPublicTalk){
-        if(S.user){
+        if(S.user && S.sharedCopySaved){
+          // Already saved a copy this view — show a confirmed, disabled state so a second tap can't
+          // clone the same shared talk again. (Codex fix)
+          h+='<button class="cap-save" disabled title="Already saved to your library" style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;box-shadow:none;cursor:default">✓ <span class="hide-mobile-text">In your library</span></button>';
+        } else if(S.user){
           var _authorN = (S.sharedAuthor && S.sharedAuthor.name) || "this curator";
           h+='<button id="saveCopyBtnTop" class="cap-save" title="Save a copy of this talk to your library (you can edit your copy without affecting '+esc(_authorN)+')">★ <span class="hide-mobile-text">Save copy</span></button>';
         } else {
@@ -10159,10 +10176,15 @@ function renderMain(){
 
     // Tier 3 — On profile (hero only for now — Phase 3 will add handles for other users)
     var _t3Active = (_smTier==="profile");
-    var _heroProfile = window.location.origin + window.location.pathname + "#showcase";
+    // The profile tier lists the talk on the CURRENT USER's public portfolio at #u/<their handle> —
+    // not the hardcoded #showcase (that's only the owner's). If they haven't claimed a handle yet,
+    // tell them how. (Codex fix)
+    var _myHandle = S.profile && S.profile.handle;
     h+='<button class="shareTierBtn" data-tier="profile" style="width:100%;background:'+(_t3Active?"#fff8e6":"#fff")+';border:1.5px solid '+(_t3Active?"#e8a91f":"var(--line)")+';border-radius:14px;padding:13px 14px;margin-bottom:14px;text-align:left;cursor:pointer;display:flex;align-items:flex-start;gap:11px;font-family:inherit;transition:all .15s ease">';
     h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t3Active?"🔵":"⚪")+'</span>';
-    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">⭐ Anyone who finds my profile</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">Shows up at <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--plum)">'+esc(_heroProfile.replace(window.location.origin+window.location.pathname,""))+'</span> alongside your other featured talks.</span></span>';
+    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">⭐ Anyone who finds my profile</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">'+(_myHandle
+      ? 'Shows up on your profile at <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--plum)">#u/'+esc(_myHandle)+'</span> alongside your other featured talks.'
+      : 'Lists it on your public profile. <b>Claim a handle in your profile</b> (avatar → Edit profile) to get your shareable link.')+'</span></span>';
     h+='</button>';
 
     // URL display + copy (only when public or featured)
@@ -10981,6 +11003,7 @@ function bindMain(){
       S.depth
     );
     if(data){
+      S.sharedCopySaved = true;   // prevent a second tap from cloning the same talk again (Codex fix)
       S.savedFlash = "✓ Saved a copy to your library" + (sourceName ? " · from "+sourceName : "");
       // Stay in public-viewer mode — user can still browse. Don't yank them away.
       render();
@@ -11006,6 +11029,7 @@ function bindMain(){
     var sourceName = (S.sharedAuthor && S.sharedAuthor.name) || null;
     var data = await cloudSaveCopyOfPublic(S.talk, S.sharedOriginalTalkId, S.sharedAuthorUserId, sourceName, S.topic, S.style, S.depth);
     if(data){
+      S.sharedCopySaved = true;   // prevent duplicate clones (Codex fix)
       S.savedFlash = "✓ Saved a copy to your library" + (sourceName ? " · from "+sourceName : "");
       render();
       setTimeout(function(){S.savedFlash="";render()},3000);
@@ -11063,9 +11087,10 @@ function bindMain(){
     if(!confirm("Make this talk private?\n\nIt'll be removed from your profile (if featured) and the share link will stop working.")) return;
     S.overflowOpen=false; render();
     var _row=(S.cloudTalks||[]).find(function(x){return x.id===S.loadedTalkId});
-    if(_row && _row.is_featured) await cloudSetTalkFeatured(S.loadedTalkId, false);
+    var _featOk = true;
+    if(_row && _row.is_featured) _featOk = (await cloudSetTalkFeatured(S.loadedTalkId, false)) !== null;   // check unfeature too (Codex fix)
     var data = await cloudSetTalkPublic(S.loadedTalkId, false);
-    if(!data){ alert("Couldn't update sharing — check connection."); return; }
+    if(!data || !_featOk){ alert("Couldn't update sharing — check connection and try again."); return; }
     S.savedFlash="🔒 Made private · existing links no longer work";
     render(); setTimeout(function(){S.savedFlash="";render()},3000);
   };

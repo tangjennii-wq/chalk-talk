@@ -30,3 +30,22 @@ language sql stable security definer set search_path = public as $$
   select not exists (select 1 from public.profiles where lower(handle) = lower(p_handle));
 $$;
 grant execute on function public.is_handle_available(text) to authenticated;
+
+-- Server-side reserved-handle enforcement (the frontend list is bypassable via a direct update).
+create or replace function public.reject_reserved_handle()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if new.handle is not null and lower(new.handle) = any(array[
+    'u','showcase','admin','api','app','www','profile','profiles','share','shared','chalk','chalktalk',
+    'about','help','settings','login','signup','signin','signout','auth','me','new','edit','talk','talks',
+    'lib','library','null','undefined','anon','user','users','home','index','root','support','terms','privacy'
+  ]) then
+    raise exception 'handle "%" is reserved', new.handle using errcode = '23514';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists profiles_reserved_handle on public.profiles;
+create trigger profiles_reserved_handle
+  before insert or update of handle on public.profiles
+  for each row execute function public.reject_reserved_handle();
