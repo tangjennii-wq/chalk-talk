@@ -3656,8 +3656,9 @@ async function applyShareTier(talkId, tier){
     var publishing = (tier === "link" || tier === "profile");
     // Copyright guardrail (Jenni 2026-07): if this talk was built from an uploaded reference (e.g.
     // MKSAP, a textbook), warn before it goes public — publishing could redistribute copyrighted
-    // material. Private use is unaffected; this only triggers on the private→public step.
-    if(publishing){
+    // material. Only fires on the actual PRIVATE→public step (not when re-sharing an already-public
+    // talk, e.g. link→profile). Private use is unaffected.
+    if(publishing && !curIsPublic){
       var _fm = (row && Array.isArray(row.files_meta)) ? row.files_meta : [];
       if(_fm.length){
         var _names = _fm.map(function(f){return f && f.n;}).filter(Boolean).join(", ");

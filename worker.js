@@ -717,6 +717,10 @@ async function callAnthropicText(env, sys, content, maxTok, models, tools) {
 
 async function runGeneration(jobId, body, env) {
   const t0 = Date.now();
+  // Refund the reserved talk AT MOST ONCE across all failure paths — several of them can chain (e.g.
+  // empty-draft refunds, then its updateJob throws into the catch which would refund again). (Codex fix)
+  let _refunded = false;
+  async function refundOnce() { if (_refunded) return; _refunded = true; await refundQuotaTalk(env, body.userEmail); }
   async function updateJob(patch) {
     let cur = {};
     try { cur = JSON.parse((await env.JOBS_KV.get("job:" + jobId)) || "{}"); } catch (_) {}
@@ -724,24 +728,24 @@ async function runGeneration(jobId, body, env) {
     await env.JOBS_KV.put("job:" + jobId, JSON.stringify(Object.assign({}, cur, patch, { updatedAt: new Date().toISOString() })), { expirationTtl: 600 });
     return true;
   }
-  // Quota model (Codex bug #3): 1 talk is RESERVED atomically at submit (handleGenerateAsync), which
-  // both enforces quota and prevents parallel jobs from over-running it. Here we only REFUND that
-  // reservation if the job never produces a talk (cancel or error) — so a closed-tab success still
-  // charges exactly once, and a failure charges zero.
+  // Quota model: 1 talk is RESERVED atomically at submit (handleGenerateAsync), which both enforces the
+  // quota and prevents parallel jobs from over-running it. Here we only REFUND that reservation if the
+  // job never produces a talk (cancel or error) — so a closed-tab success still charges exactly once,
+  // and a failure charges zero.
   try {
     const d = body.draft || {};
-    if (!(await updateJob({ stage: "drafting" }))) { await refundQuotaTalk(env, body.userEmail); return; }
+    if (!(await updateJob({ stage: "drafting" }))) { await refundOnce(); return; }
     const draft = await callAnthropicText(env, d.sys, d.content, d.maxTok || 16384, d.models, d.tools);
     // Empty/failed draft: mark it an error and refund — otherwise we'd write "done" with no talk and
     // still keep the reserved credit (charge for nothing). (Audit fix)
     if (!draft || !draft.text || !draft.text.trim()) {
-      await refundQuotaTalk(env, body.userEmail);
+      await refundOnce();
       await updateJob({ status: "error", error: { code: "empty_draft", message: "The model returned an empty draft. Please try again." } });
       return;
     }
     let critText = "", critUsage = null, critModel = null;
     if (body.critique && body.critique.sys) {
-      if (!(await updateJob({ stage: "critique" }))) { await refundQuotaTalk(env, body.userEmail); return; }
+      if (!(await updateJob({ stage: "critique" }))) { await refundOnce(); return; }
       const critInput = (body.critique.prefix || "") + "\n\nDraft chalk talk to review:\n" + draft.text;
       const crit = await callAnthropicText(env, body.critique.sys, [{ type: "text", text: critInput }], body.critique.maxTok || 16384, body.critique.models);
       critText = crit.text; critUsage = crit.usage; critModel = crit.modelUsed;
@@ -749,7 +753,7 @@ async function runGeneration(jobId, body, env) {
     // Final cancel check before we finalize — a cancel that landed during critique refunds + bails.
     let curFinal = {};
     try { curFinal = JSON.parse((await env.JOBS_KV.get("job:" + jobId)) || "{}"); } catch (_) {}
-    if (curFinal.cancelled) { await refundQuotaTalk(env, body.userEmail); return; }
+    if (curFinal.cancelled) { await refundOnce(); return; }
     // Meter real spend into the ledger (authoritative for the $/mo cap).
     try {
       const monthKey = new Date().toISOString().slice(0, 7);
@@ -758,14 +762,14 @@ async function runGeneration(jobId, body, env) {
       if (cents > 0) await supaServiceRPC(env, "ledger_add", { p_month: monthKey, p_kind: "talk", p_cost_cents: cents, p_cap_cents: freeCapCents(env) });
     } catch (_) {}
     // updateJob returns false if a cancel landed between the final check and this write — in that race
-    // the result is discarded, so refund the reservation too. (Codex bug #3)
+    // the result is discarded, so refund the reservation too.
     const wrote = await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
-    if (!wrote) await refundQuotaTalk(env, body.userEmail);
+    if (!wrote) await refundOnce();
   } catch (err) {
-    await refundQuotaTalk(env, body.userEmail);   // job failed — don't burn the reserved talk
+    await refundOnce();   // job failed — don't burn the reserved talk (no-op if already refunded)
     const msg = (err && err.message) || "Generation failed";
     const code = /overload|529|5\d\d/.test(msg) ? "upstream_overloaded" : "gen_error";
-    await updateJob({ status: "error", error: { code, message: msg } });
+    try { await updateJob({ status: "error", error: { code, message: msg } }); } catch (_) {}
   }
 }
 
@@ -832,7 +836,9 @@ async function handleGenerateStatus(request, jobId, env, origin) {
   if (!raw) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
   let obj;
   try { obj = JSON.parse(raw); } catch { return jsonError(500, "bad_job", "Corrupt job record.", origin); }
-  if (obj.userId && obj.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
+  // STRICT owner match: require the job to have an owner AND that it's this user. An ownerless record
+  // (e.g. a pre-fix legacy job) is treated as not-found rather than readable by any signed-in user.
+  if (obj.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
   return jsonOK(obj, origin);
 }
 
@@ -842,8 +848,10 @@ async function handleGenerateCancel(request, jobId, env, origin) {
   const user = token ? await verifySupabaseUser(env, token) : null;
   if (!user) return jsonError(401, "auth_required", "Sign in to cancel generation.", origin);
   try {
-    const cur = JSON.parse((await env.JOBS_KV.get("job:" + jobId)) || "{}");
-    if (cur.userId && cur.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
+    const raw = await env.JOBS_KV.get("job:" + jobId);
+    if (!raw) return jsonOK({ status: "cancelled" }, origin);   // nothing to cancel — don't CREATE an ownerless record
+    let cur; try { cur = JSON.parse(raw); } catch { return jsonError(500, "bad_job", "Corrupt job record.", origin); }
+    if (cur.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
     cur.cancelled = true;
     if (cur.status !== "done") cur.status = "cancelled";
     cur.updatedAt = new Date().toISOString();
