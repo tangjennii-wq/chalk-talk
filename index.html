@@ -8434,8 +8434,10 @@ function renderSaved(){
   for(var di=0;di<saved.length;di++){
     var e=saved[di];var et=e.talk||{};
     // Pattern A: user's specialty override wins over the auto-inferred specialty. (Jenni 2026-06-09)
-    // normalizeSpec collapses legacy "Hematology"/"Oncology" overrides into "Heme/Onc". (2026-06-10)
-    var resolvedSpec = normalizeSpec(e._specialtyOverride || inferSpecialty(e.topic, et, null));
+    // Route the (normalized) override THROUGH inferSpecialty as its fallback, which GUARANTEES a value
+    // in SPEC_ORDER — an off-taxonomy override (e.g. a legacy "Cardiology") would otherwise never match
+    // the grouped render loop and the talk would vanish from the library. (Codex #3 fix)
+    var resolvedSpec = inferSpecialty(e.topic, et, normalizeSpec(e._specialtyOverride));
     all.push({_source:"saved",_kind:et.question?"boards":"lecture",_slug:null,_id:e.id,
       _spec: resolvedSpec,
       _isPublic: !!e._isPublic, _shareToken: e._shareToken || null,
@@ -8638,11 +8640,19 @@ async function _commitSortableLibraryReorder(item, fromGroup, toGroup){
   else if(prevKey==null) newKey = nextKey - 1e6;
   else if(nextKey==null) newKey = prevKey + 1e6;
   else newKey = (prevKey + nextKey) / 2;
+  // Check that the DB writes actually landed — otherwise the drop only "sticks" optimistically and a
+  // refresh silently loses it. On failure, reload from the server to reconcile the UI. (Codex #2 fix)
+  var specOk = true;
   if(newSpec && newSpec !== origSpec && typeof cloudSetSpecialtyOverride === "function"){
-    await cloudSetSpecialtyOverride(fromId, newSpec);   // recategorize to the section it was dropped into
-    _toast("✓ Moved to " + newSpec);                    // view-independent (renderSaved ignores savedFlash)
+    specOk = !!(await cloudSetSpecialtyOverride(fromId, newSpec));   // recategorize to the dropped section
   }
-  await cloudSetSortOrder(fromId, newKey);
+  var sortOk = await cloudSetSortOrder(fromId, newKey);
+  if(specOk === false || sortOk === false){
+    _toast("⚠ Couldn't save the new order — check your connection.");
+    if(typeof refreshCloudTalks === "function"){ try{ await refreshCloudTalks(); }catch(_){} }   // revert to server truth
+  } else if(newSpec && newSpec !== origSpec){
+    _toast("✓ Moved to " + newSpec);   // view-independent (renderSaved ignores savedFlash)
+  }
   render();
 }
 
