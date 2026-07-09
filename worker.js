@@ -300,12 +300,14 @@ async function consumeQuota(env, userId, kind, envForBase) {
   } catch (e) { return false; }
 }
 
-// Refund one reserved talk (best-effort) when an async job fails or is cancelled, so a reserved-at-submit
-// credit isn't burned on work that never produced a talk. grant_bonus is keyed by email. (Jenni 2026-07)
-async function refundQuotaTalk(env, email) {
+// Refund one reserved talk/image (best-effort) when the work fails, so a consumed credit isn't burned on
+// something that never produced output. grant_bonus is keyed by email. (Jenni 2026-07)
+async function refundQuota(env, email, kind) {
   if (!email) return;
-  try { await supaServiceRPC(env, "free_tier_grant_bonus", { p_email: String(email).toLowerCase(), p_bonus_talks: 1, p_bonus_images: 0 }); } catch (_) {}
+  const talks = kind === "image" ? 0 : 1, images = kind === "image" ? 1 : 0;
+  try { await supaServiceRPC(env, "free_tier_grant_bonus", { p_email: String(email).toLowerCase(), p_bonus_talks: talks, p_bonus_images: images }); } catch (_) {}
 }
+async function refundQuotaTalk(env, email) { return refundQuota(env, email, "talk"); }
 
 function estimateCostCents(model, usage) {
   const p = MODEL_PRICES[model] || MODEL_PRICES["claude-sonnet-4-6"];
@@ -562,8 +564,14 @@ async function handleImageGeneration(request, env, ctx, origin) {
       body: JSON.stringify({ model, prompt, size, quality, n }),
     });
   } catch (err) {
+    // Network failure — the image credit was already consumed above; refund it. (Audit fix)
+    if (isFreeTier && freeUser) ctx.waitUntil(refundQuota(env, freeUser.email, "image"));
     return jsonError(502, "upstream_unreachable", "Could not reach OpenAI Images API: " + err.message, origin);
   }
+
+  // Upstream returned an error (rate limit, bad request, etc.) — refund the consumed image credit so a
+  // failed generation doesn't cost the user one of their 5. (Audit fix)
+  if (!upstream.ok && isFreeTier && freeUser) ctx.waitUntil(refundQuota(env, freeUser.email, "image"));
 
   if (upstream.ok && isFreeTier) {
     // Flat image cost into the same monthly spend ledger.
