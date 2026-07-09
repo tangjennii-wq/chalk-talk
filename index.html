@@ -1433,7 +1433,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-04";
+var BUILD_ID = "2026-07-07-05";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3310,7 +3310,7 @@ var S = {
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false, proofreadArmed:false,
-  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude", modelPickerOpen:false,
+  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude", modelPickerOpen:false, composeOptionsOpen:false,
   talkHistory:[], editingSection:null, editingDraft:null,
   loadingFromHash:false,
   // — Auth + cloud
@@ -9065,31 +9065,16 @@ function renderMain(){
   // block has the screen on mobile. Topic input stays visible (read-only) so the user
   // can see what's cooking. (Jenni 2026-06-08)
   if(!S.loading){
-  // Style + Depth — combined row (side by side on desktop, stack on narrow mobile)
   var depthInactive = (S.style === "boards");
-  h+='<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">';
-  // Style group
-  h+='<div style="flex:1 1 220px;min-width:0">';
+  // Style — always visible (the primary format choice: Lecture vs Boards).
+  h+='<div style="margin-bottom:12px">';
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Style<span tabindex="0" class="opt-hint" aria-label="What is Style?">i<span class="opt-hint-pop"><b>Lecture:</b> structured 10-min teaching — sections, mechanism, evidence, clinical pearls.<br><b>Boards:</b> a single ABIM-style practice question with answer rationales.</span></span></div>';
   h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
   h+=segBtn("styleBtn","s","lecture",S.style,"🎓","Lecture");
   h+=segBtn("styleBtn","s","boards",S.style,"📋","Boards");
   h+='</div></div>';
-  // Depth group
-  h+='<div style="flex:1 1 220px;min-width:0;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesn’t apply to Boards":"5 min vs 10 min")+'">';
-  h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span><span style="font-size:9px;font-weight:800;color:#a07d1a;letter-spacing:0.05em;margin-left:8px">★ CONCISE RECOMMENDED</span></div>';
-  h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
-  h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass, generates fastest. Recommended."});
-  h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:"~10 min — full chalk talk with deeper mechanism and evidence (generates slower, ~40-50s)"});
-  h+='</div></div>';
-  h+='</div>';
 
-  // Model provider (Jenni 2026-07-03) — minimal friction: Claude just works (free tier), so by
-  // default this is ONE faint line, not a segmented control. It expands to the full picker only when
-  // the user clicks it OR is already on a non-Claude provider. Key entry stays fully on-demand.
-  h+=renderModelPicker();
-
-  // References row
+  // References — always visible.
   h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .15s ease">';
   h+='<span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:400;flex-shrink:0">+</span>';
   h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Add your own references <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span></div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.4">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.</div><div style="font-size:10.5px;color:var(--ink-soft);margin-top:3px;line-height:1.35">🔒 Not stored, not used for training.</div></div>';
@@ -9098,16 +9083,32 @@ function renderMain(){
   h+='</div>';
   for(var fi=0;fi<S.files.length;fi++)h+='<div style="display:flex;justify-content:space-between;background:var(--lavender-bg);border-radius:8px;padding:6px 12px;margin-bottom:6px"><span style="font-size:12px;color:var(--ink)">📄 '+esc(S.files[fi].n)+'</span><button class="rmFile" data-i="'+fi+'" style="background:none;border:none;color:var(--ink-muted);font-size:16px;cursor:pointer">×</button></div>';
 
-  // Toggles — Verify / Podcast as visible stacked rows with switches
-  var verifyInactive = (S.style === "boards");
-  h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-soft)">';
-  h+='<label style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
-  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</span>';
-  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Cross-check the live web</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Always uses PubMed + society guidelines. Toggle on to also check the open web for newer updates (slower, ~30s).</div></div>';
-  h+='<span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!verifyInactive?"checked":"")+' '+(verifyInactive?"disabled":"")+'><span class="slider"></span></span>';
-  h+='</label>';
-  // Podcast toggle removed from compose form (Jenni 2026-06-08). Audio is now on-demand via the Audio tab
-  // after generation, which is where users actually decide they want to listen vs read.
+  // OPTIONS — Depth · Model · Verify tucked behind a toggle so a first-time user's screen is just
+  // Topic + Style + Generate. Collapsed by default; the choice is remembered across the session. (Jenni 2026-07)
+  h+='<div style="margin-bottom:14px">';
+  h+='<button id="composeOptionsToggle" aria-expanded="'+(S.composeOptionsOpen?'true':'false')+'" style="background:none;border:none;padding:5px 4px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px">'+(S.composeOptionsOpen?'▴ Fewer options':'▾ More options')+'<span style="color:var(--ink-soft);font-weight:400">— depth · model · verify</span></button>';
+  if(S.composeOptionsOpen){
+    h+='<div style="margin-top:10px">';
+    // Depth
+    h+='<div style="margin-bottom:14px;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesn’t apply to Boards":"5 min vs 10 min")+'">';
+    h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span><span style="font-size:9px;font-weight:800;color:#a07d1a;letter-spacing:0.05em;margin-left:8px">★ CONCISE RECOMMENDED</span></div>';
+    h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
+    h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass, generates fastest. Recommended."});
+    h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:"~10 min — full chalk talk with deeper mechanism and evidence (generates slower, ~40-50s)"});
+    h+='</div></div>';
+    // Model picker
+    h+=renderModelPicker();
+    // Verify toggle
+    var verifyInactive = (S.style === "boards");
+    h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-soft)">';
+    h+='<label style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
+    h+='<span style="background:var(--lavender-soft);color:var(--plum);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</span>';
+    h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Verify with current literature</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Always uses PubMed + society guidelines; toggle on to also scan the open web for newer updates (~30s).</div></div>';
+    h+='<span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!verifyInactive?"checked":"")+' '+(verifyInactive?"disabled":"")+'><span class="slider"></span></span>';
+    h+='</label>';
+    h+='</div>';
+    h+='</div>';
+  }
   h+='</div>';
   } // end if(!S.loading) — compose controls hidden during generation
 
@@ -9196,7 +9197,7 @@ function renderMain(){
       h+='</div></div>';
       // Verify toggle — restarts generation on toggle (in either direction)
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
-      h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px"><span style="font-size:13px">🔬</span>Verify w/ current literature</span>';
+      h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px"><span style="font-size:13px">🔬</span>Verify with current literature</span>';
       h+='<span class="toggle-sw"><input type="checkbox" id="loadingVerifyCheck" '+(S.wantWebSearch?"checked":"")+'><span class="slider"></span></span>';
       h+='</div>';
       // Audio queue toggle — same switch UX as Verify. No restart needed; flag is read after gen completes.
@@ -9978,7 +9979,7 @@ function renderMain(){
     // Toggles in drawer
     var vInact2=(S.style==="boards");
     h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin:6px 0 14px;overflow:hidden">';
-    h+='<label style="display:flex;align-items:center;gap:12px;padding:11px 13px;cursor:'+(vInact2?"not-allowed":"pointer")+';opacity:'+(vInact2?"0.5":"1")+'"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px">📄</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">Verify with current literature</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px">Use up-to-date, peer-reviewed sources</div></div><span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!vInact2?"checked":"")+' '+(vInact2?"disabled":"")+'><span class="slider"></span></span></label>';
+    h+='<label style="display:flex;align-items:center;gap:12px;padding:11px 13px;cursor:'+(vInact2?"not-allowed":"pointer")+';opacity:'+(vInact2?"0.5":"1")+'"><span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px">📄</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">Verify with current literature</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Always uses PubMed + guidelines; also scans the open web (~30s)</div></div><span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!vInact2?"checked":"")+' '+(vInact2?"disabled":"")+'><span class="slider"></span></span></label>';
     // Podcast toggle removed from drawer too (Jenni 2026-06-08) — Audio tab handles on-demand.
     h+='</div>';
     // Rebuild CTA in drawer
@@ -10232,6 +10233,7 @@ function bindMain(){
   document.querySelectorAll(".rmFile").forEach(function(b){b.onclick=function(){S.files.splice(+b.dataset.i,1);render()}});
   // podCheck handler removed (2026-06-08) — toggle was deleted from compose form + drawer.
   var wc=document.getElementById("webCheck");if(wc)wc.onchange=function(e){S.wantWebSearch=e.target.checked};
+  var cot=document.getElementById("composeOptionsToggle");if(cot)cot.onclick=function(){ S.composeOptionsOpen=!S.composeOptionsOpen; try{ localStorage.setItem("ct_compose_options", S.composeOptionsOpen?"1":"0"); }catch(_){} render(); };
   var gb=document.getElementById("genBtn");if(gb)gb.onclick=generate;
   var cgb=document.getElementById("cancelGenBtn");if(cgb)cgb.onclick=cancelGen;
   // Live depth + verify controls inside the loading panel — changing restarts generation cleanly.
@@ -10942,6 +10944,8 @@ function bindMain(){
 try{ if(!localStorage.getItem("ct_seen_v1")){ S.howitOpen = true; localStorage.setItem("ct_seen_v1","1"); } }catch(_){}
 // Restore the chosen generation provider (Jenni 2026-07-03).
 try{ var _gp = localStorage.getItem("ct_gen_provider"); if(_gp==="openai"||_gp==="gemini"||_gp==="claude") S.genProvider = _gp; }catch(_){}
+// Remember whether the compose "Options" (depth/model/verify) were expanded. Default collapsed.
+try{ if(localStorage.getItem("ct_compose_options")==="1") S.composeOptionsOpen = true; }catch(_){}
 // Restore a topic the user typed before being bounced to sign-in (which reloads the page). (fix #2)
 try{ var _pendTopic = localStorage.getItem("ct_pending_topic"); if(_pendTopic){ S.topic = _pendTopic; localStorage.removeItem("ct_pending_topic"); } }catch(_){}
 loadFromShareHash();
