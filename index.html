@@ -326,6 +326,10 @@ textarea,input[type=text]{font-family:inherit}
 .cite-pop-head .cite-pop-seeall:hover{text-decoration:underline}
 .cite-pop-item + .cite-pop-item{margin-top:10px;padding-top:10px;border-top:1px solid #efe9f5}
 .cite-pop{max-height:60vh;overflow-y:auto}
+/* Library drag: dashed drop-slot placeholder pulse + ghost card. (Codex 2026-07) */
+.libDropPlaceholder{border:2px dashed #a87fc6;background:rgba(112,43,157,0.06);animation:libDropPulse .7s ease-in-out infinite alternate}
+@keyframes libDropPulse{from{background:rgba(112,43,157,0.04);border-color:#d4baea}to{background:rgba(112,43,157,0.10);border-color:#702b9d}}
+.libDragGhost .libCardMenu,.libDragGhost .libOpenBtn{pointer-events:none}
 .cite-pop-num{font-size:12px;color:#702b9d;font-weight:700;margin-right:3px}
 .cite-pop-title{font-weight:700;color:#330662;margin-bottom:6px;line-height:1.35;font-size:13.5px}
 .cite-pop-title a{color:inherit;text-decoration:none}
@@ -1426,7 +1430,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-01";
+var BUILD_ID = "2026-07-07-02";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -8554,6 +8558,9 @@ function renderSaved(){
 // On drop it computes a midpoint sort_order within the section it landed in and persists; render() then
 // reconciles from state. Grab the ⠿ handle to drag. (Diagnosed live: the underlying reorder logic was
 // correct all along — the missing piece was visible movement.)
+// Ghost + placeholder drag (Codex 2026-07): a cloned "ghost" card follows the cursor while a dashed
+// placeholder shows the exact slot it will drop into — continuous visual feedback instead of the row
+// teleporting. Persistence logic (_commitLibraryReorder, cross-specialty recategorize) is unchanged.
 function bindLibraryReorder(){
   document.querySelectorAll(".libDragHandle").forEach(function(gh){
     gh.onpointerdown=function(e){
@@ -8561,43 +8568,57 @@ function bindLibraryReorder(){
       var fromId = gh.dataset.libid, origSpec = gh.dataset.libspec;
       if(!fromId) return;
       var card = gh.closest(".libCard"); if(!card) return;
-      var pid = e.pointerId, startY = e.clientY, started = false;
+      var startY = e.clientY, startX = e.clientX, pid = e.pointerId;
+      var started = false, ghost = null, placeholder = null, offsetX = 0, offsetY = 0;
       try{ gh.setPointerCapture(pid); }catch(_){}
-      function onMove(ev){
-        if(!started){
-          if(Math.abs(ev.clientY - startY) < 4) return;   // small threshold so a click isn't a drag
-          started = true;
-          card.style.opacity = "0.94";
-          card.style.boxShadow = "0 10px 26px rgba(75,17,111,0.28)";
-          card.style.transform = "scale(1.01)";
-          card.style.position = "relative";
-          card.style.zIndex = "40";
-          document.body.style.userSelect = "none";
-          gh.style.cursor = "grabbing";
-        }
+      function startDrag(ev){
+        started = true;
+        var cardRect = card.getBoundingClientRect();
+        offsetX = ev.clientX - cardRect.left; offsetY = ev.clientY - cardRect.top;
+        placeholder = document.createElement("div");
+        placeholder.className = "libDropPlaceholder";
+        placeholder.style.height = cardRect.height + "px"; placeholder.style.marginBottom = "6px";
+        placeholder.style.borderRadius = "9px"; placeholder.style.boxSizing = "border-box";
+        ghost = card.cloneNode(true);
+        ghost.classList.add("libDragGhost");
+        ghost.style.cssText = "position:fixed;left:"+cardRect.left+"px;top:"+cardRect.top+"px;width:"+cardRect.width+"px;z-index:9999;pointer-events:none;opacity:0.96;transform:scale(1.015);box-shadow:0 14px 34px rgba(75,17,111,0.28);border-color:var(--plum);background:#fff";
+        card.parentNode.insertBefore(placeholder, card);
+        card.style.display = "none";
+        document.body.appendChild(ghost);
+        document.body.style.userSelect = "none"; document.body.style.cursor = "grabbing"; gh.style.cursor = "grabbing";
+      }
+      function moveGhost(ev){ if(ghost){ ghost.style.left = (ev.clientX - offsetX) + "px"; ghost.style.top = (ev.clientY - offsetY) + "px"; } }
+      function movePlaceholder(ev){
         var under = document.elementFromPoint(ev.clientX, ev.clientY);
         var over = (under && under.closest) ? under.closest(".libCard") : null;
-        if(!over || over === card) return;
+        if(!over || over === card || over === ghost) return;
         if(!over.dataset.libid || over.dataset.libid.indexOf("t_") === 0) return;   // only own cloud cards
         var rect = over.getBoundingClientRect();
         var after = (ev.clientY - rect.top) > rect.height/2;
-        // LIVE: physically move the dragged card among its siblings so the user SEES it move. Works across
-        // specialty sections too (the card can cross a section header) → recategorize handled on drop.
-        if(after){ if(over.nextSibling !== card) over.parentNode.insertBefore(card, over.nextSibling); }
-        else { if(over.previousSibling !== card) over.parentNode.insertBefore(card, over); }
+        if(after){ if(over.nextSibling !== placeholder) over.parentNode.insertBefore(placeholder, over.nextSibling); }
+        else { if(over.previousSibling !== placeholder) over.parentNode.insertBefore(placeholder, over); }
       }
-      function onUp(){
+      function cleanup(){
         gh.removeEventListener("pointermove", onMove);
         gh.removeEventListener("pointerup", onUp);
-        gh.removeEventListener("pointercancel", onUp);
+        gh.removeEventListener("pointercancel", onCancel);
         try{ gh.releasePointerCapture(pid); }catch(_){}
-        card.style.opacity=""; card.style.boxShadow=""; card.style.transform=""; card.style.position=""; card.style.zIndex="";
-        document.body.style.userSelect=""; gh.style.cursor="";
-        if(started) _commitLibraryReorder(fromId, origSpec);
+        document.body.style.userSelect = ""; document.body.style.cursor = ""; gh.style.cursor = "";
       }
+      function restoreCard(){
+        if(placeholder && placeholder.parentNode){ placeholder.parentNode.insertBefore(card, placeholder); placeholder.remove(); }
+        card.style.display = "";
+        if(ghost) ghost.remove();
+      }
+      function onMove(ev){
+        if(!started){ if(Math.abs(ev.clientY - startY) < 5 && Math.abs(ev.clientX - startX) < 5) return; startDrag(ev); }
+        moveGhost(ev); movePlaceholder(ev);
+      }
+      function onUp(){ cleanup(); if(!started) return; restoreCard(); _commitLibraryReorder(fromId, origSpec); }
+      function onCancel(){ cleanup(); if(started) restoreCard(); }
       gh.addEventListener("pointermove", onMove);
       gh.addEventListener("pointerup", onUp);
-      gh.addEventListener("pointercancel", onUp);
+      gh.addEventListener("pointercancel", onCancel);
     };
   });
 }
