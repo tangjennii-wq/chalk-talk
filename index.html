@@ -8526,53 +8526,53 @@ function renderSaved(){
   return h;
 }
 
-// Drag-to-reorder library cards WITHIN a specialty group (Jenni 2026-07-03). Uses the ⠿ handle on
-// each own-cloud card. Order is read from the live DOM (= exactly what's visible after filters/sort),
-// the moved card gets a sort_order midway between its new neighbors, and it's persisted — which also
-// reorders the public showcase, since both read the same sort_order.
-// Pointer-based reorder (Jenni 2026-07-03 rewrite): HTML5 drag-and-drop was unreliable inside the
-// cards (nested link + buttons swallow the drag). Pointer events work consistently on desktop AND
-// touch. Grab the ⠿ handle and drag; the card under the pointer (same specialty) highlights, and
-// release drops the card there.
+// Drag-to-reorder library cards (Jenni 2026-07 LIVE-DRAG rewrite). The prior version only highlighted a
+// thin line on the target and repositioned on release — the dragged card never moved during the drag, so
+// it read as "broken." This version moves the card LIVE in the DOM as you drag (you see it relocate), and
+// supports dropping into a DIFFERENT specialty section (which RECATEGORIZES the talk to that specialty).
+// On drop it computes a midpoint sort_order within the section it landed in and persists; render() then
+// reconciles from state. Grab the ⠿ handle to drag. (Diagnosed live: the underlying reorder logic was
+// correct all along — the missing piece was visible movement.)
 function bindLibraryReorder(){
   document.querySelectorAll(".libDragHandle").forEach(function(gh){
     gh.onpointerdown=function(e){
-      e.preventDefault();
-      var fromId = gh.dataset.libid, spec = gh.dataset.libspec;
+      e.preventDefault(); e.stopPropagation();
+      var fromId = gh.dataset.libid, origSpec = gh.dataset.libspec;
       if(!fromId) return;
-      var card = gh.closest(".libCard");
-      var moved = false;
-      window._libDropTarget = null;
-      try{ gh.setPointerCapture(e.pointerId); }catch(_){}
-      if(card) card.style.opacity = "0.55";
-      function clearHints(){ document.querySelectorAll(".libCard").forEach(function(c){ c.style.boxShadow=""; }); }
+      var card = gh.closest(".libCard"); if(!card) return;
+      var pid = e.pointerId, startY = e.clientY, started = false;
+      try{ gh.setPointerCapture(pid); }catch(_){}
       function onMove(ev){
-        moved = true;
-        var el = document.elementFromPoint(ev.clientX, ev.clientY);
-        var over = (el && el.closest) ? el.closest(".libCard") : null;
-        clearHints();
-        if(over && over !== card && over.dataset.libspec === spec && over.dataset.libid && over.dataset.libid.indexOf("t_")!==0){
-          // Top half of the target = drop BEFORE it; bottom half = drop AFTER it. This lets you move a
-          // card down a slot (aim the lower card's bottom half) and drop after the last card. (Codex fix)
-          var rect = over.getBoundingClientRect();
-          var after = (ev.clientY - rect.top) > rect.height/2;
-          over.style.boxShadow = after ? "0 3px 0 var(--plum) inset" : "0 -3px 0 var(--plum) inset";
-          window._libDropTarget = over.dataset.libid;
-          window._libDropAfter = after;
-        } else {
-          window._libDropTarget = null;
-          window._libDropAfter = false;
+        if(!started){
+          if(Math.abs(ev.clientY - startY) < 4) return;   // small threshold so a click isn't a drag
+          started = true;
+          card.style.opacity = "0.94";
+          card.style.boxShadow = "0 10px 26px rgba(75,17,111,0.28)";
+          card.style.transform = "scale(1.01)";
+          card.style.position = "relative";
+          card.style.zIndex = "40";
+          document.body.style.userSelect = "none";
+          gh.style.cursor = "grabbing";
         }
+        var under = document.elementFromPoint(ev.clientX, ev.clientY);
+        var over = (under && under.closest) ? under.closest(".libCard") : null;
+        if(!over || over === card) return;
+        if(!over.dataset.libid || over.dataset.libid.indexOf("t_") === 0) return;   // only own cloud cards
+        var rect = over.getBoundingClientRect();
+        var after = (ev.clientY - rect.top) > rect.height/2;
+        // LIVE: physically move the dragged card among its siblings so the user SEES it move. Works across
+        // specialty sections too (the card can cross a section header) → recategorize handled on drop.
+        if(after){ if(over.nextSibling !== card) over.parentNode.insertBefore(card, over.nextSibling); }
+        else { if(over.previousSibling !== card) over.parentNode.insertBefore(card, over); }
       }
       function onUp(){
         gh.removeEventListener("pointermove", onMove);
         gh.removeEventListener("pointerup", onUp);
         gh.removeEventListener("pointercancel", onUp);
-        clearHints();
-        if(card) card.style.opacity = "";
-        var toId = window._libDropTarget, after = window._libDropAfter;
-        window._libDropTarget = null; window._libDropAfter = false;
-        if(moved && toId && toId !== fromId) _reorderLibraryCard(fromId, spec, toId, after);
+        try{ gh.releasePointerCapture(pid); }catch(_){}
+        card.style.opacity=""; card.style.boxShadow=""; card.style.transform=""; card.style.position=""; card.style.zIndex="";
+        document.body.style.userSelect=""; gh.style.cursor="";
+        if(started) _commitLibraryReorder(fromId, origSpec);
       }
       gh.addEventListener("pointermove", onMove);
       gh.addEventListener("pointerup", onUp);
@@ -8580,30 +8580,37 @@ function bindLibraryReorder(){
     };
   });
 }
+function _libKeyOf(id){
+  var r = (S.cloudTalks||[]).find(function(x){ return x.id===id; });
+  return r ? libSortKey((typeof r.sort_order==="number")?r.sort_order:null, r.created_at) : null;
+}
 
-// Move fromId before/after toId within its specialty group, compute a midpoint sort_order, persist.
-// `after` = drop below the target (bottom-half drop / after the last card).
-function _reorderLibraryCard(fromId, spec, toId, after){
-  var cards = Array.prototype.slice.call(document.querySelectorAll(".libCard")).filter(function(c){
-    return c.dataset.libspec===spec && c.dataset.libid && c.dataset.libid.indexOf("t_")!==0;
+// After a live drag: read where the card ended up in the DOM, decide which specialty SECTION it landed
+// in (nearest reorderable neighbor's spec, preferring the card above), compute a midpoint sort_order
+// among that section's cards, and persist. If the section changed, also recategorize (specialty_override).
+function _commitLibraryReorder(fromId, origSpec){
+  var all = Array.prototype.slice.call(document.querySelectorAll(".libCard")).filter(function(c){
+    return c.dataset.libid && c.dataset.libid.indexOf("t_")!==0;
   });
-  var ids = cards.map(function(c){ return c.dataset.libid; });
-  var fromPos = ids.indexOf(fromId);
-  if(fromPos<0 || ids.indexOf(toId)<0) return;
-  ids.splice(fromPos,1);
-  var toPos = ids.indexOf(toId);                        // position of the drop target after removing fromId
-  ids.splice(after ? toPos+1 : toPos, 0, fromId);      // insert before (top half) or after (bottom half)
-  var disp = (typeof getDisplayLibrary==="function") ? getDisplayLibrary() : [];
-  var keyMap = {}; disp.forEach(function(it){ if(it.id) keyMap[it.id] = libSortKey(it._sortOrder, it.savedAt); });   // bug fix: getDisplayLibrary items are keyed 'id', not '_id' — keyMap was always empty → every reorder wrote sort_order=0
-  var mi = ids.indexOf(fromId);
-  var prevId = mi>0 ? ids[mi-1] : null, nextId = mi<ids.length-1 ? ids[mi+1] : null;
-  var prevKey = (prevId!=null && keyMap[prevId]!=null) ? keyMap[prevId] : null;
-  var nextKey = (nextId!=null && keyMap[nextId]!=null) ? keyMap[nextId] : null;
+  var idx = -1; for(var i=0;i<all.length;i++){ if(all[i].dataset.libid===fromId){ idx=i; break; } }
+  if(idx < 0) return;
+  // Which specialty section is the card now in? Use the nearest neighbor's spec (above first, else below).
+  var newSpec = origSpec;
+  for(var a=idx-1; a>=0; a--){ if(all[a].dataset.libspec){ newSpec = all[a].dataset.libspec; break; } }
+  if(newSpec === origSpec){ for(var b=idx+1; b<all.length; b++){ if(all[b].dataset.libspec){ newSpec = all[b].dataset.libspec; break; } } }
+  // Neighbors WITHIN the target section (exclude self, which still carries origSpec in the DOM).
+  var prevKey=null, nextKey=null;
+  for(var p=idx-1; p>=0; p--){ if(all[p].dataset.libspec===newSpec){ prevKey=_libKeyOf(all[p].dataset.libid); break; } }
+  for(var n=idx+1; n<all.length; n++){ if(all[n].dataset.libspec===newSpec){ nextKey=_libKeyOf(all[n].dataset.libid); break; } }
   var newKey;
-  if(prevKey==null && nextKey==null) newKey = 0;
+  if(prevKey==null && nextKey==null) newKey = -(Date.now());
   else if(prevKey==null) newKey = nextKey - 1e6;
   else if(nextKey==null) newKey = prevKey + 1e6;
   else newKey = (prevKey + nextKey) / 2;
+  if(newSpec && newSpec !== origSpec && typeof cloudSetSpecialtyOverride==="function"){
+    cloudSetSpecialtyOverride(fromId, newSpec);   // recategorize to the section it was dropped into
+    S.savedFlash = "✓ Moved to " + newSpec; setTimeout(function(){ if(S.savedFlash==="✓ Moved to "+newSpec){ S.savedFlash=""; render(); } }, 2200);
+  }
   cloudSetSortOrder(fromId, newKey);   // optimistic local update is synchronous; DB write follows
   render();
 }
