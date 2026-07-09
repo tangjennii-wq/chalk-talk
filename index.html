@@ -192,7 +192,7 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
 /* Landing lecture row — horizontal scroller: scroll through your lectures (or tap "See all in library").
    Fixed-width, non-shrinking cards so a peek of the next card signals it's scrollable. (Jenni 2026-07) */
 .msample-grid{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;padding-bottom:6px;scrollbar-width:thin}
-.msample-grid > *{flex:0 0 240px !important;scroll-snap-align:start}
+.msample-grid > *{flex:0 0 200px !important;scroll-snap-align:start}
 .msample-grid::-webkit-scrollbar{height:6px}
 .msample-grid::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
 @media (max-width:640px){
@@ -326,10 +326,12 @@ textarea,input[type=text]{font-family:inherit}
 .cite-pop-head .cite-pop-seeall:hover{text-decoration:underline}
 .cite-pop-item + .cite-pop-item{margin-top:10px;padding-top:10px;border-top:1px solid #efe9f5}
 .cite-pop{max-height:60vh;overflow-y:auto}
-/* Library drag: dashed drop-slot placeholder pulse + ghost card. (Codex 2026-07) */
-.libDropPlaceholder{border:2px dashed #a87fc6;background:rgba(112,43,157,0.06);animation:libDropPulse .7s ease-in-out infinite alternate}
-@keyframes libDropPulse{from{background:rgba(112,43,157,0.04);border-color:#d4baea}to{background:rgba(112,43,157,0.10);border-color:#702b9d}}
-.libDragGhost .libCardMenu,.libDragGhost .libOpenBtn{pointer-events:none}
+/* Library drag-to-reorder via SortableJS. (Codex 2026-07) */
+.libSortGroup{min-height:8px}
+body.lib-is-reordering .libCard{transition:transform .16s ease, box-shadow .16s ease, opacity .16s ease}
+.lib-sort-chosen{box-shadow:0 10px 26px rgba(75,17,111,.22) !important}
+.lib-sort-ghost{opacity:.35 !important;background:rgba(112,43,157,.08) !important;border:2px dashed #a87fc6 !important}
+.lib-sort-drag{opacity:.98 !important;box-shadow:0 16px 38px rgba(75,17,111,.28) !important;border-color:var(--plum) !important}
 .cite-pop-num{font-size:12px;color:#702b9d;font-weight:700;margin-right:3px}
 .cite-pop-title{font-weight:700;color:#330662;margin-bottom:6px;line-height:1.35;font-size:13.5px}
 .cite-pop-title a{color:inherit;text-decoration:none}
@@ -517,6 +519,7 @@ a.pmid-pill:hover { background:var(--lavender-soft); }
 <div class="app" id="root"></div>
 <!-- html2canvas: async so it doesn't block page parse / Supabase init. Only needed lazily when user clicks "Save as Image". -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
 <script type="module">
   // Supabase SDK — initializes the client and exposes window.sb for the legacy script
   import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -1430,7 +1433,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-02";
+var BUILD_ID = "2026-07-07-03";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3906,7 +3909,7 @@ function renderLibCard(x){
   // unsaved local draft). Drag is constrained to WITHIN its specialty group. (Jenni 2026-07-03)
   var _reorderable = !isSample && !isShowcase && x._id && !String(x._id).startsWith("t_");
   var _cardSpec = x._spec || "Other";
-  var h = '<div class="libCard" data-libid="'+esc(x._id||"")+'" data-libspec="'+esc(_cardSpec)+'" style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:9px;padding:6px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">';
+  var h = '<div class="libCard" data-reorderable="'+(_reorderable?'1':'0')+'" data-libid="'+esc(x._id||"")+'" data-libspec="'+esc(_cardSpec)+'" style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:9px;padding:6px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">';
   if(_reorderable){
     h += '<span class="libDragHandle" data-libid="'+esc(x._id)+'" data-libspec="'+esc(_cardSpec)+'" title="Drag to reorder within '+esc(_cardSpec)+'" aria-label="Drag to reorder" style="cursor:grab;color:var(--ink-soft);font-size:15px;line-height:1;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none;padding:2px 4px;margin:-2px 0">⠿</span>';
   }
@@ -8527,7 +8530,9 @@ function renderSaved(){
     var _libCmp = function(a,b){ return libSortKey(a._sortOrder, a.savedAt) - libSortKey(b._sortOrder, b.savedAt); };
     if(S.libSpec){
       // Specialty filter is active \u2014 flat list, no section headers (they'd just repeat the filter label).
+      h+='<div class="libSortGroup" data-libspec="'+esc(S.libSpec)+'">';
       filtered.slice().sort(_libCmp).forEach(function(it){ h += renderLibCard(it); });
+      h+='</div>';
     } else {
       // No specialty filter \u2014 group + render section headers in canonical order.
       var bySpecGroup={};
@@ -8542,7 +8547,9 @@ function renderSaved(){
         h+='<span style="font-family:Georgia,serif;font-size:15px;font-weight:700;color:var(--plum-deep);letter-spacing:-0.005em">'+esc(specName)+'</span>';
         h+='<span style="font-size:11px;color:var(--ink-muted);font-weight:500">'+items.length+'</span>';
         h+='</button>';
+        h+='<div class="libSortGroup" data-libspec="'+esc(specName)+'">';
         for(var ci=0;ci<items.length;ci++){ h += renderLibCard(items[ci]); }
+        h+='</div>';
       }
     }
     // (The defensive "unknown specialty" branch was deleted \u2014 inferSpecialty now
@@ -8551,110 +8558,70 @@ function renderSaved(){
   return h;
 }
 
-// Drag-to-reorder library cards (Jenni 2026-07 LIVE-DRAG rewrite). The prior version only highlighted a
-// thin line on the target and repositioned on release — the dragged card never moved during the drag, so
-// it read as "broken." This version moves the card LIVE in the DOM as you drag (you see it relocate), and
-// supports dropping into a DIFFERENT specialty section (which RECATEGORIZES the talk to that specialty).
-// On drop it computes a midpoint sort_order within the section it landed in and persists; render() then
-// reconciles from state. Grab the ⠿ handle to drag. (Diagnosed live: the underlying reorder logic was
-// correct all along — the missing piece was visible movement.)
-// Ghost + placeholder drag (Codex 2026-07): a cloned "ghost" card follows the cursor while a dashed
-// placeholder shows the exact slot it will drop into — continuous visual feedback instead of the row
-// teleporting. Persistence logic (_commitLibraryReorder, cross-specialty recategorize) is unchanged.
-function bindLibraryReorder(){
-  document.querySelectorAll(".libDragHandle").forEach(function(gh){
-    gh.onpointerdown=function(e){
-      e.preventDefault(); e.stopPropagation();
-      var fromId = gh.dataset.libid, origSpec = gh.dataset.libspec;
-      if(!fromId) return;
-      var card = gh.closest(".libCard"); if(!card) return;
-      var startY = e.clientY, startX = e.clientX, pid = e.pointerId;
-      var started = false, ghost = null, placeholder = null, offsetX = 0, offsetY = 0;
-      try{ gh.setPointerCapture(pid); }catch(_){}
-      function startDrag(ev){
-        started = true;
-        var cardRect = card.getBoundingClientRect();
-        offsetX = ev.clientX - cardRect.left; offsetY = ev.clientY - cardRect.top;
-        placeholder = document.createElement("div");
-        placeholder.className = "libDropPlaceholder";
-        placeholder.style.height = cardRect.height + "px"; placeholder.style.marginBottom = "6px";
-        placeholder.style.borderRadius = "9px"; placeholder.style.boxSizing = "border-box";
-        ghost = card.cloneNode(true);
-        ghost.classList.add("libDragGhost");
-        ghost.style.cssText = "position:fixed;left:"+cardRect.left+"px;top:"+cardRect.top+"px;width:"+cardRect.width+"px;z-index:9999;pointer-events:none;opacity:0.96;transform:scale(1.015);box-shadow:0 14px 34px rgba(75,17,111,0.28);border-color:var(--plum);background:#fff";
-        card.parentNode.insertBefore(placeholder, card);
-        card.style.display = "none";
-        document.body.appendChild(ghost);
-        document.body.style.userSelect = "none"; document.body.style.cursor = "grabbing"; gh.style.cursor = "grabbing";
-      }
-      function moveGhost(ev){ if(ghost){ ghost.style.left = (ev.clientX - offsetX) + "px"; ghost.style.top = (ev.clientY - offsetY) + "px"; } }
-      function movePlaceholder(ev){
-        var under = document.elementFromPoint(ev.clientX, ev.clientY);
-        var over = (under && under.closest) ? under.closest(".libCard") : null;
-        if(!over || over === card || over === ghost) return;
-        if(!over.dataset.libid || over.dataset.libid.indexOf("t_") === 0) return;   // only own cloud cards
-        var rect = over.getBoundingClientRect();
-        var after = (ev.clientY - rect.top) > rect.height/2;
-        if(after){ if(over.nextSibling !== placeholder) over.parentNode.insertBefore(placeholder, over.nextSibling); }
-        else { if(over.previousSibling !== placeholder) over.parentNode.insertBefore(placeholder, over); }
-      }
-      function cleanup(){
-        gh.removeEventListener("pointermove", onMove);
-        gh.removeEventListener("pointerup", onUp);
-        gh.removeEventListener("pointercancel", onCancel);
-        try{ gh.releasePointerCapture(pid); }catch(_){}
-        document.body.style.userSelect = ""; document.body.style.cursor = ""; gh.style.cursor = "";
-      }
-      function restoreCard(){
-        if(placeholder && placeholder.parentNode){ placeholder.parentNode.insertBefore(card, placeholder); placeholder.remove(); }
-        card.style.display = "";
-        if(ghost) ghost.remove();
-      }
-      function onMove(ev){
-        if(!started){ if(Math.abs(ev.clientY - startY) < 5 && Math.abs(ev.clientX - startX) < 5) return; startDrag(ev); }
-        moveGhost(ev); movePlaceholder(ev);
-      }
-      function onUp(){ cleanup(); if(!started) return; restoreCard(); _commitLibraryReorder(fromId, origSpec); }
-      function onCancel(){ cleanup(); if(started) restoreCard(); }
-      gh.addEventListener("pointermove", onMove);
-      gh.addEventListener("pointerup", onUp);
-      gh.addEventListener("pointercancel", onCancel);
-    };
-  });
-}
 function _libKeyOf(id){
   var r = (S.cloudTalks||[]).find(function(x){ return x.id===id; });
   return r ? libSortKey((typeof r.sort_order==="number")?r.sort_order:null, r.created_at) : null;
 }
 
-// After a live drag: read where the card ended up in the DOM, decide which specialty SECTION it landed
-// in (nearest reorderable neighbor's spec, preferring the card above), compute a midpoint sort_order
-// among that section's cards, and persist. If the section changed, also recategorize (specialty_override).
-function _commitLibraryReorder(fromId, origSpec){
-  var all = Array.prototype.slice.call(document.querySelectorAll(".libCard")).filter(function(c){
-    return c.dataset.libid && c.dataset.libid.indexOf("t_")!==0;
+// Library drag-to-reorder via SortableJS (Codex 2026-07). The hand-rolled versions felt like
+// "click → teleport"; SortableJS gives standard smooth drag + ghost + animated placeholder + touch,
+// with zero build step. Each specialty section is its own Sortable in a shared group, so you can drag
+// within a section OR across sections (which recategorizes the talk). Grab the ⠿ handle. Persistence
+// (midpoint sort_order + specialty_override) is computed in _commitSortableLibraryReorder.
+function bindLibraryReorder(){
+  if(!window.Sortable) return;   // library still loading (defer) — bindSaved re-runs on next render
+  document.querySelectorAll(".libSortGroup").forEach(function(groupEl){
+    if(groupEl._sortableBound) return;   // guard against double-init on re-render
+    groupEl._sortableBound = true;
+    Sortable.create(groupEl, {
+      group: "chalkTalkLibrary",
+      animation: 180,
+      easing: "cubic-bezier(.2,.8,.2,1)",
+      handle: ".libDragHandle",
+      draggable: '.libCard[data-reorderable="1"]',
+      ghostClass: "lib-sort-ghost",
+      chosenClass: "lib-sort-chosen",
+      dragClass: "lib-sort-drag",
+      forceFallback: true,
+      fallbackOnBody: true,
+      scroll: true,
+      bubbleScroll: true,
+      onStart: function(){ document.body.classList.add("lib-is-reordering"); },
+      onEnd: function(evt){
+        document.body.classList.remove("lib-is-reordering");
+        if(!evt || !evt.item) return;
+        _commitSortableLibraryReorder(evt.item, evt.from, evt.to);
+      }
+    });
   });
-  var idx = -1; for(var i=0;i<all.length;i++){ if(all[i].dataset.libid===fromId){ idx=i; break; } }
+}
+
+// Persist a SortableJS drop: read the card's new neighbors within its target group, compute a midpoint
+// sort_order, and recategorize if it landed in a different specialty section.
+async function _commitSortableLibraryReorder(item, fromGroup, toGroup){
+  var fromId = item && item.dataset && item.dataset.libid;
+  if(!fromId) return;
+  var origSpec = (fromGroup && fromGroup.dataset && fromGroup.dataset.libspec) || item.dataset.libspec || "Other";
+  var newSpec  = (toGroup && toGroup.dataset && toGroup.dataset.libspec) || origSpec;
+  var cards = Array.prototype.slice.call(toGroup.querySelectorAll('.libCard[data-reorderable="1"]'));
+  var idx = cards.indexOf(item);
   if(idx < 0) return;
-  // Which specialty section is the card now in? Use the nearest neighbor's spec (above first, else below).
-  var newSpec = origSpec;
-  for(var a=idx-1; a>=0; a--){ if(all[a].dataset.libspec){ newSpec = all[a].dataset.libspec; break; } }
-  if(newSpec === origSpec){ for(var b=idx+1; b<all.length; b++){ if(all[b].dataset.libspec){ newSpec = all[b].dataset.libspec; break; } } }
-  // Neighbors WITHIN the target section (exclude self, which still carries origSpec in the DOM).
-  var prevKey=null, nextKey=null;
-  for(var p=idx-1; p>=0; p--){ if(all[p].dataset.libspec===newSpec){ prevKey=_libKeyOf(all[p].dataset.libid); break; } }
-  for(var n=idx+1; n<all.length; n++){ if(all[n].dataset.libspec===newSpec){ nextKey=_libKeyOf(all[n].dataset.libid); break; } }
+  var prev = idx > 0 ? cards[idx-1] : null;
+  var next = idx < cards.length-1 ? cards[idx+1] : null;
+  var prevKey = prev ? _libKeyOf(prev.dataset.libid) : null;
+  var nextKey = next ? _libKeyOf(next.dataset.libid) : null;
   var newKey;
-  if(prevKey==null && nextKey==null) newKey = -(Date.now());
+  if(prevKey==null && nextKey==null) newKey = -Date.now();
   else if(prevKey==null) newKey = nextKey - 1e6;
   else if(nextKey==null) newKey = prevKey + 1e6;
   else newKey = (prevKey + nextKey) / 2;
-  if(newSpec && newSpec !== origSpec && typeof cloudSetSpecialtyOverride==="function"){
-    cloudSetSpecialtyOverride(fromId, newSpec);   // recategorize to the section it was dropped into
-    S.savedFlash = "✓ Moved to " + newSpec; setTimeout(function(){ if(S.savedFlash==="✓ Moved to "+newSpec){ S.savedFlash=""; render(); } }, 2200);
+  if(newSpec && newSpec !== origSpec && typeof cloudSetSpecialtyOverride === "function"){
+    await cloudSetSpecialtyOverride(fromId, newSpec);   // recategorize to the section it was dropped into
+    S.savedFlash = "✓ Moved to " + newSpec;
   }
-  cloudSetSortOrder(fromId, newKey);   // optimistic local update is synchronous; DB write follows
+  await cloudSetSortOrder(fromId, newKey);
   render();
+  if(S.savedFlash){ setTimeout(function(){ S.savedFlash=""; render(); }, 2200); }
 }
 
 function bindSaved(){
@@ -9000,7 +8967,7 @@ function renderMain(){
         var rtitle = ret.title || rec.topic || "Untitled";
         h+='<div class="landingSavedBtn" data-id="'+esc(rec.id)+'" style="background:var(--cream);border:1px solid var(--line);border-left:2px solid var(--plum);border-radius:10px;padding:10px 11px;display:flex;flex-direction:column;gap:7px;min-height:84px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer">';
         h+='<div style="display:flex;align-items:flex-start;gap:7px;min-width:0"><span style="background:var(--lavender-soft);color:var(--plum);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">'+rico+'</span>';
-        h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(rtitle)+'</span></div>';
+        h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(rtitle)+'</span></div>';
         h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
         if(rspec) h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(rspec)+'</span>';
         h+='<span style="background:var(--lavender-bg);color:var(--ink-muted);padding:0 5px;border-radius:5px;font-weight:500;font-size:8.5px;line-height:1.55">Lecture</span>';
@@ -9017,7 +8984,7 @@ function renderMain(){
         var ftIco = SPEC_ICONS[ftSpec] || '●';
         h+='<div class="landingFeaturedBtn" data-token="'+esc(ft.share_token||"")+'" style="background:#fffdf5;border:1px solid #f0d8a0;border-left:2px solid #e8a91f;border-radius:10px;padding:10px 11px;display:flex;flex-direction:column;gap:7px;min-height:84px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer">';
         h+='<div style="display:flex;align-items:flex-start;gap:7px;min-width:0"><span style="background:#fff3d6;color:#7a5b1a;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">'+ftIco+'</span>';
-        h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(ftTitle)+'</span></div>';
+        h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(ftTitle)+'</span></div>';
         h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
         if(ftSpec) h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(ftSpec)+'</span>';
         h+='<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid var(--lavender-soft);padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;line-height:1.55">Sample</span>';
@@ -9031,7 +8998,7 @@ function renderMain(){
         var bsIco = SPEC_ICONS[bsSpec] || '●';
         h+='<div class="landingSampleBtn" data-slug="'+esc(bs.slug)+'" style="background:#fffdf5;border:1px solid #f0d8a0;border-left:2px solid #e8a91f;border-radius:10px;padding:10px 11px;display:flex;flex-direction:column;gap:7px;min-height:84px;box-shadow:var(--shadow-soft);min-width:0;position:relative;cursor:pointer">';
         h+='<div style="display:flex;align-items:flex-start;gap:7px;min-width:0"><span style="background:#fff3d6;color:#7a5b1a;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">'+bsIco+'</span>';
-        h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(bsTitle)+'</span></div>';
+        h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(bsTitle)+'</span></div>';
         h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
         if(bsSpec) h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(bsSpec)+'</span>';
         h+='<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid var(--lavender-soft);padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;line-height:1.55">'+(bs.style==="boards"?"Boards":"Sample")+'</span>';
