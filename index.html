@@ -1444,7 +1444,8 @@ var FREE_TIER_CONFIG = {
 var ASYNC_GEN_CONFIG = {
   enabled: true,          // master switch; sync path is always the fallback
   pollMs: 2500,           // status poll interval
-  maxPollMs: 240000,      // give up after 4 min of polling (job KV TTL is 10 min)
+  maxPollMs: 540000,      // stop polling after 9 min (under the 10-min KV TTL) — a rare slow job stays
+                          // recoverable via reconnect rather than being abandoned mid-flight
   jobKey: "ct_active_job" // localStorage key holding the in-flight jobId for reconnect
 };
 var _asyncUnavailable = false; // set true after a 503 async_unconfigured this session
@@ -1510,11 +1511,11 @@ async function pollAsyncGeneration(jobId, onStage, checkAbort){
   var lastStage = "";
   while(true){
     if(checkAbort && checkAbort()){
-      try{ fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-cancel/" + encodeURIComponent(jobId), { method:"POST" }); }catch(_){}
+      try{ fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-cancel/" + encodeURIComponent(jobId), { method:"POST", headers:{ "X-Supabase-Auth": freeTierToken() } }); }catch(_){}
       var ce = new Error("Generation cancelled"); ce.code = "cancelled"; throw ce;
     }
     if(Date.now() - start > ASYNC_GEN_CONFIG.maxPollMs){
-      throw new Error("Background generation timed out. Please tap Generate again.");
+      var te = new Error("Still generating on our servers — reload the page in a moment to pick it back up."); te.code = "timeout"; throw te;
     }
     await new Promise(function(res){ setTimeout(res, ASYNC_GEN_CONFIG.pollMs); });
     var r;
@@ -3396,7 +3397,7 @@ async function cloudSaveCurrentTalk(){
     talk_json: t,
     depth_variants: dvSeed,
     references_json: t.references || null,
-    files_meta: (S.files||[]).map(function(f){return {n:f.n, type:f.type||null, size:f.size||null}})
+    files_meta: (S.files||[]).map(function(f){return {n:f.n, type:(f.t||f.type||null), size:(f._size||f.size||null)}})
   };
   var r = await window.sb.from("talks").insert(row).select().maybeSingle();
   if(r.error){ console.warn(r.error); return false }
@@ -3525,8 +3526,21 @@ async function cloudUpdateTalk(id){
   // Preserve / extend depth_variants so the other-depth variant survives a "Save changes" update.
   // (Jenni 2026-06-08 Option B — without this, editing concise and re-saving would wipe the cached detailed.)
   var existingCloud = (S.cloudTalks||[]).find(function(x){return x.id===id});
+  // Preserve a saved image across depth toggles: uploads aren't restored on open, and toggling depth
+  // swaps S.talk to a variant without savedVisuals — so re-saving could drop the image and flip
+  // has_visuals off. If the live snapshot lacks visuals but a cached variant has them, carry them over.
+  if((!t.savedVisuals || !t.savedVisuals.length) && S.depthVariantsCache){
+    for(var _dk in S.depthVariantsCache){ var _v = S.depthVariantsCache[_dk]; if(_v && _v.savedVisuals && _v.savedVisuals.length){ t.savedVisuals = _v.savedVisuals; break; } }
+  }
   var dv = (existingCloud && existingCloud.depth_variants) || {};
   if(!isBQ && S.depth) dv[S.depth] = t;
+  // files_meta drives the publish copyright guardrail. S.files is only populated during compose and is
+  // empty when a saved talk is reopened — so overwriting it here would ERASE the reference metadata and
+  // silently disable the guardrail. Only rewrite when we actually have uploads this session; otherwise
+  // keep whatever the row already had. (Audit fix)
+  var _filesMeta = (S.files && S.files.length)
+    ? S.files.map(function(f){ return {n:f.n, type:(f.t||f.type||null), size:(f._size||f.size||null)}; })
+    : ((existingCloud && existingCloud.files_meta) || null);
   var row = {
     title: t.title || S.topic || "Untitled",
     topic: S.topic || t.title || "",
@@ -3536,7 +3550,7 @@ async function cloudUpdateTalk(id){
     talk_json: t,
     depth_variants: Object.keys(dv).length ? dv : null,
     references_json: t.references || null,
-    files_meta: (S.files||[]).map(function(f){return {n:f.n, type:f.type||null, size:f.size||null}})
+    files_meta: _filesMeta
   };
   var r = await window.sb.from("talks").update(row).eq("id", id).select().maybeSingle();
   if(r.error){ console.warn(r.error); return false }
@@ -6150,7 +6164,9 @@ async function generate(){
     // Clear THIS gen's persisted background job so a stale one isn't resumed on next load — but only
     // if we're still the current generation. If a restart superseded us (genId bumped), the NEW gen
     // already wrote its own jobId here; don't clobber it. (Jenni 2026-07-03)
-    if(_myGenId === S.genId){ try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){} }
+    // EXCEPTION: on a poll TIMEOUT the server job is likely still running (and the talk was paid for) —
+    // keep the reconnect key so a reload can pick it back up rather than abandoning it. (Audit fix)
+    if(_myGenId === S.genId && !(e && e.code === "timeout")){ try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){} }
     // "cancelled" (from the async poll, on user-cancel OR a superseding restart) and stale-gen are
     // silent — not real errors. (Jenni 2026-07-03)
     if(!S.genCancelled && !(e && e.code === "cancelled") && _myGenId === S.genId){
@@ -6160,6 +6176,10 @@ async function generate(){
         S.showOutOfFreeModal = true;
       } else if(e && e.code === "auth_invalid"){
         S.error = "Your session expired — please sign in again.";
+      } else if(e && e.code === "timeout"){
+        // Server job is still running — show its own message (reload to reconnect), NOT the generic
+        // "tap Generate again" that humanizeError would produce (which would double-generate).
+        S.error = e.message;
       } else {
         S.error = humanizeError(e);
       }
@@ -6231,7 +6251,7 @@ function cancelGen(){
   try {
     var _stored = JSON.parse(localStorage.getItem(ASYNC_GEN_CONFIG.jobKey) || "null");
     if(_stored && _stored.jobId && RAG_CONFIG.url){
-      fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-cancel/" + encodeURIComponent(_stored.jobId), { method:"POST" });
+      fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-cancel/" + encodeURIComponent(_stored.jobId), { method:"POST", headers:{ "X-Supabase-Auth": freeTierToken() } });
     }
   } catch(_){}
   try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){}
@@ -6725,8 +6745,9 @@ async function compressTalk(userMsg){
     text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (compress this; preserve every section, fact, and citation):\n" + existingJson
   }];
   // No file refs needed — this is a copy-edit of the existing talk, not a content addition.
-  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6" });
-  var compressed = JSON.parse(fixJSON(txt));
+  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6", meterKind: "talk" });
+  var compressed = JSON.parse(fixJSON(txt));   // parse before charging — malformed = no charge
+  if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }   // was a free full generation with no consume (quota bypass)
   if(typeof deepCleanCitations === "function") compressed = deepCleanCitations(compressed);
   if(typeof pruneFakeReferences === "function") compressed = pruneFakeReferences(compressed);
   return compressed;
@@ -6781,8 +6802,9 @@ async function expandTalk(userMsg){
     text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (expand each section with more depth; preserve every existing fact and section):\n" + existingJson
   }].concat(buildReferenceParts(S.files));
   // Higher max — expansion grows the talk so we need headroom.
-  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6" });
-  var expanded = JSON.parse(fixJSON(txt));
+  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6", meterKind: "talk" });
+  var expanded = JSON.parse(fixJSON(txt));   // parse before charging — malformed = no charge
+  if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }   // was a free full generation with no consume (quota bypass)
   if(typeof deepCleanCitations === "function") expanded = deepCleanCitations(expanded);
   if(typeof pruneFakeReferences === "function") expanded = pruneFakeReferences(expanded);
   return expanded;

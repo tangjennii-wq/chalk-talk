@@ -724,6 +724,13 @@ async function runGeneration(jobId, body, env) {
     const d = body.draft || {};
     if (!(await updateJob({ stage: "drafting" }))) { await refundQuotaTalk(env, body.userEmail); return; }
     const draft = await callAnthropicText(env, d.sys, d.content, d.maxTok || 16384, d.models, d.tools);
+    // Empty/failed draft: mark it an error and refund — otherwise we'd write "done" with no talk and
+    // still keep the reserved credit (charge for nothing). (Audit fix)
+    if (!draft || !draft.text || !draft.text.trim()) {
+      await refundQuotaTalk(env, body.userEmail);
+      await updateJob({ status: "error", error: { code: "empty_draft", message: "The model returned an empty draft. Please try again." } });
+      return;
+    }
     let critText = "", critUsage = null, critModel = null;
     if (body.critique && body.critique.sys) {
       if (!(await updateJob({ stage: "critique" }))) { await refundQuotaTalk(env, body.userEmail); return; }
