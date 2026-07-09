@@ -1433,7 +1433,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-03";
+var BUILD_ID = "2026-07-07-04";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1443,7 +1443,10 @@ function _showUpdatePill(){
   b.onclick=function(){ location.href = location.origin + location.pathname + "?_r=" + Date.now(); };
   document.body.appendChild(b);
 }
+var _lastUpdateCheck = 0;
 function checkForUpdate(){
+  if(Date.now() - _lastUpdateCheck < 60000) return;   // throttle: at most once/min (focus can fire often)
+  _lastUpdateCheck = Date.now();
   try{
     fetch("build.txt?_=" + Date.now(), { cache:"no-store" })
       .then(function(r){ return r.ok ? r.text() : null; })
@@ -1590,7 +1593,9 @@ async function resumeAsyncJobIfAny(){
   try{ stored = JSON.parse(localStorage.getItem(ASYNC_GEN_CONFIG.jobKey) || "null"); }catch(_){ stored = null; }
   if(!stored || !stored.jobId){ return; }
   // Too old to still be in KV, or a talk is already loading in this tab → drop it.
-  if((Date.now() - (stored.at || 0)) > ASYNC_GEN_CONFIG.maxPollMs || S.loading){
+  // Resume window = KV TTL (10 min), NOT maxPollMs — a job that just hit the 9-min poll timeout must
+  // still be reconnectable when the user reloads a few seconds later. (audit fix)
+  if((Date.now() - (stored.at || 0)) > 600000 || S.loading){
     try{ localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); }catch(_){}
     return;
   }
@@ -4983,6 +4988,10 @@ function _citeClass(ref){
   return "cite cite-journal";
 }
 
+// Only allow http(s) URLs into an href — refs come from the model, so a stray "javascript:" URL
+// shouldn't become a clickable link. (audit hygiene)
+function _safeUrl(u){ u = String(u || ""); return /^https?:\/\//i.test(u) ? u : ""; }
+
 function renderCite(text, refs) {
   if (!text) return "";
   if (!refs || !refs.length) return esc(String(text));
@@ -5045,16 +5054,17 @@ function showCitePop(anchor, refIds) {
     var journalParts = [];
     if (ref.society) journalParts.push('<span class="cp-society">'+esc(ref.society)+'</span>');
     if (ref.year)    journalParts.push('<span class="cp-year">'+esc(String(ref.year))+'</span>');
+    var _url = _safeUrl(ref.url);   // http(s) only \u2014 never a javascript: URL from the model
     return '<div class="cite-pop-item">' +
       '<div class="cite-pop-title">' +
         '<span class="cite-pop-num">'+esc(String(refId))+'.</span>' +
-        (ref.url
-          ? '<a href="' + esc(ref.url) + '" target="_blank" rel="noopener">'+esc(ref.source || "Reference "+refId)+'</a>'
+        (_url
+          ? '<a href="' + esc(_url) + '" target="_blank" rel="noopener">'+esc(ref.source || "Reference "+refId)+'</a>'
           : esc(ref.source || "Reference "+refId)) +
       '</div>' +
       (journalParts.length ? '<div class="cite-pop-journal">'+journalParts.join(' &middot; ')+'</div>' : '') +
       (tagLabel ? '<span class="cite-pop-tag '+tagClass+'">'+esc(tagLabel)+'</span>' : '') +
-      (ref.url ? '<div><a class="cite-pop-link" href="'+esc(ref.url)+'" target="_blank" rel="noopener">View source \u2192</a></div>' : '') +
+      (_url ? '<div><a class="cite-pop-link" href="'+esc(_url)+'" target="_blank" rel="noopener">View source \u2192</a></div>' : '') +
     '</div>';
   }
   var pop = document.createElement("div");
@@ -8563,13 +8573,26 @@ function _libKeyOf(id){
   return r ? libSortKey((typeof r.sort_order==="number")?r.sort_order:null, r.created_at) : null;
 }
 
+// View-independent toast (renderSaved doesn't render S.savedFlash, so drag/recategorize confirmations
+// were invisible in the library). Appends a fixed pill directly to the body. (audit fix)
+function _toast(msg, ms){
+  var old = document.getElementById("ctToast"); if(old) old.remove();
+  var t = document.createElement("div"); t.id = "ctToast"; t.textContent = msg;
+  t.style.cssText = "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99998;background:var(--plum-deep,#330662);color:#fff;border-radius:999px;padding:9px 16px;font-size:12.5px;font-weight:600;box-shadow:0 8px 22px rgba(45,10,70,0.3);font-family:inherit;pointer-events:none;opacity:0;transition:opacity .15s ease";
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.style.opacity = "1"; });
+  setTimeout(function(){ if(t){ t.style.opacity = "0"; setTimeout(function(){ if(t && t.parentNode) t.remove(); }, 220); } }, ms || 2200);
+}
+
 // Library drag-to-reorder via SortableJS (Codex 2026-07). The hand-rolled versions felt like
 // "click → teleport"; SortableJS gives standard smooth drag + ghost + animated placeholder + touch,
 // with zero build step. Each specialty section is its own Sortable in a shared group, so you can drag
 // within a section OR across sections (which recategorizes the talk). Grab the ⠿ handle. Persistence
 // (midpoint sort_order + specialty_override) is computed in _commitSortableLibraryReorder.
 function bindLibraryReorder(){
-  if(!window.Sortable) return;   // library still loading (defer) — bindSaved re-runs on next render
+  // SortableJS is CDN-loaded with `defer`, so it may not be ready when the library first renders.
+  // Retry until it arrives (bounded by the user staying on the library) so drag never stays dead. (audit)
+  if(!window.Sortable){ setTimeout(function(){ if(typeof S!=="undefined" && S.showSaved) bindLibraryReorder(); }, 300); return; }
   document.querySelectorAll(".libSortGroup").forEach(function(groupEl){
     if(groupEl._sortableBound) return;   // guard against double-init on re-render
     groupEl._sortableBound = true;
@@ -8617,11 +8640,10 @@ async function _commitSortableLibraryReorder(item, fromGroup, toGroup){
   else newKey = (prevKey + nextKey) / 2;
   if(newSpec && newSpec !== origSpec && typeof cloudSetSpecialtyOverride === "function"){
     await cloudSetSpecialtyOverride(fromId, newSpec);   // recategorize to the section it was dropped into
-    S.savedFlash = "✓ Moved to " + newSpec;
+    _toast("✓ Moved to " + newSpec);                    // view-independent (renderSaved ignores savedFlash)
   }
   await cloudSetSortOrder(fromId, newKey);
   render();
-  if(S.savedFlash){ setTimeout(function(){ S.savedFlash=""; render(); }, 2200); }
 }
 
 function bindSaved(){
@@ -8920,9 +8942,13 @@ function renderMain(){
     var availableSamples = (S.landingFeatured || []).filter(function(row){
       return row && row.share_token && !savedCloudIdSet[row.id];
     });
-    // Fisher-Yates shuffle for variety each render — old gems resurface, no card is "stuck" at #1.
+    // Fisher-Yates shuffle for variety, but SEEDED once per session so cards don't reshuffle on every
+    // unrelated re-render (free-tier poll, citation-audit tick) — a card you just saw would otherwise
+    // move under your hand. Same seed → same order all session. (audit UX fix)
+    var _lsSeed = (window._landingSeed || (window._landingSeed = ((Math.random()*1e9)|0) || 1));
+    function _lsRng(){ _lsSeed = (_lsSeed*1103515245 + 12345) & 0x7fffffff; return _lsSeed / 0x7fffffff; }
     for(var _shi=availableSamples.length-1; _shi>0; _shi--){
-      var _shj = Math.floor(Math.random()*(_shi+1));
+      var _shj = Math.floor(_lsRng()*(_shi+1));
       var _shtmp = availableSamples[_shi]; availableSamples[_shi]=availableSamples[_shj]; availableSamples[_shj]=_shtmp;
     }
     var sampleSlotsNeeded = Math.max(0, TARGET - recentForLanding.length);
@@ -9040,7 +9066,7 @@ function renderMain(){
   h+=segBtn("styleBtn","s","boards",S.style,"📋","Boards");
   h+='</div></div>';
   // Depth group
-  h+='<div style="flex:1 1 220px;min-width:0;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesnt apply to Boards":"5 min vs 10 min")+'">';
+  h+='<div style="flex:1 1 220px;min-width:0;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesn’t apply to Boards":"5 min vs 10 min")+'">';
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span><span style="font-size:9px;font-weight:800;color:#a07d1a;letter-spacing:0.05em;margin-left:8px">★ CONCISE RECOMMENDED</span></div>';
   h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
   h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass, generates fastest. Recommended."});
