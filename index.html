@@ -3275,7 +3275,7 @@ var S = {
   topic:"", style:"lecture", depth:"concise", refineContext:"", files:[],
   wantWebSearch:true, queueAudio:false, genId:0,
   // Showcase / portfolio view — Phase 2 sharing MVP (Jenni 2026-06-08)
-  showcase:false, showcaseLoading:false, showcaseTalks:[],
+  showcase:false, showcaseLoading:false, showcaseTalks:[], showcaseProfile:null, showcaseCuratorId:null,
   // Landing-page featured cache — populated by loadLandingFeatured() on app init
   landingFeatured:[],
   // Phase 5 sharing — origin metadata for a publicly-loaded talk so Save copy can stamp attribution
@@ -3663,6 +3663,39 @@ function showcaseURL(){
   return window.location.origin + window.location.pathname + "#showcase";
 }
 
+// ─── Public profiles / handles (Jenni 2026-07) ───────────────────────────────
+// Canonical curator = the app owner. Landing "featured" + the global #showcase are scoped to this id
+// so another signed-in user featuring a talk can't leak into Jenni's public surfaces. Each user gets
+// their OWN portfolio at #u/<handle>.
+var OWNER_USER_ID = "8453e513-0533-44e9-b612-ee37fcb23719";
+var RESERVED_HANDLES = {u:1,showcase:1,admin:1,api:1,app:1,www:1,profile:1,profiles:1,share:1,shared:1,chalk:1,chalktalk:1,about:1,help:1,settings:1,login:1,signup:1,signin:1,signout:1,auth:1,me:1,"new":1,edit:1,talk:1,talks:1,lib:1,library:1,"null":1,undefined:1,anon:1,user:1,users:1,home:1,index:1,root:1,support:1,terms:1,privacy:1};
+function validateHandle(h){
+  h = String(h||"").trim().toLowerCase();
+  if(!h) return {ok:false, reason:""};
+  if(h.length < 3) return {ok:false, reason:"At least 3 characters."};
+  if(h.length > 30) return {ok:false, reason:"30 characters max."};
+  if(!/^[a-z0-9_]+$/.test(h)) return {ok:false, reason:"Only lowercase letters, numbers, and _."};
+  if(RESERVED_HANDLES[h]) return {ok:false, reason:"That handle is reserved."};
+  return {ok:true, handle:h};
+}
+async function isHandleAvailable(h){
+  try{ var r = await window.sb.rpc("is_handle_available", {p_handle:h}); if(r.error) return null; return r.data === true; }catch(_){ return null; }
+}
+async function saveHandle(h){
+  if(!window.sb || !S.user) return {ok:false, reason:"Sign in first."};
+  var v = validateHandle(h); if(!v.ok) return {ok:false, reason:v.reason};
+  var r = await window.sb.from("profiles").update({handle:v.handle}).eq("id", S.user.id).select("handle").maybeSingle();
+  if(r.error){
+    if(/duplicate|unique|23505/i.test(r.error.message||"")) return {ok:false, reason:"That handle is already taken."};
+    return {ok:false, reason:"Couldn't save — try again."};
+  }
+  if(!S.profile) S.profile = {};
+  S.profile.handle = v.handle;
+  return {ok:true, handle:v.handle};
+}
+function myProfileURL(){ var h = S.profile && S.profile.handle; return h ? (window.location.origin + window.location.pathname + "#u/" + h) : null; }
+function _roleLabel(code){ if(!code) return ""; try{ for(var i=0;i<ROLES.length;i++){ if(ROLES[i][0]===code) return ROLES[i][1]; } }catch(_){} return code; }
+
 // Open the unified Share modal for a talk. Called from library card menu + capsule overflow.
 // (Jenni 2026-06-08 Phase 2 — replaces the old Publish/Unpublish/Feature/Unfeature menu items.)
 function openShareModal(talkId){
@@ -3743,13 +3776,14 @@ async function applyShareTier(talkId, tier){
 // projected from talk_json. Drops the full talk_json (heavy) — it's fetched only when a user clicks
 // into a specific talk via loadPublicTalkByToken. Anon Supabase client works thanks to RLS on
 // is_public=true. (Jenni 2026-06-08 — landing + showcase share this loader for caching.)
-async function loadShowcaseTalks(limit){
+async function loadShowcaseTalks(limit, curatorId){
   if(!window.sb) return [];
   var q = window.sb.from("talks")
     .select("id,title,topic,style,depth,share_token,featured_at,created_at,sort_order,user_id,has_visuals,talk_json->>subtitle")
     .eq("is_public", true)
     .eq("is_featured", true)
     .order("featured_at", {ascending:false});
+  if(curatorId) q = q.eq("user_id", curatorId);   // per-curator profile / owner-scoped surfaces
   if(limit) q = q.limit(limit);
   var r = await q;
   if(r.error){ console.warn("loadShowcaseTalks", r.error); return []; }
@@ -7564,15 +7598,47 @@ function loadFromShowcaseHash(){
     history.replaceState(null,"",window.location.pathname+window.location.search);
     S.showcase = true;
     S.showcaseLoading = true;
+    S.showcaseProfile = null; S.showcaseCuratorId = OWNER_USER_ID;
     if(typeof render === "function") render();
-    // No limit — show every featured talk on the dedicated portfolio page
-    loadShowcaseTalks().then(function(rows){
+    // Canonical #showcase = the owner's portfolio (scoped so other users' featured talks don't appear).
+    loadShowcaseTalks(null, OWNER_USER_ID).then(function(rows){
       S.showcaseTalks = rows;
       S.showcaseLoading = false;
       if(typeof render === "function") render();
     });
     return true;
   }catch(e){console.error("loadFromShowcaseHash failed:",e)}
+  return false;
+}
+
+// A user's public portfolio: #u/<handle> → look up the curator (safe fields only) + their featured
+// lectures. Renders through renderShowcase with a profile header. (Jenni 2026-07)
+function loadFromUserProfileHash(){
+  try{
+    var hash = window.location.hash || "";
+    var m = hash.match(/^#u\/([A-Za-z0-9_]{1,40})$/);
+    if(!m) return false;
+    var handle = m[1];
+    history.replaceState(null,"",window.location.pathname+window.location.search);
+    S.showcase = true; S.showcaseLoading = true; S.showcaseProfile = null; S.showcaseCuratorId = null; S.showcaseTalks = [];
+    if(typeof render === "function") render();
+    (async function(){
+      try{
+        var pr = window.sb ? await window.sb.rpc("get_public_profile", {p_handle:handle}) : {data:null};
+        var row = (pr && pr.data && pr.data[0]) ? pr.data[0] : null;
+        if(!row){
+          S.showcaseProfile = {notFound:true, handle:handle}; S.showcaseTalks = []; S.showcaseLoading = false;
+          if(typeof render === "function") render(); return;
+        }
+        S.showcaseProfile = { handle:row.handle, name:row.display_name, role:row.role, specialty:row.specialty };
+        S.showcaseCuratorId = row.user_id;
+        S.showcaseTalks = await loadShowcaseTalks(null, row.user_id);
+        S.showcaseLoading = false;
+        if(typeof render === "function") render();
+      }catch(e){ console.error("loadFromUserProfileHash", e); S.showcaseLoading = false; if(typeof render==="function") render(); }
+    })();
+    return true;
+  }catch(e){ console.error("loadFromUserProfileHash failed:", e); }
   return false;
 }
 
@@ -7584,7 +7650,7 @@ function loadLandingFeatured(){
   // Load the FULL featured set (Jenni 2026-07-03 — was capped at 10, so a visitor's Library/showcase
   // showed only 10 of a larger portfolio). Payload is tiny metadata; the landing row still slices to
   // a few visually, but counts + the visitor library now reflect every featured talk.
-  loadShowcaseTalks(100).then(function(rows){
+  loadShowcaseTalks(100, OWNER_USER_ID).then(function(rows){   // owner-scoped: only Jenni's featured samples
     if(!rows) rows = [];
     S.landingFeatured = rows;
     if(typeof render === "function") render();
@@ -7595,7 +7661,7 @@ function loadLandingFeatured(){
 // This preserves fast initial load while making starred showcase talks feel built in. (Jenni 2026-06-09)
 function refreshLibraryShowcaseSamples(){
   if(!window.sb) return;
-  loadShowcaseTalks().then(function(rows){
+  loadShowcaseTalks(null, OWNER_USER_ID).then(function(rows){   // owner-scoped
     if(!rows) rows = [];
     S.landingFeatured = rows;
     if(S.showSaved && !S.talk && !S.loading && typeof render === "function") render();
@@ -8239,19 +8305,35 @@ function renderGlobalModals(){
 // MVP: single canonical curator (the app owner). Future: /u/<handle> for multi-curator.
 function renderShowcase(){
   var h = '';
-  // ── Hero header (unchanged) ─────────────────────────────────────────────
+  var _prof = S.showcaseProfile;
+  var _isUserProfile = !!(_prof && !_prof.notFound);
+  // ── Hero header — dynamic for a user portfolio (#u/handle), owner branding for #showcase ──
   h += '<div style="padding:24px 20px 8px;text-align:center;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#f5edfa 0%,transparent 100%)">';
-  h += '<div style="font-size:10.5px;font-weight:700;color:var(--plum);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:8px">✦ Curated reading list</div>';
-  h += '<h1 style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:var(--plum-deep);margin:0 0 6px;letter-spacing:-0.01em">Jennifer Tang, MD</h1>';
-  h += '<p style="font-size:12.5px;color:var(--ink-muted);margin:0 0 12px;line-height:1.5">Internal Medicine / Nephrology · NYU Langone<br>Hand-picked teaching talks for residents</p>';
+  if(_isUserProfile){
+    var _sub = [_roleLabel(_prof.role), _prof.specialty || ""].filter(Boolean).join(" · ");
+    h += '<div style="font-size:10.5px;font-weight:700;color:var(--plum);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:8px">✦ Teaching portfolio</div>';
+    h += '<h1 style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:var(--plum-deep);margin:0 0 6px;letter-spacing:-0.01em">'+esc(_prof.name || ("@"+_prof.handle))+'</h1>';
+    h += '<p style="font-size:12.5px;color:var(--ink-muted);margin:0 0 12px;line-height:1.5">'+(_sub?esc(_sub)+'<br>':'')+'Featured teaching talks</p>';
+  } else {
+    h += '<div style="font-size:10.5px;font-weight:700;color:var(--plum);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:8px">✦ Curated reading list</div>';
+    h += '<h1 style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:var(--plum-deep);margin:0 0 6px;letter-spacing:-0.01em">Jennifer Tang, MD</h1>';
+    h += '<p style="font-size:12.5px;color:var(--ink-muted);margin:0 0 12px;line-height:1.5">Internal Medicine / Nephrology · NYU Langone<br>Hand-picked teaching talks for residents</p>';
+  }
   h += '<button id="showcaseBackBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:6px 12px;border-radius:8px">← Open Chalk Talk</button>';
   h += '</div>';
+  // Handle not found
+  if(_prof && _prof.notFound){
+    h += '<div style="padding:48px 20px;max-width:520px;margin:0 auto;text-align:center;color:var(--ink-muted)"><div style="font-size:40px;margin-bottom:12px">🔍</div><div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Profile not found</div><div style="font-size:12.5px;line-height:1.5">No one has claimed <b>#u/'+esc(_prof.handle)+'</b> yet.</div></div>';
+    return h;
+  }
 
   h += '<div style="padding:18px 16px 32px;max-width:760px;margin:0 auto">';
   if(S.showcaseLoading){
     h += '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted)"><span class="spinner" style="width:22px;height:22px;border-width:3px;margin-bottom:10px"></span><div style="font-size:13px;margin-top:10px">Loading talks…</div></div>';
   } else if(!S.showcaseTalks || S.showcaseTalks.length===0){
-    h += '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-size:13px;line-height:1.6">No featured talks yet.<br><span style="font-size:11.5px">Sign in and ⭐ a few from your library to feature them here.</span></div>';
+    h += _isUserProfile
+      ? '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-size:13px;line-height:1.6">'+esc(_prof.name || ("@"+_prof.handle))+' hasn’t featured any talks yet.</div>'
+      : '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-size:13px;line-height:1.6">No featured talks yet.<br><span style="font-size:11.5px">Sign in and ⭐ a few from your library to feature them here.</span></div>';
   } else {
     // ── List rows, grouped by specialty in canonical SPEC_ORDER (Jenni 2026-06-10).
     // Matches the library list format for consistency. Visitors get the same scan-friendly
@@ -8301,9 +8383,11 @@ function renderShowcase(){
         h += '</a>';
       }
     }
+    // Medical / AI disclaimer — important on a public teaching page.
+    h += '<div style="margin-top:26px;padding:12px 14px;background:var(--cream);border:1px solid var(--line-soft);border-radius:10px;font-size:10.5px;color:var(--ink-soft);line-height:1.5;text-align:center">⚠️ AI-generated educational content. Verify against primary sources and current guidelines before clinical use; not a substitute for professional judgment.</div>';
     // Footer attribution + share link
-    h += '<div style="text-align:center;margin-top:32px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-muted);line-height:1.5">';
-    h += '<div style="margin-bottom:6px">Built with <a href="'+window.location.origin+window.location.pathname+'" style="color:var(--plum);text-decoration:none;font-weight:600">Chalk Talk</a> — a teaching tool by Jennifer Tang, MD</div>';
+    h += '<div style="text-align:center;margin-top:20px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-muted);line-height:1.5">';
+    h += '<div style="margin-bottom:6px">Built with <a href="'+window.location.origin+window.location.pathname+'" style="color:var(--plum);text-decoration:none;font-weight:600">Chalk Talk</a>'+(_isUserProfile?'':' — a teaching tool by Jennifer Tang, MD')+'</div>';
     h += '<button id="showcaseCopyLinkBtn" style="background:none;border:1px solid var(--line);color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:7px;margin-top:4px">📋 Copy this page link</button>';
     h += '</div>';
   }
@@ -8319,7 +8403,10 @@ function bindShowcase(){
   };
   var copy = document.getElementById("showcaseCopyLinkBtn");
   if(copy) copy.onclick = function(){
-    var url = showcaseURL();
+    // A user portfolio copies its #u/<handle> URL; the owner #showcase copies the showcase URL.
+    var url = (S.showcaseProfile && S.showcaseProfile.handle)
+      ? (window.location.origin + window.location.pathname + "#u/" + S.showcaseProfile.handle)
+      : showcaseURL();
     if(navigator.clipboard){
       navigator.clipboard.writeText(url).then(function(){
         copy.textContent = "✓ Link copied";
@@ -9342,7 +9429,6 @@ function renderMain(){
       if(S.isSampleTalk || !S.user || !S.loadedTalkId || String(S.loadedTalkId).startsWith("t_")){
         h+='<button id="shareTalkBtn">🔗 Share link (encoded)</button>';
       }
-      h+='<button id="copyAllTalkBtn">📋 Copy entire talk</button>';
       h+='<button id="pdfTalkBtn">📄 Export PDF</button>';
       h+='<button id="pngTalkBtn">📸 Save as image</button>';
       // Print submenu (Jenni 2026-07-03) — send Overview / Slides poster / Visual to the printer.
@@ -10139,6 +10225,23 @@ function renderMain(){
     // Compact Save profile CTA
     h+='<button id="pfSaveBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Save profile</button>';
 
+    // === PUBLIC PROFILE / HANDLE ===
+    h+='<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line-soft)">';
+    h+=_lab("Public profile")+'<div style="font-size:11px;color:var(--ink-muted);margin:-1px 4px 8px;line-height:1.4">Claim a handle to share a page of your featured lectures.</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:5px 6px 5px 11px">';
+    h+='<span style="font-size:12.5px;color:var(--ink-soft);white-space:nowrap;font-weight:500">#u/</span>';
+    h+='<input id="pfHandle" type="text" value="'+esc(pf.handle||"")+'" placeholder="jtang" maxlength="30" autocapitalize="none" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;background:transparent;border:none;outline:none;font-size:13px;font-family:inherit;color:var(--ink)">';
+    h+='<button id="pfHandleSave" style="background:var(--plum-deep);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:600;cursor:pointer;flex-shrink:0">Save</button>';
+    h+='</div>';
+    h+='<div id="pfHandleStatus" style="font-size:11px;margin:5px 4px 0;min-height:14px;line-height:1.3;color:var(--ink-muted)"></div>';
+    if(pf.handle){
+      h+='<div style="display:flex;align-items:center;gap:8px;margin-top:8px">';
+      h+='<button id="pfCopyLink" style="flex:1;background:var(--lavender-bg);color:var(--plum);border:1px solid var(--lavender-soft);border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">🔗 Copy my profile link</button>';
+      h+='<button id="pfViewProfile" style="background:none;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--ink-muted);cursor:pointer;font-family:inherit">View</button>';
+      h+='</div>';
+    }
+    h+='</div>';
+
     // === API KEYS — compact list ===
     var _hasClaudeP = !!localStorage.getItem("claude_api_key");
     var _hasGemP = !!localStorage.getItem("gemini_api_key");
@@ -10422,6 +10525,48 @@ function bindMain(){
   _pfBind("pfName","name"); _pfBind("pfRole","role"); _pfBind("pfSpec","specialty");
   _pfBind("pfInst","institution"); _pfBind("pfUse","primary_use");
   var pfs=document.getElementById("pfSaveBtn");if(pfs)pfs.onclick=function(){saveProfileForm()};
+  // Public handle — live validate + availability, save, copy, view.
+  var pfh=document.getElementById("pfHandle"), pfhStatus=document.getElementById("pfHandleStatus");
+  function _setHStatus(msg, color){ if(pfhStatus){ pfhStatus.textContent=msg||""; pfhStatus.style.color=color||"var(--ink-muted)"; } }
+  if(pfh){
+    pfh.oninput=function(){
+      var raw=pfh.value; var lower=raw.toLowerCase(); if(raw!==lower){ pfh.value=lower; }
+      var v=validateHandle(lower);
+      if(!lower){ _setHStatus(""); return; }
+      if(!v.ok){ _setHStatus(v.reason, "#b23"); return; }
+      if(lower === (S.profile&&S.profile.handle)){ _setHStatus("This is your current handle.", "var(--ink-muted)"); return; }
+      _setHStatus("Checking…", "var(--ink-muted)");
+      clearTimeout(window._handleChkTimer);
+      window._handleChkTimer=setTimeout(function(){
+        var checking=lower;
+        isHandleAvailable(lower).then(function(avail){
+          if(document.getElementById("pfHandle") && document.getElementById("pfHandle").value.toLowerCase()!==checking) return; // stale
+          if(avail===true) _setHStatus("✓ #u/"+checking+" is available", "#2d6a2d");
+          else if(avail===false) _setHStatus("That handle is taken.", "#b23");
+          else _setHStatus("", "");
+        });
+      }, 400);
+    };
+  }
+  var pfhSave=document.getElementById("pfHandleSave");
+  if(pfhSave)pfhSave.onclick=async function(){
+    var val=(pfh&&pfh.value||"").trim().toLowerCase();
+    var v=validateHandle(val);
+    if(!v.ok){ _setHStatus(v.reason||"Enter a handle.", "#b23"); return; }
+    pfhSave.disabled=true; pfhSave.textContent="…";
+    var res=await saveHandle(val);
+    pfhSave.disabled=false; pfhSave.textContent="Save";
+    if(res.ok){ _setHStatus("✓ Saved — #u/"+res.handle, "#2d6a2d"); render(); }
+    else { _setHStatus(res.reason||"Couldn't save.", "#b23"); }
+  };
+  var pfCopy=document.getElementById("pfCopyLink");
+  if(pfCopy)pfCopy.onclick=function(){
+    var url=myProfileURL(); if(!url) return;
+    if(navigator.clipboard){ navigator.clipboard.writeText(url).then(function(){ pfCopy.textContent="✓ Link copied"; setTimeout(function(){ pfCopy.textContent="🔗 Copy my profile link"; },1800); }).catch(function(){ prompt("Copy your profile link:", url); }); }
+    else prompt("Copy your profile link:", url);
+  };
+  var pfView=document.getElementById("pfViewProfile");
+  if(pfView)pfView.onclick=function(){ var hh=S.profile&&S.profile.handle; if(!hh) return; S.profileOpen=false; window.location.hash="#u/"+hh; loadFromUserProfileHash(); };
   // API-key save / edit / cancel (rendered inside the profile drawer)
   document.querySelectorAll(".pfSaveKeyBtn").forEach(function(b){b.onclick=function(){
     var inp=document.getElementById(b.dataset.input);if(!inp)return;
@@ -10950,6 +11095,7 @@ try{ if(localStorage.getItem("ct_compose_options")==="1") S.composeOptionsOpen =
 try{ var _pendTopic = localStorage.getItem("ct_pending_topic"); if(_pendTopic){ S.topic = _pendTopic; localStorage.removeItem("ct_pending_topic"); } }catch(_){}
 loadFromShareHash();
 loadFromPublicShareHash();
+loadFromUserProfileHash();
 loadFromShowcaseHash();
 loadFromLibHash();
 render();
