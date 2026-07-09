@@ -3352,12 +3352,13 @@ async function refreshCloudTalks(){
     // Try the full query first (includes Pattern A columns). If the migration hasn't been run yet,
     // the new columns don't exist and PostgREST returns 42703 / "column does not exist" — fall back
     // to the prior query so the user still sees their saved talks. (Jenni 2026-06-09)
-    var FULL_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, talk_json->>subtitle";
+    var FULL_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, files_meta, talk_json->>subtitle";
     // Fallback query. Includes the curation columns (specialty_override / is_pinned / pinned_at /
     // sort_order) too — they exist in every migrated DB, so keeping them here means a transient
     // FULL_COLS error can't silently DROP a user's recategorization / pin / manual order on reload.
-    // (Jenni 2026-07-03 — recategorize-doesn't-persist fix.)
-    var LEGACY_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, talk_json->>subtitle";
+    // (Jenni 2026-07-03 — recategorize-doesn't-persist fix.) files_meta drives the copyright confirm
+    // on publish (Jenni 2026-07 — talks built from an uploaded reference warn before going public).
+    var LEGACY_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, files_meta, talk_json->>subtitle";
     var r = await window.sb.from("talks").select(FULL_COLS).order("created_at", { ascending: false });
     if(r.error){
       var msg = (r.error && (r.error.message||"")) + " " + (r.error.code||"");
@@ -3634,10 +3635,25 @@ async function applyShareTier(talkId, tier){
   var curIsFeatured = !!(row && row.is_featured);
 
   try{
+    var publishing = (tier === "link" || tier === "profile");
+    // Copyright guardrail (Jenni 2026-07): if this talk was built from an uploaded reference (e.g.
+    // MKSAP, a textbook), warn before it goes public — publishing could redistribute copyrighted
+    // material. Private use is unaffected; this only triggers on the private→public step.
+    if(publishing){
+      var _fm = (row && Array.isArray(row.files_meta)) ? row.files_meta : [];
+      if(_fm.length){
+        var _names = _fm.map(function(f){return f && f.n;}).filter(Boolean).join(", ");
+        var _okPub = confirm(
+          "This talk was built from an uploaded reference" + (_names ? " (" + _names + ")" : "") + ".\n\n" +
+          "Publishing it publicly could redistribute copyrighted material. Only continue if the talk is your own synthesis and doesn't reproduce that source.\n\n" +
+          "Publish anyway?"
+        );
+        if(!_okPub){ S.shareModalBusy = false; render(); return; }
+      }
+    }
     // BEFORE publishing/featuring: sync the currently-viewed depth's content to the row's
     // canonical talk_json. Otherwise an instant depth swap (cached) leaves the DB stale and
     // coworkers see a different depth than the curator is viewing. (Jenni 2026-06-09 fix.)
-    var publishing = (tier === "link" || tier === "profile");
     if(publishing && S.loadedTalkId === talkId && S.talk && S.depth){
       await cloudUpsertDepthVariant(talkId, S.depth, S.talk);
     }
