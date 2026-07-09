@@ -1433,7 +1433,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-08";
+var BUILD_ID = "2026-07-07-09";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3754,25 +3754,26 @@ async function applyShareTier(talkId, tier){
       await cloudUpsertDepthVariant(talkId, S.depth, S.talk);
     }
 
+    // cloudSetTalkFeatured/Public return null (not throw) on failure — check each so a failed
+    // publish/unpublish surfaces an error instead of looking like success. (Codex fix)
+    var ok = true;
     if(tier === "private"){
-      // If currently featured, unfeature first (the DB trigger keeps is_public in sync but we
-      // explicitly unpublish too — the user pressed "Just me," they want it gone from the world).
-      if(curIsFeatured) await cloudSetTalkFeatured(talkId, false);
-      if(curIsPublic) await cloudSetTalkPublic(talkId, false);
+      if(curIsFeatured && (await cloudSetTalkFeatured(talkId, false)) === null) ok = false;
+      if(curIsPublic && (await cloudSetTalkPublic(talkId, false)) === null) ok = false;
     } else if(tier === "link"){
-      // Unfeature if needed (keeps is_public=true so link still works), then ensure published.
-      if(curIsFeatured) await cloudSetTalkFeatured(talkId, false);
-      if(!curIsPublic) await cloudSetTalkPublic(talkId, true);
+      if(curIsFeatured && (await cloudSetTalkFeatured(talkId, false)) === null) ok = false;
+      if(!curIsPublic && (await cloudSetTalkPublic(talkId, true)) === null) ok = false;
     } else if(tier === "profile"){
-      // Feature — DB trigger auto-publishes.
-      await cloudSetTalkFeatured(talkId, true);
+      if((await cloudSetTalkFeatured(talkId, true)) === null) ok = false;
     }
+    if(!ok) throw new Error("share_update_failed");
     // Refresh cached share_token for the modal display
     var updated = (S.cloudTalks||[]).find(function(x){return x.id===talkId});
     if(updated) S.shareModalToken = updated.share_token;
   }catch(e){
     console.warn("applyShareTier", e);
-    S.savedFlash = "⚠ Couldn't update sharing — try again";
+    S.savedFlash = "⚠ Couldn't update sharing — check your connection and try again";
+    if(typeof _toast === "function") _toast("⚠ Couldn't update sharing — try again", 3200);
   }
   S.shareModalBusy = false;
   render();

@@ -973,7 +973,11 @@ async function handleShareGet(request, env, ctx, origin, url) {
     } catch (e) { /* swallow */ }
   }
 
-  // Strip PII — never return user_id, email, etc.
+  // Return only public-safe fields: NO email, institution, handle, or other profile PII. We DO include
+  // the author's display name (only for a talk they chose to make public) and their pseudonymous
+  // user_id as author_user_id — the latter is required so a viewer can detect "this is my own talk"
+  // (to hide Save-copy) and so the save-copy flow can stamp source_curator_user_id for attribution.
+  // A Supabase user UUID is an opaque pseudonymous identifier, not sensitive PII. (Codex clarification)
   const payload = {
     id: row.id,
     title: row.title,
@@ -983,8 +987,6 @@ async function handleShareGet(request, env, ctx, origin, url) {
     talk_json: row.talk_json,
     created_at: row.created_at,
     author: authorName ? { name: authorName } : null,
-    // Phase 5 — Jenni 2026-06-08: include author user_id so viewers can detect
-    // "this is my own talk" and the save-copy flow can stamp source_curator_user_id.
     author_user_id: row.user_id,
   };
 
