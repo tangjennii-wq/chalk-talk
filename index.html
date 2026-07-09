@@ -1433,7 +1433,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-07";
+var BUILD_ID = "2026-07-07-08";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -4451,7 +4451,14 @@ async function loadSavedTalk(id){
       // Falls back to row.talk_json for legacy rows that pre-date the schema change.
       var preferredDepth = S.depth || row.depth || "concise";
       var dv = row.depth_variants || {};
-      var chosen = dv[preferredDepth] || row.talk_json || dv.concise || dv.detailed || null;
+      // Pick the variant AND its ACTUAL depth together — otherwise opening a concise-only talk while
+      // "detailed" is the current global depth would show concise content mislabeled as detailed. (Codex fix)
+      var chosen, actualDepth;
+      if(dv[preferredDepth]){ chosen = dv[preferredDepth]; actualDepth = preferredDepth; }
+      else if(row.talk_json){ chosen = row.talk_json; actualDepth = row.depth || (dv.detailed && !dv.concise ? "detailed" : "concise"); }
+      else if(dv.concise){ chosen = dv.concise; actualDepth = "concise"; }
+      else if(dv.detailed){ chosen = dv.detailed; actualDepth = "detailed"; }
+      else { chosen = null; actualDepth = row.depth || "concise"; }
       // Stash the variant map on the talk object so the depth toggle can instant-swap if both present.
       if(chosen){
         chosen._depth_variants = dv && Object.keys(dv).length ? Object.keys(dv) : null;
@@ -4460,7 +4467,7 @@ async function loadSavedTalk(id){
         id: row.id,
         topic: row.topic,
         style: row.style,
-        depth: preferredDepth,
+        depth: actualDepth,
         _depthVariantsAvailable: dv && Object.keys(dv).length ? Object.keys(dv) : [],
         _depthVariantsFull: dv,
         talk: chosen,
@@ -7655,6 +7662,25 @@ function loadFromUserProfileHash(){
   return false;
 }
 
+// Open the showcase scoped to a specific curator (never unscoped — an unscoped load leaks EVERY user's
+// featured talks into the view). profileObj sets the header; null → owner branding. (Codex fix)
+function _openShowcaseFor(curatorId, profileObj){
+  var cid = curatorId || OWNER_USER_ID;
+  S.showSaved = false; S.showcase = true; S.showcaseLoading = true; S.showcaseTalks = [];
+  S.showcaseCuratorId = cid; S.showcaseProfile = profileObj || null;
+  render();
+  loadShowcaseTalks(null, cid).then(function(rows){ S.showcaseTalks = rows; S.showcaseLoading = false; render(); });
+}
+// "My showcase" — the signed-in user's own portfolio. Routes to #u/<handle> if they've claimed one,
+// else previews their featured talks scoped to their id with their own header.
+function openMyShowcase(){
+  S.accountMenuOpen = false;
+  var hh = S.profile && S.profile.handle;
+  if(hh){ window.location.hash = "#u/" + hh; loadFromUserProfileHash(); return; }
+  if(!S.user){ return; }
+  _openShowcaseFor(S.user.id, { handle:null, name:(S.profile&&S.profile.name)||(S.user.email)||"You", role:(S.profile&&S.profile.role)||"", specialty:(S.profile&&S.profile.specialty)||"" });
+}
+
 // Background fetch of featured talks for the landing surface. Keep startup cheap: only the top
 // 10 lightweight metadata cards load initially; Library/#showcase can fetch the full list later.
 // Full talk JSON is still fetched only on-click via loadPublicTalkByToken. (Jenni 2026-06-09)
@@ -8820,9 +8846,11 @@ function bindSaved(){
   // to /u/<handle> based on the source curator's handle.
   document.querySelectorAll(".libAttribChip").forEach(function(b){b.onclick=function(e){
     e.stopPropagation(); // don't trigger the underlying card-open click
-    S.showSaved=false; S.showcase=true; S.showcaseLoading=true; S.showcaseTalks=[];
-    render();
-    loadShowcaseTalks().then(function(rows){S.showcaseTalks=rows;S.showcaseLoading=false;render()});
+    // Open the SOURCE CURATOR's portfolio (this talk was saved from them) — scoped to their id so it
+    // doesn't leak everyone's featured talks. (Codex fix)
+    var tid=b.dataset.id; var row=(S.cloudTalks||[]).find(function(x){return x.id===tid;});
+    var cid=row&&row.source_curator_user_id; var cname=row&&row.source_curator_name;
+    _openShowcaseFor(cid||OWNER_USER_ID, cid?{handle:null, name:cname||"Curator", role:"", specialty:""}:null);
   }});
   // Copy link — for already-public talks, skip the modal and just copy.
   document.querySelectorAll(".libCopyLinkBtn").forEach(function(b){b.onclick=function(){
@@ -10514,12 +10542,7 @@ function bindMain(){
   var sob=document.getElementById("signOutBtn");if(sob)sob.onclick=function(){S.accountMenuOpen=false;signOut()};
   var peb=document.getElementById("profileEditBtn");if(peb)peb.onclick=function(){S.accountMenuOpen=false;S.profileEditOpen=true;S.profileForm=Object.assign({},S.profile||{});render()};
   // "My showcase" link — opens the public portfolio so user can preview what coworkers see
-  var vsb=document.getElementById("viewShowcaseBtn");if(vsb)vsb.onclick=function(){
-    S.accountMenuOpen=false;
-    S.showcase=true;S.showcaseLoading=true;S.showcaseTalks=[];
-    render();
-    loadShowcaseTalks().then(function(rows){S.showcaseTalks=rows;S.showcaseLoading=false;render()});
-  };
+  var vsb=document.getElementById("viewShowcaseBtn");if(vsb)vsb.onclick=function(){ openMyShowcase(); };
   // API key buttons in account menu — prompt for new key, save to localStorage.
   // Route profile key buttons to the smooth in-app modal (Jenni 2026-07-03) — no more native prompt().
   function _setKey(provider){ return function(){ S.accountMenuOpen=false; openKeyModal(provider); }; }
@@ -10575,7 +10598,9 @@ function bindMain(){
     pfhSave.disabled=true; pfhSave.textContent="…";
     var res=await saveHandle(val);
     pfhSave.disabled=false; pfhSave.textContent="Save";
-    if(res.ok){ _setHStatus("✓ Saved — #u/"+res.handle, "#2d6a2d"); render(); }
+    // The drawer input renders from S.profileForm, so mirror the saved handle there or a re-render
+    // reverts the field to the stale (empty) value. (Codex fix)
+    if(res.ok){ if(S.profileForm) S.profileForm.handle=res.handle; _setHStatus("✓ Saved — #u/"+res.handle, "#2d6a2d"); render(); }
     else { _setHStatus(res.reason||"Couldn't save.", "#b23"); }
   };
   var pfCopy=document.getElementById("pfCopyLink");
@@ -10585,7 +10610,7 @@ function bindMain(){
     else prompt("Copy your profile link:", url);
   };
   var pfView=document.getElementById("pfViewProfile");
-  if(pfView)pfView.onclick=function(){ var hh=S.profile&&S.profile.handle; if(!hh) return; S.profileOpen=false; window.location.hash="#u/"+hh; loadFromUserProfileHash(); };
+  if(pfView)pfView.onclick=function(){ var hh=S.profile&&S.profile.handle; if(!hh) return; S.profileEditOpen=false; S.profileForm=null; window.location.hash="#u/"+hh; loadFromUserProfileHash(); };
   // API-key save / edit / cancel (rendered inside the profile drawer)
   document.querySelectorAll(".pfSaveKeyBtn").forEach(function(b){b.onclick=function(){
     var inp=document.getElementById(b.dataset.input);if(!inp)return;
@@ -10702,10 +10727,7 @@ function bindMain(){
     if(slug && typeof loadSample === "function") loadSample(slug);
   }});
   var lsl=document.getElementById("landingShowcaseLinkBtn");
-  if(lsl)lsl.onclick=function(){
-    S.showcase=true;S.showcaseLoading=true;S.showcaseTalks=[];render();
-    loadShowcaseTalks().then(function(rows){S.showcaseTalks=rows;S.showcaseLoading=false;render()});
-  };
+  if(lsl)lsl.onclick=function(){ _openShowcaseFor(OWNER_USER_ID, null); };   // owner's curated samples
   document.querySelectorAll(".favBtn").forEach(function(b){b.onclick=function(e){e.stopPropagation();toggleFavorite(b.dataset.slug)}});
   // ─── Visual Memory Card (download / lightbox) ──────────────────────────
   var dvb=document.getElementById("downloadVMCBtn");if(dvb)dvb.onclick=downloadVMC;
