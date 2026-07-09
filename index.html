@@ -1433,7 +1433,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-05";
+var BUILD_ID = "2026-07-07-06";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3424,10 +3424,14 @@ async function cloudSaveCurrentTalk(){
   var dgLite = S.dg ? { hadImage: !!S.dg.imgB64, svg: S.dg.svg||null } : null;
   // depth_variants: single-row container for concise+detailed. New saves seed with current depth;
   // generating the other depth later merges into the same row. (Jenni 2026-06-08 Option B)
+  // Seed depth_variants with EVERY depth the user has viewed this session (S.depthVariantsCache), so
+  // toggling Concise↔Detailed then Saving persists BOTH versions. (Jenni 2026-07)
   var dvSeed = null;
-  if(!isBQ && S.depth){
+  if(!isBQ){
     dvSeed = {};
-    dvSeed[S.depth] = t;
+    if(S.depthVariantsCache){ for(var _dvk in S.depthVariantsCache){ if(S.depthVariantsCache[_dvk]) dvSeed[_dvk] = S.depthVariantsCache[_dvk]; } }
+    if(S.depth) dvSeed[S.depth] = t;
+    if(!Object.keys(dvSeed).length) dvSeed = null;
   }
   var row = {
     user_id: S.user.id,
@@ -3575,6 +3579,8 @@ async function cloudUpdateTalk(id){
     for(var _dk in S.depthVariantsCache){ var _v = S.depthVariantsCache[_dk]; if(_v && _v.savedVisuals && _v.savedVisuals.length){ t.savedVisuals = _v.savedVisuals; break; } }
   }
   var dv = (existingCloud && existingCloud.depth_variants) || {};
+  // Merge in every depth viewed this session so "Save changes" persists BOTH versions. (Jenni 2026-07)
+  if(!isBQ && S.depthVariantsCache){ for(var _dvu in S.depthVariantsCache){ if(S.depthVariantsCache[_dvu]) dv[_dvu] = S.depthVariantsCache[_dvu]; } }
   if(!isBQ && S.depth) dv[S.depth] = t;
   // files_meta drives the publish copyright guardrail. S.files is only populated during compose and is
   // empty when a saved talk is reopened — so overwriting it here would ERASE the reference metadata and
@@ -3986,6 +3992,8 @@ function renderLibCard(x){
   // Visuals badge: prefer exact count (local talks with full savedVisuals data); else just show 🖼 (cloud cards).
   if(visuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼 '+visuals.length+'</span>';
   else if(t._hasCloudVisuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼</span>';
+  // Both-depths badge — this talk has Concise AND Detailed saved. (Jenni 2026-07)
+  if(x._hasBoth) h += '<span title="Saved in both Concise and Detailed" style="background:#eef7ee;color:#2d6a2d;border:1px solid #cbe6cb;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">⊜≣ Both</span>';
   if(dateStr) h += '<span style="font-size:10.5px;color:var(--ink-soft)">'+dateStr+'</span>';
   h += '</div>';
   h += '</div>';
@@ -6252,16 +6260,21 @@ async function generate(){
   S.talk = finalTalk;
     S.sec=0;S.dg=null;S.dgErr="";S.podScript="";
     if (glRef) { S.glRef = glRef; } else { S.glRef = null; }
-    // Option B: if this generate was triggered by a depth flip on an already-saved talk, merge the
-    // new variant into the SAME row instead of creating a duplicate. Cache the variant locally too
-    // so an immediate flip back is instant. (Jenni 2026-06-08)
+    // Always cache the depth we just generated so an immediate flip back is instant AND both variants
+    // are available to save together. resetAll() clears this cache between talks, so it can never show
+    // a prior talk's variant. (Jenni 2026-07 — depth-variant fixes.)
+    if(!S.depthVariantsCache) S.depthVariantsCache = {};
+    S.depthVariantsCache[S.depth] = finalTalk;
+    // Option B: a depth flip on an already-SAVED cloud talk merges the new variant into the same row.
     if(S._pendingDepthMerge && S.loadedTalkId && !String(S.loadedTalkId).startsWith("t_")){
       S._pendingDepthMerge = false;
-      if(!S.depthVariantsCache) S.depthVariantsCache = {};
-      S.depthVariantsCache[S.depth] = finalTalk;
       cloudUpsertDepthVariant(S.loadedTalkId, S.depth, finalTalk).then(function(ok){
         if(!ok) console.warn("Depth variant merge failed — talk loaded in memory but not persisted to existing row.");
       });
+    } else if(S.loadedTalkId && S.talkIsSaved){
+      // A depth flip on an UNSAVED-locally or non-merge saved talk → mark dirty so the pill shows
+      // "Save changes" (the newly-generated variant isn't persisted yet). (Jenni 2026-07)
+      S.talkIsSaved = false;
     }
   }catch(e){
     // Clear THIS gen's persisted background job so a stale one isn't resumed on next load — but only
@@ -7851,6 +7864,7 @@ function resetAll(){
   S.showAns=false; S.userPick=""; S.reviseIn="";
   S.chatIn=""; S.chatBusy=false;
   S.glRef=null; S.ragChunks=[];
+  S.depthVariantsCache=null; S._pendingDepthMerge=false;   // clear cached depth variants so a new talk can't show a PRIOR talk's variant on depth-toggle (bug fix)
   S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false; S.talkIsSaved=false;
   // Close any transient drawers/modals so a fresh compose view doesn't flash an open overlay.
   S.editSettings=false; S.overflowOpen=false; S.lightbox=false; S.gldOpen=false; S.ragOpen=false;
@@ -8531,6 +8545,7 @@ function renderSaved(){
       _isPinned: !!e._isPinned, _pinnedAt: e._pinnedAt || null,
       _sortOrder: (typeof e._sortOrder==="number") ? e._sortOrder : null,   // bug fix: was dropped, so library never re-sorted by manual order
       _specialtyOverride: e._specialtyOverride || null,
+      _hasBoth: !!e._hasBoth,
       topic:e.topic||"",talk:et,savedAt:e.savedAt,specialty:"",generated_at:""});
   }
   // Mark items that have saved visuals (for the Visuals tab + thumbnail rendering)
@@ -9393,6 +9408,10 @@ function renderMain(){
       }
     } else if(S.talkIsSaved && !S.isSampleTalk){
       h+='<button id="saveTalkBtnTop" class="cap-save" title="Already saved — tap to confirm" style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;box-shadow:none;cursor:pointer">✓ <span class="hide-mobile-text">Saved</span></button>';
+    } else if(S.loadedTalkId && !S.isSampleTalk && !String(S.loadedTalkId).startsWith("shared")){
+      // A previously-saved talk that's now been EDITED (depth toggle, refine, etc.) → prompt to save the
+      // changes, not a passive "Saved". Amber so it reads as an action. (Jenni 2026-07)
+      h+='<button id="saveTalkBtnTop" class="cap-save" title="You have unsaved changes — save them to this talk" style="background:#fff6dd;color:#7a5b1a;border:1px solid #e6d49a;box-shadow:none;cursor:pointer">↻ <span class="hide-mobile-text">Save changes</span></button>';
     } else {
       var _saveTitle = S.isSampleTalk ? "Save this as a new talk in your library" : "Save to library";
       h+='<button id="saveTalkBtnTop" class="cap-save" title="'+_saveTitle+'">★ <span class="hide-mobile-text">Save</span></button>';
