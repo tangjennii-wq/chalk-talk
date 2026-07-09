@@ -29,7 +29,10 @@ git --no-pager diff --name-only a93c75f..HEAD -- supabase/   # if migrations cha
 ```
 
 Read the whole diff before judging any hunk — features share functions (`generate()`, `callAPI()`,
-`render()`).
+`render()`). This range spans many commits; it's fine for a full audit, but **if it's too large to trace
+carefully, prioritize the most recent fix commits (`git --no-pager log --oneline -8`) — the newest
+changes (provider upload converters, image-save rollback, reserve-at-submit quota, library reorder) are
+the highest-risk and least-reviewed.**
 
 ## What changed this session (intent — check behavior against it)
 
@@ -62,7 +65,9 @@ Read the whole diff before judging any hunk — features share functions (`gener
      if the job cancels or errors. So async is NOT consume-on-completion anymore.
    - The frontend therefore does NOT consume for async (`generate()` skips its consume when `_useAsync`;
      `resumeAsyncJobIfAny` never consumes). On a 403 the frontend shows the paywall, not a sync fallback.
-   - The Worker meters $ spend into `spend_ledger` on both paths (the $250/mo cap).
+   - The Worker meters $ spend into `spend_ledger` on both Claude FREE-TIER paths (sync + async) — this
+     backs the $250/mo cap. BYOK provider calls (own Claude key, ChatGPT, Gemini) must NOT touch Jenni's
+     spend ledger or quota at all.
    - **Invariant: every successful generation consumes exactly ONE talk; a failed/cancelled one consumes
      ZERO; parallel jobs can't exceed remaining quota.** Trace and state the consume/refund count for:
      (a) async success, user watching; (b) async success, tab closed, never reconnects; (c) async job
@@ -106,8 +111,9 @@ and the async branch in `generate()`):
 - Do the converters produce valid request shapes? Gemini `inlineData` for pdf+image; OpenAI `image_url`
   data URL for images and `file`/`file_data` for PDFs; plain text stays a string. Any part dropped, or
   malformed data URL / missing mime? Does the Worker forward the OpenAI body unchanged (so the rich
-  content array survives)? Is the OpenAI `file` PDF part actually accepted by the chat completions API
-  for `gpt-5`, or will it 400? (Flag as cannot-verify if unsure.)
+  content array survives)? **Do NOT assume OpenAI Chat Completions accepts `file`/`file_data` PDF parts —
+  verify against current OpenAI docs or mark it cannot-verify. If it 400s, uploaded PDFs to ChatGPT would
+  fail; note whether the failure surfaces cleanly.** (Images via `image_url` are well-supported.)
 - Do ChatGPT/Gemini failures (auth, rate limit, timeout, malformed JSON) surface cleanly, never fall
   through to Claude, never consume quota? Do they get the same `fixJSON` parse-repair as Claude?
 - Request-size: an uploaded PDF can push the OpenAI proxy body over the Worker's 2 MB cap for
@@ -121,6 +127,13 @@ endpoint bypass: can missing/invalid Supabase auth reach the owner's key on `/ge
 
 **D. Image save** (`saveCurrentVisualToLibrary`): rollback on every failure branch; success persists and
 survives reload; no false "★ saved". Also the `dgSaveImgBtn` handler wiring.
+
+**D2. Library reorder** (`bindLibraryReorder`, `_reorderLibraryCard`): drag is grip-handle only
+(`⠿`); top-half of the target = drop before, bottom-half = drop after; bottom-half of the last card =
+drop at end. Confirm: moving a card DOWN one slot works (not a no-op), moving to the very bottom works,
+`sort_order` is written per card (midpoint math, never always-0), and the new order persists + drives the
+public showcase. Watch for the `keyMap` keyed on `id` (not `_id`) and only own-cloud cards (`t_`-prefixed
+local ids excluded) being reorderable.
 
 **E. `render()` churn + stale closures:** DOM rebuilt via `innerHTML`, so the risk is stale async
 callbacks / global (`document`-level) handlers / `setInterval` pollers writing `S` or the DOM after the
@@ -136,5 +149,8 @@ especially with uploads or web-search.
 The three sections at top (Bugs / Cannot-verify / Confidence). Call out loudly anything that
 double-charges, charges zero on success, leaks a reservation, drops user content, or leaks/persists a
 key. Skip style nits. Do not modify files — report only.
+
+**Never print secrets in your report** — no API keys, `X-Provider-Key`/`x-api-key`/`Authorization`
+header values, Supabase service-role keys, or `localStorage` key contents. Refer to them by name only.
 
 **End with a one-line verdict: SHIP or DO NOT SHIP, plus the top 3 ship-blockers** (or "no blockers").
