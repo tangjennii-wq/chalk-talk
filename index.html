@@ -1421,6 +1421,30 @@ var RAG_CONFIG = {
   url: "https://chalk-talk-proxy.chalktalk.workers.dev"
 };
 
+// Build stamp for the stale-cache nudge. GitHub Pages caches index.html for ~10 min, so after a deploy
+// a browser can keep serving the OLD app (which has repeatedly looked like "the fix didn't work"). On
+// load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
+// this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
+// every deploy. (Jenni 2026-07)
+var BUILD_ID = "2026-07-07-01";
+function _showUpdatePill(){
+  if(document.getElementById("ctUpdatePill")) return;
+  var b=document.createElement("button");
+  b.id="ctUpdatePill";
+  b.textContent="🔄 New version available — Refresh";
+  b.style.cssText="position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99999;background:var(--plum-deep,#330662);color:#fff;border:none;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(45,10,70,0.35);cursor:pointer;font-family:inherit";
+  b.onclick=function(){ location.href = location.origin + location.pathname + "?_r=" + Date.now(); };
+  document.body.appendChild(b);
+}
+function checkForUpdate(){
+  try{
+    fetch("build.txt?_=" + Date.now(), { cache:"no-store" })
+      .then(function(r){ return r.ok ? r.text() : null; })
+      .then(function(txt){ if(txt && txt.trim() && txt.trim() !== BUILD_ID) _showUpdatePill(); })
+      .catch(function(){});
+  }catch(_){}
+}
+
 // ═══════════ FREE TIER CONFIG ═══════════
 // Master off-switch for the whole free-tier frontend (quota chip, sign-in nudge, Worker
 // routing, upsell modal). Keep FALSE until the backend is live — see FREE_TIER_DEPLOY.md:
@@ -10904,6 +10928,9 @@ render();
 // Safety net: if Supabase init never completes (e.g., user offline), still drain after 3s
 // so the deep-link at least tries the localStorage path. No-op if already drained.
 setTimeout(function(){ if(typeof drainPendingHashLoad==="function" && window._pendingHashLoad) drainPendingHashLoad(); }, 3000);
+// Stale-cache nudge: check the deployed build shortly after load and whenever the tab regains focus.
+setTimeout(checkForUpdate, 4000);
+window.addEventListener("focus", function(){ if(!document.getElementById("ctUpdatePill")) checkForUpdate(); });
 </script>
 </body>
 </html>
