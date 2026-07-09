@@ -324,6 +324,8 @@ textarea,input[type=text]{font-family:inherit}
 .cite-pop-head{display:flex;justify-content:space-between;align-items:baseline;font-size:10.5px;color:#9490a6;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;font-weight:600}
 .cite-pop-head .cite-pop-seeall{color:#702b9d;text-decoration:none;font-weight:600;cursor:pointer}
 .cite-pop-head .cite-pop-seeall:hover{text-decoration:underline}
+.cite-pop-item + .cite-pop-item{margin-top:10px;padding-top:10px;border-top:1px solid #efe9f5}
+.cite-pop{max-height:60vh;overflow-y:auto}
 .cite-pop-num{font-size:12px;color:#702b9d;font-weight:700;margin-right:3px}
 .cite-pop-title{font-weight:700;color:#330662;margin-bottom:6px;line-height:1.35;font-size:13.5px}
 .cite-pop-title a{color:inherit;text-decoration:none}
@@ -4974,18 +4976,14 @@ function renderCite(text, refs) {
       for(var ix=0;ix<ids.length;ix++) html += '[' + ids[ix] + ']';
     } else {
       // First ref gets the labeled chip; extra refs collapse into a "+N" suffix on the same chip.
+      // data-refs carries ALL ids so the popover can show every source (fixes the old bug where the
+      // "+N" chip only ever surfaced the first reference). (Codex citation fix)
       var first = resolved[0];
+      var allIds = resolved.map(function(r){ return r.id; }).join(",");
       var extraCount = resolved.length - 1;
-      html += '<span class="' + _citeClass(first.ref) + '" data-ref="' + first.id + '">';
+      html += '<span class="' + _citeClass(first.ref) + '" data-ref="' + esc(first.id) + '" data-refs="' + esc(allIds) + '" title="' + esc(first.ref.source || _citeLabel(first.ref)) + '" tabindex="0" role="button">';
       html += esc(_citeLabel(first.ref));
-      if(extraCount > 0){
-        // Encode the extra ids so the popover can show all sources when clicked
-        html += '<span class="cite-plus">+' + extraCount + '</span>';
-        // Also expose the trailing ids on the chip's dataset for future popover use
-        var extraIds = resolved.slice(1).map(function(r){return r.id}).join(",");
-        // Re-open the chip with the data attribute (we already opened above, append via JS instead — simplest: include another attribute)
-        // (Done via the data-extra-refs attribute added to the chip element below.)
-      }
+      if(extraCount > 0) html += '<span class="cite-plus">+' + extraCount + '</span>';
       html += '</span>';
     }
     lastIdx = m.index + m[0].length;
@@ -4994,44 +4992,47 @@ function renderCite(text, refs) {
   return html;
 }
 
-// Show/hide citation popover (single global element)
-function showCitePop(anchor, refId) {
+// Show/hide citation popover (single global element). Accepts one id or a comma-separated list of ids
+// (from the chip's data-refs) so a merged "[1,2]" chip shows ALL of its sources. (Codex citation fix)
+function showCitePop(anchor, refIds) {
   hideCitePop();
   if (!S.talk || !S.talk.references) return;
-  var ref = null, refIdx = -1;
-  for (var i = 0; i < S.talk.references.length; i++) {
-    if (String(S.talk.references[i].id) === String(refId)) { ref = S.talk.references[i]; refIdx = i; break; }
-  }
-  if (!ref) return;
-  // Type tag class
-  var tagClass = "";
-  var tagLabel = "";
-  if (String(ref.type||"").toLowerCase() === "guideline" || ref.society) { tagClass = "tag-guideline"; tagLabel = "Guideline"; }
-  else if (String(ref.type||"").toLowerCase() === "trial" || /^[A-Z][A-Z0-9-]{2,}/.test(String(ref.source||""))) { tagClass = "tag-trial"; tagLabel = "Trial"; }
-  else if (ref.type) { tagLabel = ref.type; }
-  // Journal/society line
-  var journalParts = [];
-  if (ref.society) journalParts.push('<span class="cp-society">'+esc(ref.society)+'</span>');
-  if (ref.year)    journalParts.push('<span class="cp-year">'+esc(String(ref.year))+'</span>');
+  var ids = String(refIds || (anchor && anchor.dataset && anchor.dataset.ref) || "").split(",").map(function(x){ return x.trim(); }).filter(Boolean);
+  if (!ids.length) return;
+  var items = ids.map(function(id){
+    for (var i = 0; i < S.talk.references.length; i++) { if (String(S.talk.references[i].id) === String(id)) return { id:id, ref:S.talk.references[i] }; }
+    return null;
+  }).filter(Boolean);
+  if (!items.length) return;
   var totalRefs = S.talk.references.length;
+  function refBlock(item){
+    var ref = item.ref, refId = item.id;
+    var tagClass = "", tagLabel = "";
+    if (String(ref.type||"").toLowerCase() === "guideline" || ref.society) { tagClass = "tag-guideline"; tagLabel = "Guideline"; }
+    else if (String(ref.type||"").toLowerCase() === "trial" || /^[A-Z][A-Z0-9-]{2,}/.test(String(ref.source||""))) { tagClass = "tag-trial"; tagLabel = "Trial"; }
+    else if (ref.type) { tagLabel = ref.type; }
+    var journalParts = [];
+    if (ref.society) journalParts.push('<span class="cp-society">'+esc(ref.society)+'</span>');
+    if (ref.year)    journalParts.push('<span class="cp-year">'+esc(String(ref.year))+'</span>');
+    return '<div class="cite-pop-item">' +
+      '<div class="cite-pop-title">' +
+        '<span class="cite-pop-num">'+esc(String(refId))+'.</span>' +
+        (ref.url
+          ? '<a href="' + esc(ref.url) + '" target="_blank" rel="noopener">'+esc(ref.source || "Reference "+refId)+'</a>'
+          : esc(ref.source || "Reference "+refId)) +
+      '</div>' +
+      (journalParts.length ? '<div class="cite-pop-journal">'+journalParts.join(' &middot; ')+'</div>' : '') +
+      (tagLabel ? '<span class="cite-pop-tag '+tagClass+'">'+esc(tagLabel)+'</span>' : '') +
+      (ref.url ? '<div><a class="cite-pop-link" href="'+esc(ref.url)+'" target="_blank" rel="noopener">View source \u2192</a></div>' : '') +
+    '</div>';
+  }
   var pop = document.createElement("div");
   pop.className = "cite-pop";
   pop.id = "citePop";
   pop.innerHTML =
     '<button class="cite-pop-close" onclick="hideCitePop()" aria-label="Close">\u00D7</button>' +
-    '<div class="cite-pop-head"><span>Reference</span><a class="cite-pop-seeall" data-action="see-all">See all ('+totalRefs+')</a></div>' +
-    '<div class="cite-pop-title">' +
-      '<span class="cite-pop-num">'+esc(String(refId))+'.</span>' +
-      (ref.url
-        ? '<a href="' + esc(ref.url) + '" target="_blank" rel="noopener">'+esc(ref.source || "Reference "+refId)+'</a>'
-        : esc(ref.source || "Reference "+refId)
-      ) +
-    '</div>' +
-    (journalParts.length ? '<div class="cite-pop-journal">'+journalParts.join(' &middot; ')+'</div>' : '') +
-    (tagLabel ? '<span class="cite-pop-tag '+tagClass+'">'+esc(tagLabel)+'</span>' : '') +
-    (ref.url
-      ? '<div><a class="cite-pop-link" href="'+esc(ref.url)+'" target="_blank" rel="noopener">View source \u2192</a></div>'
-      : '<div style="font-size:11.5px;color:#9490a6;margin-top:8px">Click \u201CSee all\u201D below for full citation</div>');
+    '<div class="cite-pop-head"><span>Reference'+(items.length>1?"s":"")+'</span><a class="cite-pop-seeall" data-action="see-all">See all ('+totalRefs+')</a></div>' +
+    items.map(refBlock).join("");
   document.body.appendChild(pop);
   // Position below the anchor; flip up if too close to viewport bottom.
   // Uses ACTUAL offsetWidth/Height post-append so the popover sizes against its real content,
@@ -5086,35 +5087,31 @@ window._citeHoverTimer = null;
 document.addEventListener("mouseover", function(e){
   var t = e.target && e.target.closest && e.target.closest(".cite");
   if (!t) return;
+  if (t.contains(e.relatedTarget)) return;   // moving WITHIN the chip (e.g. onto "+N") — ignore, no flicker
   if (window._citeHoverTimer) clearTimeout(window._citeHoverTimer);
   if (window._citePopHideTimer) { clearTimeout(window._citePopHideTimer); window._citePopHideTimer = null; }
-  window._citeHoverTimer = setTimeout(function(){ showCitePop(t, t.dataset.ref); }, 120);
+  window._citeHoverTimer = setTimeout(function(){ showCitePop(t, t.dataset.refs || t.dataset.ref); }, 120);
 });
 document.addEventListener("mouseout", function(e){
   var t = e.target && e.target.closest && e.target.closest(".cite");
   if (!t) return;
+  if (t.contains(e.relatedTarget)) return;   // still inside the chip — don't start the hide timer
   if (window._citeHoverTimer) { clearTimeout(window._citeHoverTimer); window._citeHoverTimer = null; }
-  window._citePopHideTimer = setTimeout(hideCitePop, 200);
+  window._citePopHideTimer = setTimeout(hideCitePop, 220);
+});
+document.addEventListener("focusin", function(e){
+  var chip = e.target && e.target.closest && e.target.closest(".cite");
+  if (chip) showCitePop(chip, chip.dataset.refs || chip.dataset.ref);
 });
 document.addEventListener("click", function(e){
-  var t = e.target;
-  var chip = t && t.closest && t.closest(".cite");
+  var chip = e.target && e.target.closest && e.target.closest(".cite");
   if (chip) {
+    // Click shows the reference CARD (with a "View source →" link inside) rather than jumping
+    // straight to the URL — consistent with hover, and works for multi-ref chips. (Codex citation fix)
+    e.preventDefault();
     e.stopPropagation();
-    // Click behavior: open the referenced paper directly in a new tab if there's a URL.
-    // No URL → fall back to showing the popover so the user still gets the citation details.
-    if (S.talk && S.talk.references) {
-      var refId = chip.dataset.ref;
-      var ref = null;
-      for (var i=0; i<S.talk.references.length; i++){ if(String(S.talk.references[i].id) === String(refId)){ ref = S.talk.references[i]; break; } }
-      if (ref && ref.url) {
-        window.open(ref.url, "_blank", "noopener");
-        return;
-      }
-    }
-    // No URL — show the popover instead so user knows what the citation is
-    showCitePop(chip, chip.dataset.ref);
-  } else if (t && !t.closest(".cite-pop")) {
+    showCitePop(chip, chip.dataset.refs || chip.dataset.ref);
+  } else if (e.target && !e.target.closest(".cite-pop")) {
     hideCitePop();
   }
 });
