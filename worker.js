@@ -634,8 +634,10 @@ async function handleOpenAIChat(request, env, origin) {
   if (userKey.indexOf("sk-") !== 0)
     return jsonError(400, "missing_key", "Missing or invalid OpenAI API key.", origin);
   const raw = await request.text();
-  if (raw.length > 2_000_000)
-    return jsonError(413, "request_too_large", "Request body too large.", origin);
+  // Align with MAX_REQUEST_BYTES so an uploaded reference (up to 3.5 MB/file) that Claude accepts isn't
+  // rejected only for ChatGPT. (Codex bug #4)
+  if (raw.length > MAX_REQUEST_BYTES)
+    return jsonError(413, "request_too_large", "Request body too large — try a smaller reference file.", origin);
   let body;
   try { body = JSON.parse(raw); }
   catch { return jsonError(400, "invalid_json", "Body is not valid JSON.", origin); }
@@ -740,7 +742,10 @@ async function runGeneration(jobId, body, env) {
       if (critUsage) cents += estimateCostCents(critModel, critUsage);
       if (cents > 0) await supaServiceRPC(env, "ledger_add", { p_month: monthKey, p_kind: "talk", p_cost_cents: cents, p_cap_cents: freeCapCents(env) });
     } catch (_) {}
-    await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
+    // updateJob returns false if a cancel landed between the final check and this write — in that race
+    // the result is discarded, so refund the reservation too. (Codex bug #3)
+    const wrote = await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
+    if (!wrote) await refundQuotaTalk(env, body.userEmail);
   } catch (err) {
     await refundQuotaTalk(env, body.userEmail);   // job failed — don't burn the reserved talk
     const msg = (err && err.message) || "Generation failed";
@@ -764,18 +769,37 @@ async function handleGenerateAsync(request, env, ctx, origin) {
   if (raw.length > MAX_REQUEST_BYTES) return jsonError(413, "request_too_large", "Request too large — try a smaller reference file.", origin);
   let body;
   try { body = JSON.parse(raw); } catch { return jsonError(400, "invalid_json", "Body is not valid JSON.", origin); }
-  // RESERVE 1 talk atomically at submit (Codex bug #3). free_tier_consume decrements only if quota
-  // remains, so N parallel submits with quota=1 → only 1 succeeds; the rest get 403. This both enforces
-  // the quota against a tampered client AND prevents the parallel-job over-run the old (non-atomic)
-  // remaining-check allowed. runGeneration refunds this if the job fails/cancels.
+  body.userId = user.id;
+  body.userEmail = user.email || null;   // for refund-on-failure
+
+  // Idempotency (Codex bug #2): the client sends a clientJobId so a retried / lost-response POST doesn't
+  // create a second job or reserve a second talk. If a job with this id already exists, return it as-is.
+  const jobId = (typeof body.clientJobId === "string" && /^[a-f0-9-]{16,64}$/i.test(body.clientJobId))
+    ? body.clientJobId : crypto.randomUUID();
+  try {
+    const existing = await env.JOBS_KV.get("job:" + jobId);
+    if (existing) {
+      let ex = {}; try { ex = JSON.parse(existing); } catch (_) {}
+      return jsonOK({ jobId, createdAt: ex.createdAt || new Date().toISOString(), resumed: true }, origin);
+    }
+  } catch (_) { /* KV read hiccup — proceed to create */ }
+
+  // RESERVE 1 talk atomically at submit. free_tier_consume decrements only if quota remains, so N
+  // parallel submits with quota=1 → only 1 succeeds; the rest get 403. This enforces the quota against a
+  // tampered client AND prevents parallel-job over-run. runGeneration refunds if the job fails/cancels.
   let reserved = false;
   try { reserved = await consumeQuota(env, user.id, "talk", env); } catch (_) { reserved = false; }
   if (!reserved) return jsonError(403, "quota_exceeded", "You've used all your free talks. Add your own key to keep generating.", origin);
-  body.userId = user.id;
-  body.userEmail = user.email || null;   // for refund-on-failure
-  const jobId = crypto.randomUUID();
+
+  // Create the job record + kick off work. If the KV write fails AFTER we reserved, refund so the talk
+  // isn't leaked. (Codex bug #1)
   const now = new Date().toISOString();
-  await env.JOBS_KV.put("job:" + jobId, JSON.stringify({ status: "running", stage: "drafting", createdAt: now, updatedAt: now }), { expirationTtl: 600 });
+  try {
+    await env.JOBS_KV.put("job:" + jobId, JSON.stringify({ status: "running", stage: "drafting", createdAt: now, updatedAt: now }), { expirationTtl: 600 });
+  } catch (e) {
+    await refundQuotaTalk(env, body.userEmail);
+    return jsonError(503, "job_create_failed", "Couldn't start background generation. Please try again.", origin);
+  }
   ctx.waitUntil(runGeneration(jobId, body, env));
   return jsonOK({ jobId, createdAt: now }, origin);
 }

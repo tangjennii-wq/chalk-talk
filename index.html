@@ -1455,7 +1455,13 @@ function asyncGenApplicable(){
 }
 
 // Submit a background job. Returns { jobId } on success, or null to signal "fall back to sync".
+// A client-generated jobId is sent so the submit is IDEMPOTENT: if the POST reaches the server (reserving
+// a talk + starting the job) but the RESPONSE is lost, we don't blindly fall back to sync (which would
+// double-generate) — we recover by checking that job's status first. (Codex bug #2)
 async function submitAsyncGeneration(payload){
+  var clientJobId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+    : (Date.now().toString(16) + "-" + Math.random().toString(16).slice(2,10) + "-" + Math.random().toString(16).slice(2,10));
+  payload.clientJobId = clientJobId;
   try{
     var r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-async", {
       method:"POST",
@@ -1468,7 +1474,7 @@ async function submitAsyncGeneration(payload){
       return null; // includes free_tier_paused: let the SYNC path surface it consistently
     }
     // Out of quota: the worker RESERVED and found none left. Don't fall back to sync (that would
-    // generate one more on the owner's key) — surface the paywall. (Codex bug #3)
+    // generate one more on the owner's key) — surface the paywall.
     if(r.status === 403){
       var e403 = {}; try{ e403 = await r.json(); }catch(_){}
       if(((e403.error && e403.error.type) || "") === "quota_exceeded"){ var qe = new Error((e403.error && e403.error.message) || "You've used all your free talks."); qe.code = "quota_exceeded"; throw qe; }
@@ -1478,9 +1484,21 @@ async function submitAsyncGeneration(payload){
     // real error handling (auth_invalid, paused) and keeps one code path for user-facing errors.
     if(!r.ok){ return null; }
     var data = await r.json();
-    return (data && data.jobId) ? data : null;
+    return (data && data.jobId) ? data : { jobId: clientJobId };
   }catch(err){
-    return null; // network/other → sync fallback
+    if(err && err.code) throw err; // tagged (quota_exceeded) — don't swallow
+    // Network error AFTER the POST may have started the job server-side. Check whether our clientJobId
+    // exists before falling back to sync — otherwise a lost response double-generates. Retry once (KV is
+    // read-your-write within a colo but can lag briefly).
+    for(var attempt=0; attempt<2; attempt++){
+      await new Promise(function(res){ setTimeout(res, attempt===0?600:1400); });
+      try{
+        var sr = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-status/" + encodeURIComponent(clientJobId), { headers:{ "X-Supabase-Auth": freeTierToken() } });
+        if(sr.ok){ return { jobId: clientJobId, recovered:true }; }  // job exists → poll it, don't sync
+        if(sr.status === 404 && attempt===1){ return null; }         // confirmed never created → safe to sync
+      }catch(_){ /* keep trying */ }
+    }
+    return null; // couldn't confirm — fall back to sync (rare; accepts a small double-gen risk over a hang)
   }
 }
 
