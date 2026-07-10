@@ -1440,7 +1440,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-26";
+var BUILD_ID = "2026-07-07-27";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5196,7 +5196,10 @@ function _secHeaderChip(id, refs){
   if(!id || !refs) return "";
   var ref=null; for(var i=0;i<refs.length;i++){ if(String(refs[i].id)===String(id)){ ref=refs[i]; break; } }
   if(!ref) return "";
-  return '<span title="'+esc(ref.source||_citeLabel(ref))+'" style="margin-left:8px;font-size:9.5px;font-weight:600;color:#8a7d95;background:#f3eef8;border:1px solid #e3d9ea;border-radius:6px;padding:1px 6px;vertical-align:middle;white-space:nowrap;letter-spacing:0.01em;flex-shrink:0">'+esc(_citeLabel(ref))+'</span>';
+  // Interactive .cite chip so hover/click shows the reference popover like the inline chips. It lives
+  // inside the section toggle button, so stopPropagation keeps a click from collapsing the section and
+  // instead opens the popover directly. (Jenni 2026-07-10)
+  return '<span class="'+_citeClass(ref)+' sec-src-chip" data-ref="'+esc(String(id))+'" data-refs="'+esc(String(id))+'" title="'+esc(ref.source||_citeLabel(ref))+'" tabindex="0" aria-label="Section source: '+esc(_citeLabel(ref))+'" onclick="event.stopPropagation();showCitePop(this,this.dataset.ref)" style="margin-left:8px;vertical-align:middle">'+esc(_citeLabel(ref))+'</span>';
 }
 
 // Show/hide citation popover (single global element). Accepts one id or a comma-separated list of ids
