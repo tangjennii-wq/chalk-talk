@@ -1435,7 +1435,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-12";
+var BUILD_ID = "2026-07-07-13";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5235,12 +5235,12 @@ document.addEventListener("keydown", function(e){ if (e.key === "Escape") hideCi
 
 function stripCitations(str) {
   if (typeof str !== "string") return str;
+  // Strips ONLY XML/HTML citation markup (web_search <cite> tags, footnote spans) — NOT the
+  // numeric [N] inline markers, which are the citation-chip feature. Deleting [N] here was the
+  // root cause of "citations don't show": the model emitted them and this function ate them. (Jenni 2026-07-10)
   return str
-    .replace(/]*>/g, "")
-    .replace(/<\/antml:cite>/g, "")
-    .replace(/<cite[^>]*>/g, "")
-    .replace(/<\/cite>/g, "")
-    .replace(/\[\d+(?:[-,:]\d+)*\]/g, "")  // also strip bracket citations like [1] [2-3]
+    .replace(/<\/?antml:cite[^>]*>/gi, "")
+    .replace(/<\/?cite[^>]*>/gi, "")
     .trim();
 }
 
