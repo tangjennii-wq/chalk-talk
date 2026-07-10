@@ -1440,7 +1440,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-24";
+var BUILD_ID = "2026-07-07-25";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1495,7 +1495,16 @@ var _asyncUnavailable = false; // set true after a 503 async_unconfigured this s
 
 // Should THIS generation go through the background Worker path?
 function asyncGenApplicable(){
-  return !!(ASYNC_GEN_CONFIG.enabled && !_asyncUnavailable && genUsesFreeTier() && RAG_CONFIG.url && freeTierToken());
+  if(!(ASYNC_GEN_CONFIG.enabled && !_asyncUnavailable && genUsesFreeTier() && RAG_CONFIG.url && freeTierToken())) return false;
+  // Reserve the BACKGROUND (async) path for mobile, where backgrounding the tab / locking the phone kills
+  // a sync fetch. On desktop, prefer the SYNC streaming path so the user watches the talk build live
+  // ("Drafting: <title> · ~N words") — the preview the async path can't show. (Jenni 2026-07-10)
+  try{
+    var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    var narrow = (window.matchMedia && window.matchMedia("(max-width: 820px)").matches) || ((window.innerWidth||1024) < 820);
+    if(!(coarse || narrow)) return false;   // desktop → sync streaming preview
+  }catch(_){}
+  return true;
 }
 
 // Submit a background job. Returns { jobId } on success, or null to signal "fall back to sync".
@@ -6163,7 +6172,7 @@ async function generate(){
   // checks for this case and renders a small banner instead of a full takeover. New draft swaps in
   // when ready (or on cancel/error, the old content stays).
   var _hadExistingTalk = !!S.talk;
-  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;S.vmcStale=false;
+  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;S.vmcStale=false;S.modelPickerOpen=false;
   S.streamingTitle="";S.streamingSubtitle="";S.streamingSections=[];S.streamingStem="";S.streamingChars=0;  // clear stale preview from prior gen (Jenni 2026)
   speechSynthesis.cancel();
   if(!_hadExistingTalk) S.talk = null;   // only blank the view when there's no prior content to read
@@ -7997,6 +8006,7 @@ function resetAll(){
   // Reset per-talk state + transient UI flags. Auth/profile/cloud/library survives — session-scoped.
   S.talk=null; S.topic=""; S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview";
   S.loadedTalkId=null; S.talkIsSaved=false;
+  S.modelPickerOpen=false;   // collapse the model picker back to its default on New talk (Jenni 2026-07-10)
   // Uploaded references are per-talk too — they leaked into the next talk before. (Jenni 2026-06-10)
   S.files=[];
   S.dg=null; S.dgErr=""; S.dgBusy=false; S.visualStale=false;
@@ -9754,7 +9764,7 @@ function renderMain(){
           h+='<div class="tk-acc '+(open?"open":"")+'">';
           // Section header — minutes replaced by ✎ edit pencil (Jenni 2026-06-04)
           h+='<div style="display:flex;align-items:center;gap:0;position:relative">';
-          h+='<button class="tk-acc-head secBtn" data-i="'+si2+'" style="flex:1;min-width:0"><span class="tk-acc-num">'+(si2+1)+'</span><span class="tk-acc-ttl">'+esc(x.heading)+'</span>'+(_secCite?_secHeaderChip(_secCite,t.references):'')+'<span class="tk-acc-chev" style="margin-left:auto">⌄</span></button>';
+          h+='<button class="tk-acc-head secBtn" data-i="'+si2+'" style="flex:1;min-width:0"><span class="tk-acc-num">'+(si2+1)+'</span><span class="tk-acc-ttl">'+esc(x.heading)+(_secCite?_secHeaderChip(_secCite,t.references):'')+'</span><span class="tk-acc-chev" style="margin-left:auto">⌄</span></button>';
           if(!isEditing){
             // Edit + Copy paired in the section header — easier to discover than the buried
             // bottom-right copy button. (Jenni 2026-06-09 — copy was easy to miss alone.)
