@@ -621,7 +621,9 @@ function segBtn(cls, dataAttr, val, current, icon, label, opts){
     (disabled?'opacity:0.4;pointer-events:none;':'')+
     (compact ? '' : 'box-shadow:'+(active?"var(--shadow-soft)":"none")+';transition:all .15s ease;')+
     'display:inline-flex;align-items:center;justify-content:center;gap:6px">'+
-    '<span'+(compact?'':' style="font-size:13px"')+'>'+icon+'</span>'+label+'</button>';
+    '<span'+(compact?'':' style="font-size:13px"')+'>'+icon+'</span>'+label+
+    (opts.badge?'<span style="font-size:8px;font-weight:800;color:#a07d1a;letter-spacing:0.02em;margin-left:5px;background:#fbf3dc;border:1px solid #e6d9a8;border-radius:4px;padding:1px 4px;line-height:1.3;white-space:nowrap">'+opts.badge+'</span>':'')+
+    '</button>';
 }
 
 // Image-generation prompt shared by both OpenAI gpt-image-2 and Gemini image branches in genDiagram().
@@ -1433,7 +1435,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-11";
+var BUILD_ID = "2026-07-07-12";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -9196,10 +9198,8 @@ function renderMain(){
   h+='</div>';
   h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-soft)">';
   h+='<span style="color:var(--ink-soft);font-size:14px;flex-shrink:0">🔍</span>';
-  h+='<input id="topicTA" type="text" value="'+esc(S.topic)+'" placeholder="Enter a topic…" '+(S.loading?'disabled':'')+' style="flex:1;min-width:0;background:transparent;border:none;padding:8px 0;font-size:14px;color:var(--ink);outline:none;font-family:inherit;opacity:'+(S.loading?'0.55':'1')+'">';
+  h+='<input id="topicTA" type="text" value="'+esc(S.topic)+'" placeholder="Enter a topic… add references below or refine after generating" '+(S.loading?'disabled':'')+' style="flex:1;min-width:0;background:transparent;border:none;padding:8px 0;font-size:14px;color:var(--ink);outline:none;font-family:inherit;opacity:'+(S.loading?'0.55':'1')+'">';
   h+='</div>';
-  // Helper hint — tells user that refine/context is available post-generation via the composer
-  h+='<div style="font-size:11px;color:var(--ink-muted);margin:7px 4px 0;line-height:1.4;display:flex;align-items:center;gap:5px"><span style="font-size:11px">💬</span>You can add context or refine the lesson after generating.</div>';
   h+='</div>';
 
   // Hide compose controls (style/depth/refs/toggles) during generation so the focus
@@ -9219,9 +9219,9 @@ function renderMain(){
   h+='</div></div>';
   // Depth
   h+='<div style="flex:1 1 220px;min-width:0;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesn’t apply to Boards":"5 min vs 10 min")+'">';
-  h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span><span style="font-size:9px;font-weight:800;color:#a07d1a;letter-spacing:0.05em;margin-left:8px">★ CONCISE REC.</span></div>';
+  h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span></div>';
   h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
-  h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass, generates fastest. Recommended."});
+  h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass, generates fastest. Recommended.",badge:"★ REC"});
   h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:"~10 min — full chalk talk with deeper mechanism and evidence (generates slower, ~40-50s)"});
   h+='</div></div>';
   h+='</div>';
@@ -9229,23 +9229,23 @@ function renderMain(){
   // Model picker
   h+=renderModelPicker();
 
-  // References
-  h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .15s ease">';
-  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:400;flex-shrink:0">+</span>';
-  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Add your own references <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span></div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.4">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.</div><div style="font-size:10.5px;color:var(--ink-soft);margin-top:3px;line-height:1.35">🔒 Not stored, not used for training.</div></div>';
-  h+='<span style="color:var(--ink-soft);font-size:14px;flex-shrink:0">⌄</span>';
+  // References + Verify — consolidated into one compact card so neither eats a full row. (Jenni 2026-07)
+  h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-soft)">';
+  // Add references — compact one-line clickable row (opens file picker via #dropZone handler)
+  h+='<div id="dropZone" style="display:flex;align-items:center;gap:11px;padding:11px 14px;cursor:pointer;transition:background .15s ease">';
+  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:400;flex-shrink:0">+</span>';
+  h+='<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--ink)">Add references</span> <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span><span tabindex="0" class="opt-hint" onclick="event.stopPropagation()" aria-label="About references">i<span class="opt-hint-pop">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.<br>🔒 Not stored, not used for training.</span></span></div>';
   h+='<input type="file" id="fileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none">';
   h+='</div>';
-  for(var fi=0;fi<S.files.length;fi++)h+='<div style="display:flex;justify-content:space-between;background:var(--lavender-bg);border-radius:8px;padding:6px 12px;margin-bottom:6px"><span style="font-size:12px;color:var(--ink)">📄 '+esc(S.files[fi].n)+'</span><button class="rmFile" data-i="'+fi+'" style="background:none;border:none;color:var(--ink-muted);font-size:16px;cursor:pointer">×</button></div>';
-
-  // Verify toggle
-  h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-soft)">';
-  h+='<label style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
-  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</span>';
-  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Verify with current literature</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Always uses PubMed + society guidelines; toggle on to also scan the open web for newer updates (~30s).</div></div>';
+  h+='<div style="height:1px;background:var(--line)"></div>';
+  // Verify — compact one-line; the long explanation lives in the (i) popover
+  h+='<label style="display:flex;align-items:center;gap:11px;padding:11px 14px;cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
+  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🔬</span>';
+  h+='<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--ink)">Verify with current literature</span><span tabindex="0" class="opt-hint" onclick="event.preventDefault();event.stopPropagation()" aria-label="About verification">i<span class="opt-hint-pop">Always uses PubMed + society guidelines. Toggle on to also scan the open web for newer updates (~30s).</span></span></div>';
   h+='<span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!verifyInactive?"checked":"")+' '+(verifyInactive?"disabled":"")+'><span class="slider"></span></span>';
   h+='</label>';
   h+='</div>';
+  for(var fi=0;fi<S.files.length;fi++)h+='<div style="display:flex;justify-content:space-between;background:var(--lavender-bg);border-radius:8px;padding:6px 12px;margin-bottom:6px"><span style="font-size:12px;color:var(--ink)">📄 '+esc(S.files[fi].n)+'</span><button class="rmFile" data-i="'+fi+'" style="background:none;border:none;color:var(--ink-muted);font-size:16px;cursor:pointer">×</button></div>';
   } // end if(!S.loading) — compose controls hidden during generation
 
   // Sticky bottom Generate CTA + privacy note
@@ -9327,7 +9327,7 @@ function renderMain(){
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
       h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink)">Depth</span>';
       h+='<div style="display:inline-flex;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:2px;font-size:11px;font-weight:600">';
-      h+='<button class="loadingDepthBtn" data-d="concise"  style="background:'+(_dC?"#fff":"transparent")+';color:'+(_dC?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dC?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dC?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dC?"700":"500")+'">Concise</button>';
+      h+='<button class="loadingDepthBtn" data-d="concise"  style="background:'+(_dC?"#fff":"transparent")+';color:'+(_dC?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dC?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dC?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dC?"700":"500")+'">Concise<span style="font-size:8px;font-weight:800;color:#a07d1a;letter-spacing:0.02em;margin-left:4px">★ REC</span></button>';
       // Un-gated 2026-07-03 (Jenni): switching to Detailed mid-generation restarts at full depth.
       h+='<button class="loadingDepthBtn" data-d="detailed" title="Switch to full depth — restarts this generation (~40-50s)" style="background:'+(_dD?"#fff":"transparent")+';color:'+(_dD?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dD?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dD?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dD?"700":"500")+'">Detailed</button>';
       h+='</div></div>';
