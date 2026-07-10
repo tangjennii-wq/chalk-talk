@@ -307,18 +307,18 @@ textarea,input[type=text]{font-family:inherit}
   /* Pearls + Tips columns stack on mobile so each gets full width (Jenni 2026-06-08) */
   .slides-callouts{grid-template-columns:1fr !important}
 }
-/* OpenEvidence-style inline citation chips. Color-coded by source type: guideline=warm, trial=plum, journal=cool. */
-.cite{display:inline-flex;align-items:center;gap:3px;background:#eee6f3;color:#4a1a7a;padding:1px 7px 1px 6px;border-radius:10px;font-size:10.5px;font-weight:600;margin:0 2px;cursor:pointer;line-height:1.5;text-decoration:none;border:1px solid #d4baea;transition:all .12s ease;font-family:ui-sans-serif,system-ui,sans-serif;vertical-align:baseline;white-space:nowrap}
-.cite:hover{background:#e2d3f0;border-color:#a87fc6}
-.cite::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.7;flex-shrink:0}
-.cite.cite-guideline{background:#fdeee6;color:#a44a1e;border-color:#f0c89c}
-.cite.cite-guideline:hover{background:#fbdcc7;border-color:#e08b48}
-.cite.cite-trial{background:#eee6f3;color:#4a1a7a;border-color:#d4baea}
-.cite.cite-trial:hover{background:#e2d3f0;border-color:#a87fc6}
-.cite.cite-journal{background:#e6efff;color:#1e4a8a;border-color:#a8c4eb}
-.cite.cite-journal:hover{background:#cfddff;border-color:#5781c9}
-.cite-plus{font-size:9.5px;color:inherit;opacity:0.7;font-weight:500;margin-left:1px}
-.cite:hover{background:#702b9d;color:#fff;border-color:#702b9d}
+/* Inline citation chips — quiet by default ("source available" whisper, not a loud badge). No dot, small,
+   low-saturation; type tint only lightly hinted, saturating on hover. (Jenni 2026-07-10 UX pass) */
+.cite{display:inline-flex;align-items:center;gap:2px;background:#f5f1f8;color:#7b6b86;padding:0 5px;border-radius:7px;font-size:10px;font-weight:600;margin-left:3px;cursor:pointer;line-height:1.35;text-decoration:none;border:1px solid #e3d9ea;transition:all .12s ease;font-family:ui-sans-serif,system-ui,sans-serif;vertical-align:8%;white-space:nowrap}
+.cite::before{display:none}
+.cite:hover{background:#eee4f5;color:var(--plum);border-color:#cdb7dd}
+.cite.cite-guideline{background:#f7f1ea;color:#8a6a4e;border-color:#e8dcc9}
+.cite.cite-guideline:hover{background:#efe3d3;color:#7a5320;border-color:#d9c19c}
+.cite.cite-trial{background:#f3eef8;color:#6a5482;border-color:#e0d4ee}
+.cite.cite-trial:hover{background:#e9def5;color:var(--plum);border-color:#c9b3dd}
+.cite.cite-journal{background:#eef1f6;color:#5a6478;border-color:#d6dce8}
+.cite.cite-journal:hover{background:#e0e6f0;color:#33415a;border-color:#b8c4d8}
+.cite-plus{font-size:9px;color:inherit;opacity:0.7;font-weight:600;margin-left:1px}
 /* Citation popover (OpenEvidence-style — title + journal/year/authors + type tag + link). Opens on hover OR click. */
 .cite-pop{position:absolute;background:#fff;border:1px solid #d4baea;border-radius:12px;padding:14px 16px;max-width:340px;min-width:280px;box-shadow:0 10px 32px rgba(45,42,62,0.20);z-index:1000;font-size:13px;line-height:1.5;color:#2d2a3e}
 .cite-pop-head{display:flex;justify-content:space-between;align-items:baseline;font-size:10.5px;color:#9490a6;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;font-weight:600}
@@ -1440,7 +1440,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-22";
+var BUILD_ID = "2026-07-07-23";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5085,7 +5085,12 @@ function _citeClass(ref){
 // shouldn't become a clickable link. (audit hygiene)
 function _safeUrl(u){ u = String(u || ""); return /^https?:\/\//i.test(u) ? u : ""; }
 
-function renderCite(text, refs) {
+// Optional `seen` (an object used as a Set of ref-id strings) enables SECTION-LEVEL DEDUP: a source is
+// chipped the first time it appears within a section; later markers citing only already-seen sources are
+// dropped (and a trailing space trimmed) so we don't stamp "Cell" on every bullet. A marker that introduces
+// a NEW source still shows a chip for just that new source. Pass the same object across a section's
+// bullets/pearl/tip to share the seen-set. Omit it for standalone renders (Slides, key point, etc.). (Jenni 2026-07-10)
+function renderCite(text, refs, seen) {
   if (!text) return "";
   if (!refs || !refs.length) return esc(String(text));
   // First, merge consecutive markers like "[1][2][3]" into a single "[1,2,3]" form so the renderer
@@ -5104,16 +5109,26 @@ function renderCite(text, refs) {
     // Collect resolved refs (skip unknown ids)
     var resolved = [];
     for(var i=0;i<ids.length;i++){ if(refMap[ids[i]]) resolved.push({id:ids[i], ref:refMap[ids[i]]}); }
+    // Dedup mode: chip only the refs not yet shown in this section, then mark all as seen.
+    var display = resolved;
+    if (seen) {
+      display = resolved.filter(function(r){ return !seen[r.id]; });
+      for(var di=0; di<resolved.length; di++){ seen[resolved[di].id] = true; }
+    }
     if(resolved.length === 0){
       // No matches — render raw bracketed text so the user can still see the marker
       for(var ix=0;ix<ids.length;ix++) html += '[' + ids[ix] + ']';
+    } else if(display.length === 0){
+      // Every source here was already cited earlier in this section — drop the marker; trim a trailing
+      // space so we don't leave "word ." with a gap before the period.
+      html = html.replace(/[ \t]+$/,"");
     } else {
       // First ref gets the labeled chip; extra refs collapse into a "+N" suffix on the same chip.
       // data-refs carries ALL ids so the popover can show every source (fixes the old bug where the
       // "+N" chip only ever surfaced the first reference). (Codex citation fix)
-      var first = resolved[0];
-      var allIds = resolved.map(function(r){ return r.id; }).join(",");
-      var extraCount = resolved.length - 1;
+      var first = display[0];
+      var allIds = display.map(function(r){ return r.id; }).join(",");
+      var extraCount = display.length - 1;
       html += '<span class="' + _citeClass(first.ref) + '" data-ref="' + esc(first.id) + '" data-refs="' + esc(allIds) + '" title="' + esc(first.ref.source || _citeLabel(first.ref)) + '" tabindex="0" role="button">';
       html += esc(_citeLabel(first.ref));
       if(extraCount > 0) html += '<span class="cite-plus">+' + extraCount + '</span>';
@@ -5123,6 +5138,41 @@ function renderCite(text, refs) {
   }
   html += esc(s.slice(lastIdx));
   return html;
+}
+
+// ── Section-level citation dedup ──────────────────────────────────────────────
+// When one source grounds most/all of a section, cite it ONCE under the heading and strip the repeated
+// marker from each item — instead of stamping the same chip after every bullet. (Jenni 2026-07-10)
+function _citeSetOf(text){
+  var all = String(text||"").match(/\[(\d+(?:\s*,\s*\d+)*)\]/g);
+  if(!all || !all.length) return "";
+  return all[all.length-1].replace(/[\[\]\s]/g,"");   // last marker, normalized: "[1]"->"1", "[1, 2]"->"1,2"
+}
+function _stripCiteSet(text, set){
+  if(!set) return text;
+  var pat = set.split(",").map(function(x){return x.trim();}).join("\\s*,\\s*");
+  var re = new RegExp("\\s*\\[\\s*"+pat+"\\s*\\]","g");
+  return String(text||"").replace(re,"").replace(/\s+([.,;:])/g,"$1").replace(/\s{2,}/g," ").trim();
+}
+// Returns the citation set (e.g. "1" or "1,2") that dominates a section, or "" if none qualifies.
+// Qualifies only when the same set appears on >=3 cited items OR on ALL cited items (min 2) — otherwise
+// per-item chips are more honest. Considers points + teaching_pearl + board_tip + mechanism.
+function _dominantSectionCite(sec){
+  if(!sec) return "";
+  var items = (sec.points||[]).slice();
+  if(sec.teaching_pearl) items.push(sec.teaching_pearl);
+  if(sec.board_tip) items.push(sec.board_tip);
+  if(sec.mechanism) items.push(sec.mechanism);
+  var counts={}, cited=0, best="", bestN=0;
+  for(var i=0;i<items.length;i++){
+    var st=_citeSetOf(items[i]);
+    if(!st) continue;
+    cited++;
+    counts[st]=(counts[st]||0)+1;
+    if(counts[st]>bestN){ bestN=counts[st]; best=st; }
+  }
+  if(best && (bestN>=3 || (bestN===cited && cited>=2))) return best;
+  return "";
 }
 
 // Show/hide citation popover (single global element). Accepts one id or a comma-separated list of ids
@@ -9732,21 +9782,26 @@ function renderMain(){
             h+='</div>';
           } else if(open){
             // ── Read mode ─────────────────────────────────────────────────
-            h+='<div class="tk-acc-body"><ul>';
-            for(var pi2=0;pi2<(x.points||[]).length;pi2++)h+='<li><span>'+renderCite(x.points[pi2], t.references)+'</span></li>';
+            h+='<div class="tk-acc-body">';
+            // If one source grounds most of this section, cite it ONCE under the heading and strip the
+            // repeated marker from each item so chips don't pile up on every bullet. (Jenni 2026-07-10)
+            var _secCite = _dominantSectionCite(x);
+            if(_secCite) h+='<div style="margin:2px 0 9px;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:8.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.07em">Source</span>'+renderCite("["+_secCite+"]", t.references)+'</div>';
+            h+='<ul>';
+            for(var pi2=0;pi2<(x.points||[]).length;pi2++)h+='<li><span>'+renderCite(_stripCiteSet(x.points[pi2], _secCite), t.references)+'</span></li>';
             h+='</ul>';
             // Teaching Pearl as textbook callout — academic plum (Jenni 2026-06-04, post-ChatGPT critique)
             if(x.teaching_pearl){
               h+='<div style="margin-top:14px;padding:4px 0 4px 16px;border-left:4px solid #702b9d;background:linear-gradient(90deg,rgba(112,43,157,0.07) 0,rgba(112,43,157,0) 100%)">';
               h+='<div style="font-size:9.5px;font-weight:700;color:#4a1a7a;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;display:flex;align-items:center;gap:5px"><span style="font-size:13px">💡</span>Teaching Pearl</div>';
-              h+='<div style="font-size:13px;color:#3a1564;line-height:1.55;font-style:italic;font-family:Georgia,serif">'+renderCite(x.teaching_pearl,t.references)+'</div>';
+              h+='<div style="font-size:13px;color:#3a1564;line-height:1.55;font-style:italic;font-family:Georgia,serif">'+renderCite(_stripCiteSet(x.teaching_pearl,_secCite),t.references)+'</div>';
               h+='</div>';
             }
             // Board Tip — orange "highlighter" treatment (post-UX critique: pops next to plum Pearl, matches Anki/USMLE highlight semantics)
             if(x.board_tip){
               h+='<div style="margin-top:10px;padding:4px 0 4px 16px;border-left:4px solid #e67e22;background:linear-gradient(90deg,rgba(230,126,34,0.08) 0,rgba(230,126,34,0) 100%)">';
               h+='<div style="font-size:9.5px;font-weight:700;color:#a44a1e;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;display:flex;align-items:center;gap:5px"><span style="font-size:13px">🎯</span>Board Tip · memorize</div>';
-              h+='<div style="font-size:13px;color:#6e3214;line-height:1.55;font-family:Georgia,serif">'+renderCite(x.board_tip,t.references)+'</div>';
+              h+='<div style="font-size:13px;color:#6e3214;line-height:1.55;font-family:Georgia,serif">'+renderCite(_stripCiteSet(x.board_tip,_secCite),t.references)+'</div>';
               h+='</div>';
             }
             // Optional mechanism / why this works expander — only renders if the talk JSON has a `mechanism` field on the section
@@ -9754,7 +9809,7 @@ function renderMain(){
               // Auto-open "Why this works" when Expand all is active (Jenni 2026-07-03), so a single
               // Expand all reveals both the section bullets AND their mechanism. Individually-opened
               // sections keep it collapsed for a cleaner read.
-              h+='<details '+(S.allExpanded?'open ':'')+'style="margin-top:10px;padding:6px 12px;background:#fafafa;border:1px solid var(--line-soft);border-radius:8px"><summary style="font-size:11px;font-weight:600;color:var(--plum);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:5px;font-family:inherit"><span style="display:inline-block;width:0;height:0;border-left:5px solid var(--plum);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s ease"></span>Why this works</summary><div style="font-size:12px;color:var(--ink-muted);line-height:1.55;margin-top:6px;padding-left:12px;border-left:2px solid var(--line-soft);font-family:Georgia,serif;font-style:italic">'+renderCite(x.mechanism,t.references)+'</div></details>';
+              h+='<details '+(S.allExpanded?'open ':'')+'style="margin-top:10px;padding:6px 12px;background:#fafafa;border:1px solid var(--line-soft);border-radius:8px"><summary style="font-size:11px;font-weight:600;color:var(--plum);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:5px;font-family:inherit"><span style="display:inline-block;width:0;height:0;border-left:5px solid var(--plum);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s ease"></span>Why this works</summary><div style="font-size:12px;color:var(--ink-muted);line-height:1.55;margin-top:6px;padding-left:12px;border-left:2px solid var(--line-soft);font-family:Georgia,serif;font-style:italic">'+renderCite(_stripCiteSet(x.mechanism,_secCite),t.references)+'</div></details>';
             }
             // Section copy button moved to the header next to Edit (Jenni 2026-06-09 — easier to spot).
             h+='</div>';
