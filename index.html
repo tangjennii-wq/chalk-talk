@@ -461,6 +461,8 @@ body.lib-is-reordering .lib-sort-fallback{transition:none !important;pointer-eve
   .app:not(.has-talk) .hero-tagline-col > div:last-child { display: none !important; } /* hide "ABIM topics · Peer-reviewed..." subline */
   .app:not(.has-talk) .howit { margin-bottom: 8px !important; }
   .app:not(.has-talk) .howit > summary { padding: 6px 10px !important; font-size: 11.5px !important; }
+  /* Mobile: hide the "Your lectures" recent row to save vertical space — the Library button opens the full list. (Jenni 2026-07-10) */
+  .app:not(.has-talk) .landing-recent { display: none !important; }
   .app:not(.has-talk) [data-mtopic] { margin-bottom: 8px !important; }
   .app:not(.has-talk) [data-mtopic] + div { margin-bottom: 8px !important; }
   .app:not(.has-talk) #dropZone { padding: 8px 12px !important; margin-bottom: 6px !important; }
@@ -1438,7 +1440,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-28";
+var BUILD_ID = "2026-07-07-29";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -9290,7 +9292,7 @@ function renderMain(){
         _headerHtml = '<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>Your lectures</span>';
         _seeAllHtml = '<button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all in library →</button>';
       }
-      h+='<div style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
+      h+='<div class="landing-recent" style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
       h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px">'+_headerHtml+_seeAllHtml+'</div>';
       h+='<div data-msample-grid class="msample-grid">';
       // Recent user lectures (cloud + local) — newest first
@@ -9389,13 +9391,13 @@ function renderMain(){
   // "+" sits to the LEFT of "Add references"; Verify keeps its toggle on the right. (Jenni 2026-07-10)
   h+='<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px">';
   // Add references pill — clickable, opens file picker via #dropZone handler
-  h+='<div id="dropZone" style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:9px;padding:12px 16px;background:var(--cream);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-soft);cursor:pointer;transition:background .15s ease">';
+  h+='<div id="dropZone" style="flex:1 1 140px;min-width:0;display:flex;align-items:center;gap:9px;padding:12px 16px;background:var(--cream);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-soft);cursor:pointer;transition:background .15s ease">';
   h+='<span aria-hidden="true" style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:400;flex-shrink:0">+</span>';
   h+='<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--ink)">Add references</span> <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span><span tabindex="0" class="opt-hint" onclick="event.stopPropagation()" aria-label="About references">i<span class="opt-hint-pop">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.<br>🔒 Not stored, not used for training.</span></span></div>';
   h+='<input type="file" id="fileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none">';
   h+='</div>';
   // Verify pill — toggle on the right; the long explanation lives in the (i) popover
-  h+='<label style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:9px;padding:12px 16px;background:var(--cream);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-soft);cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
+  h+='<label style="flex:1 1 140px;min-width:0;display:flex;align-items:center;gap:9px;padding:12px 16px;background:var(--cream);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-soft);cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
   h+='<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--ink)">Verify with current literature</span><span tabindex="0" class="opt-hint" onclick="event.preventDefault();event.stopPropagation()" aria-label="About verification">i<span class="opt-hint-pop">Always uses PubMed + society guidelines. Toggle on to also scan the open web for newer updates (~30s).</span></span></div>';
   h+='<span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!verifyInactive?"checked":"")+' '+(verifyInactive?"disabled":"")+'><span class="slider"></span></span>';
   h+='</label>';
