@@ -1435,7 +1435,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-15";
+var BUILD_ID = "2026-07-07-16";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5462,8 +5462,10 @@ function parsePartialJSON(raw){
 }
 
 function fixJSON(raw) {
-  // Strip web search citation tags that leak into output
-  var t = raw.replace(/]*>/g,"").replace(/<\/antml:cite>/g,"").replace(/<cite[^>]*>/g,"").replace(/<\/cite>/g,"");
+  // Strip web-search citation MARKUP (XML/HTML <cite> tags) that leaks into output — but NOT the
+  // numeric [N] markers or '>' characters. The old /]*>/g regex ate every '>' (mangling medical
+  // inequalities like "eGFR > 60") and broke the tag-stripping itself. (Jenni 2026-07-10)
+  var t = raw.replace(/<\/?antml:cite[^>]*>/gi,"").replace(/<\/?cite[^>]*>/gi,"");
   t = t.replace(/```json/g,"").replace(/```/g,"").trim();
   try { return JSON.parse(t), t; } catch(e) {}
   // Truncate at the LAST `}` if there's trailing text after the JSON body (common when the
