@@ -328,7 +328,12 @@ textarea,input[type=text]{font-family:inherit}
 .cite-pop{max-height:60vh;overflow-y:auto}
 /* Library drag-to-reorder via SortableJS. (Codex 2026-07) */
 .libSortGroup{min-height:8px}
-body.lib-is-reordering .libCard{transition:transform .16s ease, box-shadow .16s ease, opacity .16s ease}
+/* Don't transition TRANSFORM on the dragged card — that makes it "chase" the pointer. Only fade
+   shadow/opacity; the card being dragged/its clone gets transition:none so it stays glued. (Codex 2026-07) */
+body.lib-is-reordering .libCard{transition:box-shadow .12s ease, opacity .12s ease}
+body.lib-is-reordering .lib-sort-drag,
+body.lib-is-reordering .sortable-fallback,
+body.lib-is-reordering .lib-sort-fallback{transition:none !important;pointer-events:none}
 .lib-sort-chosen{box-shadow:0 10px 26px rgba(75,17,111,.22) !important}
 .lib-sort-ghost{opacity:.35 !important;background:rgba(112,43,157,.08) !important;border:2px dashed #a87fc6 !important}
 .lib-sort-drag{opacity:.98 !important;box-shadow:0 16px 38px rgba(75,17,111,.28) !important;border-color:var(--plum) !important}
@@ -1435,7 +1440,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-17";
+var BUILD_ID = "2026-07-07-18";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5004,11 +5009,15 @@ function _citeLabel(ref){
   if((type === "guideline" || ref.society) && ref.society && ref.society.length <= 12) return ref.society;
   // (Recognized journal abbreviations are checked further down — NEJM, JAMA, CJASN, JACC, etc.
   //  Only fall back to "PMID N" if the journal name doesn't match any of those.)
-  // Common journal abbreviations
-  var lower = src.toLowerCase();
+  // Common journal abbreviations. Scan BOTH the title (source) AND the society field, since talks
+  // often store the journal in society (e.g. "European Heart Journal", "JCEM", "JBMR"). (Jenni 2026-07-10)
+  var lower = (src + " " + (ref.society || "")).toLowerCase();
   var journals = [
     ["new england journal","NEJM"],["nejm","NEJM"],
+    ["jacc heart failure","JACC-HF"],
     ["journal of the american college of cardiology","JACC"],["jacc","JACC"],
+    ["european heart journal","Eur Heart J"],["eur heart j","Eur Heart J"],
+    ["european journal of heart failure","Eur J Heart Fail"],["eur j heart fail","Eur J Heart Fail"],
     ["circulation","Circulation"],
     ["lancet","Lancet"],
     ["jama","JAMA"],
@@ -5017,11 +5026,13 @@ function _citeLabel(ref){
     ["american journal of kidney diseases","AJKD"],["ajkd","AJKD"],
     ["annals of internal medicine","Ann Intern Med"],
     ["diabetes care","Diabetes Care"],
+    ["gastroenterology","Gastroenterology"],
+    ["journal of bone and mineral research","JBMR"],["jbmr","JBMR"],["asbmr","ASBMR"],
+    ["journal of clinical endocrinology","JCEM"],["jcem","JCEM"],
+    ["european thyroid","Eur Thyroid J"],
     ["chest","CHEST"],
     ["thorax","Thorax"],
-    ["gut","Gut"],
     ["hepatology","Hepatology"],
-    ["blood","Blood"],
     ["clinical infectious diseases","CID"],
     ["british medical journal","BMJ"],["bmj","BMJ"]
   ];
@@ -8752,6 +8763,9 @@ function bindLibraryReorder(){
       chosenClass: "lib-sort-chosen",
       dragClass: "lib-sort-drag",
       forceFallback: true,
+      fallbackClass: "lib-sort-fallback",
+      fallbackTolerance: 3,
+      touchStartThreshold: 3,
       fallbackOnBody: true,
       scroll: true,
       bubbleScroll: true,
@@ -9237,15 +9251,15 @@ function renderMain(){
   // two halves read as consistent. No overflow:hidden so the (i) tooltips aren't clipped. (Jenni 2026-07-10)
   h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;box-shadow:var(--shadow-soft);display:flex;flex-wrap:wrap;align-items:stretch">';
   // Add references (left half) — clickable, opens file picker via #dropZone handler
-  h+='<div id="dropZone" style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:11px;padding:15px 18px;cursor:pointer;border-radius:14px 0 0 14px;transition:background .15s ease">';
-  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">📎</span>';
+  h+='<div id="dropZone" style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;border-radius:14px 0 0 14px;transition:background .15s ease">';
+  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📎</span>';
   h+='<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--ink)">Add references</span> <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span><span tabindex="0" class="opt-hint" onclick="event.stopPropagation()" aria-label="About references">i<span class="opt-hint-pop">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.<br>🔒 Not stored, not used for training.</span></span></div>';
-  h+='<span aria-hidden="true" style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:400;flex-shrink:0">+</span>';
+  h+='<span aria-hidden="true" style="background:var(--lavender-soft);color:var(--plum);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:400;flex-shrink:0">+</span>';
   h+='<input type="file" id="fileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none">';
   h+='</div>';
   // Verify (right half) — separated by a left border; the long explanation lives in the (i) popover
-  h+='<label style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:11px;padding:15px 18px;border-left:1px solid rgba(112,43,157,0.09);cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
-  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🔬</span>';
+  h+='<label style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:10px;padding:11px 16px;border-left:1px solid rgba(112,43,157,0.09);cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
+  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🔬</span>';
   h+='<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--ink)">Verify with current literature</span><span tabindex="0" class="opt-hint" onclick="event.preventDefault();event.stopPropagation()" aria-label="About verification">i<span class="opt-hint-pop">Always uses PubMed + society guidelines. Toggle on to also scan the open web for newer updates (~30s).</span></span></div>';
   h+='<span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!verifyInactive?"checked":"")+' '+(verifyInactive?"disabled":"")+'><span class="slider"></span></span>';
   h+='</label>';
