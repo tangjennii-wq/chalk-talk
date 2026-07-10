@@ -1440,7 +1440,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-18";
+var BUILD_ID = "2026-07-07-19";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3891,23 +3891,49 @@ function inferSpecialty(topic, talk, fallback){
   if((c = canon(fallback))) return c;
   if(talk && (c = canon(talk.specialty))) return c;
   var t = ((topic||"") + " " + (talk && talk.title || "") + " " + (talk && talk.subtitle || "")).toLowerCase();
+  // Each rule = [specialty, boundedRegex, stemList].
+  //  - boundedRegex uses \b anchors and is best for SHORT / ambiguous tokens (pe, ms, tb, hd, gi, htn)
+  //    that would false-match inside unrelated words.
+  //  - stemList is matched as PLAIN SUBSTRINGS (no boundaries) so compound / inflected medical words
+  //    resolve correctly — e.g. "hyperPARATHYROIDism", "hyperTHYROIDism", "hemoDIALYSIS", "nephroPATHY".
+  //    This was the bug: bounded-only matching dropped every compound term into "Other". (Jenni 2026-07-10)
+  //    Only put UNAMBIGUOUS long roots here (>=5 chars, no cross-specialty collisions — e.g. NOT "renal",
+  //    which is embedded in "adRENAL").
   var rules = [
-    ["Cardiovascular", /\b(heart|cardia|hfref|hfpef|afib|atrial fibrillation|atrial flutter|ventricular|coronary|angina|stent|valve|valvular|aortic|mitral|tricuspid|endocarditis|pericardial|cardiomyopath|chf|congestive heart|hypertension|htn|lipid|statin|cholesterol|syncope|bradycardia|tachycardia)\b/],
-    ["Pulmonary", /\b(lung|pulmonary|copd|asthma|pneumonia|interstitial lung|pleural|bronchi|emphysema|sleep apnea|osa|sarcoidosis|ild|ipf|pneumothorax|pe\b|pulmonary embolism)\b/],
-    ["Nephrology", /\b(kidney|renal|ckd|aki|nephrotic|nephritic|hyponatremia|hypernatremia|hyperkalemia|hypokalemia|dialysis|glomerul|hepatorenal|nephropath|nephrolith|tubular|polycystic kidney|acid.?base|electrolyte)\b/],
-    ["Gastroenterology", /\b(\bgi\b|gut|ibd|crohn|ulcerative colitis|ibs|gerd|peptic ulcer|pancrea|gallbladder|cholecyst|esophag|colon|diverticul|gi bleed|pancreatitis)\b/],
-    ["Hepatology", /\b(liver|cirrhosis|hepatitis|fatty liver|nash|masld|ascites|hepatic encephalopathy|portal hyper)\b/],
-    ["Endocrinology", /\b(diabetes|t1dm|t2dm|dka|hhs|thyroid|hyperthyroid|hypothyroid|adrenal|cortisol|cushing|addison|parathyroid|pituitary|prolactin|acromegal|insulin)\b/],
-    ["Heme/Onc", /\b(anemia|sickle|thrombocyt|leukemia|lymphoma|myeloma|dvt|vte|venous thromboembolism|anticoag|bleeding|tma|ttp|hus|itp|coag|platelet|warfarin|doac|hemophilia|porphyria|cancer|tumor|malignan|chemotherap|neoplasm|sarcoma|carcinoma|melanoma|metastas|immune checkpoint|irae|chemo|onco)\b/],
-    ["Infectious Disease", /\b(hiv|sepsis|abscess|cellulitis|uti|meningitis|tuberculosis|\btb\b|malaria|fever of unknown|hcv|hbv|syphilis|gonorrhea|mrsa|candida|fungal|encephalitis|osteomyelitis|prosthetic joint infection|stis?\b)\b/],
-    ["Rheumatology", /\b(rheumatoid|lupus|sle|gout|pseudogout|ana\b|vasculitis|sjogren|scleroderma|ankylosing|psoriatic|polymyalgia|pmr|fibromyalgia|giant cell|temporal arteritis|gpa)\b/],
-    ["Neurology", /\b(stroke|seizure|epilepsy|neuropath|dementia|alzheimer|parkinson|multiple sclerosis|\bms\b|migraine|headache|myasthenia|guillain|tremor|delirium)\b/],
-    ["Allergy/Immunology", /\b(anaphylax|allergic|urticaria|angioedema|immunodefic|food allergy|drug allergy)\b/],
-    ["Dermatology", /\b(dermatit|psoriasis|eczema|rash|skin lesion|stevens.?johnson|toxic epidermal)\b/],
-    ["Psychiatry", /\b(depression|anxiety|bipolar|schizophrenia|ptsd|ocd|substance use|opioid use|alcohol use disorder|suicide)\b/],
-    ["Geriatrics", /\b(elderly|frailty|fall\b|polypharmacy|cognitive impairment|geriatric)\b/]
+    ["Cardiovascular", /\b(heart|cardia|hfref|hfpef|afib|atrial fibrillation|atrial flutter|ventricular|coronary|angina|stent|valve|valvular|aortic|mitral|tricuspid|endocarditis|pericardial|cardiomyopath|chf|congestive heart|hypertension|htn|lipid|statin|cholesterol|syncope|bradycardia|tachycardia)\b/,
+      ["cardiomyopath","myocard","pericard","tachycard","bradycard","dyslipidem","arrhythmi","atrial fibrill"]],
+    ["Pulmonary", /\b(lung|pulmonary|copd|asthma|pneumonia|interstitial lung|pleural|bronchi|emphysema|sleep apnea|osa|sarcoidosis|ild|ipf|pneumothorax|pe\b|pulmonary embolism)\b/,
+      ["pulmonary","bronchi","pneumon","emphysem","pleural"]],
+    ["Nephrology", /\b(kidney|renal|ckd|aki|nephrotic|nephritic|hyponatremia|hypernatremia|hyperkalemia|hypokalemia|dialysis|glomerul|hepatorenal|nephropath|nephrolith|tubular|polycystic kidney|acid.?base|electrolyte|hd|esrd|eskd)\b/,
+      ["nephro","dialysis","glomerul","hemodial","haemodial"]],
+    ["Gastroenterology", /\b(\bgi\b|gut|ibd|crohn|ulcerative colitis|ibs|gerd|peptic ulcer|pancrea|gallbladder|cholecyst|esophag|colon|diverticul|gi bleed|pancreatitis)\b/,
+      ["esophag","pancrea","colonos","gastrit","gastroenter","diverticul"]],
+    ["Hepatology", /\b(liver|cirrhosis|hepatitis|fatty liver|nash|masld|ascites|hepatic encephalopathy|portal hyper)\b/,
+      ["cirrho","hepatic","hepatocellular","hepatitis","steatohepat"]],
+    ["Endocrinology", /\b(diabetes|t1dm|t2dm|dka|hhs|thyroid|hyperthyroid|hypothyroid|adrenal|cortisol|cushing|addison|parathyroid|pituitary|prolactin|acromegal|insulin)\b/,
+      ["thyroid","parathyroid","thyrotox","adrenal","pituitary","cushing","acromegal","diabet","hypoglycem","osteoporos"]],
+    ["Heme/Onc", /\b(anemia|sickle|thrombocyt|leukemia|lymphoma|myeloma|dvt|vte|venous thromboembolism|anticoag|bleeding|tma|ttp|hus|itp|coag|platelet|warfarin|doac|hemophilia|porphyria|cancer|tumor|malignan|chemotherap|neoplasm|sarcoma|carcinoma|melanoma|metastas|immune checkpoint|irae|chemo|onco)\b/,
+      ["leukemi","lymphoma","myeloma","carcinoma","sarcoma","thrombocyt","anticoag","malignan","neoplas"]],
+    ["Infectious Disease", /\b(hiv|sepsis|abscess|cellulitis|uti|meningitis|tuberculosis|\btb\b|malaria|fever of unknown|hcv|hbv|syphilis|gonorrhea|mrsa|candida|fungal|encephalitis|osteomyelitis|prosthetic joint infection|stis?\b)\b/,
+      ["meningitis","osteomyelit","cellulitis","bacteremi","endocardit"]],
+    ["Rheumatology", /\b(rheumatoid|lupus|sle|gout|pseudogout|ana\b|vasculitis|sjogren|scleroderma|ankylosing|psoriatic|polymyalgia|pmr|fibromyalgia|giant cell|temporal arteritis|gpa)\b/,
+      ["rheumat","vasculiti","scleroderm","spondylit","arthriti","osteoarthr"]],
+    ["Neurology", /\b(stroke|seizure|epilepsy|neuropath|dementia|alzheimer|parkinson|multiple sclerosis|\bms\b|migraine|headache|myasthenia|guillain|tremor|delirium)\b/,
+      ["neuropath","myasthen","epilep","parkinson"]],
+    ["Allergy/Immunology", /\b(anaphylax|allergic|urticaria|angioedema|immunodefic|food allergy|drug allergy)\b/,
+      ["anaphylax","urticari","angioedem"]],
+    ["Dermatology", /\b(dermatit|psoriasis|eczema|rash|skin lesion|stevens.?johnson|toxic epidermal)\b/,
+      ["dermatit","psoriasi","eczema"]],
+    ["Psychiatry", /\b(depression|anxiety|bipolar|schizophrenia|ptsd|ocd|substance use|opioid use|alcohol use disorder|suicide)\b/,
+      ["depress","schizophren","bipolar"]],
+    ["Geriatrics", /\b(elderly|frailty|fall\b|polypharmacy|cognitive impairment|geriatric)\b/,
+      ["geriatric","frailty","polypharmac"]]
   ];
-  for(var i=0;i<rules.length;i++) if(rules[i][1].test(t)) return rules[i][0];
+  for(var i=0;i<rules.length;i++){
+    if(rules[i][1].test(t)) return rules[i][0];
+    var stems = rules[i][2] || [];
+    for(var si=0;si<stems.length;si++){ if(t.indexOf(stems[si]) >= 0) return rules[i][0]; }
+  }
   return "Other";
 }
 
