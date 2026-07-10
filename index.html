@@ -1440,7 +1440,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-27";
+var BUILD_ID = "2026-07-07-28";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1495,12 +1495,15 @@ var _asyncUnavailable = false; // set true after a 503 async_unconfigured this s
 
 // Should THIS generation go through the background Worker path?
 function asyncGenApplicable(){
-  // Prefer the SYNC streaming path EVERYWHERE (desktop AND mobile) so the user always watches the talk
-  // build live ("Drafting: <title> · ~N words drafted", sections appearing as they parse) — a feature
-  // the server-side async path can't show. Trade-off: the tab must stay open while generating (the
-  // on-screen "Keep this tab open" note already says so). The async background infra stays in place for
-  // reload-reconnect, but isn't the primary path. (Jenni 2026-07-10 — "show the generation on phone too")
-  return false;
+  if(!(ASYNC_GEN_CONFIG.enabled && !_asyncUnavailable && genUsesFreeTier() && RAG_CONFIG.url && freeTierToken())) return false;
+  // Use the BACKGROUND (async) path on MOBILE: it survives the user leaving the tab / locking the phone,
+  // AND now streams a live partial draft back via polling so they still watch it build. On DESKTOP, prefer
+  // the SYNC path for the smoother token-by-token stream (backgrounding is rare there). (Jenni 2026-07-10)
+  try{
+    var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    var narrow = (window.matchMedia && window.matchMedia("(max-width: 820px)").matches) || ((window.innerWidth||1024) < 820);
+    return !!(coarse || narrow);
+  }catch(_){ return false; }
 }
 
 // Submit a background job. Returns { jobId } on success, or null to signal "fall back to sync".
@@ -1558,9 +1561,35 @@ async function submitAsyncGeneration(payload){
 // Poll a job to completion. onStage(stage) fires when the server stage changes (drafting/critique).
 // checkAbort() returns true if the caller wants to stop (cancel / stale gen); we then cancel the job.
 // Returns { draftText, critText, modelUsed }. Throws on server error / timeout / cancel.
-async function pollAsyncGeneration(jobId, onStage, checkAbort){
+// Feed a partial draft JSON string into the streaming-preview state (title/subtitle/sections/stem) so the
+// same "watch it build" UI renders. Shared by the sync stream and the async poll (mobile). (Jenni 2026-07-10)
+function _applyStreamingPartial(fullText){
+  if(typeof fullText !== "string" || !fullText) return;
+  S.streamingChars = fullText.length;
+  var titleMatch = fullText.match(/"title"\s*:\s*"([^"\\]+)/);
+  if (titleMatch && !S.streamingTitle) S.streamingTitle = titleMatch[1];
+  var partial = (typeof parsePartialJSON === "function") ? parsePartialJSON(fullText) : null;
+  if (partial) {
+    if (partial.title) S.streamingTitle = partial.title;
+    if (partial.subtitle) S.streamingSubtitle = partial.subtitle;
+    if (Array.isArray(partial.sections)) {
+      S.streamingSections = partial.sections.map(function(sec){
+        return {
+          heading: (sec && sec.heading) ? String(sec.heading) : "",
+          minutes: (sec && sec.minutes) ? String(sec.minutes) : "",
+          points: (sec && Array.isArray(sec.points)) ? sec.points.filter(function(p){return p!=null}).map(String) : []
+        };
+      });
+    }
+    if (partial.question && partial.question.stem) S.streamingStem = String(partial.question.stem);
+  }
+  if (typeof render === "function") render();
+}
+
+async function pollAsyncGeneration(jobId, onStage, checkAbort, onPartial){
   var start = Date.now();
   var lastStage = "";
+  var lastPartialLen = 0;
   while(true){
     if(checkAbort && checkAbort()){
       try{ fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-cancel/" + encodeURIComponent(jobId), { method:"POST", headers:{ "X-Supabase-Auth": freeTierToken() } }); }catch(_){}
@@ -1580,6 +1609,11 @@ async function pollAsyncGeneration(jobId, onStage, checkAbort){
     if(!r.ok){ continue; }
     var job; try{ job = await r.json(); }catch(_){ continue; }
     if(job.stage && job.stage !== lastStage){ lastStage = job.stage; if(onStage) try{ onStage(job.stage); }catch(_){} }
+    // Feed the live partial draft into the streaming preview (server writes it while drafting).
+    if(onPartial && typeof job.partialDraft === "string" && job.partialDraft.length > lastPartialLen){
+      lastPartialLen = job.partialDraft.length;
+      try{ onPartial(job.partialDraft); }catch(_){}
+    }
     if(job.status === "done" && job.result){
       // Re-check abort on the SAME tick we got the result: if a restart superseded us during this
       // poll interval, don't let the stale invocation proceed to the success path (which would run an
@@ -1619,14 +1653,16 @@ async function resumeAsyncJobIfAny(){
   if(stored.topic) S.topic = stored.topic;
   if(stored.style) S.style = stored.style;
   if(stored.depth) S.depth = stored.depth;
-  S.loading = true; S.loadSec = 0; S.loadMsg = "Reconnecting to your talk…";
+  S.loading = true; S.loadSec = 0; S.loadMsg = "Reconnecting to your talk…"; S.genBackgroundSafe = true;
+  S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";
   if(typeof render === "function") render();
   if(typeof loadTimer !== "undefined") clearInterval(loadTimer);
   loadTimer = setInterval(function(){ S.loadSec++; render(); }, 1000);
   try{
     var res = await pollAsyncGeneration(stored.jobId,
       function(stage){ S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Finishing your talk (server-side)…"; render(); },
-      function(){ return S.genCancelled || _myGenId !== S.genId; }
+      function(){ return S.genCancelled || _myGenId !== S.genId; },
+      function(partial){ if(S.genCancelled || _myGenId !== S.genId) return; _applyStreamingPartial(partial); }
     );
     try{ localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); }catch(_){}
     var txt = (res && res.draftText) || "";
@@ -6171,7 +6207,7 @@ async function generate(){
   // checks for this case and renders a small banner instead of a full takeover. New draft swaps in
   // when ready (or on cancel/error, the old content stays).
   var _hadExistingTalk = !!S.talk;
-  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;S.vmcStale=false;S.modelPickerOpen=false;
+  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;S.vmcStale=false;S.modelPickerOpen=false;S.genBackgroundSafe=false;
   S.streamingTitle="";S.streamingSubtitle="";S.streamingSections=[];S.streamingStem="";S.streamingChars=0;  // clear stale preview from prior gen (Jenni 2026)
   speechSynthesis.cancel();
   if(!_hadExistingTalk) S.talk = null;   // only blank the view when there's no prior content to read
@@ -6297,11 +6333,13 @@ async function generate(){
         _useAsync = true;
         // Persist for reload-reconnect: if the user reloads mid-gen, boot logic resumes this job.
         try { localStorage.setItem(ASYNC_GEN_CONFIG.jobKey, JSON.stringify({ jobId: _job.jobId, genId: _myGenId, topic: S.topic, style: S.style, depth: S.depth, at: Date.now() })); } catch(_){}
+        S.genBackgroundSafe = true;   // async path survives backgrounding → swap the "keep tab open" warning
         S.loadMsg = "Generating on our servers — safe to switch tabs or lock your phone.";
         if (typeof render === "function") render();
         var _res = await pollAsyncGeneration(_job.jobId,
           function(stage){ S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Drafting your talk (server-side)…"; if (typeof render === "function") render(); },
-          function(){ return S.genCancelled || _myGenId !== S.genId; }
+          function(){ return S.genCancelled || _myGenId !== S.genId; },
+          function(partial){ if (S.genCancelled || _myGenId !== S.genId) return; _applyStreamingPartial(partial); }
         );
         try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){}
         txt = (_res && _res.draftText) || "";
@@ -9396,7 +9434,9 @@ function renderMain(){
     h+='<div style="margin-top:10px;height:4px;background:var(--lavender-bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,var(--plum-rich),var(--plum-deep));transition:width 0.6s ease"></div></div>';
     // Mobile backgrounding warning (Jenni 2026-06-09) — iOS Safari kills fetch when tab is
     // backgrounded. No way around it without a service worker. Tell the user proactively.
-    h+='<div style="margin-top:10px;font-size:10.5px;color:var(--ink-muted);line-height:1.45">📱 Keep this tab open while generating · backgrounding pauses the connection.</div>';
+    h+= S.genBackgroundSafe
+      ? '<div style="margin-top:10px;font-size:10.5px;color:var(--ink-muted);line-height:1.45">☁️ Generating on our servers · safe to switch tabs or lock your phone — it keeps going.</div>'
+      : '<div style="margin-top:10px;font-size:10.5px;color:var(--ink-muted);line-height:1.45">📱 Keep this tab open while generating · backgrounding pauses the connection.</div>';
     h+='</div>';
 
     // ─── Live preview: sections appear as they draft (progressive rendering, Jenni 2026) ───

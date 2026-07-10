@@ -676,7 +676,7 @@ async function handleOpenAIChat(request, env, origin) {
 // the browser does all JSON parsing / citation cleanup on poll-complete (no prompt logic duplicated).
 
 // Anthropic text call with model fallback on overload. Returns { text, modelUsed, usage }.
-async function callAnthropicText(env, sys, content, maxTok, models, tools) {
+async function callAnthropicText(env, sys, content, maxTok, models, tools, onProgress) {
   // Enforce the same allowlist + token cap as the synchronous /v1/messages path — a tampered client
   // can't push us onto an off-list or oversized model via the async route.
   models = (Array.isArray(models) ? models : []).filter(function(m){ return ALLOWED_MODELS.indexOf(m) >= 0; });
@@ -692,6 +692,9 @@ async function callAnthropicText(env, sys, content, maxTok, models, tools) {
   for (let i = 0; i < models.length; i++) {
     const reqBody = { model: models[i], max_tokens: maxTok || 16384, system: sys, messages: [{ role: "user", content: content }] };
     if (safeTools) reqBody.tools = safeTools;
+    // Stream ONLY when a progress callback is supplied (the async draft path) — lets the server surface a
+    // live partial draft to the polling client so mobile users watch the talk build. (Jenni 2026-07-10)
+    if (onProgress) reqBody.stream = true;
     let r;
     try {
       r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -701,6 +704,33 @@ async function callAnthropicText(env, sys, content, maxTok, models, tools) {
       });
     } catch (e) { lastErr = e; continue; }
     if (r.ok) {
+      if (onProgress && r.body) {
+        // Parse the SSE stream: accumulate text_delta content, report throttled progress, capture usage.
+        let text = "", usage = {};
+        const reader = r.body.getReader();
+        const dec = new TextDecoder();
+        let buf = "", lastEmit = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          let nl;
+          while ((nl = buf.indexOf("\n")) >= 0) {
+            const line = buf.slice(0, nl); buf = buf.slice(nl + 1);
+            if (line.indexOf("data:") !== 0) continue;
+            const payload = line.slice(5).trim();
+            if (!payload || payload === "[DONE]") continue;
+            let ev; try { ev = JSON.parse(payload); } catch (_) { continue; }
+            if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") { text += ev.delta.text || ""; }
+            else if (ev.type === "message_start" && ev.message && ev.message.usage) { usage = Object.assign({}, ev.message.usage); }
+            else if (ev.type === "message_delta" && ev.usage) { usage = Object.assign(usage, ev.usage); }
+          }
+          const now = Date.now();
+          if (now - lastEmit > 1200) { lastEmit = now; try { await onProgress(text); } catch (_) {} }
+        }
+        try { await onProgress(text); } catch (_) {}
+        return { text, modelUsed: models[i], usage };
+      }
       const d = await r.json();
       // Concatenate ALL text blocks — with web_search the response also carries tool_use / tool_result
       // blocks, and the talk JSON can be split across multiple text blocks. (index.html does the same.)
@@ -735,7 +765,14 @@ async function runGeneration(jobId, body, env) {
   try {
     const d = body.draft || {};
     if (!(await updateJob({ stage: "drafting" }))) { await refundOnce(); return; }
-    const draft = await callAnthropicText(env, d.sys, d.content, d.maxTok || 16384, d.models, d.tools);
+    // Stream the draft: write the growing partial text to KV (throttled, skip no-growth ticks e.g. during
+    // web_search) so the polling client can render the live "watch it build" preview. (Jenni 2026-07-10)
+    let _lastLen = 0;
+    const draft = await callAnthropicText(env, d.sys, d.content, d.maxTok || 16384, d.models, d.tools, async function (partial) {
+      if (!partial || partial.length <= _lastLen + 40) return;   // only write on meaningful growth
+      _lastLen = partial.length;
+      await updateJob({ partialDraft: partial.slice(0, 24000) });
+    });
     // Empty/failed draft: mark it an error and refund — otherwise we'd write "done" with no talk and
     // still keep the reserved credit (charge for nothing). (Audit fix)
     if (!draft || !draft.text || !draft.text.trim()) {
