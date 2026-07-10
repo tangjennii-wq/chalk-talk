@@ -1440,7 +1440,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-21";
+var BUILD_ID = "2026-07-07-22";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5028,15 +5028,9 @@ function _citeLabel(ref){
     if(clean.length > 14) clean = clean.slice(0,12)+"…";
     return "📎 " + clean;
   }
-  // Trial acronym pattern: ALL-CAPS, optionally hyphenated, at the start (e.g. "DAPA-HF", "EMPEROR-Reduced", "PARADIGM-HF")
-  var trial = src.match(/^([A-Z][A-Z0-9]+(?:-[A-Za-z0-9]+)?)\b/);
-  if(trial) return trial[1];
-  // Society label preferred for guidelines (e.g., "AHA", "KDIGO", "IDSA")
-  if((type === "guideline" || ref.society) && ref.society && ref.society.length <= 12) return ref.society;
-  // (Recognized journal abbreviations are checked further down — NEJM, JAMA, CJASN, JACC, etc.
-  //  Only fall back to "PMID N" if the journal name doesn't match any of those.)
-  // Common journal abbreviations. Scan BOTH the title (source) AND the society field, since talks
-  // often store the journal in society (e.g. "European Heart Journal", "JCEM", "JBMR"). (Jenni 2026-07-10)
+  // JOURNAL FIRST — a recognized journal name (in the title OR the society field) is the cleanest,
+  // most recognizable chip label. This makes society "ADVOR / NEJM" render as just "NEJM" rather than
+  // the whole compound string, and beats the trial-acronym fallback. Scan both fields. (Jenni 2026-07-10)
   var lower = (src + " " + (ref.society || "")).toLowerCase();
   var journals = [
     ["new england journal","NEJM"],["nejm","NEJM"],
@@ -5063,6 +5057,11 @@ function _citeLabel(ref){
     ["british medical journal","BMJ"],["bmj","BMJ"]
   ];
   for(var j=0;j<journals.length;j++){ if(lower.indexOf(journals[j][0])>=0) return journals[j][1]; }
+  // No journal matched — trial acronym at the start of the title (e.g. "DAPA-HF", "EMPEROR-Reduced")
+  var trial = src.match(/^([A-Z][A-Z0-9]+(?:-[A-Za-z0-9]+)?)\b/);
+  if(trial) return trial[1];
+  // Short/clean society label for guidelines (e.g., "AHA", "KDIGO", "IDSA", "AACE/ACE")
+  if((type === "guideline" || ref.society) && ref.society && ref.society.length <= 12) return ref.society;
   // Society fallback (longer)
   if(ref.society) return ref.society.length<=14?ref.society:ref.society.slice(0,12)+"…";
   // PMID fallback for original journal articles when no recognizable journal name (Jenni 2026-06-04)
@@ -9734,7 +9733,7 @@ function renderMain(){
           } else if(open){
             // ── Read mode ─────────────────────────────────────────────────
             h+='<div class="tk-acc-body"><ul>';
-            for(var pi2=0;pi2<(x.points||[]).length;pi2++)h+='<li>'+renderCite(x.points[pi2], t.references)+'</li>';
+            for(var pi2=0;pi2<(x.points||[]).length;pi2++)h+='<li><span>'+renderCite(x.points[pi2], t.references)+'</span></li>';
             h+='</ul>';
             // Teaching Pearl as textbook callout — academic plum (Jenni 2026-06-04, post-ChatGPT critique)
             if(x.teaching_pearl){
