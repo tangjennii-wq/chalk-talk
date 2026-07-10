@@ -1433,7 +1433,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-10";
+var BUILD_ID = "2026-07-07-11";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -9060,12 +9060,11 @@ function renderMain(){
     h+='<summary><span>✦ How it works · 10-min evidence-based teaching</span><span class="howit-hint"></span></summary>';
     h+='<div class="howit-body">';
     // Free-tier pitch — front and center (combines the "10 free talks" message; fix #1 + #4).
-    h+='<div style="background:#fff6dd;border:1px solid #e6d49a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#7a5b1a;line-height:1.5;text-align:center"><b>✨ Free to try — 10 talks + 5 images.</b> Just sign in — after that, bring your own key: Claude, ChatGPT, or Gemini (Gemini keys are free from Google AI Studio).</div>';
-    h+='<div class="howit-step"><span class="howit-num">1</span><div><b>You enter a topic.</b> We pull matching evidence from PubMed and current society guidelines.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>AI drafts the talk from that evidence</b> (RAG) with inline citations for every clinical claim, then verifies it against current guidelines and literature — catching errors, outdated recommendations, and drug-name mistakes — before you see it.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">3</span><div><b>Three ways to view it:</b> the full <i>Overview</i>, a one-screen <i>📊 Slides</i> poster you can screenshot, or commute-friendly <i>🎧 Audio</i>.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">4</span><div><b>Refine anytime.</b> Tweak any part via <i>Ask to revise lesson</i> — it edits surgically without rebuilding the talk. Your library stays private until you choose to share.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">5</span><div><b>Use any model.</b> Claude\'s free tier just works — nothing to set up. Prefer ChatGPT or Gemini, or your own Claude key? Add any of them anytime in your profile (tap your avatar, top-right). Gemini keys are free from Google AI Studio.</div></div>';
+    h+='<div style="background:#fff6dd;border:1px solid #e6d49a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#7a5b1a;line-height:1.5;text-align:center"><b>✨ Free to try — 10 talks + 5 images.</b> Just sign in — after that, bring your own API key: Claude, ChatGPT, or Gemini (Gemini is free).</div>';
+    h+='<div class="howit-step"><span class="howit-num">1</span><div><b>Enter a topic</b> — as a lecture or a boards question. Optional: upload your own reference materials.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>AI drafts it with RAG</b> — Retrieval-Augmented Generation from society guidelines + PubMed, with inline citations — then verifies it against current guidelines and the latest literature.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">3</span><div><b>View it</b> as an <i>Overview</i>, <i>📊 Slides</i>, or a <i>🎧 Audio</i> podcast.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">4</span><div><b>Refine anytime</b> to make edits.</div></div>';
     h+='</div>';
     h+='</details>';
   }
@@ -9208,15 +9207,29 @@ function renderMain(){
   // can see what's cooking. (Jenni 2026-06-08)
   if(!S.loading){
   var depthInactive = (S.style === "boards");
-  // Style — always visible (the primary format choice: Lecture vs Boards).
-  h+='<div style="margin-bottom:12px">';
+  var verifyInactive = (S.style === "boards");
+  // Style + Depth — side by side (stack on narrow mobile). All controls visible, no collapse. (Jenni 2026-07 revert)
+  h+='<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">';
+  // Style
+  h+='<div style="flex:1 1 220px;min-width:0">';
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Style<span tabindex="0" class="opt-hint" aria-label="What is Style?">i<span class="opt-hint-pop"><b>Lecture:</b> structured 10-min teaching — sections, mechanism, evidence, clinical pearls.<br><b>Boards:</b> a single ABIM-style practice question with answer rationales.</span></span></div>';
   h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
   h+=segBtn("styleBtn","s","lecture",S.style,"🎓","Lecture");
   h+=segBtn("styleBtn","s","boards",S.style,"📋","Boards");
   h+='</div></div>';
+  // Depth
+  h+='<div style="flex:1 1 220px;min-width:0;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesn’t apply to Boards":"5 min vs 10 min")+'">';
+  h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span><span style="font-size:9px;font-weight:800;color:#a07d1a;letter-spacing:0.05em;margin-left:8px">★ CONCISE REC.</span></div>';
+  h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
+  h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass, generates fastest. Recommended."});
+  h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:"~10 min — full chalk talk with deeper mechanism and evidence (generates slower, ~40-50s)"});
+  h+='</div></div>';
+  h+='</div>';
 
-  // References — always visible.
+  // Model picker
+  h+=renderModelPicker();
+
+  // References
   h+='<div id="dropZone" style="background:var(--cream);border:1px dashed #d8cfe6;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .15s ease">';
   h+='<span style="background:var(--lavender-soft);color:var(--plum);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:400;flex-shrink:0">+</span>';
   h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Add your own references <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span></div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.4">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.</div><div style="font-size:10.5px;color:var(--ink-soft);margin-top:3px;line-height:1.35">🔒 Not stored, not used for training.</div></div>';
@@ -9225,32 +9238,13 @@ function renderMain(){
   h+='</div>';
   for(var fi=0;fi<S.files.length;fi++)h+='<div style="display:flex;justify-content:space-between;background:var(--lavender-bg);border-radius:8px;padding:6px 12px;margin-bottom:6px"><span style="font-size:12px;color:var(--ink)">📄 '+esc(S.files[fi].n)+'</span><button class="rmFile" data-i="'+fi+'" style="background:none;border:none;color:var(--ink-muted);font-size:16px;cursor:pointer">×</button></div>';
 
-  // OPTIONS — Depth · Model · Verify tucked behind a toggle so a first-time user's screen is just
-  // Topic + Style + Generate. Collapsed by default; the choice is remembered across the session. (Jenni 2026-07)
-  h+='<div style="margin-bottom:14px">';
-  h+='<button id="composeOptionsToggle" aria-expanded="'+(S.composeOptionsOpen?'true':'false')+'" style="background:none;border:none;padding:5px 4px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px">'+(S.composeOptionsOpen?'▴ Fewer options':'▾ More options')+'<span style="color:var(--ink-soft);font-weight:400">— depth · model · verify</span></button>';
-  if(S.composeOptionsOpen){
-    h+='<div style="margin-top:10px">';
-    // Depth
-    h+='<div style="margin-bottom:14px;opacity:'+(depthInactive?"0.4":"1")+';pointer-events:'+(depthInactive?"none":"auto")+'" title="'+(depthInactive?"Depth doesn’t apply to Boards":"5 min vs 10 min")+'">';
-    h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span><span style="font-size:9px;font-weight:800;color:#a07d1a;letter-spacing:0.05em;margin-left:8px">★ CONCISE RECOMMENDED</span></div>';
-    h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
-    h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass, generates fastest. Recommended."});
-    h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:"~10 min — full chalk talk with deeper mechanism and evidence (generates slower, ~40-50s)"});
-    h+='</div></div>';
-    // Model picker
-    h+=renderModelPicker();
-    // Verify toggle
-    var verifyInactive = (S.style === "boards");
-    h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-soft)">';
-    h+='<label style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
-    h+='<span style="background:var(--lavender-soft);color:var(--plum);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</span>';
-    h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Verify with current literature</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Always uses PubMed + society guidelines; toggle on to also scan the open web for newer updates (~30s).</div></div>';
-    h+='<span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!verifyInactive?"checked":"")+' '+(verifyInactive?"disabled":"")+'><span class="slider"></span></span>';
-    h+='</label>';
-    h+='</div>';
-    h+='</div>';
-  }
+  // Verify toggle
+  h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-soft)">';
+  h+='<label style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
+  h+='<span style="background:var(--lavender-soft);color:var(--plum);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</span>';
+  h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25">Verify with current literature</div><div style="font-size:11px;color:var(--ink-muted);margin-top:2px;line-height:1.35">Always uses PubMed + society guidelines; toggle on to also scan the open web for newer updates (~30s).</div></div>';
+  h+='<span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!verifyInactive?"checked":"")+' '+(verifyInactive?"disabled":"")+'><span class="slider"></span></span>';
+  h+='</label>';
   h+='</div>';
   } // end if(!S.loading) — compose controls hidden during generation
 
