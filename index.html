@@ -1435,7 +1435,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-13";
+var BUILD_ID = "2026-07-07-14";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -7900,6 +7900,7 @@ function resetAll(){
   S.glRef=null; S.ragChunks=[];
   S.depthVariantsCache=null; S._pendingDepthMerge=false;   // clear cached depth variants so a new talk can't show a PRIOR talk's variant on depth-toggle (bug fix)
   S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false; S.sharedCopySaved=false; S.talkIsSaved=false;
+  S.wantWebSearch=true;   // Verify with current literature always defaults ON for a fresh talk (Jenni 2026-07-10)
   // Close any transient drawers/modals so a fresh compose view doesn't flash an open overlay.
   S.editSettings=false; S.overflowOpen=false; S.lightbox=false; S.gldOpen=false; S.ragOpen=false;
   // Collapse "How it works" on New talk (Jenni 2026-07-03) — it only auto-expands on the very first
@@ -9229,17 +9230,17 @@ function renderMain(){
   // Model picker
   h+=renderModelPicker();
 
-  // References + Verify — consolidated into one compact card so neither eats a full row. (Jenni 2026-07)
-  h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-soft)">';
-  // Add references — compact one-line clickable row (opens file picker via #dropZone handler)
-  h+='<div id="dropZone" style="display:flex;align-items:center;gap:11px;padding:11px 14px;cursor:pointer;transition:background .15s ease">';
+  // References + Verify — both on ONE row (Add references left, Verify right). No overflow:hidden so the
+  // (i) tooltips aren't clipped by the card. Wraps to two lines only on very narrow mobile. (Jenni 2026-07-10)
+  h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;box-shadow:var(--shadow-soft);display:flex;flex-wrap:wrap;align-items:stretch">';
+  // Add references (left half) — clickable, opens file picker via #dropZone handler
+  h+='<div id="dropZone" style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-radius:14px 0 0 14px;transition:background .15s ease">';
   h+='<span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:400;flex-shrink:0">+</span>';
   h+='<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--ink)">Add references</span> <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span><span tabindex="0" class="opt-hint" onclick="event.stopPropagation()" aria-label="About references">i<span class="opt-hint-pop">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.<br>🔒 Not stored, not used for training.</span></span></div>';
   h+='<input type="file" id="fileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none">';
   h+='</div>';
-  h+='<div style="height:1px;background:var(--line)"></div>';
-  // Verify — compact one-line; the long explanation lives in the (i) popover
-  h+='<label style="display:flex;align-items:center;gap:11px;padding:11px 14px;cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
+  // Verify (right half) — separated by a left border; the long explanation lives in the (i) popover
+  h+='<label style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:10px;padding:12px 14px;border-left:1px solid var(--line);cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
   h+='<span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🔬</span>';
   h+='<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--ink)">Verify with current literature</span><span tabindex="0" class="opt-hint" onclick="event.preventDefault();event.stopPropagation()" aria-label="About verification">i<span class="opt-hint-pop">Always uses PubMed + society guidelines. Toggle on to also scan the open web for newer updates (~30s).</span></span></div>';
   h+='<span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!verifyInactive?"checked":"")+' '+(verifyInactive?"disabled":"")+'><span class="slider"></span></span>';
