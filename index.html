@@ -1435,7 +1435,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-16";
+var BUILD_ID = "2026-07-07-17";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -9237,14 +9237,14 @@ function renderMain(){
   // two halves read as consistent. No overflow:hidden so the (i) tooltips aren't clipped. (Jenni 2026-07-10)
   h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;box-shadow:var(--shadow-soft);display:flex;flex-wrap:wrap;align-items:stretch">';
   // Add references (left half) — clickable, opens file picker via #dropZone handler
-  h+='<div id="dropZone" style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-radius:14px 0 0 14px;transition:background .15s ease">';
+  h+='<div id="dropZone" style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:11px;padding:15px 18px;cursor:pointer;border-radius:14px 0 0 14px;transition:background .15s ease">';
   h+='<span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">📎</span>';
   h+='<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--ink)">Add references</span> <span style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span><span tabindex="0" class="opt-hint" onclick="event.stopPropagation()" aria-label="About references">i<span class="opt-hint-pop">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.<br>🔒 Not stored, not used for training.</span></span></div>';
   h+='<span aria-hidden="true" style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:400;flex-shrink:0">+</span>';
   h+='<input type="file" id="fileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none">';
   h+='</div>';
   // Verify (right half) — separated by a left border; the long explanation lives in the (i) popover
-  h+='<label style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:10px;padding:12px 14px;border-left:1px solid var(--line);cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
+  h+='<label style="flex:1 1 210px;min-width:0;display:flex;align-items:center;gap:11px;padding:15px 18px;border-left:1px solid rgba(112,43,157,0.09);cursor:'+(verifyInactive?"not-allowed":"pointer")+';opacity:'+(verifyInactive?"0.5":"1")+'" title="'+(verifyInactive?"Not used for Boards":"")+'">';
   h+='<span style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🔬</span>';
   h+='<div style="flex:1;min-width:0"><span style="font-size:13px;font-weight:600;color:var(--ink)">Verify with current literature</span><span tabindex="0" class="opt-hint" onclick="event.preventDefault();event.stopPropagation()" aria-label="About verification">i<span class="opt-hint-pop">Always uses PubMed + society guidelines. Toggle on to also scan the open web for newer updates (~30s).</span></span></div>';
   h+='<span class="toggle-sw"><input type="checkbox" id="webCheck" '+(S.wantWebSearch&&!verifyInactive?"checked":"")+' '+(verifyInactive?"disabled":"")+'><span class="slider"></span></span>';
