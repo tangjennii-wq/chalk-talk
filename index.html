@@ -466,9 +466,12 @@ body.lib-is-reordering .lib-sort-fallback{transition:none !important;pointer-eve
   .app:not(.has-talk) .howit > summary { padding: 6px 10px !important; font-size: 11.5px !important; }
   /* Mobile: hide the "Your lectures" recent row to save vertical space — the Library button opens the drawer. (Jenni 2026-07-10) */
   .app:not(.has-talk) .landing-recent { display: none !important; }
-  /* Mobile: keep References + Verify on ONE row with short labels ("+ Add references", "Verify [toggle]"). */
+  /* Mobile: drop the Verify toggle from the compose screen entirely — it's ON by default, resets to ON for
+     every new talk, and stays adjustable mid-generation in the "Change anytime" panel. That leaves a single
+     slim "Add references" row so the phone screen stays focused on the job. (Jenni 2026-07-10) */
+  .compose-ref-row .verifyPill { display: none !important; }
   .compose-ref-row { flex-wrap: nowrap !important; gap: 8px !important; }
-  .compose-ref-row #dropZone, .compose-ref-row .verifyPill { flex: 1 1 0 !important; min-width: 0 !important; padding: 9px 12px !important; min-height: 46px !important; }
+  .compose-ref-row #dropZone { flex: 1 1 100% !important; min-width: 0 !important; padding: 8px 12px !important; min-height: 42px !important; }
   .optionalText, .verifyLong { display: none !important; }
   /* Mobile: slimmer topic box */
   .app:not(.has-talk) .topicBox { padding: 2px 8px 2px 12px !important; }
@@ -1450,7 +1453,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-31";
+var BUILD_ID = "2026-07-07-32";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
