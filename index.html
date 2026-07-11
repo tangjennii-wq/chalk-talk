@@ -272,9 +272,6 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
 /* Right-side slide-in drawer (mobile Library). Reuses .drawer-backdrop/.drawer-head/.drawer-body. */
 .side-drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,86vw);background:var(--paper);z-index:91;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(20,10,28,0.20)}
 .side-drawer.open{transform:translateX(0)}
-/* Persistent right-edge pull tab that opens the Library drawer. Mobile only. */
-.lib-edge-tab{display:none;position:fixed;right:0;top:34%;z-index:80;background:var(--plum);color:#fff;border:none;border-radius:12px 0 0 12px;padding:14px 6px;font-size:10px;font-weight:700;letter-spacing:0.12em;writing-mode:vertical-rl;text-orientation:mixed;box-shadow:-3px 3px 14px rgba(45,10,70,0.30);cursor:pointer;font-family:inherit}
-@media (max-width:640px){ .lib-edge-tab{display:block} }
 /* Overflow ⋯ menu */
 .overflow-menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,10,28,0.12);min-width:200px;z-index:70;overflow:hidden}
 .overflow-menu button{width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft)}
@@ -461,11 +458,13 @@ body.lib-is-reordering .lib-sort-fallback{transition:none !important;pointer-eve
 }
 /* Aggressive landing-only compaction so mobile fits in one viewport (no scroll) */
 @media (max-width: 640px) {
-  .app:not(.has-talk) .hero-card { padding: 10px 14px 8px !important; margin-bottom: 8px !important; }
+  .app:not(.has-talk) .hero-card { padding: 10px 14px 8px !important; margin-bottom: 12px !important; }
   .app:not(.has-talk) .hero-card .hero-meta { margin-top: 8px !important; padding-top: 7px !important; font-size: 11px !important; }
+  /* Byline stays, just quieter and smaller on phones */
+  .hero-byline { font-size: 11px !important; margin-top: 2px !important; color: var(--muted, #6b6780) !important; }
   .app:not(.has-talk) .hero-tagline-col { margin-top: 6px !important; padding-top: 6px !important; }
   .app:not(.has-talk) .hero-tagline-col > div:last-child { display: none !important; } /* hide "ABIM topics · Peer-reviewed..." subline */
-  .app:not(.has-talk) .howit { margin-bottom: 8px !important; }
+  .app:not(.has-talk) .howit { margin-bottom: 18px !important; }
   .app:not(.has-talk) .howit > summary { padding: 6px 10px !important; font-size: 11.5px !important; }
   /* Mobile: hide the "Your lectures" recent row to save vertical space — the Library button opens the drawer. (Jenni 2026-07-10) */
   .app:not(.has-talk) .landing-recent { display: none !important; }
@@ -476,11 +475,11 @@ body.lib-is-reordering .lib-sort-fallback{transition:none !important;pointer-eve
   .compose-ref-row { flex-wrap: nowrap !important; gap: 8px !important; }
   .compose-ref-row #dropZone { flex: 1 1 100% !important; min-width: 0 !important; padding: 8px 12px !important; min-height: 42px !important; }
   .optionalText, .verifyLong { display: none !important; }
-  /* Mobile: slimmer topic box */
-  .app:not(.has-talk) .topicBox { padding: 2px 8px 2px 12px !important; }
-  .app:not(.has-talk) #topicTA { padding: 7px 0 !important; }
-  .app:not(.has-talk) [data-mtopic] { margin-bottom: 8px !important; }
-  .app:not(.has-talk) [data-mtopic] + div { margin-bottom: 8px !important; }
+  /* Mobile: topic box with real height so the field does not feel cramped */
+  .app:not(.has-talk) .topicBox { min-height: 56px !important; box-sizing: border-box !important; padding: 6px 10px 6px 14px !important; }
+  .app:not(.has-talk) #topicTA { padding: 10px 0 !important; }
+  .app:not(.has-talk) [data-mtopic] { margin-bottom: 18px !important; }
+  .app:not(.has-talk) [data-mtopic] + div { margin-bottom: 16px !important; }
   .app:not(.has-talk) #dropZone { padding: 8px 12px !important; margin-bottom: 6px !important; }
   .app:not(.has-talk) #dropZone > div > div:nth-child(3) { display: none !important; } /* hide "Not stored, not used for training" line */
   .app:not(.has-talk) #dropZone > div > div:nth-child(2) { font-size: 10.5px !important; margin-top: 1px !important; }
@@ -1456,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-34";
+var BUILD_ID = "2026-07-07-35";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -9383,7 +9382,7 @@ function renderMain(){
   h+='</div>';
   h+='<div class="topicBox" style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-soft)">';
   h+='<span style="color:var(--ink-soft);font-size:14px;flex-shrink:0">🔍</span>';
-  h+='<input id="topicTA" type="text" value="'+esc(S.topic)+'" placeholder="Enter a topic… add references below or refine after generating" '+(S.loading?'disabled':'')+' style="flex:1;min-width:0;background:transparent;border:none;padding:8px 0;font-size:14px;color:var(--ink);outline:none;font-family:inherit;opacity:'+(S.loading?'0.55':'1')+'">';
+  h+='<input id="topicTA" type="text" value="'+esc(S.topic)+'" placeholder="Enter a topic…" '+(S.loading?'disabled':'')+' style="flex:1;min-width:0;background:transparent;border:none;padding:8px 0;font-size:14px;color:var(--ink);outline:none;font-family:inherit;opacity:'+(S.loading?'0.55':'1')+'">';
   h+='</div>';
   h+='</div>';
 
@@ -10443,8 +10442,6 @@ function renderMain(){
   // === Mobile Library drawer (bottom sheet) ===
   // Mobile hides the "Your lectures" carousel to save space; the Library button opens this drawer instead
   // of jumping to the full Library page. Recent lectures, tap to open. (Jenni 2026-07-10)
-  // Persistent right-edge pull tab (mobile) — always available, opens the drawer.
-  if(!S.mobileLibOpen) h+='<button class="lib-edge-tab" id="libEdgeTab" aria-label="Open your library">LIBRARY</button>';
 
   if(S.mobileLibOpen){
     var _libRecent = (getDisplayLibrary()||[])
@@ -11003,7 +11000,6 @@ function bindMain(){
     else { S.showSaved=true;S.savedSearch="";render();refreshLibraryShowcaseSamples(); }
   };
   // Mobile Library drawer handlers
-  var _let=document.getElementById("libEdgeTab");if(_let)_let.onclick=function(){S.mobileLibOpen=true;render();refreshLibraryShowcaseSamples();};
   var _mlbd=document.getElementById("mobileLibBackdrop");if(_mlbd)_mlbd.onclick=function(){S.mobileLibOpen=false;render();};
   var _mlbc=document.getElementById("mobileLibClose");if(_mlbc)_mlbc.onclick=function(){S.mobileLibOpen=false;render();};
   var _mlsa=document.getElementById("mobileLibSeeAll");if(_mlsa)_mlsa.onclick=function(){S.mobileLibOpen=false;S.showSaved=true;S.savedSearch="";render();refreshLibraryShowcaseSamples();};
