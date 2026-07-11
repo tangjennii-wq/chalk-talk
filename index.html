@@ -272,6 +272,9 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
 /* Right-side slide-in drawer (mobile Library). Reuses .drawer-backdrop/.drawer-head/.drawer-body. */
 .side-drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,86vw);background:var(--paper);z-index:91;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(20,10,28,0.20)}
 .side-drawer.open{transform:translateX(0)}
+/* Persistent right-edge pull tab that opens the Library drawer. Mobile only. */
+.lib-edge-tab{display:none;position:fixed;right:0;top:34%;z-index:80;background:var(--plum);color:#fff;border:none;border-radius:12px 0 0 12px;padding:14px 6px;font-size:10px;font-weight:700;letter-spacing:0.12em;writing-mode:vertical-rl;text-orientation:mixed;box-shadow:-3px 3px 14px rgba(45,10,70,0.30);cursor:pointer;font-family:inherit}
+@media (max-width:640px){ .lib-edge-tab{display:block} }
 /* Overflow ⋯ menu */
 .overflow-menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,10,28,0.12);min-width:200px;z-index:70;overflow:hidden}
 .overflow-menu button{width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft)}
@@ -1453,7 +1456,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-32";
+var BUILD_ID = "2026-07-07-33";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -10430,17 +10433,28 @@ function renderMain(){
   // === Mobile Library drawer (bottom sheet) ===
   // Mobile hides the "Your lectures" carousel to save space; the Library button opens this drawer instead
   // of jumping to the full Library page. Recent lectures, tap to open. (Jenni 2026-07-10)
+  // Persistent right-edge pull tab (mobile) — always available, opens the drawer.
+  if(!S.mobileLibOpen) h+='<button class="lib-edge-tab" id="libEdgeTab" aria-label="Open your library">LIBRARY</button>';
+
   if(S.mobileLibOpen){
     var _libRecent = (getDisplayLibrary()||[])
       .filter(function(e){ return e && e.talk; })
       .sort(function(a,b){ return new Date(b.savedAt||0) - new Date(a.savedAt||0); });
+    // Signed-out / empty library (e.g. incognito): fall back to featured showcase talks, then bundled
+    // samples, so the drawer is never an empty dead end. (Jenni 2026-07-10)
+    var _libFeat = [], _libSamp = [];
+    if(!_libRecent.length){
+      _libFeat = (S.landingFeatured||[]).filter(function(r){ return r && r.share_token; }).slice(0,12);
+      if(typeof SAMPLES!=="undefined" && SAMPLES.length){
+        _libSamp = SAMPLES.filter(function(s){ return s && s.slug; }).slice(0, Math.max(0, 12-_libFeat.length));
+      }
+    }
+    var _libHasOwn = _libRecent.length > 0;
     h+='<div class="drawer-backdrop open" id="mobileLibBackdrop"></div>';
     h+='<div class="side-drawer open" id="mobileLibDrawer">';
-    h+='<div class="drawer-head" style="padding-top:16px"><div class="drawer-title">📖 Your lectures</div><button class="drawer-close" id="mobileLibClose" aria-label="Close">×</button></div>';
+    h+='<div class="drawer-head" style="padding-top:16px"><div class="drawer-title">📖 '+(_libHasOwn?"Your lectures":"Sample lectures")+'</div><button class="drawer-close" id="mobileLibClose" aria-label="Close">×</button></div>';
     h+='<div class="drawer-body">';
-    if(!_libRecent.length){
-      h+='<div style="text-align:center;color:var(--ink-muted);font-size:13px;padding:28px 8px;line-height:1.5">No saved lectures yet.<br>Generate one and it’ll show up here.</div>';
-    } else {
+    if(_libHasOwn){
       for(var mli=0; mli<_libRecent.length; mli++){
         var mrec=_libRecent[mli]; var mtk=mrec.talk||{};
         var misBoards=!!mtk.question;
@@ -10453,6 +10467,35 @@ function renderMain(){
         h+='<span style="display:block;font-size:10.5px;color:var(--ink-muted);margin-top:2px">'+esc(mspec)+' · '+(misBoards?"Boards":"Lecture")+'</span></span>';
         h+='<span style="color:var(--ink-soft);font-size:16px;flex-shrink:0">›</span>';
         h+='</button>';
+      }
+    } else {
+      h+='<div style="font-size:11.5px;color:var(--ink-muted);line-height:1.45;margin:0 2px 10px">Sign in to build your own library. In the meantime, here are talks you can open:</div>';
+      for(var mfi=0; mfi<_libFeat.length; mfi++){
+        var mft=_libFeat[mfi];
+        var mftTitle=mft.title||mft.topic||"Untitled";
+        var mftSpec=inferSpecialty(mft.topic,{title:mftTitle,subtitle:mft.subtitle||""},null);
+        var mftIco=SPEC_ICONS[mftSpec]||"●";
+        h+='<button class="mobileLibFeatured" data-token="'+esc(mft.share_token||"")+'" style="width:100%;text-align:left;background:#fffdf5;border:1px solid #f0d8a0;border-left:2px solid #e8a91f;border-radius:10px;padding:11px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;font-family:inherit">';
+        h+='<span style="background:#fff3d6;color:#7a5b1a;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">'+mftIco+'</span>';
+        h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(mftTitle)+'</span>';
+        h+='<span style="display:block;font-size:10.5px;color:var(--ink-muted);margin-top:2px">'+esc(mftSpec)+' · Sample</span></span>';
+        h+='<span style="color:var(--ink-soft);font-size:16px;flex-shrink:0">›</span>';
+        h+='</button>';
+      }
+      for(var msi=0; msi<_libSamp.length; msi++){
+        var mbs=_libSamp[msi];
+        var mbsTitle=mbs.topic||mbs.title||"Sample talk";
+        var mbsSpec=mbs.specialty||inferSpecialty(mbs.topic,{title:mbsTitle},null);
+        var mbsIco=SPEC_ICONS[mbsSpec]||"●";
+        h+='<button class="mobileLibSample" data-slug="'+esc(mbs.slug)+'" style="width:100%;text-align:left;background:#fffdf5;border:1px solid #f0d8a0;border-left:2px solid #e8a91f;border-radius:10px;padding:11px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;font-family:inherit">';
+        h+='<span style="background:#fff3d6;color:#7a5b1a;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">'+mbsIco+'</span>';
+        h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(mbsTitle)+'</span>';
+        h+='<span style="display:block;font-size:10.5px;color:var(--ink-muted);margin-top:2px">'+esc(mbsSpec)+' · '+(mbs.style==="boards"?"Boards":"Sample")+'</span></span>';
+        h+='<span style="color:var(--ink-soft);font-size:16px;flex-shrink:0">›</span>';
+        h+='</button>';
+      }
+      if(!_libFeat.length && !_libSamp.length){
+        h+='<div style="text-align:center;color:var(--ink-muted);font-size:13px;padding:28px 8px;line-height:1.5">No lectures yet.<br>Generate one and it’ll show up here.</div>';
       }
     }
     h+='</div>';   // /drawer-body
@@ -10950,10 +10993,13 @@ function bindMain(){
     else { S.showSaved=true;S.savedSearch="";render();refreshLibraryShowcaseSamples(); }
   };
   // Mobile Library drawer handlers
+  var _let=document.getElementById("libEdgeTab");if(_let)_let.onclick=function(){S.mobileLibOpen=true;render();refreshLibraryShowcaseSamples();};
   var _mlbd=document.getElementById("mobileLibBackdrop");if(_mlbd)_mlbd.onclick=function(){S.mobileLibOpen=false;render();};
   var _mlbc=document.getElementById("mobileLibClose");if(_mlbc)_mlbc.onclick=function(){S.mobileLibOpen=false;render();};
   var _mlsa=document.getElementById("mobileLibSeeAll");if(_mlsa)_mlsa.onclick=function(){S.mobileLibOpen=false;S.showSaved=true;S.savedSearch="";render();refreshLibraryShowcaseSamples();};
   document.querySelectorAll(".mobileLibItem").forEach(function(b){b.onclick=function(){S.mobileLibOpen=false;loadSavedTalk(b.dataset.id);}});
+  document.querySelectorAll(".mobileLibFeatured").forEach(function(b){b.onclick=function(){var tk=b.dataset.token;S.mobileLibOpen=false;if(tk)loadPublicTalkByToken(tk);else render();}});
+  document.querySelectorAll(".mobileLibSample").forEach(function(b){b.onclick=function(){var sg=b.dataset.slug;S.mobileLibOpen=false;if(sg&&typeof loadSample==="function")loadSample(sg);else render();}});
   // examplesBtn was removed from hero; samples now live inside the Library view.
   document.querySelectorAll(".landingSampleBtn").forEach(function(b){b.onclick=function(e){if(e.target.closest(".favBtn"))return;loadSample(b.dataset.slug)}});
   document.querySelectorAll(".landingSavedBtn").forEach(function(b){b.onclick=function(){loadSavedTalk(b.dataset.id)}});
