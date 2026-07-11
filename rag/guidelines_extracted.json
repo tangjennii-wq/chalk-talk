@@ -9,11 +9,11 @@
   },
   {
     "specialty": "Nephrology",
-    "name": "KDIGO 2024 Blood Pressure in CKD",
-    "year": 2024,
+    "name": "KDIGO 2021 Blood Pressure in CKD",
+    "year": 2021,
     "access": "Open",
     "url": "https://kdigo.org/guidelines/blood-pressure-in-ckd/",
-    "keys": "Target SBP <120 (SPRINT-informed) when tolerated; do not stop RASi for modest eGFR bumps or mild hyperkalemia. Recommendation primarily CV-driven, not kidney-outcome driven."
+    "keys": "YEAR FIX: this is KDIGO 2021 (Kidney Int 2021;99(3S):S1-S87). There is NO KDIGO 2024 BP guideline. Target SBP under 120 mmHg using STANDARDIZED OFFICE measurement (SPRINT-informed) when tolerated. Do NOT stop RASi for a modest eGFR decline (under 30 percent) or mild hyperkalemia - treat the potassium instead. The recommendation is primarily cardiovascular-driven, not kidney-outcome driven. Standardized BP technique is the whole point: rest 5 min, correct cuff, no talking, average multiple readings."
   },
   {
     "specialty": "Nephrology",
@@ -33,11 +33,11 @@
   },
   {
     "specialty": "Nephrology",
-    "name": "KDIGO 2024 CKD-MBD update",
-    "year": 2024,
+    "name": "KDIGO 2017 CKD-MBD Update",
+    "year": 2017,
     "access": "Open",
     "url": "https://kdigo.org/guidelines/ckd-mbd/",
-    "keys": "Dietary phosphate first; non-calcium phosphate binders preferred. Vitamin D analogs and calcimimetics for severe SHPT. PTH targets a range (2-9x ULN) in dialysis. Aluminum binders historic / avoid."
+    "keys": "YEAR FIX: this is the KDIGO 2017 CKD-MBD Guideline Update (Kidney Int Suppl 2017;7:1-59). There is NO 2024 CKD-MBD guideline - the 2024 document is a CONTROVERSIES CONFERENCE REPORT, not a guideline, and it concluded the 2017 recommendations remain largely consistent with the evidence. Do not cite it as a guideline update. Content: treat toward the NORMAL range for calcium and phosphate; lower ELEVATED phosphate toward normal (do not treat prophylactically); restrict dietary phosphate, prefer non-calcium binders. PTH in CKD G5D: maintain roughly 2 to 9 times the upper normal assay limit - do not chase a single number. Bone biopsy is not routine. Avoid bisphosphonates in advanced CKD without a biopsy."
   },
   {
     "specialty": "Nephrology",
@@ -57,11 +57,11 @@
   },
   {
     "specialty": "Nephrology",
-    "name": "AUA 2023 BPH Guideline",
-    "year": 2023,
-    "access": "Paywalled",
-    "url": "https://www.auanet.org/guidelines/benign-prostatic-hyperplasia-(bph)-guideline",
-    "keys": "IPSS-driven evaluation. Alpha-blockers and 5-alpha-reductase inhibitors first-line; combination if both LUTS and large prostate. Surgical options including PVP, WVTT, laser enucleation, PAE."
+    "name": "AUA 2026 BPH / LUTS Guideline",
+    "year": 2026,
+    "access": "Open",
+    "url": "https://www.auanet.org/guidelines-and-quality/guidelines/bph-guideline",
+    "keys": "SUPERSEDED: AUA released a new BPH/LUTS guideline on 7 May 2026 (62 recommendations across evaluation, medical management, and procedural/surgical). It REFRAMES lower urinary tract symptoms as MULTIFACTORIAL rather than prostate-size-driven, incorporates new minimally-invasive surgical therapy (MIST) evidence, and heavily emphasizes shared decision-making. Core evaluation: IPSS symptom score, digital rectal exam, urinalysis, PSA where it will change management, post-void residual. Medical therapy: alpha blockers (tamsulosin, alfuzosin - watch orthostasis and intraoperative floppy iris syndrome) for rapid symptom relief; 5-alpha-reductase inhibitors (finasteride, dutasteride) only help larger prostates and take months, and they LOWER PSA by roughly half (double the measured value when interpreting). Combination therapy for large glands. Anticholinergics or beta-3 agonists for storage-predominant symptoms. Surgery/MIST for refractory symptoms, retention, recurrent UTI, stones, or renal insufficiency."
   },
   {
     "specialty": "Nephrology",
@@ -937,11 +937,11 @@
   },
   {
     "specialty": "Neurology",
-    "name": "AHA/ASA Acute Ischemic Stroke 2019/2024",
-    "year": 2024,
+    "name": "2026 AHA/ASA Early Management of Acute Ischemic Stroke",
+    "year": 2026,
     "access": "Open",
     "url": "https://www.ahajournals.org/doi/10.1161/STR.0000000000000513",
-    "keys": "IV alteplase (0.9 mg/kg) OR tenecteplase (0.25 mg/kg) within 4.5h LKW (extended to 9h with penumbra imaging per WAKE-UP/EXTEND/AcT). Mechanical thrombectomy <=24h for LVO with favorable imaging (DAWN, DEFUSE 3). BP <185/110 for tPA, <180/105 post-tPA."
+    "keys": "SUPERSEDED: the 2026 AHA/ASA acute ischemic stroke guideline (published 26 Jan 2026) explicitly REPLACES the 2018 guideline and its 2019 update. (There was never a 2024 AIS guideline - the 2024 document was PRIMARY PREVENTION of stroke, a different scope.) MAJOR CHANGES: TENECTEPLASE is endorsed within 4.5 hours (simpler single bolus vs alteplase infusion). ENDOVASCULAR THROMBECTOMY eligibility BROADENED to include BASILAR ARTERY OCCLUSION and LARGE ISCHEMIC CORE - both previously excluded. Mobile stroke units endorsed; refined EMS triage; first-ever pediatric AIS recommendations. A talk on the 2019 text teaches an obsolete reperfusion algorithm. Core that stands: time is brain; NIHSS; noncontrast CT to exclude hemorrhage; thrombolysis within 4.5 h; EVT for large vessel occlusion (window extended to 24 h with perfusion imaging per DAWN/DEFUSE-3); permissive hypertension unless thrombolysis (then under 185/110); dysphagia screen before anything by mouth; start secondary prevention early."
   },
   {
     "specialty": "Neurology",
@@ -953,11 +953,11 @@
   },
   {
     "specialty": "Neurology",
-    "name": "AAN/AES Status Epilepticus 2016 + 2024",
-    "year": 2024,
+    "name": "AES Status Epilepticus 2016 (+ ESETT 2019) - not an AAN guideline",
+    "year": 2016,
     "access": "Open",
-    "url": "https://www.aan.com/Guidelines/",
-    "keys": "First-line benzodiazepine: IM midazolam 10mg, IV lorazepam 4mg, or IV diazepam 10mg. Second-line: fosphenytoin 20 mg/kg, valproate 40 mg/kg, levetiracetam 60 mg/kg - equivalent (ESETT). Refractory: anesthetic infusion (midazolam/propofol/pentobarbital)."
+    "url": "https://www.aesnet.org/clinical-care/guidelines",
+    "keys": "ATTRIBUTION + YEAR FIX: this is an AES (American Epilepsy Society) guideline - AAN is NOT a co-issuer - and there is NO 2024 update. Glauser et al., Epilepsy Curr 2016;16:48-61. KEY UPDATE FROM TRIAL EVIDENCE: the 2016 guideline left second-phase therapy at Level U (insufficient evidence); ESETT (2019, NEJM) resolved this - fosphenytoin, valproate, and LEVETIRACETAM are EQUIVALENT (each terminates roughly half of benzodiazepine-refractory status). Timeline: 0-5 min stabilize; 5-20 min FIRST-LINE BENZODIAZEPINE - IM midazolam 10 mg, IV lorazepam 4 mg, or IV diazepam - and UNDERDOSING is the most common error; 20-40 min second-phase agent (any of the three per ESETT); 40-60 min repeat second-phase or go to anesthetic infusion (midazolam, propofol, pentobarbital) with continuous EEG. Treat the cause: glucose, thiamine, sodium, toxins, infection, eclampsia."
   },
   {
     "specialty": "Neurology",
@@ -969,19 +969,19 @@
   },
   {
     "specialty": "Neurology",
-    "name": "AAN/AAOS Anti-Amyloid Therapy 2024",
-    "year": 2024,
+    "name": "Anti-amyloid mAbs for Alzheimer disease - Appropriate Use Recommendations (NOT an AAN/AAOS guideline)",
+    "year": 2023,
     "access": "Open",
-    "url": "https://www.aan.com/Guidelines/home/GuidelineDetail/",
-    "keys": "Lecanemab (CLARITY-AD: 27% slower decline) and donanemab (TRAILBLAZER-ALZ-2: 35% slower decline at low/intermediate tau) for early symptomatic AD. Eligibility: MCI/mild dementia + amyloid PET/CSF+ + APOE4 testing for ARIA risk. ARIA-E/H 20-30% (often asymptomatic)."
+    "url": "https://pubmed.ncbi.nlm.nih.gov/37495380/",
+    "keys": "CITATION FIX: there is NO AAN/AAOS anti-amyloid guideline - AAOS is the ORTHOPAEDIC surgeons academy, and AAN has NO practice guideline on lecanemab or donanemab. The governing documents are the Appropriate Use Recommendations (lecanemab AUR, JPAD 2023; donanemab AUR 2025) plus an AAN Emerging Issues review (Neurology 2023) that explicitly states it is NOT a practice guideline. Do not cite a society guideline that does not exist. Content: lecanemab and donanemab are anti-amyloid monoclonals for EARLY symptomatic Alzheimer disease (MCI or mild dementia) with CONFIRMED amyloid (PET or CSF) - not for moderate/severe disease. ARIA (amyloid-related imaging abnormalities: ARIA-E edema, ARIA-H hemorrhage) is the defining toxicity - MRI surveillance is mandatory. APOE4 HOMOZYGOTES have the highest ARIA risk - genotype before treating and counsel accordingly. Avoid or use extreme caution with ANTICOAGULATION. Benefit is modest slowing of decline, not reversal - counsel expectations explicitly."
   },
   {
     "specialty": "Neurology",
-    "name": "International Consensus Myasthenia Gravis 2023",
-    "year": 2023,
-    "access": "Paywalled",
-    "url": "https://www.neurology.org/doi/10.1212/WNL.0000000000011124",
-    "keys": "Pyridostigmine symptomatic. Steroids + steroid-sparing (AZA, MMF, MTX). Refractory: rituximab (off-label, especially MuSK+), eculizumab/ravulizumab (C5 inhibitors), efgartigimod (FcRn antagonist per ADAPT). Thymectomy for AChR+ early-onset (MGTX)."
+    "name": "International Consensus MG - 2020 Update (Neurology 2021); armamentarium now outdated",
+    "year": 2020,
+    "access": "Open",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/33144515/",
+    "keys": "YEAR FIX: this is the 2020 Update (Narayanaswami, Neurology 2021;96:114-122) - there is NO 2023 international consensus. MAJOR DRUG GAP - the document predates FIVE approved drugs: EFGARTIGIMOD (FcRn blocker, 2021), RAVULIZUMAB (long-acting C5, 2022), ROZANOLIXIZUMAB (FcRn, June 2023), ZILUCOPLAN (C5 peptide, Oct 2023), and NIPACALIMAB (Imaavy, FcRn, April 2025). Teaching only pyridostigmine, steroids, azathioprine, and eculizumab is a badly obsolete armamentarium. Batoclimab remains investigational. Core: pyridostigmine symptomatic; corticosteroids plus a steroid-sparing agent (azathioprine, mycophenolate) for maintenance; THYMECTOMY for thymoma (any), and for non-thymomatous generalized AChR-positive MG in adults under 65 (MGTX trial). Crisis: IVIG or plasma exchange - NOT steroids alone (can worsen acutely); watch for respiratory failure with NIF and FVC, not oxygen saturation. AVOID aggravating drugs: aminoglycosides, fluoroquinolones, magnesium, beta blockers."
   },
   {
     "specialty": "Neurology",
@@ -1001,11 +1001,11 @@
   },
   {
     "specialty": "Neurology",
-    "name": "AAN BPPV 2023",
-    "year": 2023,
-    "access": "Paywalled",
-    "url": "https://onlinelibrary.wiley.com/doi/10.1111/acem.14558",
-    "keys": "Dix-Hallpike for posterior canal BPPV (most common). Torsional/upbeat nystagmus, latency 5-20s, fatigable. Treatment: Epley canalith repositioning maneuver (NNT 2). Brandt-Daroff exercises home alternative."
+    "name": "AAO-HNSF Benign Paroxysmal Positional Vertigo 2017",
+    "year": 2017,
+    "access": "Open",
+    "url": "https://www.entnet.org/quality-practice/quality-products/clinical-practice-guidelines/bppv/",
+    "keys": "CITATION FIX: there is NO AAN BPPV guideline dated 2023, and AAN formally RETIRED its only BPPV parameter (Fife 2008) in Feb 2018 - AAN states retired recommendations are no longer valid. The current guideline is AAO-HNSF (Otolaryngol Head Neck Surg 2017;156(3_suppl):S1-S47); no update since. DIAGNOSE with the DIX-HALLPIKE maneuver (posterior canal, the great majority) - upbeating torsional nystagmus with latency, fatigability. Supine roll test for horizontal canal. TREAT with a repositioning maneuver - EPLEY (canalith repositioning) for posterior canal; it is curative in most patients. Do NOT routinely use vestibular suppressants (meclizine, benzodiazepines) - they impair central compensation and are not treatment. Do NOT routinely image - reserve imaging for atypical nystagmus, focal neurologic signs, or red flags. Reassess after treatment; consider vestibular rehab for persistent symptoms."
   },
   {
     "specialty": "Neurology",
@@ -1049,19 +1049,19 @@
   },
   {
     "specialty": "Allergy/Immuno",
-    "name": "AAAAI/ACAAI Anaphylaxis 2023",
+    "name": "JTFPP Anaphylaxis 2023 (+ intranasal epinephrine 2024)",
     "year": 2023,
     "access": "Open",
-    "url": "https://www.aaaai.org/Aaaai/media/Media-Library-PDFs/Allergist%20Resources/Statements%20and%20Practice%20Parameters/Anaphylaxis-Practice-Paramaters-2023.pdf",
-    "keys": "IM epinephrine 0.3-0.5 mg first-line (lateral thigh). Biphasic reactions 5-20% within 24h - observation 4-8h. Antihistamines/steroids ADJUNCTS only. Self-injectable epinephrine + 911 activation for at-risk patients."
+    "url": "https://www.annallergy.org/article/S1081-1206(23)01304-6/fulltext",
+    "keys": "Document is CURRENT and correctly cited (Golden, Ann Allergy Asthma Immunol 2024;132:124-176). DRUG GAP: NEFFY (EPINEPHRINE NASAL SPRAY) was FDA-approved Aug 2024 (pediatric 1 mg dose March 2025; a March 2026 label update REMOVED the minimum age, making it purely weight-based at 15 kg or more). The parameter is framed IM-only. Anaphylm sublingual film is NOT approved (FDA Complete Response Letter Jan 2026) - do not teach it as available. Core: EPINEPHRINE IM to the LATERAL THIGH is first-line - 0.3-0.5 mg adult, and there is NO absolute contraindication. Antihistamines and corticosteroids are ADJUNCTS ONLY and do not treat anaphylaxis - giving them instead of epinephrine is the classic fatal error. Biphasic reactions occur in 5-20 percent within 24 h - observe 4-8 h (longer if severe or on beta blockers). Prescribe TWO auto-injectors and an action plan; refer to allergy. Beta blockers blunt the epinephrine response - glucagon is the rescue."
   },
   {
     "specialty": "Allergy/Immuno",
-    "name": "GINA Asthma 2024",
-    "year": 2024,
+    "name": "GINA 2026 Strategy Report",
+    "year": 2026,
     "access": "Open",
-    "url": "https://ginasthma.org/2024-report/",
-    "keys": "Track 1 preferred: ICS-formoterol PRN (mild) up to scheduled+PRN reliever (severe). Track 2: SABA + ICS. Type-2 biologics (omalizumab, mepolizumab/reslizumab/benralizumab anti-IL-5, dupilumab anti-IL-4Ra, tezepelumab anti-TSLP) for severe."
+    "url": "https://ginasthma.org/2026-gina-strategy-report/",
+    "keys": "SUPERSEDED - GINA updates ANNUALLY and 2024 is two editions stale. GINA 2026 (May 2026). CHANGES: ICS-SABA added at STEP 1 on Track 1 with simplified AIR/MART dosing; four new acute-exacerbation flowcharts (primary care and ED); DEPEMOKIMAB (twice-yearly anti-IL-5, FDA-approved Dec 2025) and generic anti-IgE added to the biologics section; a fatal/near-fatal-asthma red-flag list; systematic oral-corticosteroid minimization. GINA 2025 added guidance on STOPPING biologics (consider after 12 or more months of good response). CORE THAT STANDS: NEVER treat asthma with SABA alone - every adult and adolescent should receive ICS-containing therapy. TRACK 1 (preferred): ICS-formoterol as both reliever and maintenance (MART). Track 2: ICS whenever SABA is taken. Assess control, inhaler technique, and adherence at every visit before escalating. Biologics for severe eosinophilic or allergic asthma; phenotype first."
   },
   {
     "specialty": "Allergy/Immuno",
@@ -1081,35 +1081,27 @@
   },
   {
     "specialty": "Allergy/Immuno",
-    "name": "AAAAI Food Allergy / OIT 2024",
-    "year": 2024,
+    "name": "Food allergy - JTFPP peanut PP 2020 / food allergy PP 2014 (no 2024 parameter exists)",
+    "year": 2020,
     "access": "Open",
-    "url": "https://www.aaaai.org/",
-    "keys": "Strict avoidance + epinephrine for risk-management. Palforzia (peanut OIT) FDA-approved ages 1-17 (POSEIDON, PALISADE). Omalizumab 2024 FDA approval reduces severe reactions in multi-food allergy (OUtMATCH). SLIT/EPIT emerging."
+    "url": "https://www.aaaai.org/practice-resources/statements-and-practice-parameters",
+    "keys": "CITATION FIX: there is NO AAAAI/ACAAI food allergy or OIT practice parameter dated 2024. The real documents are the peanut allergy diagnosis PP (2020), the food allergy PP (2014), and the AAAAI/ACAAI/CSACI early-introduction prevention consensus (2021). MAJOR GAPS: OMALIZUMAB was FDA-approved Feb 2024 for IgE-mediated FOOD ALLERGY (multi-food; OUtMATCH) - it is not in any of those documents. PALFORZIA (peanut OIT) is being DISCONTINUED with wind-down through July 2026 - do NOT present it as a going concern. Core: introduce peanut EARLY (4-6 months) in high-risk infants (LEAP) - delayed introduction increases risk. Diagnose on history plus sIgE or skin test; oral food challenge is the gold standard. Do not screen-test broad food panels - it generates false positives and unnecessary avoidance. Epinephrine is first-line for anaphylaxis; antihistamines are adjunctive only."
   },
   {
     "specialty": "Allergy/Immuno",
-    "name": "AAAAI Allergic Rhinitis 2017/2023",
-    "year": 2023,
+    "name": "JTFPP Rhinitis 2020 Practice Parameter Update",
+    "year": 2020,
     "access": "Open",
-    "url": "https://www.aaaai.org/Aaaai/media/Media-Library-PDFs/Allergist%20Resources/Statements%20and%20Practice%20Parameters/Rhinitis-2020-A-practice-parameter-update.pdf",
-    "keys": "INCS first-line monotherapy. INCS + intranasal antihistamine combination effective. Oral 2nd-gen antihistamines safer than 1st-gen. SCIT/SLIT for refractory/IgE-mediated. Avoid depot steroids."
+    "url": "https://www.jacionline.org/article/S0091-6749(20)30945-2/fulltext",
+    "keys": "YEAR FIX: there is NO 2023 allergic rhinitis parameter. The current comprehensive document is Rhinitis 2020: A Practice Parameter Update (Dykewicz, JACI 2020;146:721-767); the 2017 seasonal-AR focused update is real but narrower. INCS (intranasal corticosteroid) is first-line monotherapy for moderate-severe or persistent AR. INCS plus intranasal ANTIHISTAMINE combination is more effective than either alone for inadequate responders. Oral second-generation antihistamines are safer than first-generation (avoid sedating agents). Allergen immunotherapy (SCIT or SLIT) for IgE-mediated disease refractory to pharmacotherapy, or to modify disease course. AVOID depot/systemic corticosteroids. Identify and avoid triggers; saline irrigation is a useful adjunct."
   },
   {
     "specialty": "Dermatology",
-    "name": "AAD/NPF Psoriasis 2019 + 2024 biologics update",
-    "year": 2024,
+    "name": "AAD Atopic Dermatitis - 2023 base + 2025 adult focused update + 2026 pediatric",
+    "year": 2025,
     "access": "Open",
-    "url": "https://www.jaad.org/",
-    "keys": "Anti-IL-23 (guselkumab, risankizumab, tildrakizumab) and anti-IL-17 (secukinumab, ixekizumab, brodalumab, bimekizumab) preferred for moderate-severe. Anti-TNF (adalimumab, etanercept, infliximab) alternative. IL-23i favor less frequent dosing, lower candidiasis."
-  },
-  {
-    "specialty": "Dermatology",
-    "name": "AAD Atopic Dermatitis 2024",
-    "year": 2024,
-    "access": "Open",
-    "url": "https://jcadonline.com/aad-aaaai-guidelines-atopic-dermatitis/",
-    "keys": "Topical steroids + emollients + barrier care first-line. Topical calcineurin inhibitors (tacrolimus, pimecrolimus) for face/folds. Severe: dupilumab (anti-IL-4Ra), tralokinumab (anti-IL-13), abrocitinib/baricitinib/upadacitinib (JAKi). Topical ruxolitinib for mild-moderate."
+    "url": "https://www.aad.org/member/clinical-quality/guidelines/atopic-dermatitis",
+    "keys": "The AAD AD set is 2022-2023 (comorbidities, topicals, phototherapy/systemics), UPDATED by an adult focused update (JAAD June 2025) and the FIRST-EVER AAD PEDIATRIC AD guideline (JAAD April 2026, 27 recommendations). NEWLY GUIDELINE-ENDORSED AGENTS a 2023-grounded talk omits: TAPINAROF (AhR agonist), ROFLUMILAST cream (topical PDE4), LEBRIKIZUMAB (IL-13), and NEMOLIZUMAB (IL-31, for itch). Core: emollients and trigger avoidance in everyone. Topical corticosteroids first-line; topical calcineurin inhibitors (tacrolimus, pimecrolimus) and crisaborole for face/folds and steroid-sparing; now also tapinarof and roflumilast. Moderate-severe: DUPILUMAB (IL-4/13) or tralokinumab or lebrikizumab; JAK inhibitors (upadacitinib, abrocitinib) work fast but carry boxed warnings. Phototherapy. Treat S. aureus superinfection; bleach baths. Screen for comorbid asthma, allergic rhinitis, depression."
   },
   {
     "specialty": "Dermatology",
@@ -1129,19 +1121,19 @@
   },
   {
     "specialty": "Dermatology",
-    "name": "IDSA SSTI / Cellulitis 2014/2024",
-    "year": 2024,
+    "name": "IDSA Skin and Soft Tissue Infections 2014",
+    "year": 2014,
     "access": "Open",
     "url": "https://www.idsociety.org/practice-guideline/skin-and-soft-tissue-infections/",
-    "keys": "Nonpurulent cellulitis: oral cephalexin or amoxicillin (Strep coverage). Purulent: incision + drainage; add MRSA coverage (TMP-SMX, doxycycline, clindamycin) if SIRS. Severe: IV vancomycin/daptomycin/linezolid. Diabetic foot: extended courses, image for osteomyelitis."
+    "keys": "YEAR FIX: there is NO 2014/2024 IDSA SSTI update - the guideline is Stevens et al., CID 2014;59:e10-52, and no update is on IDSA in-development register. Practice has drifted (shorter courses, clindamycin de-emphasized) WITHOUT a formal IDSA update - do not attribute that drift to IDSA. Purulent (abscess): incision and drainage is the primary therapy; antibiotics only if severe, systemic signs, or immunocompromised - cover MRSA (TMP-SMX, doxycycline). NON-purulent cellulitis: cover STREPTOCOCCI (cephalexin, penicillin) - MRSA coverage is NOT routine. Elevate the limb. Mark the border. Necrotizing fasciitis: surgical emergency - immediate debridement plus broad-spectrum antibiotics plus clindamycin (antitoxin); pain out of proportion, crepitus, bullae, systemic toxicity."
   },
   {
     "specialty": "Dermatology",
-    "name": "AAD/HSF Hidradenitis Suppurativa 2019/2024",
-    "year": 2024,
+    "name": "US/Canadian HS Foundations Hidradenitis Suppurativa 2019 (NOT an AAD guideline)",
+    "year": 2019,
     "access": "Open",
-    "url": "https://www.jaad.org/",
-    "keys": "Adalimumab (anti-TNF) FDA-approved (PIONEER 1/2; HiSCR 40-59%). Secukinumab (anti-IL-17A; SUNRISE/SUNSHINE) approved 2023. Bimekizumab approved 2024. Surgical excision for fibrotic stages."
+    "url": "https://www.jaad.org/article/S0190-9622(19)30368-8/fulltext",
+    "keys": "ATTRIBUTION + YEAR FIX: this is a US and Canadian HS FOUNDATIONS guideline (2019), NOT an AAD guideline - AAD has never published one (its first is expected Q4 2026). There is NO 2024 update. DRUG GAP: the 2019 document knows only ADALIMUMAB. Since then: SECUKINUMAB (IL-17A, FDA-approved Oct 2023) and BIMEKIZUMAB (IL-17A/F, Nov 2024) are approved for HS. Povorcitinib is NOT yet approved - do not teach it as available. Content: Hurley staging I-III. Lifestyle - smoking cessation, weight loss. Topical clindamycin for mild; oral tetracyclines; clindamycin plus rifampin for moderate. Biologics for moderate-severe. Surgery (wide local excision, deroofing) for tunnels and scarring; intralesional steroids for flares. Screen for metabolic syndrome and depression."
   },
   {
     "specialty": "Dermatology",
@@ -1150,14 +1142,6 @@
     "access": "Open",
     "url": "https://www.aad.org/member/clinical-quality/guidelines/psoriasis",
     "keys": "AAD-NPF has NOT re-issued (biologics 2019, topicals 2021), but the guideline now predates essentially the entire modern armamentarium - teach the newer agents explicitly. MISSING ORAL SYSTEMICS: deucravacitinib (oral TYK2, 2022) and ICOTROKINRA (Icotyde, first-in-class ORAL IL-23 receptor antagonist, FDA-approved 18 March 2026; ICONIC program ~70 percent IGA 0/1 and 55 percent PASI 90 at week 16, superior to deucravacitinib) - first-line systemic is now potentially an ORAL decision. MISSING BIOLOGIC: bimekizumab (IL-17A/F, 2023). MISSING NONSTEROIDAL TOPICALS: tapinarof (AhR agonist, 2022) and roflumilast cream (topical PDE4, 2022). Guideline content that still stands: topical corticosteroids plus vitamin D analogues for limited disease; phototherapy; biologics by target (TNF, IL-17, IL-23) for moderate-severe disease or PsA; screen for PsA, metabolic syndrome, depression."
-  },
-  {
-    "specialty": "Dermatology",
-    "name": "AAD 2023/2024 Atopic Dermatitis",
-    "year": 2024,
-    "access": "Open",
-    "url": "https://www.aad.org/member/clinical-quality/guidelines/atopic-dermatitis",
-    "keys": "Emollients + bathing, topical corticosteroids first-line; topical calcineurin inhibitors (tacrolimus, pimecrolimus) and crisaborole for face/folds/steroid-sparing; topical ruxolitinib for mild-moderate. NB-UVB phototherapy for refractory. Strong recommendations for dupilumab (anti-IL-4Ra, LIBERTY-AD), tralokinumab (anti-IL-13, ECZTRA), and oral JAKi abrocitinib/upadacitinib/baricitinib (JADE, Measure Up, BREEZE-AD) for moderate-severe."
   },
   {
     "specialty": "Psychiatry",
@@ -1398,14 +1382,6 @@
     "access": "Open",
     "url": "https://www.idsociety.org/practice-guideline/streptococcal-pharyngitis2/",
     "keys": "TESTING - 2025 Part 1 (Oct 2025) CHANGES PRACTICE: clinical scoring systems (Centor/McIsaac, FeverPAIN) now explicitly gate WHETHER TO TEST AT ALL - do NOT test and do not treat low-risk patients. This reverses the 2012 posture of near-universal RADT or culture in adults with pharyngitis. TREATMENT - Part 2 (treatment, duration, penicillin allergy) is still PENDING (estimated late 2026), so 2012 treatment guidance still stands: penicillin V or amoxicillin first-line for 10 days; cephalosporin, clindamycin, or azithromycin if penicillin-allergic; no test of cure after RADT in adults."
-  },
-  {
-    "specialty": "Otolaryngology",
-    "name": "AAN Benign Paroxysmal Positional Vertigo 2023",
-    "year": 2023,
-    "access": "Paywalled",
-    "url": "https://onlinelibrary.wiley.com/doi/10.1111/acem.14558",
-    "keys": "Most common cause peripheral vertigo. Dix-Hallpike test for posterior canal: torsional/upbeat nystagmus, latency 5-20s, fatigable, resolves <60s. Epley canalith repositioning maneuver (NNT 2). Brandt-Daroff exercises home alternative."
   },
   {
     "specialty": "Otolaryngology",
