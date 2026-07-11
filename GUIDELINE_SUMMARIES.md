@@ -1,10 +1,15 @@
 # Chalk Talk — Guideline Summaries
 
-_196 entries · last audited July 2026_
+_192 entries · currency-audited July 2026 (pre-2020 band + 2020–2022 band)_
 
 These are the **complete** society-guideline grounding the app has. The model never sees the guideline document itself — only these summaries.
 
-## Allergy/Immuno (7)
+## Allergy/Immuno (6)
+
+### WAO Hereditary Angioedema 2025
+*2025 · Open* · [source](https://www.worldallergyorganizationjournal.org/article/S1939-4551(26)00168-7/fulltext)
+
+> 2025 WAO guideline REPLACES the WAO/EAACI 2021 revision; introduces endotype-based classification (HAE-C1-INH vs HAE-nC1-INH). THREE NEW FDA-APPROVED DRUGS the 2021 guideline cannot contain: sebetralstat (Ekterly) - the first ORAL on-demand plasma kallikrein inhibitor (KONFIDENT), approved July 2025, so on-demand therapy is no longer injectable-only; garadacimab (Andembry) - anti-activated-FXII monoclonal, monthly prophylaxis, June 2025; donidalorsen (Dawnzera) - prekallikrein antisense oligonucleotide, first RNA-targeted HAE drug, Aug 2025. 2025 first-line LONG-TERM PROPHYLAXIS: subcutaneous plasma-derived C1-INH, lanadelumab, garadacimab, donidalorsen, berotralstat. ON-DEMAND: icatibant, ecallantide, C1-INH, and now oral sebetralstat - treat every attack early. HAE is bradykinin-mediated: antihistamines, steroids, and epinephrine DO NOT work. Short-term prophylaxis before procedures. C4 low; C1-INH level and function; C1q distinguishes acquired.
 
 ### GINA Asthma 2024
 *2024 · Open* · [source](https://ginasthma.org/2024-report/)
@@ -30,16 +35,6 @@ These are the **complete** society-guideline grounding the app has. The model ne
 *2022 · Open* · [source](https://www.aaaai.org/Aaaai/media/Media-Library-PDFs/Allergist%20Resources/Statements%20and%20Practice%20Parameters/Drug-Allergy-PP-9-2022.pdf)
 
 > Direct oral challenge for low-risk penicillin allergy (95% delabeling). Skin testing for high-risk. Graded challenges for radiocontrast/sulfonamides/NSAIDs. Avoid empiric desensitization without confirmed allergy.
-
-### AAAAI/ACAAI Drug Allergy Practice Parameter 2022
-*2022 · Open* · [source](https://www.jacionline.org/article/S0091-6749(22)01186-1/fulltext)
-
-> Penicillin allergy delabeling priority — 95% of labeled patients tolerate penicillin; label associated with broader antibiotic use, MRSA/C. difficile, longer admissions. Risk-stratify by history: low-risk (isolated GI symptoms, remote benign rash, family-only history, unknown reaction >10y) eligible for direct oral amoxicillin challenge without skin testing. Moderate-risk (urticaria, pruritus): penicillin skin testing then graded challenge. High-risk (anaphylaxis, SJS/TEN, DRESS): avoid. Sulfonamide antibiotic-to-non-antibiotic cross-reactivity is a myth — sulfasalazine, diuretics, celecoxib safe. RCM premed with prednisone + diphenhydramine.
-
-### HAEA/WAO Hereditary Angioedema 2021
-*2021 · Open* · [source](https://www.haea.org/)
-
-> On-demand: C1-INH concentrate, ecallantide, icatibant. Long-term prophylaxis: lanadelumab (FcRn anti-pKLK; reduces attacks 86%, HELP), berotralstat (oral pKLK inhibitor), C1-INH SC. Self-administer all therapies.
 
 ---
 
@@ -95,10 +90,10 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > Stable atherosclerotic plaque with progressive ischemia. Stress imaging guides management. DAPT >=6 months post-DES (prasugrel/ticagrelor). Beta-blockers, CCBs, or ranolazine for symptoms. ACEi/ARB + statin in all per HOPE/LIPID/HPS.
 
-### 2022 AHA/ACC/HFSA Heart Failure
+### 2022 AHA/ACC/HFSA Heart Failure (+ finerenone 2025)
 *2022 · Open* · [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063)
 
-> HFrEF four-pillar GDMT started together: ARNi (PARADIGM-HF) > ACEi/ARB; beta-blocker; MRA; SGLT2i (DAPA-HF, EMPEROR-Reduced). HFpEF: SGLT2i Class 2a (EMPEROR-Preserved, DELIVER). IV iron for iron-deficient (AFFIRM-AHF). ICD/CRT per EF + QRS.
+> GUIDELINE IS STILL 2022, but the HFpEF/HFmrEF armamentarium has changed: FINERENONE was FDA-approved 14 July 2025 for HF with LVEF 40 percent or greater (FINEARTS-HF, n=6016, ~16 percent RRR in CV events) - the first nonsteroidal MRA for this population and now a pillar alongside SGLT2i. The 2022 guideline predates it. HFrEF four pillars unchanged: ARNI (or ACEi/ARB) + evidence-based beta blocker + MRA + SGLT2i, titrate all four early. HFpEF/HFmrEF: SGLT2i (Class 2a), now plus finerenone; diuretics for congestion; treat comorbidities. Stages A-D; GDMT titration; ICD/CRT per EF and QRS. Also new: 2026 AHA/ACC/ESC/WHF Second Universal Definition of Heart Failure (consensus document, revises classification).
 
 ### 2022 ACC/AHA Aortic Disease
 *2022 · Open* · [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001106)
@@ -110,10 +105,10 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > Heart Team for complex multivessel/left main disease. FFR/iFR <=0.80/<=0.89 guides PCI of intermediate lesions (FAME, FAME 2). STEMI with multivessel disease: complete revascularization during index hospitalization (COMPLETE, FULL REVASC) reduces MI/death. Diabetes + multivessel CAD: CABG preferred over PCI (FREEDOM, BARI 2D). Radial access default (RIVAL, MATRIX). Left main: CABG Class 1; PCI reasonable for low/intermediate SYNTAX (EXCEL, NOBLE caveats).
 
-### 2020 ACC/AHA Valvular Heart Disease
+### 2020 ACC/AHA Valvular Heart Disease (+ EARLY TAVR 2025)
 *2020 · Open* · [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000000923)
 
-> TAVR across all risk tiers (PARTNER 1/2/3, CoreValve). MitraClip for severe functional MR with HF (COAPT). Multidisciplinary heart team evaluation required. Endocarditis prophylaxis for high-risk native/prosthetic valves only.
+> GUIDELINE IS STILL 2020, but asymptomatic severe AS teaching has been overtaken: FDA approved the Edwards SAPIEN 3 platform in May 2025 for ASYMPTOMATIC severe aortic stenosis on the basis of EARLY TAVR (26.8 vs 45.3 percent death/stroke/unplanned CV hospitalization at 3.8 years). The 2020 guideline teaches watchful waiting plus exercise testing for asymptomatic severe AS with normal LVEF - that is now out of step with FDA labeling and practice. Otherwise 2020 stands: stages A-D; severe AS = Vmax 4 m/s or more, mean gradient 40 mmHg or more, AVA 1.0 cm2 or less; intervene when symptomatic or LVEF under 50 percent; TAVR vs SAVR by age, surgical risk, and anatomy (TAVR favored 65 and older / high risk). Also new since 2020: transcatheter tricuspid therapies (TriClip, Evoque) and a 2025 ACC consensus pathway on tricuspid regurgitation.
 
 ### 2017 ACC/AHA/HRS Syncope
 *2017 · Open* · [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000000499)
@@ -178,14 +173,14 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > Insufficient evidence for routine visual skin screening in asymptomatic adults (I statement). Does not apply to symptomatic, high-risk (immunocompromised, prior cancer, family history, dysplastic nevi). AAD continues to recommend self-exams + dermatologist evaluation.
 
-### AAD-NPF 2020/2021 Psoriasis (Topicals + Biologics)
+### AAD-NPF Psoriasis 2019/2021 (armamentarium now outdated)
 *2021 · Open* · [source](https://www.aad.org/member/clinical-quality/guidelines/psoriasis)
 
-> Topical corticosteroids + vitamin D analogs (calcipotriene) first-line for limited disease; phototherapy (NB-UVB) for moderate. Biologics for moderate-severe: TNFi (etanercept, adalimumab, infliximab), IL-17i (secukinumab, ixekizumab, brodalumab), IL-23i (guselkumab, risankizumab, tildrakizumab). Oral: apremilast, methotrexate, cyclosporine, acitretin, deucravacitinib. Screen all for psoriatic arthritis and cardiometabolic comorbidities.
+> AAD-NPF has NOT re-issued (biologics 2019, topicals 2021), but the guideline now predates essentially the entire modern armamentarium - teach the newer agents explicitly. MISSING ORAL SYSTEMICS: deucravacitinib (oral TYK2, 2022) and ICOTROKINRA (Icotyde, first-in-class ORAL IL-23 receptor antagonist, FDA-approved 18 March 2026; ICONIC program ~70 percent IGA 0/1 and 55 percent PASI 90 at week 16, superior to deucravacitinib) - first-line systemic is now potentially an ORAL decision. MISSING BIOLOGIC: bimekizumab (IL-17A/F, 2023). MISSING NONSTEROIDAL TOPICALS: tapinarof (AhR agonist, 2022) and roflumilast cream (topical PDE4, 2022). Guideline content that still stands: topical corticosteroids plus vitamin D analogues for limited disease; phototherapy; biologics by target (TNF, IL-17, IL-23) for moderate-severe disease or PsA; screen for PsA, metabolic syndrome, depression.
 
 ---
 
-## Endocrinology (11)
+## Endocrinology (10)
 
 ### ADA Standards of Care 2025
 *2025 · Open* · [source](https://professional.diabetes.org/standards-of-care)
@@ -211,11 +206,6 @@ These are the **complete** society-guideline grounding the app has. The model ne
 *2020 · Open* · [source](https://pro.aace.com/clinical-guidance/2020-clinical-practice-guidelines-diagnosis-and-treatment-postmenopausal)
 
 > T-score <=-2.5 diagnostic. First-line: alendronate, risedronate, zoledronate, denosumab. Anabolics (teriparatide, abaloparatide, romosozumab) for very-high-risk. FRAX >=20% major or 3% hip fracture risk treatment threshold.
-
-### AACE/ACE Postmenopausal Osteoporosis 2020
-*2020 · Open* · [source](https://www.endocrinepractice.org/article/S1530-891X(20)35037-0/fulltext)
-
-> Dx: T-score <=-2.5, fragility fracture, or FRAX >=20% major / >=3% hip. High risk: alendronate, risedronate, zoledronate, or denosumab first-line. Very high risk (T<=-3.0, recent fracture, multiple fx): anabolic first — romosozumab x12mo (ARCH vs alendronate), teriparatide or abaloparatide x2y (VERO, ACTIVE) — then sequence to antiresorptive. Denosumab 60mg SC q6mo — never stop without bisphosphonate follow-on (rebound vertebral fx). Bisphosphonate drug holiday after 3-5y IV / 5y oral if low risk.
 
 ### Endocrine Society Hypopituitarism 2016
 *2016 · Open* · [source](https://academic.oup.com/jcem/article/101/11/3888/2764912)
@@ -250,6 +240,11 @@ These are the **complete** society-guideline grounding the app has. The model ne
 *2025 · Open* · [source](https://journals.lww.com/ajg/)
 
 > >=15 eos/hpf diagnostic. Shared decision: 1-FED/2-FED elimination diet, topical steroids (fluticasone/budesonide), or dupilumab (LIBERTY-EoE). Maintenance therapy required to prevent fibrostenosis.
+
+### AGA Living Guideline: Moderate-Severe Crohn Disease 2025
+*2025 · Open* · [source](https://gastro.org/clinical-guidance/pharmacological-management-of-moderate-to-severe-crohns-disease/)
+
+> 2025 AGA Living Guideline REPLACES 2020 and REVERSES the algorithm: AGA now suggests UPFRONT ADVANCED THERAPY rather than step-up (steroid/immunomodulator-first) therapy in moderate-to-severe Crohn disease. Teaching step-up in 2026 teaches against guideline. Current agent list: infliximab, adalimumab, ustekinumab, risankizumab, mirikizumab, guselkumab, upadacitinib. (ACG also published its own Crohn guideline for adults in June 2025.) Steroids remain for short-term induction only, never maintenance; assess for perianal/fistulizing disease; treat-to-target with endoscopic healing.
 
 ### AASLD/IDSA Chronic Hepatitis B 2025
 *2025 · Open* · [source](https://www.aasld.org/aasld-announces-new-practice-guideline-treatment-chronic-hepatitis-b)
@@ -296,10 +291,10 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > Universal screening recommended. Glecaprevir/pibrentasvir or sofosbuvir/velpatasvir 8-12 weeks pangenotypic; >95% SVR. Simplified treatment for treatment-naive non-cirrhotic. Pediatric treatment >=3 years.
 
-### ACG GERD 2022
-*2022 · Open* · [source](https://journals.lww.com/ajg/fulltext/2022/01000/acg_clinical_guideline_for_the_diagnosis_and.14.aspx)
+### ACG GERD 2022 (+ vonoprazan)
+*2022 · Open* · [source](https://gi.org/clinical-guidelines/clinical-guidelines-sortable-list/)
 
-> Empiric PPI 8-week trial for typical GERD. Endoscopy for alarm symptoms (dysphagia, weight loss, GI bleed) and Barrett risk factors. Long-term PPI risks (CKD, fractures) overstated; continue if symptoms recur.
+> ACG 2022 stands, but a drug class has opened that the algorithm predates: VONOPRAZAN (Voquezna), a potassium-competitive acid blocker (P-CAB), FDA-approved 1 Nov 2023 for erosive esophagitis and H. pylori, and 18 July 2024 for NON-EROSIVE GERD heartburn. It is not in the ACG algorithm. (ACG also lists an Extra-esophageal Reflux guideline as IN PROGRESS.) Core teaching stands: 8-week PPI trial for classic heartburn/regurgitation without alarm features; take PPI 30-60 min BEFORE a meal; endoscopy if alarm features (dysphagia, weight loss, bleeding, anemia, vomiting) or refractory; pH testing OFF PPI to confirm before surgery; step down to lowest effective dose; lifestyle - weight loss, head-of-bed elevation, avoid late meals. Barrett surveillance if risk factors.
 
 ### USPSTF Colorectal Cancer Screening 2021
 *2021 · Open* · [source](https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/colorectal-cancer-screening)
@@ -311,15 +306,10 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > Positive diagnostic strategy (Rome IV) over diagnosis of exclusion. Low-FODMAP diet for symptom relief. IBS-D: rifaximin, eluxadoline. IBS-C: linaclotide, plecanatide, lubiprostone. Gut-directed psychotherapy.
 
-### ACG C. difficile 2021
-*2021 · Open* · [source](https://journals.lww.com/ajg/fulltext/2021/06000/acg_clinical_guidelines__prevention,_diagnosis,.12.aspx)
+### ACG C. difficile 2021 (+ AGA FMT 2024, FDA-approved microbiota products)
+*2021 · Open* · [source](https://gi.org/clinical-guidelines/clinical-guidelines-sortable-list/)
 
-> Fidaxomicin first-line for initial CDI (lower recurrence vs vancomycin). Vancomycin 125 mg PO QID x 10d alternative. FMT for recurrent CDI (>=2 recurrences). Bezlotoxumab for prevention in high-risk.
-
-### AGA Crohn Disease 2020
-*2020 · Open* · [source](https://www.gastrojournal.org/)
-
-> Top-down advanced therapy (anti-TNF, ustekinumab, risankizumab/mirikizumab anti-IL23, vedolizumab) over step-up for moderate-severe. Combination anti-TNF + thiopurine reduces immunogenicity. Upadacitinib JAKi as alternative.
+> ACG 2021 still stands, but FMT teaching is out of date: microbiota therapy is now THREE standardized options, not an investigational stool-donor procedure. FDA-APPROVED: Rebyota (fecal microbiota live-jslm, rectal, Nov 2022) and Vowst (fecal microbiota spores live-brpk, ORAL, Apr 2023), alongside conventional FMT. The AGA 2024 guideline on fecal microbiota-based therapies conditionally recommends these after standard-of-care antibiotics for RECURRENT CDI in immunocompetent adults. ALSO TEACH THE SOCIETY DISAGREEMENT: IDSA/SHEA 2021 made FIDAXOMICIN PREFERRED over vancomycin for initial and recurrent CDI; ACG 2021 does not - this is a live disagreement, not settled. Core: stop the inciting antibiotic; do NOT test asymptomatic patients or repeat test-of-cure; oral vancomycin or fidaxomicin (metronidazole only if neither available); bezlotoxumab to reduce recurrence in high-risk; fulminant disease - high-dose oral vancomycin plus IV metronidazole, surgical consult.
 
 ---
 
@@ -359,6 +349,11 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 ## Heme/Onc (8)
 
+### ISTH TTP 2020 + 2025 Focused Update (NOT an ASH guideline)
+*2025 · Open* · [source](https://www.jthjournal.org/article/S1538-7836(25)00360-5/fulltext)
+
+> ATTRIBUTION FIX: the TTP guideline is an ISTH guideline (Zheng et al.), NOT an ASH guideline. 2025 ISTH FOCUSED UPDATE changes congenital TTP: new STRONG recommendation for RECOMBINANT ADAMTS13 (Adzynma, FDA-approved Nov 2023) OVER fresh frozen plasma in cTTP remission - the cTTP paradigm changed entirely. IMMUNE TTP UNCHANGED: caplacizumab recommendation REAFFIRMED after review of new efficacy/survival/cost data, so HERCULES-based teaching still stands. iTTP triad: therapeutic plasma exchange + immunosuppression (steroids, rituximab) + caplacizumab. ADAMTS13 activity under 10 percent confirms; PLASMIC score risk-stratifies before the assay returns. Do NOT transfuse platelets unless life-threatening bleeding.
+
 ### ASH 2020 + 2024 VTE Treatment
 *2024 · Open* · [source](https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/venous-thromboembolism-guidelines)
 
@@ -383,11 +378,6 @@ These are the **complete** society-guideline grounding the app has. The model ne
 *2023 · Open* · [source](https://jamanetwork.com/journals/jama/fullarticle/2810754)
 
 > Restrictive: Hgb 7 g/dL for stable hospitalized adults (TRICC). Cardiac surgery: 7.5 g/dL. Orthopedic: 8 g/dL. Hem/onc: consider <7. Liberal in ACS uncertain (REALITY). Reduces transfusion volumes ~40%.
-
-### ASH TTP 2020 + HERCULES Trial
-*2020 · Open* · [source](https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/thrombotic-microangiopathies-guidelines)
-
-> Plasma exchange + caplacizumab (vWF nanobody) reduces death/recurrence/thrombosis 38%->8% (HERCULES). Steroids + rituximab for autoimmune iTTP. ADAMTS13 testing at presentation. PLASMIC score.
 
 ### ASH ITP 2019
 *2019 · Open* · [source](https://ashpublications.org/bloodadvances/article/3/23/3829/428701)
@@ -516,6 +506,11 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 ## Nephrology (9)
 
+### KDIGO Glomerular Diseases - IgAN 2025 / Lupus Nephritis 2024 / ANCA 2024 (2021 base being retired)
+*2025 · Open* · [source](https://kdigo.org/guidelines/gd/)
+
+> KDIGO is retiring the 2021 glomerular disease guideline CHAPTER BY CHAPTER - do not teach it as one current document. REPLACED CHAPTERS: IgA nephropathy and IgA vasculitis (KDIGO 2025, Kidney Int Sept 2025); Lupus Nephritis (KDIGO 2024); ANCA-Associated Vasculitis (KDIGO 2024); Nephrotic Syndrome in Children (KDIGO 2025). STILL 2021: membranous nephropathy, FSGS, minimal change, anti-GBM, C3G. IgA NEPHROPATHY - MAJOR CHANGES: (1) proteinuria TARGET is now under 0.5 g/d, ideally under 0.3 g/d, with stable eGFR - the 2021 framing used a greater-than-1 g/d threshold to consider immunosuppression; (2) PARADIGM SHIFT from maximal supportive care first with immunosuppression as last resort, to a DUAL CONCURRENT strategy - treat the immunologic driver (Gd-IgA1 immune complex formation) AND manage nephron-loss consequences together; (3) more liberal kidney biopsy policy. NEW IgAN AGENTS the 2021 guideline names NONE of: targeted-release budesonide (Nefecon/Tarpeyo), sparsentan (Filspari, dual endothelin/ARB), iptacopan (Fabhalta, factor B inhibitor), atrasentan (Vanrafia, selective ETA), sibeprenlimab (Voyxact, APRIL inhibitor, accelerated approval Nov 2025). ANCA: KDIGO 2024 incorporates avacopan (C5aR antagonist) as a glucocorticoid-sparing induction option and the reduced-dose steroid taper (PEXIVAS).
+
 ### KDIGO 2025 ADPKD
 *2025 · Open* · [source](https://kdigo.org/guidelines/adpkd/)
 
@@ -551,11 +546,6 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > SGLT2i first-line for T2DM + CKD regardless of A1c (eGFR >=20). Metformin if eGFR >=30. GLP-1 RA layered for additional glycemic / weight control. Decouple glycemic control from kidney protection.
 
-### KDIGO 2021 Glomerulonephritis
-*2021 · Open* · [source](https://kdigo.org/guidelines/gd/)
-
-> ANCA vasculitis: rituximab (RAVE) or cyclophosphamide + reduced steroids (PEXIVAS); avacopan as steroid-sparing C5a inhibitor. Lupus nephritis: induction with belimumab + MMF or voclosporin (AURORA-1); membranous: rituximab if anti-PLA2R+ (MENTOR). IgA: sparsentan (PROTECT).
-
 ### KDIGO 2012 AKI (2026 update in review)
 *2012 · Open* · [source](https://kdigo.org/guidelines/acute-kidney-injury/)
 
@@ -563,7 +553,7 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 ---
 
-## Neurology (12)
+## Neurology (11)
 
 ### AHA/ASA Acute Ischemic Stroke 2019/2024
 *2024 · Open* · [source](https://www.ahajournals.org/doi/10.1161/STR.0000000000000513)
@@ -609,11 +599,6 @@ These are the **complete** society-guideline grounding the app has. The model ne
 *2022 · Open* · [source](https://www.ahajournals.org/doi/10.1161/STR.0000000000000407)
 
 > BP control <140 within 1-2h (INTERACT2/ATACH-2). Reverse anticoagulation (4F-PCC, idarucizumab for dabigatran, andexanet for FXa). Avoid prophylactic steroids. Surgical evacuation for cerebellar ICH >3cm or hydrocephalus.
-
-### AHA/ASA Stroke Prevention 2021
-*2021 · Open* · [source](https://pubmed.ncbi.nlm.nih.gov/34024117/)
-
-> DAPT (aspirin + clopidogrel) <=21d for minor stroke/TIA (CHANCE/POINT, start <=24h). Ticagrelor + aspirin (THALES) alternative. Statin, ACEi/ARB. AF: DOAC. Carotid stenosis 70-99% symptomatic: CEA/CAS within 2 weeks.
 
 ### AAN Parkinson Disease 2018 + 2021 update
 *2021 · Open* · [source](https://www.aan.com/Guidelines/home/GuidelineDetail/1043)
@@ -728,10 +713,10 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > Wet AMD: anti-VEGF (aflibercept, faricimab, ranibizumab, brolucizumab) monthly initially, then treat-and-extend or PRN. Dry AMD: AREDS2 (lutein/zeaxanthin/zinc/Cu/vit C/E) slows progression 25% (no benefit if smoker for AREDS). Geographic atrophy: pegcetacoplan/avacincaptad pegol new.
 
-### ACR/EULAR GCA 2021 (Vision Loss Lens)
-*2021 · Open* · [source](https://vasculitisfoundation.org/wp-content/uploads/2024/01/2021-ACR-VF-Guideline-for-Management-of-Giant-Cell-Arteritis-and-Takayasu-Artheritis.pdf)
+### GCA vision loss (teaching lens on ACR/VF 2021 - not a separate guideline)
+*2021 · Open* · [source](https://rheumatology.org/vasculitis-guideline)
 
-> Sudden vision loss: IV methylprednisolone 1g x 3d -> oral pred 1mg/kg taper. Add tocilizumab (GiACTA: 56% sustained remission vs 14% with steroids alone). Temporal artery biopsy + LV imaging. ESR + CRP + IL-6 monitoring.
+> ATTRIBUTION FIX: there is NO joint ACR/EULAR GCA 2021 management guideline. ACR and EULAR jointly published 2022 ACR/EULAR CLASSIFICATION CRITERIA for GCA (a classification instrument, not a management guideline). This entry is a vision-loss teaching lens on the ACR/VF 2021 guideline - do not cite it as a separate society document. OPHTHALMIC EMERGENCY: GCA is the leading cause of preventable sudden bilateral blindness in older adults. Start HIGH-DOSE GLUCOCORTICOIDS IMMEDIATELY on clinical suspicion - do NOT wait for biopsy or for ESR/CRP. IV pulse methylprednisolone 1 g daily for 3 days if any visual symptoms (amaurosis fugax, diplopia, vision loss); once vision is lost it rarely recovers, and the fellow eye is at high risk within days. Arteritic anterior ischemic optic neuropathy: pallid disc swelling. Check ESR AND CRP (either may be normal); platelets often elevated. Temporal artery biopsy within 2 weeks of starting steroids (yield persists); ultrasound halo sign is an alternative. Tocilizumab steroid-sparing; upadacitinib FDA-approved for GCA April 2025.
 
 ### AAN/AAO Optic Neuritis (ONTT)
 *1992 · Open* · [source](https://www.aaojournal.org/article/S0161-6420(19)32364-4/fulltext)
@@ -849,10 +834,10 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > First major update since 2006. Anorexia: weight restoration + family-based therapy (adolescents) or eating-disorder-focused CBT (adults). Bulimia/BED: CBT-ED + SSRI (fluoxetine 60mg). Lisdexamfetamine for BED. Olanzapine for severe AN weight gain.
 
-### SAMHSA TIP 63 / ASAM OUD
-*2020 · Open* · [source](https://library.samhsa.gov/product/tip-63-medications-opioid-use-disorder/pep21-02-01-002)
+### ASAM OUD 2020 / SAMHSA TIP 63 (X-waiver ABOLISHED 2023)
+*2021 · Open* · [source](https://www.asam.org/quality-care/clinical-guidelines)
 
-> MAT first-line: buprenorphine (mu partial agonist; office-based; X-waiver removed 2023), methadone (opioid agonist; OTP only), naltrexone (mu antagonist; XR-NTX preferred). Concurrent psychosocial. Naloxone co-prescription for overdose risk.
+> CRITICAL REGULATORY CHANGE: the DEA X-WAIVER WAS ELIMINATED (MAT Act, Consolidated Appropriations Act 2023). ANY DEA-registered clinician can now prescribe buprenorphine - no waiver, no 8-hour training, no patient cap. Both source documents were written under the waiver regime and describe waiver requirements; teaching that a waiver is needed is FLATLY WRONG and actively discourages generalists from prescribing. Documents themselves are still current (ASAM 2020 Focused Update; SAMHSA TIP 63 rev. 2021). Buprenorphine or methadone first-line for OUD; naltrexone XR if abstinent. Buprenorphine partial agonist - ceiling effect on respiratory depression. Methadone requires an OTP. Naloxone to every patient and household. NOT ADDRESSED by the 2020 documents: fentanyl-era induction (low-dose/micro induction, high-dose buprenorphine initiation) and the 2024 SAMHSA 42 CFR Part 8 rule making methadone take-home flexibilities permanent.
 
 ### APA/WFSBP Bipolar Disorder
 *2002 · Open* · [source](https://www.psychiatry.org/)
@@ -861,7 +846,7 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 ---
 
-## Pulmonary (16)
+## Pulmonary (15)
 
 ### 2026 AHA/ACC Acute Pulmonary Embolism (US) + ESC 2019
 *2026 · Open* · [source](https://professional.heart.org/en/science-news/2026-guideline-for-the-evaluation-and-management-of-acute-pulmonary-embolism-in-adults)
@@ -918,20 +903,15 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > Low TV 4-8 mL/kg PBW. Prone position >=16 h/day for moderate-severe (PROSEVA, NNT 6). Neuromuscular blockade for refractory hypoxemia. Conservative fluid; ECMO referral early for refractory.
 
-### ATS 2022 IPF / Progressive PF
-*2022 · Paywalled* · [source](https://www.atsjournals.org/doi/full/10.1164/rccm.202202-0399ST)
+### ATS/ERS/JRS/ALAT IPF + Progressive PF 2022 (+ nerandomilast 2025)
+*2022 · Open* · [source](https://www.thoracic.org/statements/guideline-implementation-tools/matrix-guidelines-and-derivatives-ipf-update.php)
 
-> Nintedanib (TKI: PDGFR/FGFR/VEGFR) reduces FVC decline 125 mL/yr (INPULSIS); pirfenidone modulates TGF-beta (CAPACITY/ASCEND). Both for IPF and progressive non-IPF PPF. Lung transplant referral early for advanced disease.
+> Guideline is still 2022, but the drug landscape changed: NERANDOMILAST (Jascayd), an oral PDE4B inhibitor, was FDA-approved 7 Oct 2025 for IPF - the first new IPF therapy in over a decade - and 19 Dec 2025 for PROGRESSIVE PULMONARY FIBROSIS (FIBRONEER trials). Saying pirfenidone and nintedanib are the only antifibrotics is now WRONG. Guideline content that stands: IPF diagnosis by UIP pattern on HRCT (subpleural, basal, honeycombing) - biopsy only if pattern is indeterminate; multidisciplinary discussion. Antifibrotics (nintedanib, pirfenidone) slow FVC decline but do not reverse. Progressive pulmonary fibrosis (PPF) defined across non-IPF ILDs - nintedanib recommended. Treat GERD; pulmonary rehab; oxygen; transplant referral early. AVOID steroids/immunosuppression in IPF (PANTHER harm).
 
-### 2022 ESC/ERS Pulmonary Hypertension
-*2022 · Paywalled* · [source](https://academic.oup.com/eurheartj/article/43/38/3618/6673929)
+### 2022 ESC/ERS Pulmonary Hypertension (+ sotatercept 2024)
+*2022 · Open* · [source](https://www.escardio.org/guidelines/clinical-practice-guidelines/all-esc-practice-guidelines/pulmonary-hypertension-guidelines-on-diagnosis-and-treatment-of/)
 
-> PH redefined as mPAP >20 mmHg. Three-step diagnostic: clinical suspicion -> echo -> RHC confirmation. Risk-based management; initial combination therapy (ERA + PDE5i + sotatercept-emerging) per AMBITION/STELLAR. PEA / BPA for CTEPH.
-
-### ESC/ERS Pulmonary Hypertension 2022
-*2022 · Open* · [source](https://academic.oup.com/eurheartj/article/43/38/3618/6673929)
-
-> Hemodynamic definition revised: mPAP >20 mmHg (was ≥25). PAH (Group 1): PAWP <=15 + PVR >2 WU on right heart cath — mandatory. WSPH classification: I PAH, II left heart, III lung/hypoxia, IV CTEPH, V multifactorial. Initial dual oral therapy (ERA + PDE5i: ambrisentan-tadalafil per AMBITION) for low/intermediate risk; add selexipag (GRIPHON), macitentan (MERIT). Parenteral prostacyclin (epoprostenol, treprostinil) for high-risk. CTEPH: pulmonary endarterectomy first-line; riociguat if inoperable.
+> Guideline is still 2022 (ESC register; next revision ~2027), but SOTATERCEPT (Winrevair), a first-in-class activin signaling inhibitor, was FDA-approved 26 March 2024 for PAH (STELLAR) with an expanded indication from ZENITH - it is ABSENT from the 2022 treatment algorithm, so the PAH treatment slide is incomplete. Guideline content that stands: mPAP over 20 mmHg defines PH (lowered from 25); PVR over 2 WU defines pre-capillary. Group 1 PAH: risk-stratify (ESC/ERS 4-strata) and treat with initial COMBINATION therapy - ERA plus PDE5i; add prostacyclin (IV epoprostenol/treprostinil) for high risk. Group 2 (left heart) and Group 3 (lung disease): treat the underlying disease, do NOT use PAH drugs. Group 4 (CTEPH): pulmonary endarterectomy is potentially curative; riociguat/balloon angioplasty if inoperable. Right heart catheterization is required to confirm.
 
 ### CHEST/ACCP Antithrombotic Therapy for VTE 2021
 *2021 · Open* · [source](https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext)
@@ -957,6 +937,11 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > Hydroxychloroquine for ALL (target weight-based ≤5 mg/kg, retinal screen q1y after 5y). Organ-domain framework. Lupus nephritis Class III/IV: MMF + steroids + belimumab (BLISS-LN) OR voclosporin (AURORA-1, calcineurin inhibitor) triple therapy preferred over MMF alone. Non-renal SLE: anifrolumab (anti-IFNAR, TULIP-1/2) for cutaneous/articular. Steroid taper to ≤5 mg prednisone by 6 mo. Aspirin + statin + bone/vaccine/reproductive planning integrated. Belimumab maintenance reduces flares (BLISS-52/76).
 
+### ACR/VF ANCA Vasculitis 2021 + KDIGO 2024 (avacopan)
+*2024 · Open* · [source](https://kdigo.org/guidelines/antineutrophilic-cytoplasmic-antibody-anca-associated-vasculitis-aav/)
+
+> ACR/VF 2021 predates AVACOPAN (C5aR antagonist, FDA-approved Oct 2021) and therefore does not position it - the induction algorithm it teaches is now an incomplete armamentarium. KDIGO 2024 ANCA-Associated Vasculitis guideline incorporates avacopan as a GLUCOCORTICOID-SPARING option in severe AAV induction, and adopts the reduced-dose glucocorticoid taper (PEXIVAS). Induction: rituximab OR cyclophosphamide plus glucocorticoids (reduced-dose taper), with avacopan to spare steroids. Plasma exchange NOT routine (PEXIVAS) - consider in severe kidney disease or alveolar hemorrhage. Maintenance: rituximab preferred over azathioprine. Check ANCA type (PR3 vs MPO) - PR3 relapses more. Pneumocystis prophylaxis.
+
 ### EULAR 2022 / KDIGO 2024 ANCA-Associated Vasculitis
 *2024 · Open* · [source](https://kdigo.org/wp-content/uploads/2024/02/KDIGO-2024-ANCA-Vasculitis-Guideline.pdf)
 
@@ -977,15 +962,10 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > Skin: MMF or MTX. SSc-ILD: MMF, nintedanib (SENSCIS), tocilizumab (focuSSced). PAH: ERA + PDE5i (AMBITION). Renal crisis: ACEi (DO NOT use in pre-crisis prevention). Raynaud: CCB + PDE5i.
 
-### GRAPPA PsA 2022
-*2022 · Open* · [source](https://psoriasis-hub.com/medical-information/updated-grappa-guidelines-the-good-care-campaign-for-psoriatic-arthritis)
+### EULAR 2023 Imaging in Large Vessel Vasculitis (there is no EULAR 2022 GCA guideline)
+*2023 · Open* · [source](https://ard.eular.org/article/S0003-4967(24)00130-4/fulltext)
 
-> Domain-based: peripheral arthritis, axial, enthesitis, dactylitis, skin, nails. csDMARD (MTX/SSZ/LEF) vs bDMARD (TNFi, IL-17i, IL-23i, JAKi, abatacept) by domain. Treat-to-target. IL-17i (secukinumab, ixekizumab) - excellent skin + joint.
-
-### EULAR 2022 Giant Cell Arteritis (2023 imaging update)
-*2022 · Open* · [source](https://ard.bmj.com/content/79/1/19)
-
-> Induction: prednisone 40-60mg/day, taper to 15-20mg by 2-3mo, off by 12mo. Tocilizumab 162mg SC weekly (GiACTA) for relapsing/refractory disease or high steroid-toxicity risk; methotrexate alternative adjunct. Diagnosis: temporal artery biopsy or temporal/axillary ultrasound (halo sign, compression sign) within 1 week; do not delay steroids. Large-vessel involvement: PET-CT, MRA, or CTA aorta. Aspirin only if ischemic/cardiovascular indication.
+> ATTRIBUTION FIX: there is NO EULAR 2022 GCA management guideline. EULAR large-vessel-vasculitis MANAGEMENT recommendations are the 2018 update (Hellmich, Ann Rheum Dis 2020). What IS real and current is the 2023 EULAR update on IMAGING in large vessel vasculitis (Dejaco, Ann Rheum Dis 2024). IMAGING CHANGES vs 2018: ULTRASOUND IS NOW FIRST-LINE IN ALL PATIENTS with suspected GCA (not just selected ones), and the AXILLARY ARTERIES MUST be included in the standard exam. FDG-PET or MRI (cranial plus extracranial) are alternatives. For Takayasu, MRI is preferred. Imaging is NOT routine for follow-up but may assess suspected relapse when inflammatory markers are unreliable. Halo sign on ultrasound; compression sign. Start steroids immediately - imaging yield persists for days but do not delay treatment.
 
 ### ASAS-EULAR 2022 / ACR 2019 Axial Spondyloarthritis
 *2022 · Open* · [source](https://ard.bmj.com/content/82/1/19)
@@ -997,20 +977,20 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > MTX monotherapy first-line (preferred over biologics in DMARD-naive). If inadequate response: add bDMARD (anti-TNF, anti-IL6, abatacept) OR JAKi (caution >65/CV risk per ORAL Surveillance). Triple therapy (MTX/HCQ/SSZ) acceptable alternative to biologics.
 
-### ACR ANCA Vasculitis 2021
-*2021 · Open* · [source](https://vasculitisfoundation.org/wp-content/uploads/2024/01/2021-ACR-VF-Guideline-for-Management-of-ANCA-Associated-Vasculitis.pdf)
+### ACR/VF Giant Cell Arteritis 2021 (+ upadacitinib 2025, EULAR imaging 2023)
+*2021 · Open* · [source](https://rheumatology.org/vasculitis-guideline)
 
-> Severe GPA/MPA induction: rituximab (RAVE) preferred over cyclophosphamide; reduced-dose steroids (PEXIVAS, NNT 11). Avacopan (C5a inhibitor) steroid-sparing (ADVOCATE). Maintenance: rituximab > AZA. Plasma exchange controversial post-PEXIVAS.
+> ACR/VF 2021 has NOT been re-issued, but two things changed. (1) NEW DRUG: UPADACITINIB (Rinvoq) 15 mg was FDA-approved for GCA on 29 April 2025 (SELECT-GCA: 46.4 vs 29.0 percent sustained remission wk 12-52 with a 26-week steroid taper) - the first oral JAK inhibitor for GCA and only the second approved GCA drug after tocilizumab. A talk built on ACR 2021 teaches glucocorticoids plus or minus tocilizumab and omits an entire approved oral option. (2) IMAGING: the EULAR 2023 update on imaging in large vessel vasculitis makes ULTRASOUND FIRST-LINE in ALL patients with suspected GCA and requires the AXILLARY arteries be included; FDG-PET or MRI are alternatives. Core teaching stands: start high-dose glucocorticoids IMMEDIATELY on clinical suspicion - do NOT wait for biopsy; IV pulse methylprednisolone if vision loss; temporal artery biopsy (or ultrasound halo) to confirm; tocilizumab as steroid-sparing; screen for aortic aneurysm.
 
-### ACR GCA 2021
-*2021 · Open* · [source](https://acrjournals.onlinelibrary.wiley.com/doi/10.1002/acr.24632)
+### GRAPPA PsA 2021 (published 2022) (+ bimekizumab 2024)
+*2021 · Open* · [source](https://www.nature.com/articles/s41584-022-00798-0)
 
-> High-dose prednisone immediately for vision threat (1mg/kg or 1g IV pulse if vision loss). Add tocilizumab for newly-dx (GiACTA) - reduces relapse / steroid burden. Methotrexate alternative. Temporal artery biopsy + LV vascular imaging (PET, MRA). Monitor with ESR/CRP.
+> YEAR FIX: this is the GRAPPA 2021 recommendations (published in Nat Rev Rheumatol 2022) - the stored 2022 was the publication year, not the guideline year. Still current; a GRAPPA update is underway. GAP: BIMEKIZUMAB (dual IL-17A/IL-17F) was FDA-approved for PsA in Sept 2024, after the evidence review. EULAR also published separate 2023 PsA recommendations worth contrasting. Core: treat by DOMAIN (peripheral arthritis, axial disease, enthesitis, dactylitis, skin, nails) - the domain drives drug choice. Peripheral arthritis: MTX or other csDMARD, then TNFi / IL-17i / IL-23i / JAKi. Axial disease: NSAIDs then TNFi or IL-17i (csDMARDs do NOT work for axial). Predominant skin: IL-17i or IL-23i. Enthesitis: TNFi, IL-17i, IL-23i, or JAKi (not csDMARDs). Screen every psoriasis patient for PsA.
 
-### ACR Gout 2020
-*2020 · Open* · [source](https://www.healio.com/clinical-guidance/gout/2020-american-college-of-rheumatology-guidelines-for-the-management-of-gout-treatment-guidelines)
+### ACR Gout 2020 (+ pegloticase-methotrexate co-therapy 2022)
+*2020 · Open* · [source](https://rheumatology.org/gout-guideline)
 
-> Treat-to-target uric acid <6 mg/dL (or <5 if tophi). Allopurinol first-line, start during flare with anti-inflammatory prophylaxis (3-6 mo). HLA-B*5801 screen in Asian populations (SCAR risk). Acute: NSAID, colchicine, OR steroid (combine for severe). Febuxostat caution per CARES (CV mortality).
+> ACR 2020 is still current (ACR register). One gap: FDA expanded the PEGLOTICASE (Krystexxa) label in July 2022 to include CO-ADMINISTRATION WITH METHOTREXATE 15 mg weekly for uncontrolled gout (MIRROR RCT: sUA response 71 vs 39 percent) - the 2020 guideline teaches pegloticase monotherapy. Core teaching unchanged: TREAT-TO-TARGET serum urate under 6 mg/dL. ALLOPURINOL is first-line urate-lowering therapy INCLUDING in CKD - start low (100 mg, or 50 mg in CKD stage 4+) and titrate; do NOT cap the dose at 300 mg. HLA-B*5801 screening before allopurinol in Southeast Asian and Black patients. Start ULT during a flare if the patient is already on it. Anti-inflammatory PROPHYLAXIS (low-dose colchicine, NSAID, or prednisone) for 3-6 months when initiating ULT. Indications for ULT: 2 or more flares per year, tophi, radiographic damage, or CKD stage 3+. Flare: colchicine, NSAID, or glucocorticoid - all equivalent.
 
 ### ACR Osteoarthritis 2019
 *2019 · Open* · [source](https://acrjournals.onlinelibrary.wiley.com/doi/10.1002/art.41142)
@@ -1051,15 +1031,15 @@ These are the **complete** society-guideline grounding the app has. The model ne
 
 > Ages 21-29: Pap q3y. Ages 30-65: HPV primary q5y (preferred), co-testing q5y, OR Pap q3y. Stop at 65 if adequate screening and no high-grade lesions in 25 years. ACS 2025 update: start age 25, HPV primary preferred (incl. self-collection).
 
-### NAMS Menopause Hormone Therapy 2022
-*2022 · Open* · [source](https://menopause.org/wp-content/uploads/professional/nams-2022-hormone-therapy-position-statement.pdf)
+### PCOS - 2023 International Evidence-Based Guideline (ACOG PB 194 is 2018, reaffirmed 2025)
+*2023 · Open* · [source](https://academic.oup.com/jcem/article/108/10/2447/7242360)
 
-> HT most effective for VMS. Favorable benefit-risk for symptomatic women <60 OR <10 years from menopause onset. Transdermal estrogen LOWER VTE/stroke risk vs oral. Add progestogen if uterus present. Bazedoxifene/CEE (Duavee) alternative.
+> CITATION FIX: there is NO ACOG PCOS Practice Bulletin dated 2022. ACOG Practice Bulletin 194 is dated 2018 (reaffirmed 2025). The current international standard is the 2023 International Evidence-Based Guideline for the Assessment and Management of PCOS (Monash/ESHRE/ASRM, Aug 2023; endorsed by 39 organizations). DIAGNOSTIC CHANGE: serum AMH can now SUBSTITUTE for pelvic ultrasound in establishing polycystic ovarian morphology in ADULTS (other etiologies excluded) - ultrasound is no longer required. Rotterdam 2-of-3 otherwise retained (oligo/anovulation, clinical or biochemical hyperandrogenism, polycystic morphology); exclude thyroid disease, hyperprolactinemia, and nonclassic CAH. Management: lifestyle first-line; combined OCP for menstrual irregularity and hyperandrogenism; metformin for metabolic features; letrozole first-line for ovulation induction (over clomiphene). Screen for metabolic syndrome, OSA, depression, and endometrial hyperplasia.
 
-### ACOG 2022 Polycystic Ovary Syndrome (Practice Bulletin 194 update)
-*2022 · Paywalled* · [source](https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2018/06/polycystic-ovary-syndrome)
+### NAMS/Menopause Society Hormone Therapy 2022 (FDA boxed warning REMOVED 2025)
+*2022 · Open* · [source](https://menopause.org/)
 
-> Rotterdam criteria: 2 of 3 (oligo-/anovulation, clinical or biochemical hyperandrogenism, polycystic ovarian morphology on US) after exclusion of CAH, Cushing, thyroid, prolactinoma. Screen all for T2DM (2-hr 75g OGTT), dyslipidemia, OSA, endometrial cancer risk. Combined OCs first-line for menstrual regulation/hirsutism; spironolactone adjunct. Metformin for metabolic/glycemic. Letrozole first-line for ovulation induction (PPCOS II: higher live births vs clomiphene). GLP-1 RA emerging for weight.
+> MAJOR CHANGE OUTSIDE THE GUIDELINE: on 10 Nov 2025 the FDA REMOVED THE BOXED WARNING from menopausal hormone therapy products - the cardiovascular disease, breast cancer, and probable dementia boxed language is gone (the endometrial cancer boxed warning is RETAINED for systemic estrogen-only products), including removal from LOW-DOSE VAGINAL ESTROGEN. Labels are being rewritten with age-specific guidance emphasizing benefit when initiated within 10 years of menopause onset. The WHI black-box slide most IM teachers use is now inaccurate, and the counseling/consent script has changed. The Menopause Society supported the action. Guideline content that stands: HT is most favorable when started under age 60 or within 10 years of menopause; systemic HT for vasomotor symptoms; LOW-DOSE VAGINAL ESTROGEN for genitourinary syndrome alone (minimal systemic absorption); add progestogen if uterus present; individualize by risk.
 
 ### NAMS 2020 Genitourinary Syndrome of Menopause Position Statement
 *2020 · Open* · [source](https://menopause.org/wp-content/uploads/default-document-library/2020-gsm-ps.pdf)
