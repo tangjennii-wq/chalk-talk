@@ -1,0 +1,1077 @@
+# Chalk Talk — Guideline Summaries (the "condensed factual summaries")
+
+These 197 entries are the **complete** society-guideline grounding your app has. When a talk says it is "anchored to society guidelines," this is what the model actually sees — one short summary per guideline. It never sees the guideline document itself.
+
+**Why review this:** an error or stale recommendation here propagates into every talk on that topic. Check especially: drug names, numeric thresholds/targets, and whether the year is still the current version.
+
+---
+
+## Pulmonary (16)
+
+### GOLD 2025 COPD Strategy  
+*2025 · Open*  ·  [source](https://goldcopd.org/2025-report/)
+
+> ABE assessment groups (replaces ABCD). Triple ICS-LABA-LAMA preferred for exacerbators (IMPACT, ETHOS); ensifentrine (PDE3/4 inhibitor) for persistent dyspnea. Anthonisen criteria for exacerbation antibiotics. NIV first-line for hypercapnic respiratory failure. LTOT if SpO2 <=88% (NOTT/MRC).
+
+### GINA 2025 Asthma  
+*2025 · Open*  ·  [source](https://ginasthma.org/2025-report/)
+
+> Track 1 (preferred): as-needed ICS-formoterol (SMART/MART). Track 2: SABA + separate ICS. Type-2 biologics for severe: omalizumab (IgE), mepolizumab/reslizumab/benralizumab (IL-5), dupilumab (IL-4Ra), tezepelumab (TSLP).
+
+### 2024 ATS/CDC/ERS/IDSA TB Treatment  
+*2024 · Open*  ·  [source](https://www.atsjournals.org/doi/10.1164/rccm.202410-2096ST)
+
+> 4-month RIPM (rifapentine/isoniazid/pyrazinamide/moxifloxacin) for drug-susceptible (Study 31, non-inferior to 6-month standard). 6-month BPaLM for RIF-resistant. LTBI: 3HP weekly x12w or 4R.
+
+### AASM OSA 2024  
+*2024 · Paywalled*  ·  [source](https://aasm.org/clinical-resources/practice-standards/practice-guidelines/)
+
+> Inpatient OSA screening in high-risk hospitalized. PAP first-line for moderate-severe. Surgical / oral appliance for select patients. Hypoglossal nerve stimulation (Inspire) for moderate OSA failing CPAP.
+
+### ATS/ERS Bronchiectasis 2024  
+*2024 · Paywalled*  ·  [source](https://publications.ersnet.org/)
+
+> Airway clearance cornerstone. Long-term macrolide for >=2 exacerbations/yr (BAT, EMBRACE). Against chronic ICS unless coexistent COPD/asthma. Inhaled mannitol/hypertonic saline mucolytic options.
+
+### AASM OSA Diagnostic Testing 2017 (reaffirmed 2024)  
+*2024 · Open*  ·  [source](https://jcsm.aasm.org/doi/10.5664/jcsm.6506)
+
+> Screen high-risk adults with STOP-BANG or Berlin. In-lab PSG gold standard; home sleep apnea testing (HSAT) acceptable only for uncomplicated high pretest probability moderate-severe OSA — repeat with PSG if HSAT negative/inadequate. Avoid HSAT if cardiopulmonary disease, neuromuscular disease, opioid use, or non-OSA sleep disorder suspected. CPAP first-line; mandibular advancement device for mild-moderate or CPAP-intolerant; hypoglossal nerve stimulator (Inspire, STAR) for AHI 15-65 with BMI<32 and non-concentric collapse.
+
+### ATS ARDS Management Update 2024  
+*2024 · Open*  ·  [source](https://www.atsjournals.org/doi/10.1164/rccm.202311-2011ST)
+
+> Berlin: acute hypoxemia within 7d, bilateral infiltrates, not fully explained by cardiac failure. Severity by P/F on PEEP >=5: mild 200-300, mod 100-200, severe <100. Low tidal volume 4-8 mL/kg PBW, plateau <30 cm H2O (ARMA). Higher PEEP for moderate-severe (ALVEOLI, LOVS). Prone positioning >=16h/day for P/F<150 (PROSEVA — 50% mortality reduction). NMB (cisatracurium) short-term in severe (ACURASYS; ROSE neutral). VV-ECMO for refractory P/F<80 (EOLIA, CESAR). Steroids suggested (DEXA-ARDS).
+
+### 2023 BTS Pleural Disease  
+*2023 · Paywalled*  ·  [source](https://thorax.bmj.com/)
+
+> Pneumothorax: symptom-based (not size-based) management; conservative or ambulatory options. Pleural infection: TPA + DNAse intrapleural (MIST2) for empyema. MPE: indwelling pleural catheter or talc pleurodesis.
+
+### 2023 ATS/ESICM/SCCM ARDS  
+*2023 · Open*  ·  [source](https://www.atsjournals.org/doi/10.1164/rccm.202311-2011ST)
+
+> Low TV 4-8 mL/kg PBW. Prone position >=16 h/day for moderate-severe (PROSEVA, NNT 6). Neuromuscular blockade for refractory hypoxemia. Conservative fluid; ECMO referral early for refractory.
+
+### ATS 2022 IPF / Progressive PF  
+*2022 · Paywalled*  ·  [source](https://www.atsjournals.org/doi/full/10.1164/rccm.202202-0399ST)
+
+> Nintedanib (TKI: PDGFR/FGFR/VEGFR) reduces FVC decline 125 mL/yr (INPULSIS); pirfenidone modulates TGF-beta (CAPACITY/ASCEND). Both for IPF and progressive non-IPF PPF. Lung transplant referral early for advanced disease.
+
+### 2022 ESC/ERS Pulmonary Hypertension  
+*2022 · Paywalled*  ·  [source](https://academic.oup.com/eurheartj/article/43/38/3618/6673929)
+
+> PH redefined as mPAP >20 mmHg. Three-step diagnostic: clinical suspicion -> echo -> RHC confirmation. Risk-based management; initial combination therapy (ERA + PDE5i + sotatercept-emerging) per AMBITION/STELLAR. PEA / BPA for CTEPH.
+
+### ESC/ERS Pulmonary Hypertension 2022  
+*2022 · Open*  ·  [source](https://academic.oup.com/eurheartj/article/43/38/3618/6673929)
+
+> Hemodynamic definition revised: mPAP >20 mmHg (was ≥25). PAH (Group 1): PAWP <=15 + PVR >2 WU on right heart cath — mandatory. WSPH classification: I PAH, II left heart, III lung/hypoxia, IV CTEPH, V multifactorial. Initial dual oral therapy (ERA + PDE5i: ambrisentan-tadalafil per AMBITION) for low/intermediate risk; add selexipag (GRIPHON), macitentan (MERIT). Parenteral prostacyclin (epoprostenol, treprostinil) for high-risk. CTEPH: pulmonary endarterectomy first-line; riociguat if inoperable.
+
+### CHEST/ACCP Antithrombotic Therapy for VTE 2021  
+*2021 · Open*  ·  [source](https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext)
+
+> DOACs (apixaban, rivaroxaban, edoxaban, dabigatran) preferred over warfarin for acute VTE (AMPLIFY, EINSTEIN, RE-COVER, Hokusai). Exceptions favoring warfarin/LMWH: CrCl<30, triple-positive APLS (TRAPS), mechanical valves. Cancer-VTE: apixaban or edoxaban preferred (CARAVAGGIO, Hokusai-Cancer); avoid edoxaban/rivaroxaban with luminal GI tumors. Provoked: 3 months. Unprovoked or persistent factor: indefinite low-dose apixaban 2.5mg BID or rivaroxaban 10mg daily (AMPLIFY-EXT, EINSTEIN-CHOICE).
+
+### 2019 ESC PE  
+*2019 · Paywalled*  ·  [source](https://academic.oup.com/eurheartj/article/41/4/543/5556136)
+
+> YEARS algorithm: D-dimer cut-off adapted to pre-test probability. DOACs first-line over warfarin (apixaban, rivaroxaban with no lead-in). RV dysfunction stratifies severity; >=3 months anticoagulation. Massive PE: systemic thrombolysis (PEITHO) or catheter-directed.
+
+### 2019 IDSA/ATS CAP  
+*2019 · Open*  ·  [source](https://www.atsjournals.org/doi/10.1164/rccm.201908-1581ST)
+
+> Eliminated HCAP category; assess individual MRSA/Pseudomonas risk. Site-of-care by severity (CURB-65, ATS minor criteria). Standard outpatient: amoxicillin or doxycycline; macrolide if low resistance. Inpatient: beta-lactam + macrolide or fluoroquinolone.
+
+### Fleischner 2017 Pulmonary Nodules  
+*2017 · Paywalled*  ·  [source](https://pubs.rsna.org/doi/full/10.1148/radiol.2017161659)
+
+> Risk-based follow-up <3 cm. <6 mm: low risk no f/u; 6-8 mm: 6-12 mo CT; >8 mm: 3 mo CT or PET. Subsolid nodules: longer follow-up (5 years).
+
+---
+
+## Oncology (16)
+
+### NCCN Colorectal v2.2026  
+*2026 · Paywalled*  ·  [source](https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1438)
+
+> Universal MMR/MSI testing. dMMR/MSI-H metastatic: pembrolizumab first-line (KEYNOTE-177; ORR ~30%, OS not reached). BRAF V600E: encorafenib + cetuximab/panitumumab (BEACON). Adjuvant FOLFOX/CAPOX +/- atezolizumab for stage III dMMR.
+
+### NCCN Prostate v5.2026  
+*2026 · Paywalled*  ·  [source](https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1444)
+
+> Localized: surgery / radiation +/- ADT. Metastatic hormone-sensitive: ADT + docetaxel (CHAARTED) OR androgen receptor targeted (abiraterone/enzalutamide/apalutamide; LATITUDE/STAMPEDE/TITAN/ARCHES). CRPC: olaparib (BRCA, PROfound). PARPi for HRR mutations.
+
+### NCCN Multiple Myeloma v4.2026  
+*2026 · Paywalled*  ·  [source](https://www.nccn.org/guidelines/)
+
+> IMWG diagnosis: clonal plasma cells >=10% + myeloma-defining events (CRAB, biomarker SLiM-CRAB). Triplet/quadruplet induction (VRd, Dara-VRd; GRIFFIN, PERSEUS); ASCT eligibility-based. CAR-T (cilta-cel, ide-cel) for relapsed (CARTITUDE, KarMMa).
+
+### ASCO 2025 mCRPC Living Guideline  
+*2025 · Open*  ·  [source](https://ascopubs.org/doi/10.1200/JCO-25-00007)
+
+> Continue ADT lifelong; layer abiraterone + prednisone or enzalutamide first-line for mCRPC (COU-AA-301, AFFIRM, PREVAIL). nmCRPC with PSADT <=10mo: apalutamide (SPARTAN), enzalutamide (PROSPER), or darolutamide (ARAMIS) added to ADT. HRR testing universal; olaparib for BRCA1/2 (PROfound) or olaparib+abiraterone (PROpel). PSMA-PET-positive post-taxane/ARPI: 177Lu-PSMA-617 (VISION, 4mo OS gain). Docetaxel then cabazitaxel (CARD) for taxane sequencing.
+
+### ASCO WBC Growth Factors 2025 Update  
+*2025 · Open*  ·  [source](https://ascopubs.org/doi/10.1200/JCO-25-02938)
+
+> Primary G-CSF prophylaxis (filgrastim, pegfilgrastim, tbo-filgrastim, biosimilars) when regimen-related febrile neutropenia risk >=20%, or 10-20% with patient risk factors (age >65, prior chemo/RT, advanced disease, comorbidity, poor PS). Secondary prophylaxis after prior FN/dose-limiting neutropenia. Therapeutic G-CSF not routine for afebrile neutropenia; consider in febrile neutropenia with high-risk features. Biosimilars equivalent.
+
+### NCCN NSCLC v4.2024  
+*2024 · Paywalled*  ·  [source](https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1450)
+
+> All advanced NSCLC: NGS for EGFR/ALK/ROS1/BRAF/KRAS-G12C/MET/RET/NTRK/HER2 + PD-L1 IHC. EGFR mut: osimertinib (FLAURA). ALK: alectinib/lorlatinib. KRAS-G12C: sotorasib/adagrasib (CodeBreaK 200). Adjuvant osimertinib (ADAURA), durvalumab (PACIFIC) post-CRT.
+
+### NCCN Breast Cancer v3.2024 + ASCO  
+*2024 · Paywalled*  ·  [source](https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1419)
+
+> HER2+: trastuzumab + pertuzumab + taxane (CLEOPATRA); T-DXd second-line (DESTINY-Breast03). HR+: CDK4/6 inhibitors + AI/fulvestrant (PALOMA, MONALEESA, MONARCH); ribociclib OS benefit. TNBC: pembrolizumab + chemo (KEYNOTE-522). HER2-low: T-DXd.
+
+### USPSTF Cancer Screening 2024  
+*2024 · Open*  ·  [source](https://www.uspreventiveservicestaskforce.org/uspstf/recommendation-topics/uspstf-a-and-b-recommendations)
+
+> Breast: mammography 40-74 q2y (B). Colon: 45-75 (B 45-49, A 50-75). Lung LDCT: 50-80, >=20 pack-yr, current/former (quit <15y). Cervical: HPV primary q5y 30-65 or co-test. Prostate: shared decision 55-69.
+
+### ASCO Immunotherapy Toxicity 2024  
+*2024 · Open*  ·  [source](https://ascopubs.org/doi/abs/10.1200/JCO.21.01440)
+
+> Grade 1: continue, monitor. Grade 2: hold + consider steroids if persistent. Grade 3: hold + high-dose steroids (prednisone 1-2 mg/kg, taper 4-6 weeks). Grade 4: permanent discontinuation; immunosuppression escalation. Endocrinopathies often need lifelong replacement.
+
+### ASCO Cancer Pain 2024  
+*2024 · Open*  ·  [source](https://ascopubs.org/journal/jco)
+
+> Multimodal pain management. Opioid titration with breakthrough doses. Adjuvants: gabapentinoids for neuropathic, dexamethasone for bone. Buprenorphine emerging for chronic cancer pain. Methadone caution (QT, drug interactions).
+
+### ASCO Early Breast Cancer / CDK4/6 Rapid Update 2024  
+*2024 · Open*  ·  [source](https://ascopubs.org/doi/10.1200/JCO.24.00886)
+
+> HR+/HER2- node-positive high-risk: adjuvant abemaciclib 150mg BID x2y + ET >=5y (monarchE: 5y IDFS absolute benefit 7.6%; Ki-67 requirement dropped 2023). Ribociclib emerging per NATALEE (stage II-III, broader population). HER2+: trastuzumab + pertuzumab + taxane (APHINITY); T-DM1 post-neoadjuvant residual (KATHERINE). Metastatic HR+: CDK4/6i + AI first-line (PALOMA-2, MONALEESA-2/7); TNBC PD-L1+ pembrolizumab (KEYNOTE-355); sacituzumab govitecan (ASCENT).
+
+### ASCO Metastatic Colorectal Cancer Guideline 2022/2024  
+*2024 · Open*  ·  [source](https://ascopubs.org/doi/10.1200/JCO.22.01690)
+
+> Adjuvant stage III: FOLFOX or CAPOX x3-6mo (IDEA: 3mo non-inferior for low-risk T1-3N1). Metastatic molecular triage: RAS/BRAF/MSI/HER2 mandatory. RAS-mut or right-sided: doublet + bevacizumab (anti-VEGF). RAS-WT left-sided: doublet + cetuximab/panitumumab (anti-EGFR; PARADIGM, CALGB 80405). BRAF V600E: encorafenib + cetuximab (BEACON). dMMR/MSI-H: pembrolizumab first-line (KEYNOTE-177). Fit selected: FOLFOXIRI + bev (TRIBE).
+
+### ASCO/SITC Immune-Related Adverse Events 2021 (updated 2024)  
+*2024 · Open*  ·  [source](https://ascopubs.org/doi/10.1200/JCO.21.01440)
+
+> CTCAE v5 grading. Grade 1: continue ICI + monitor. Grade 2: hold ICI, prednisone 0.5-1 mg/kg. Grade 3-4: hold/discontinue, methylprednisolone 1-2 mg/kg + taper >=4-6wk. Steroid-refractory >48-72h: colitis → infliximab 5 mg/kg or vedolizumab 300 mg (wk 0/2/6); pneumonitis → infliximab or MMF; hepatitis → MMF (avoid infliximab); myocarditis → pulse methylpred 1g + ATG/abatacept (high mortality). Hypophysitis: hydrocortisone replacement, do NOT permanently stop ICI.
+
+### ASCO 2024 Stage IV NSCLC Living Guideline  
+*2024 · Open*  ·  [source](https://ascopubs.org/doi/10.1200/JCO-24-02133)
+
+> Universal molecular testing for EGFR/ALK/ROS1/BRAF/KRAS G12C/MET/RET/NTRK/HER2 before first-line therapy. Adjuvant osimertinib x3yr for resected EGFR+ stage IB-IIIA (ADAURA, 73% DFS benefit). Durvalumab x1yr post-concurrent CRT in unresectable stage III (PACIFIC). Metastatic non-driver: pembrolizumab monotherapy if PD-L1 >=50% (KEYNOTE-024); chemo + pembrolizumab regardless of PD-L1 (KEYNOTE-189 nonsquamous, KEYNOTE-407 squamous). Sotorasib/adagrasib for KRAS G12C post-progression (CodeBreaK 200).
+
+### ASCO 2020 Antiemetics Guideline Update  
+*2020 · Open*  ·  [source](https://ascopubs.org/doi/10.1200/JCO.20.01296)
+
+> Highly emetogenic chemo (cisplatin, AC): 4-drug day 1 = NK1 RA (aprepitant/fosaprepitant/netupitant/rolapitant) + 5HT3 RA (palonosetron preferred) + dexamethasone + olanzapine 5-10mg; continue dex + olanzapine days 2-4. Moderately emetogenic: 5HT3 + dex +/- NK1. Olanzapine 5mg non-inferior to 10mg, less sedation. Olanzapine rescue for breakthrough. Same 4-drug for high-dose chemo + HSCT.
+
+### Cairo-Bishop TLS Definition  
+*2004 · Open*  ·  [source](https://onlinelibrary.wiley.com/doi/10.1111/j.1365-2141.2004.05094.x)
+
+> TLS: laboratory (>=2 of K, P, uric acid, Ca within +/-25% baseline) + clinical (Cr 1.5x, arrhythmia, seizure). High risk: bulky lymphoma, AML with hyperleukocytosis, ATL. Rasburicase for high-risk; allopurinol for moderate. Aggressive IV hydration.
+
+---
+
+## Cardiovascular (15)
+
+### 2026 ACC/AHA Dyslipidemia  
+*2026 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001423)
+
+> LDL is causal for atherosclerosis: lower is better in high-risk. High-intensity statin first; ezetimibe (15-20% LDL); PCSK9i (FOURIER, ODYSSEY: 40-60% LDL); bempedoic acid (CLEAR Outcomes) for statin-intolerant. LDL <55 for very high-risk ASCVD. Lp(a) measured once.
+
+### 2025 AHA/ACC Hypertension Guideline  
+*2025 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/HYP.0000000000000249)
+
+> Target BP <130/80 for most adults. PREVENT replaces pooled cohort equations. Expanded aldosteronism screening for stage 2 and resistant HTN. Renal denervation as adjunct for resistant HTN. SPRINT-era data drove targets down for stroke and HF prevention.
+
+### 2025 ACC/AHA ACS  
+*2025 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001309)
+
+> Unified STEMI/NSTEMI framework (plaque instability spectrum). Early invasive for high-risk NSTEMI. Ticagrelor/prasugrel preferred over clopidogrel post-PCI (PLATO, TRITON-TIMI 38). Radial access (RIVAL, MATRIX). DAPT individualized; colchicine (COLCOT, LoDoCo2) as anti-inflammatory secondary prevention.
+
+### 2025 ESC Myocarditis & Pericarditis  
+*2025 · Open*  ·  [source](https://www.escardio.org/guidelines/clinical-practice-guidelines/all-esc-practice-guidelines/myocarditis-and-pericarditis/)
+
+> Myopericarditis: viral/autoimmune myocardial inflammation. NSAIDs or colchicine first-line; corticosteroids second-line (recurrence risk). Anakinra/rilonacept for autoimmune/giant-cell forms. CMR-PET-FDG imaging guidance.
+
+### 2024 AHA/ACC HCM  
+*2024 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001250)
+
+> Sarcomeric mutations cause LVH, diastolic dysfunction, LVOT obstruction; SCD risk. Genetic testing + CMR risk stratification; ICD for SCD prevention. Disopyramide / verapamil for symptoms; mavacamten (cardiac myosin inhibitor) reduces LVOT gradient (EXPLORER-HCM).
+
+### 2024 ACC/AHA Multisociety Lower Extremity PAD  
+*2024 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001251)
+
+> ABI <=0.90 diagnoses PAD; toe-brachial if non-compressible. Structured/supervised exercise therapy first-line for claudication, superior to revascularization for walking distance. Statin + antiplatelet (aspirin or clopidogrel per CAPRIE) for all symptomatic PAD. Low-dose rivaroxaban 2.5mg BID + aspirin reduces MALE/MACE (COMPASS, VOYAGER PAD post-revasc). CLTI: multidisciplinary limb team; endovascular vs surgical bypass per anatomy (BEST-CLI: vein bypass superior with adequate GSV).
+
+### 2023 ACC/AHA/ACCP/HRS Atrial Fibrillation  
+*2023 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193)
+
+> Two separable questions: stroke risk (CHA2DS2-VASc -> DOAC > warfarin per ARISTOTLE/RE-LY/ROCKET-AF) and rhythm management. EAST-AFNET 4 supports early rhythm control; CASTLE-AF / CABANA support ablation in symptomatic AF + HFrEF.
+
+### 2023 Duke-ISCVID Endocarditis Criteria  
+*2023 · Open*  ·  [source](https://academic.oup.com/cid/article/77/4/518/7151107)
+
+> IE = bacterial valve seeding from bacteremia/dental/IVDU causing vegetation + emboli. Updated 2023 criteria add PCR, metagenomic sequencing, FDG-PET/CT. Sensitivity 84% (vs 75% for modified Duke 2000). Empiric ceftriaxone + vancomycin; POET supports IV-to-PO switch.
+
+### 2023 AHA/ACC Chronic Coronary Disease  
+*2023 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168)
+
+> Stable atherosclerotic plaque with progressive ischemia. Stress imaging guides management. DAPT >=6 months post-DES (prasugrel/ticagrelor). Beta-blockers, CCBs, or ranolazine for symptoms. ACEi/ARB + statin in all per HOPE/LIPID/HPS.
+
+### 2022 AHA/ACC/HFSA Heart Failure  
+*2022 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063)
+
+> HFrEF four-pillar GDMT started together: ARNi (PARADIGM-HF) > ACEi/ARB; beta-blocker; MRA; SGLT2i (DAPA-HF, EMPEROR-Reduced). HFpEF: SGLT2i Class 2a (EMPEROR-Preserved, DELIVER). IV iron for iron-deficient (AFFIRM-AHF). ICD/CRT per EF + QRS.
+
+### 2022 ACC/AHA Aortic Disease  
+*2022 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001106)
+
+> Medial degeneration drives dissection/aneurysm in HTN + connective tissue disease. Surgical threshold reduced to 5.0 cm at expert centers. Growth >=0.3 cm/yr over 2y or >=0.5 cm/yr triggers repair. Beta-blockers / ARBs lower aortic stress.
+
+### 2021 ACC/AHA/SCAI Coronary Revascularization  
+*2021 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001038)
+
+> Heart Team for complex multivessel/left main disease. FFR/iFR <=0.80/<=0.89 guides PCI of intermediate lesions (FAME, FAME 2). STEMI with multivessel disease: complete revascularization during index hospitalization (COMPLETE, FULL REVASC) reduces MI/death. Diabetes + multivessel CAD: CABG preferred over PCI (FREEDOM, BARI 2D). Radial access default (RIVAL, MATRIX). Left main: CABG Class 1; PCI reasonable for low/intermediate SYNTAX (EXCEL, NOBLE caveats).
+
+### 2020 ACC/AHA Valvular Heart Disease  
+*2020 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000000923)
+
+> TAVR across all risk tiers (PARTNER 1/2/3, CoreValve). MitraClip for severe functional MR with HF (COAPT). Multidisciplinary heart team evaluation required. Endocarditis prophylaxis for high-risk native/prosthetic valves only.
+
+### 2019 ESC/ERS Acute Pulmonary Embolism  
+*2019 · Open*  ·  [source](https://academic.oup.com/eurheartj/article/41/4/543/5556136)
+
+> Risk-stratify by hemodynamics, sPESI, RV dysfunction (echo/CT), troponin. High-risk (shock/arrest): systemic thrombolysis with alteplase 100mg/2hr (PEITHO informed risk); surgical embolectomy or catheter-directed if contraindicated. Intermediate-high: monitor 48-72h, rescue lysis if decompensation. Catheter-directed thrombolysis emerging (ULTIMA, PE-TRACT). Low-risk (sPESI=0): DOAC outpatient (HoT-PE). Apixaban/rivaroxaban single-drug; dabigatran/edoxaban need parenteral lead-in.
+
+### 2017 ACC/AHA/HRS Syncope  
+*2017 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000000499)
+
+> TLOC from cerebral hypoperfusion: vasovagal, orthostatic, cardiac arrhythmia, structural. History/exam + 12-lead ECG Class 1 (find QT prolongation, Brugada, ARVC). Routine labs/imaging not useful; EP/ICD only if structural/arrhythmic suspected.
+
+---
+
+## GI/Hepatology (15)
+
+### ACG Eosinophilic Esophagitis 2025  
+*2025 · Open*  ·  [source](https://journals.lww.com/ajg/)
+
+> >=15 eos/hpf diagnostic. Shared decision: 1-FED/2-FED elimination diet, topical steroids (fluticasone/budesonide), or dupilumab (LIBERTY-EoE). Maintenance therapy required to prevent fibrostenosis.
+
+### AGA 2025 Moderate-Severe Crohn's Disease  
+*2025 · Open*  ·  [source](https://gastro.org/clinical-guidance/pharmacological-management-of-moderate-to-severe-crohns-disease/)
+
+> Biologic-naive: higher-efficacy first — infliximab + immunomodulator combo (SONIC), adalimumab, ustekinumab (UNITI), risankizumab (ADVANCE/MOTIVATE), guselkumab, mirikizumab; vedolizumab gut-selective option. Previously exposed: adalimumab, risankizumab, guselkumab, or upadacitinib (U-EXCEL/U-EXCEED) preferred; ustekinumab/mirikizumab intermediate. Treat-to-target with mucosal/endoscopic healing (STRIDE-II, CALM). Avoid prolonged steroids. Certolizumab pegol and vedolizumab lower efficacy in pretreated.
+
+### ACG H. pylori Treatment 2024  
+*2024 · Open*  ·  [source](https://journals.lww.com/ajg/fulltext/2024/09000/acg_clinical_guideline__treatment_of_helicobacter.13.aspx)
+
+> Bismuth quadruple therapy (BQT) 14 days preferred for treatment-naive due to clarithromycin resistance. Vonoprazan-based therapy emerging. Test of cure >=4 weeks post-treatment.
+
+### ACG Acute Pancreatitis 2024  
+*2024 · Open*  ·  [source](https://journals.lww.com/ajg/)
+
+> Early oral feeding within 24-48h for mild AP. Enteral nutrition prevents infection in moderate-severe. Lactated Ringer's preferred over normal saline (WATERFALL). Delay intervention 4+ weeks for walled-off necrosis.
+
+### AASLD Cirrhosis & Ascites 2021/2024  
+*2024 · Open*  ·  [source](https://www.aasld.org/practice-guidelines)
+
+> Variceal bleed: octreotide + ceftriaxone (SBP prophylaxis) + EVL. Ascites: spironolactone + furosemide; refractory -> TIPS or LVP + albumin. HRS-AKI: terlipressin + albumin (CONFIRM, 36% reversal vs placebo). HE: lactulose +/- rifaximin.
+
+### AASLD MASLD 2024  
+*2024 · Open*  ·  [source](https://www.aasld.org/)
+
+> Renamed from NAFLD (metabolic dysfunction-associated steatotic liver disease). Lifestyle (5-10% weight loss) + comorbidity management; SGLT2i / GLP-1 RA for diabetes/obesity. Resmetirom (THR-beta agonist) FDA-approved for noncirrhotic MASH F2-F3 (MAESTRO-NASH).
+
+### AGA 2024 Moderate-Severe Ulcerative Colitis  
+*2024 · Open*  ·  [source](https://gastro.org/clinical-guidance/living-guideline-for-moderate-to-severe-ulcerative-colitis/)
+
+> Early advanced therapy over step-up. Higher-efficacy options for biologic-naive: infliximab, vedolizumab, upadacitinib, risankizumab, guselkumab, ozanimod (S1P modulator). Anti-TNF (infliximab + thiopurine combo per UC-SUCCESS), anti-integrin vedolizumab (GEMINI), anti-IL12/23 ustekinumab (UNIFI), JAKi tofacitinib/upadacitinib (OCTAVE, U-ACHIEVE). Steroid-sparing essential; confirm active inflammation by biomarkers/endoscopy before escalation. Mild-moderate: oral + topical 5-ASA (mesalamine).
+
+### ACG Celiac Disease 2023  
+*2023 · Open*  ·  [source](https://journals.lww.com/ajg/fulltext/2023/01000/american_college_of_gastroenterology_guidelines.17.aspx)
+
+> EGD with multiple duodenal biopsies for confirmation. High-titer TTG IgA >10x ULN + positive EMA can avoid biopsy in select cases. Lifelong gluten-free diet; pneumococcal vaccination per asplenia risk.
+
+### AASLD HCV 2023 (living document)  
+*2023 · Open*  ·  [source](https://www.hcvguidelines.org/)
+
+> Universal screening recommended. Glecaprevir/pibrentasvir or sofosbuvir/velpatasvir 8-12 weeks pangenotypic; >95% SVR. Simplified treatment for treatment-naive non-cirrhotic. Pediatric treatment >=3 years.
+
+### ACG GERD 2022  
+*2022 · Open*  ·  [source](https://journals.lww.com/ajg/fulltext/2022/01000/acg_clinical_guideline_for_the_diagnosis_and.14.aspx)
+
+> Empiric PPI 8-week trial for typical GERD. Endoscopy for alarm symptoms (dysphagia, weight loss, GI bleed) and Barrett risk factors. Long-term PPI risks (CKD, fractures) overstated; continue if symptoms recur.
+
+### USPSTF Colorectal Cancer Screening 2021  
+*2021 · Open*  ·  [source](https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/colorectal-cancer-screening)
+
+> Lowered start age 50 -> 45 (rising young-onset CRC). Options: colonoscopy q10y, FIT annually, sDNA-FIT q3y, flexible sigmoidoscopy. Individualized 76-85. Stop after 85.
+
+### ACG IBS 2021  
+*2021 · Open*  ·  [source](https://journals.lww.com/ajg/fulltext/2021/01000/acg_clinical_guideline__management_of_irritable.11.aspx)
+
+> Positive diagnostic strategy (Rome IV) over diagnosis of exclusion. Low-FODMAP diet for symptom relief. IBS-D: rifaximin, eluxadoline. IBS-C: linaclotide, plecanatide, lubiprostone. Gut-directed psychotherapy.
+
+### ACG C. difficile 2021  
+*2021 · Open*  ·  [source](https://journals.lww.com/ajg/fulltext/2021/06000/acg_clinical_guidelines__prevention,_diagnosis,.12.aspx)
+
+> Fidaxomicin first-line for initial CDI (lower recurrence vs vancomycin). Vancomycin 125 mg PO QID x 10d alternative. FMT for recurrent CDI (>=2 recurrences). Bezlotoxumab for prevention in high-risk.
+
+### AGA Crohn Disease 2020  
+*2020 · Open*  ·  [source](https://www.gastrojournal.org/)
+
+> Top-down advanced therapy (anti-TNF, ustekinumab, risankizumab/mirikizumab anti-IL23, vedolizumab) over step-up for moderate-severe. Combination anti-TNF + thiopurine reduces immunogenicity. Upadacitinib JAKi as alternative.
+
+### AASLD HBV 2018 + updates  
+*2018 · Open*  ·  [source](https://www.aasld.org/)
+
+> Treat HBeAg+ with HBV DNA >20,000 + ALT >2x ULN; or HBeAg- with HBV DNA >2,000. Tenofovir / entecavir first-line. Universal screening (anti-HBs, anti-HBc, HBsAg) per CDC 2023.
+
+---
+
+## ID (15)
+
+### IDSA 2010/2025 UTI  
+*2025 · Open*  ·  [source](https://www.idsociety.org/practice-guideline/complicated-urinary-tract-infections/)
+
+> Uncomplicated cystitis: nitrofurantoin or TMP-SMX or fosfomycin. Complicated UTI / pyelonephritis: 5-7d fluoroquinolone (FQ) or 7-10d non-FQ. Asymptomatic bacteriuria: only treat in pregnancy or pre-urological surgery.
+
+### ACIP Adult Immunizations 2025  
+*2025 · Open*  ·  [source](https://www.cdc.gov/vaccines/acip/recommendations.html)
+
+> RZV (recombinant zoster) for all adults >=50. RSV vaccine universally for >=75; risk-based for 60-74. Pneumococcal: PCV21/PCV20/PCV15 for all >=50 (lowered from 65). Annual influenza, COVID-19, Tdap once + Td q10y.
+
+### Surviving Sepsis Campaign 2021 + 2024 update  
+*2024 · Open*  ·  [source](https://www.sccm.org/survivingsepsiscampaign/guidelines-and-resources/surviving-sepsis-campaign-adult-guidelines)
+
+> Hour-1 bundle: lactate, blood cultures BEFORE abx, broad-spectrum within 1h, 30 mL/kg crystalloid for hypotension/lactate>=4, norepinephrine first-line for MAP<65 after fluids. Balanced crystalloids (SMART, BaSICS). De-escalate by 48-72h.
+
+### DHHS HIV ART 2024  
+*2024 · Open*  ·  [source](https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-arv/whats-new)
+
+> INSTI-based regimens first-line (bictegravir/TAF/FTC, dolutegravir/3TC/ABC). Long-acting cabotegravir/rilpivirine bimonthly for adherence. Earlier statin use per REPRIEVE (35% MACE reduction). Start ART regardless of CD4 count.
+
+### ATS/CDC/IDSA TB 2024  
+*2024 · Open*  ·  [source](https://www.idsociety.org/practice-guideline/treatment-of-drug-susceptible-tb/)
+
+> 4-month rifapentine-moxifloxacin (Study 31) for drug-susceptible TB >=12 years. 6-month BPaLM (bedaquiline-pretomanid-linezolid-moxifloxacin) for RIF-resistant. LTBI: 3HP weekly x12w (preferred) or 4R.
+
+### IDSA/SHEA C. difficile 2021 + ACG 2024  
+*2024 · Open*  ·  [source](https://www.idsociety.org/practice-guideline/clostridioides-difficile-2021-focused-update/)
+
+> Fidaxomicin first-line over vancomycin (lower recurrence). Bezlotoxumab for high-risk recurrence prevention. FMT for >=2 recurrences. Avoid metronidazole except for fulminant CDI.
+
+### IDSA SSTI 2014 + 2024 updates  
+*2024 · Open*  ·  [source](https://www.idsociety.org/practice-guideline/skin-and-soft-tissue-infections/)
+
+> Stratify by purulent vs nonpurulent and severity. MRSA coverage if penetrating trauma, prior MRSA, severe SIRS. Necrotizing infections: surgical debridement + broad antibiotics + clindamycin (toxin suppression). Diabetic foot: extended courses + osteomyelitis evaluation.
+
+### IDSA Febrile Neutropenia 2024 + ASCO  
+*2024 · Open*  ·  [source](https://www.idsociety.org/practice-guideline/fever-and-neutropenia-in-adults-with-cancer/)
+
+> MASCC score risk stratification. High-risk (AML, HSCT, prolonged neutropenia >=7d): IV antipseudomonal beta-lactam + +/- vancomycin if mucositis/catheter/SSTI. Outpatient FQ for low-risk. FQ prophylaxis for high-risk.
+
+### WHO/IDSA Travel Medicine + Malaria  
+*2024 · Open*  ·  [source](https://www.cdc.gov/yellow-book/)
+
+> Pre-travel risk assessment: destination, activities, comorbidities. Malaria chemoprophylaxis (atovaquone-proguanil, doxycycline, mefloquine, tafenoquine). Severe malaria: IV artesunate + clindamycin. Tafenoquine for P. vivax radical cure.
+
+### AHA 2023 IE Update + Duke-ISCVID  
+*2023 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/CIR.0000000000001093)
+
+> Healthcare-associated IE increasing. Modified Duke-ISCVID 2023 incorporates molecular diagnostics, FDG-PET. Empiric therapy: ceftriaxone + vancomycin. POET trial: IV-to-PO transition after stabilization (>=10d IV + clinical response).
+
+### IDSA Lyme 2020  
+*2020 · Open*  ·  [source](https://www.idsociety.org/practice-guideline/lyme-disease/)
+
+> Doxycycline 10-14d for early erythema migrans. 14-28d for neurologic/cardiac/arthritis. Single-dose doxycycline post-tick bite if Ixodes tick + >36h attached + endemic area + <72h post-bite. No chronic Lyme syndrome.
+
+### IDSA/ATS CAP 2019  
+*2019 · Open*  ·  [source](https://www.idsociety.org/practice-guideline/community-acquired-pneumonia-cap-in-adults/)
+
+> Eliminated HCAP. Assess MRSA/Pseudomonas risk individually. CURB-65 / ATS minor criteria for severity. Outpatient: amoxicillin OR doxycycline OR macrolide (if local resistance <25%). Inpatient: beta-lactam + macrolide OR fluoroquinolone.
+
+### IDSA/ATS HAP/VAP 2016  
+*2016 · Paywalled*  ·  [source](https://academic.oup.com/cid/article/63/5/e61/2237650)
+
+> 7-day standard duration for most HAP/VAP. Procalcitonin can guide de-escalation. Empiric coverage: anti-pseudomonal beta-lactam + MRSA coverage if risk factors. Local antibiogram-driven.
+
+### IDSA Candidiasis 2016 (2024 update in review)  
+*2016 · Open*  ·  [source](https://www.idsociety.org/practice-guideline/candidiasis/)
+
+> Candidemia: echinocandin first-line (caspofungin 70→50 mg, micafungin 100 mg, anidulafungin 200→100 mg) — fungicidal, covers C. glabrata/krusei. Step-down to fluconazole 400 mg if susceptible + clinically stable + clearance. Remove central lines. Ophthalmology exam within 1 week (endophthalmitis). 14d from first negative blood culture. C. auris + echinocandin-resistance rising → speciation + AST mandatory. Rezafungin (once-weekly) emerging (ReSTORE).
+
+### IDSA Bacterial Meningitis 2004 (still standard)  
+*2004 · Open*  ·  [source](https://academic.oup.com/cid/article/39/9/1267/402080)
+
+> Empiric: vancomycin + ceftriaxone (add ampicillin if >50yo/immunocompromised for Listeria). Dexamethasone 0.15 mg/kg q6h for pneumococcal (van de Beek). LP after head CT if focal deficits, papilledema, or immunocompromise.
+
+---
+
+## Rheumatology (14)
+
+### ACR 2025 SLE Treatment Guideline  
+*2025 · Open*  ·  [source](https://rheumatology.org/lupus-guideline)
+
+> Hydroxychloroquine for ALL (target weight-based ≤5 mg/kg, retinal screen q1y after 5y). Organ-domain framework. Lupus nephritis Class III/IV: MMF + steroids + belimumab (BLISS-LN) OR voclosporin (AURORA-1, calcineurin inhibitor) triple therapy preferred over MMF alone. Non-renal SLE: anifrolumab (anti-IFNAR, TULIP-1/2) for cutaneous/articular. Steroid taper to ≤5 mg prednisone by 6 mo. Aspirin + statin + bone/vaccine/reproductive planning integrated. Belimumab maintenance reduces flares (BLISS-52/76).
+
+### EULAR 2022 / KDIGO 2024 ANCA-Associated Vasculitis  
+*2024 · Open*  ·  [source](https://kdigo.org/wp-content/uploads/2024/02/KDIGO-2024-ANCA-Vasculitis-Guideline.pdf)
+
+> GPA/MPA induction: rituximab (RAVE, RITUXVAS) preferred over cyclophosphamide for severe disease; both paired with PEXIVAS reduced-dose glucocorticoid taper (40% less cumulative steroid, non-inferior outcomes). Avacopan (oral C5a receptor inhibitor) added per ADVOCATE for steroid-sparing remission (week-52 superiority, cumulative prednisone -2.3g). Maintenance: rituximab 500mg q6mo > azathioprine (MAINRITSAN). EGPA severe: mepolizumab (MIRRA) or rituximab; cyclophosphamide if cardiac involvement.
+
+### EULAR SLE 2023  
+*2023 · Open*  ·  [source](https://ard.eular.org/article/S0003-4967(24)66542-8/fulltext)
+
+> Hydroxychloroquine for ALL SLE patients. Lupus nephritis: MMF + steroids; add belimumab (BLISS-LN) or voclosporin (AURORA-1) for high proteinuria. Anifrolumab (TULIP) for skin/joint disease. Goal: lupus-related damage prevention via low-dose steroids + tight DMARD control.
+
+### ACR/EULAR Sjögren 2023  
+*2023 · Open*  ·  [source](https://www.eular.org/recommendations-management)
+
+> Sicca symptoms: artificial tears, saliva substitutes, pilocarpine, cevimeline. Systemic: hydroxychloroquine first-line; immunosuppressants (MTX, AZA, MMF) for organ involvement. Rituximab/abatacept for refractory; CD4+/CD20+ targeted therapy emerging.
+
+### EULAR Systemic Sclerosis 2023  
+*2023 · Open*  ·  [source](https://ard.eular.org/)
+
+> Skin: MMF or MTX. SSc-ILD: MMF, nintedanib (SENSCIS), tocilizumab (focuSSced). PAH: ERA + PDE5i (AMBITION). Renal crisis: ACEi (DO NOT use in pre-crisis prevention). Raynaud: CCB + PDE5i.
+
+### GRAPPA PsA 2022  
+*2022 · Open*  ·  [source](https://psoriasis-hub.com/medical-information/updated-grappa-guidelines-the-good-care-campaign-for-psoriatic-arthritis)
+
+> Domain-based: peripheral arthritis, axial, enthesitis, dactylitis, skin, nails. csDMARD (MTX/SSZ/LEF) vs bDMARD (TNFi, IL-17i, IL-23i, JAKi, abatacept) by domain. Treat-to-target. IL-17i (secukinumab, ixekizumab) - excellent skin + joint.
+
+### EULAR 2022 Giant Cell Arteritis (2023 imaging update)  
+*2022 · Open*  ·  [source](https://ard.bmj.com/content/79/1/19)
+
+> Induction: prednisone 40-60mg/day, taper to 15-20mg by 2-3mo, off by 12mo. Tocilizumab 162mg SC weekly (GiACTA) for relapsing/refractory disease or high steroid-toxicity risk; methotrexate alternative adjunct. Diagnosis: temporal artery biopsy or temporal/axillary ultrasound (halo sign, compression sign) within 1 week; do not delay steroids. Large-vessel involvement: PET-CT, MRA, or CTA aorta. Aspirin only if ischemic/cardiovascular indication.
+
+### ASAS-EULAR 2022 / ACR 2019 Axial Spondyloarthritis  
+*2022 · Open*  ·  [source](https://ard.bmj.com/content/82/1/19)
+
+> NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria).
+
+### ACR RA 2021  
+*2021 · Open*  ·  [source](https://pubmed.ncbi.nlm.nih.gov/34101376/)
+
+> MTX monotherapy first-line (preferred over biologics in DMARD-naive). If inadequate response: add bDMARD (anti-TNF, anti-IL6, abatacept) OR JAKi (caution >65/CV risk per ORAL Surveillance). Triple therapy (MTX/HCQ/SSZ) acceptable alternative to biologics.
+
+### ACR ANCA Vasculitis 2021  
+*2021 · Open*  ·  [source](https://vasculitisfoundation.org/wp-content/uploads/2024/01/2021-ACR-VF-Guideline-for-Management-of-ANCA-Associated-Vasculitis.pdf)
+
+> Severe GPA/MPA induction: rituximab (RAVE) preferred over cyclophosphamide; reduced-dose steroids (PEXIVAS, NNT 11). Avacopan (C5a inhibitor) steroid-sparing (ADVOCATE). Maintenance: rituximab > AZA. Plasma exchange controversial post-PEXIVAS.
+
+### ACR GCA 2021  
+*2021 · Open*  ·  [source](https://acrjournals.onlinelibrary.wiley.com/doi/10.1002/acr.24632)
+
+> High-dose prednisone immediately for vision threat (1mg/kg or 1g IV pulse if vision loss). Add tocilizumab for newly-dx (GiACTA) - reduces relapse / steroid burden. Methotrexate alternative. Temporal artery biopsy + LV vascular imaging (PET, MRA). Monitor with ESR/CRP.
+
+### ACR Gout 2020  
+*2020 · Open*  ·  [source](https://www.healio.com/clinical-guidance/gout/2020-american-college-of-rheumatology-guidelines-for-the-management-of-gout-treatment-guidelines)
+
+> Treat-to-target uric acid <6 mg/dL (or <5 if tophi). Allopurinol first-line, start during flare with anti-inflammatory prophylaxis (3-6 mo). HLA-B*5801 screen in Asian populations (SCAR risk). Acute: NSAID, colchicine, OR steroid (combine for severe). Febuxostat caution per CARES (CV mortality).
+
+### ACR/SAA/SPARTAN Axial SpA 2019  
+*2019 · Open*  ·  [source](https://pmc.ncbi.nlm.nih.gov/articles/PMC6764857/)
+
+> Stable AS: NSAID first-line; failure -> TNFi (any) preferred over IL-17i. PsA-related: TNFi or IL-17i; IL-23i (guselkumab, risankizumab) emerging. Treat-to-target with disease activity measures (BASDAI, ASDAS).
+
+### ACR Osteoarthritis 2019  
+*2019 · Open*  ·  [source](https://acrjournals.onlinelibrary.wiley.com/doi/10.1002/art.41142)
+
+> Exercise + weight loss core. Topical NSAIDs strongly recommended for hand/knee OA. Oral NSAIDs > acetaminophen (limited efficacy). Intra-articular steroids for flares (3-4x/year max). Avoid glucosamine/chondroitin, PRP, stem cells (insufficient evidence). Joint replacement for end-stage.
+
+---
+
+## Neurology (12)
+
+### AHA/ASA Acute Ischemic Stroke 2019/2024  
+*2024 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/STR.0000000000000513)
+
+> IV alteplase (0.9 mg/kg) OR tenecteplase (0.25 mg/kg) within 4.5h LKW (extended to 9h with penumbra imaging per WAKE-UP/EXTEND/AcT). Mechanical thrombectomy <=24h for LVO with favorable imaging (DAWN, DEFUSE 3). BP <185/110 for tPA, <180/105 post-tPA.
+
+### AAN/AES Status Epilepticus 2016 + 2024  
+*2024 · Open*  ·  [source](https://www.aan.com/Guidelines/)
+
+> First-line benzodiazepine: IM midazolam 10mg, IV lorazepam 4mg, or IV diazepam 10mg. Second-line: fosphenytoin 20 mg/kg, valproate 40 mg/kg, levetiracetam 60 mg/kg - equivalent (ESETT). Refractory: anesthetic infusion (midazolam/propofol/pentobarbital).
+
+### AHS Migraine 2024  
+*2024 · Paywalled*  ·  [source](https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14692)
+
+> Acute: triptans (sumatriptan, eletriptan), gepants (rimegepant, ubrogepant), ditans (lasmiditan), NSAIDs. Preventive: CGRP mAbs (erenumab, fremanezumab, galcanezumab, eptinezumab) FIRST-LINE (no prior trial requirement); atogepant; topiramate, propranolol. Triptans cardiac contraindications.
+
+### AAN/AAOS Anti-Amyloid Therapy 2024  
+*2024 · Open*  ·  [source](https://www.aan.com/Guidelines/home/GuidelineDetail/)
+
+> Lecanemab (CLARITY-AD: 27% slower decline) and donanemab (TRAILBLAZER-ALZ-2: 35% slower decline at low/intermediate tau) for early symptomatic AD. Eligibility: MCI/mild dementia + amyloid PET/CSF+ + APOE4 testing for ARIA risk. ARIA-E/H 20-30% (often asymptomatic).
+
+### AAN 2018 (reaffirmed 2024) DMT for Adults with MS  
+*2024 · Open*  ·  [source](https://www.aan.com/Guidelines/home/GuidelineDetail/898)
+
+> Offer DMT for relapsing MS; earlier = better long-term disability outcome. High-efficacy agents (natalizumab, ocrelizumab, alemtuzumab, ofatumumab, S1P modulators fingolimod/ozanimod) for highly active disease (TREAT-MS, DELIVER-MS support early high-efficacy). Ocrelizumab only DMT proven for ambulatory PPMS (ORATORIO). Monitor JCV antibody for natalizumab (PML risk). Switch for breakthrough activity. Pregnancy planning: glatiramer/IFN-β safest; washout for teratogenic agents.
+
+### International Consensus Myasthenia Gravis 2023  
+*2023 · Paywalled*  ·  [source](https://www.neurology.org/doi/10.1212/WNL.0000000000011124)
+
+> Pyridostigmine symptomatic. Steroids + steroid-sparing (AZA, MMF, MTX). Refractory: rituximab (off-label, especially MuSK+), eculizumab/ravulizumab (C5 inhibitors), efgartigimod (FcRn antagonist per ADAPT). Thymectomy for AChR+ early-onset (MGTX).
+
+### EAN/PNS Guillain-Barré 2023  
+*2023 · Paywalled*  ·  [source](https://onlinelibrary.wiley.com/doi/10.1111/jns.12594)
+
+> PE OR IVIG 0.4 g/kg x5d - equally effective for hastening recovery (no advantage of combination). Steroids NOT recommended (no benefit). EGOS/mEGOS/mEGRIS prognostication. Mechanical ventilation for FVC <20 mL/kg or NIF <-30.
+
+### AAN BPPV 2023  
+*2023 · Paywalled*  ·  [source](https://onlinelibrary.wiley.com/doi/10.1111/acem.14558)
+
+> Dix-Hallpike for posterior canal BPPV (most common). Torsional/upbeat nystagmus, latency 5-20s, fatigable. Treatment: Epley canalith repositioning maneuver (NNT 2). Brandt-Daroff exercises home alternative.
+
+### AHA/ASA ICH 2022  
+*2022 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/STR.0000000000000407)
+
+> BP control <140 within 1-2h (INTERACT2/ATACH-2). Reverse anticoagulation (4F-PCC, idarucizumab for dabigatran, andexanet for FXa). Avoid prophylactic steroids. Surgical evacuation for cerebellar ICH >3cm or hydrocephalus.
+
+### AHA/ASA Stroke Prevention 2021  
+*2021 · Open*  ·  [source](https://pubmed.ncbi.nlm.nih.gov/34024117/)
+
+> DAPT (aspirin + clopidogrel) <=21d for minor stroke/TIA (CHANCE/POINT, start <=24h). Ticagrelor + aspirin (THALES) alternative. Statin, ACEi/ARB. AF: DOAC. Carotid stenosis 70-99% symptomatic: CEA/CAS within 2 weeks.
+
+### AAN Parkinson Disease 2018 + 2021 update  
+*2021 · Open*  ·  [source](https://www.aan.com/Guidelines/home/GuidelineDetail/1043)
+
+> Levodopa superior for motor (LEAP); dopamine agonists increase impulse control disorders, hallucinations, edema. MAO-B inhibitors (rasagiline, selegiline) modest. DBS for motor fluctuations / dyskinesias (EARLYSTIM). LCIG infusion for advanced disease.
+
+### AHA/ASA 2021 Secondary Stroke Prevention  
+*2021 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/STR.0000000000000375)
+
+> Etiologic workup within 48h. Non-cardioembolic minor stroke/high-risk TIA (ABCD2 >=4): DAPT aspirin + clopidogrel x21d (CHANCE, POINT) or +ticagrelor x30d (THALES). AF: DOAC over warfarin (apixaban, rivaroxaban, dabigatran, edoxaban). High-intensity statin targeting LDL <70 (SPARCL, TST). BP <130/80. PFO closure for cryptogenic stroke age <60 with high-risk PFO (CLOSE, REDUCE, RESPECT, DEFENSE-PFO). Symptomatic intracranial stenosis: aggressive medical (SAMMPRIS).
+
+---
+
+## Endocrinology (11)
+
+### ADA Standards of Care 2025  
+*2025 · Open*  ·  [source](https://professional.diabetes.org/standards-of-care)
+
+> Metformin baseline + early combination. SGLT2i for ASCVD/HF/CKD regardless of A1c (EMPA-REG, CANVAS, DAPA-HF). GLP-1 RA for ASCVD/obesity (LEADER, REWIND, SUSTAIN-6, SELECT). Tirzepatide for weight loss (SURMOUNT). CGM for non-insulin T2DM.
+
+### AACE/ATA Hypothyroidism 2014/2024  
+*2024 · Open*  ·  [source](https://www.endocrinepractice.org/)
+
+> TSH screening; treat if TSH >10 or symptoms with TSH 4.5-10. Levothyroxine 1.6 mcg/kg/day; titrate by TSH. Liothyronine combination not routinely recommended. Subclinical hypothyroidism treatment individualized.
+
+### KDIGO 2022 Diabetes in CKD  
+*2022 · Open*  ·  [source](https://kdigo.org/guidelines/diabetes-ckd/)
+
+> SGLT2i for T2DM + CKD regardless A1c (eGFR >=20). Metformin if eGFR >=30. GLP-1 RA semaglutide for kidney protection (FLOW). Finerenone if eGFR >25, K normal, ACR >30 (FIDELIO/FIGARO).
+
+### AACE Postmenopausal Osteoporosis 2020  
+*2020 · Open*  ·  [source](https://pro.aace.com/clinical-guidance/2020-clinical-practice-guidelines-diagnosis-and-treatment-postmenopausal)
+
+> T-score <=-2.5 diagnostic. First-line: alendronate, risedronate, zoledronate, denosumab. Anabolics (teriparatide, abaloparatide, romosozumab) for very-high-risk. FRAX >=20% major or 3% hip fracture risk treatment threshold.
+
+### AACE/ACE Postmenopausal Osteoporosis 2020  
+*2020 · Open*  ·  [source](https://www.endocrinepractice.org/article/S1530-891X(20)35037-0/fulltext)
+
+> Dx: T-score <=-2.5, fragility fracture, or FRAX >=20% major / >=3% hip. High risk: alendronate, risedronate, zoledronate, or denosumab first-line. Very high risk (T<=-3.0, recent fracture, multiple fx): anabolic first — romosozumab x12mo (ARCH vs alendronate), teriparatide or abaloparatide x2y (VERO, ACTIVE) — then sequence to antiresorptive. Denosumab 60mg SC q6mo — never stop without bisphosphonate follow-on (rebound vertebral fx). Bisphosphonate drug holiday after 3-5y IV / 5y oral if low risk.
+
+### Endocrine Society Hypopituitarism 2016  
+*2016 · Open*  ·  [source](https://academic.oup.com/jcem/article/101/11/3888/2764912)
+
+> 8-9am cortisol <3 = adrenal insufficiency; 3-15 ambiguous (cosyntropin stim or insulin tolerance test). Hydrocortisone 15-25 mg/day in divided doses; stress dosing for illness/surgery. Levothyroxine, sex hormones, GH per deficiency.
+
+### Endocrine Society Primary Aldosteronism 2016  
+*2016 · Open*  ·  [source](https://pubmed.ncbi.nlm.nih.gov/26934393/)
+
+> Screen if SBP >150 / resistant HTN / hypokalemia / adrenal incidentaloma / OSA / family history. Aldosterone-renin ratio (ARR) initial test. Confirm with saline infusion or oral salt load. Adrenal vein sampling if surgery considered. Lateralization -> adrenalectomy; bilateral -> spironolactone.
+
+### ATA Hyperthyroidism & Thyrotoxicosis 2016  
+*2016 · Open*  ·  [source](https://www.liebertpub.com/doi/full/10.1089/thy.2016.0229)
+
+> Graves dx: suppressed TSH + elevated FT4/T3 + TRAb or diffuse RAIU. Three definitive options: methimazole 12-18mo (preferred initial; PTU only 1st-trimester pregnancy or storm due to hepatotoxicity), RAI ablation, or thyroidectomy. Beta-blocker for symptoms (propranolol, atenolol). Storm: PTU + iodine (Lugol/SSKI 1h after PTU) + hydrocortisone + beta-blocker + cooling. Moderate-severe orbitopathy: IV methylprednisolone pulse; teprotumumab (IGF-1R mAb) reduces proptosis per OPTIC (83% vs 10%).
+
+### Endocrine Society Cushing 2015  
+*2015 · Open*  ·  [source](https://academic.oup.com/jcem/article/100/8/2807/2836065)
+
+> Screening: 24h urine free cortisol, late-night salivary cortisol, or 1-mg dexamethasone suppression. Treatment: transsphenoidal selective adenomectomy first-line (Cushing disease); unilateral adrenalectomy for adrenal adenoma. Ketoconazole/metyrapone/osilodrostat second-line.
+
+### ATA Thyroid Nodules 2015  
+*2015 · Open*  ·  [source](https://www.thyroid.org/professionals/ata-professional-guidelines/)
+
+> US risk stratification (TI-RADS-like): high suspicion -> FNA at >=1cm; intermediate -> 1-1.5cm; low -> 1.5cm; very low -> 2cm. Bethesda categories for FNA. Active surveillance for low-risk PTC <1cm.
+
+### ATA Hypothyroidism Treatment 2014  
+*2014 · Open*  ·  [source](https://www.liebertpub.com/doi/10.1089/thy.2014.0028)
+
+> Levothyroxine monotherapy standard: 1.6 mcg/kg/day overt; 25-75 mcg start subclinical. Take fasting, separate from calcium/iron/PPI by 4h. Recheck TSH q6-8wk after dose change; target mid-reference range (0.4-4.0). Treat subclinical if TSH >10, or 4.5-10 with symptoms, positive TPO, pregnancy, or CV risk. Pregnancy: increase dose ~30% at confirmation, target TSH <2.5. LT4/LT3 combination not routinely recommended (insufficient evidence); consider in persistently symptomatic euthyroid on LT4 alone.
+
+---
+
+## Nephrology (9)
+
+### KDIGO 2025 ADPKD  
+*2025 · Open*  ·  [source](https://kdigo.org/guidelines/adpkd/)
+
+> Tolvaptan slows kidney volume increase (TEMPO 3:4) and preserves eGFR in rapid-progressors. Liver enzyme monitoring required. Genetic testing helpful for prognosis and family screening.
+
+### 2025 AHA/ACC Hypertension (Renal Lens)  
+*2025 · Open*  ·  [source](https://www.ahajournals.org/doi/10.1161/HYP.0000000000000249)
+
+> Target <130/80 for most adults; resistant HTN -> spironolactone (PATHWAY-2 demonstrated mineralocorticoid excess physiology). Expanded primary aldosteronism screening for stage 2 / resistant HTN. PREVENT calculator replaces pooled cohort equations.
+
+### KDIGO 2024 CKD Evaluation & Management  
+*2024 · Open (CC BY-NC-ND)*  ·  [source](https://kdigo.org/guidelines/ckd-evaluation-and-management/)
+
+> Risk stratification by eGFRcr-cys + ACR; RASi + SGLT2i + finerenone backbone for proteinuric CKD (DAPA-CKD, EMPA-KIDNEY, FIDELIO/FIGARO). GLP-1 RA per FLOW (semaglutide, 24% kidney composite reduction). KFRE for individualized progression risk; SGLT2i now indicated at eGFR >=20.
+
+### KDIGO 2024 Blood Pressure in CKD  
+*2024 · Open*  ·  [source](https://kdigo.org/guidelines/blood-pressure-in-ckd/)
+
+> Target SBP <120 (SPRINT-informed) when tolerated; do not stop RASi for modest eGFR bumps or mild hyperkalemia. Recommendation primarily CV-driven, not kidney-outcome driven.
+
+### KDIGO 2024 CKD-MBD update  
+*2024 · Open*  ·  [source](https://kdigo.org/guidelines/ckd-mbd/)
+
+> Dietary phosphate first; non-calcium phosphate binders preferred. Vitamin D analogs and calcimimetics for severe SHPT. PTH targets a range (2-9x ULN) in dialysis. Aluminum binders historic / avoid.
+
+### AUA 2023 BPH Guideline  
+*2023 · Paywalled*  ·  [source](https://www.auanet.org/guidelines/benign-prostatic-hyperplasia-(bph)-guideline)
+
+> IPSS-driven evaluation. Alpha-blockers and 5-alpha-reductase inhibitors first-line; combination if both LUTS and large prostate. Surgical options including PVP, WVTT, laser enucleation, PAE.
+
+### KDIGO 2022 Diabetes in CKD  
+*2022 · Open*  ·  [source](https://kdigo.org/guidelines/diabetes-ckd/)
+
+> SGLT2i first-line for T2DM + CKD regardless of A1c (eGFR >=20). Metformin if eGFR >=30. GLP-1 RA layered for additional glycemic / weight control. Decouple glycemic control from kidney protection.
+
+### KDIGO 2021 Glomerulonephritis  
+*2021 · Open*  ·  [source](https://kdigo.org/guidelines/gd/)
+
+> ANCA vasculitis: rituximab (RAVE) or cyclophosphamide + reduced steroids (PEXIVAS); avacopan as steroid-sparing C5a inhibitor. Lupus nephritis: induction with belimumab + MMF or voclosporin (AURORA-1); membranous: rituximab if anti-PLA2R+ (MENTOR). IgA: sparsentan (PROTECT).
+
+### KDIGO 2012 AKI (2026 update in review)  
+*2012 · Open*  ·  [source](https://kdigo.org/guidelines/acute-kidney-injury/)
+
+> Three-bucket etiology (prerenal/intrinsic/postrenal) drives action. Hold nephrotoxins; optimize perfusion. RRT for refractory hyperkalemia/acidosis, volume overload, uremic complications, dialyzable toxins. AKIKI / STARRT-AKI: no benefit from accelerated RRT timing.
+
+---
+
+## Heme/Onc (9)
+
+### ASH 2020 + 2024 VTE Treatment  
+*2024 · Open*  ·  [source](https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/venous-thromboembolism-guidelines)
+
+> DOACs first-line: apixaban or rivaroxaban (no lead-in heparin); dabigatran/edoxaban require lead-in. Cancer-associated VTE: DOACs noninferior to LMWH (CARAVAGGIO, HOKUSAI-CANCER) - watch GI bleed with edoxaban. Provoked: 3 mo. Unprovoked: indefinite if low bleed risk.
+
+### ASH Sickle Cell 2020 + 2024  
+*2024 · Open*  ·  [source](https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/sickle-cell-disease-guidelines)
+
+> Hydroxyurea standard; transfusion for stroke prevention (STOP). Voxelotor withdrawn 2024 (mortality signal); crizanlizumab disappointed in STAND. Gene therapy approved (exa-cel/CRISPR, lovo-cel) for severe SCD. Pain management with multimodal.
+
+### NCCN Cancer-Related Infections v3.2024 (Febrile Neutropenia)  
+*2024 · Paywalled*  ·  [source](https://www.nccn.org/guidelines/guidelines-detail?category=3&id=1457)
+
+> FN = ANC <500 (or <1000 with predicted nadir) + temp ≥38.3 once or ≥38.0 sustained 1h. MASCC ≥21 OR CISNE <3 = low-risk → oral cipro + amox-clav outpatient (after 2-4h observation). High-risk: IV antipseudomonal beta-lactam (cefepime, piperacillin-tazobactam, meropenem). Add vancomycin for catheter infection, mucositis, SSTI, hemodynamic instability, MRSA colonization. Empiric antifungal (echinocandin or voriconazole) after 4-7d persistent fever. FQ prophylaxis + G-CSF if expected ANC <100 >7d (AML/HSCT).
+
+### ACR/EULAR APS 2023  
+*2023 · Open*  ·  [source](https://pubmed.ncbi.nlm.nih.gov/37635643/)
+
+> New criteria 99% specificity. Persistent aPL (LA, aCL, anti-beta2GPI) >=12 weeks apart + clinical event. Triple-positive highest risk. Treatment: warfarin INR 2-3 (DOACs inferior per TRAPS in triple-positive); aspirin for primary prevention in obstetric APS.
+
+### AABB Transfusion Threshold 2023  
+*2023 · Open*  ·  [source](https://jamanetwork.com/journals/jama/fullarticle/2810754)
+
+> Restrictive: Hgb 7 g/dL for stable hospitalized adults (TRICC). Cardiac surgery: 7.5 g/dL. Orthopedic: 8 g/dL. Hem/onc: consider <7. Liberal in ACS uncertain (REALITY). Reduces transfusion volumes ~40%.
+
+### ASH TTP 2020 + HERCULES Trial  
+*2020 · Open*  ·  [source](https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/thrombotic-microangiopathies-guidelines)
+
+> Plasma exchange + caplacizumab (vWF nanobody) reduces death/recurrence/thrombosis 38%->8% (HERCULES). Steroids + rituximab for autoimmune iTTP. ADAMTS13 testing at presentation. PLASMIC score.
+
+### ASH ITP 2019  
+*2019 · Open*  ·  [source](https://ashpublications.org/bloodadvances/article/3/23/3829/428701)
+
+> Steroids first-line (dexamethasone 40mg x4d preferred over prednisone). Second-line: TPO-RAs (eltrombopag, romiplostim, avatrombopag), rituximab, splenectomy. IVIG for emergent platelet rise. Fostamatinib for refractory.
+
+### ASH HIT 2018  
+*2018 · Open*  ·  [source](https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/heparin-induced-thrombocytopenia-guidelines)
+
+> 4Ts score initial. Stop ALL heparin (incl. flushes). Non-heparin anticoagulants: argatroban, bivalirudin, danaparoid, fondaparinux, DOAC (apixaban / rivaroxaban for stable). Avoid platelet transfusion unless bleeding.
+
+### ASH 2018 Heparin-Induced Thrombocytopenia  
+*2018 · Open*  ·  [source](https://ashpublications.org/bloodadvances/article/2/22/3360/16129/)
+
+> 4Ts score for pretest probability; low (<=3) rules out HIT, skip testing. Intermediate/high: PF4-heparin ELISA, confirm positive with serotonin release assay (SRA). Stop all heparin (including flushes) immediately; bridge with argatroban, bivalirudin, fondaparinux, or danaparoid. Avoid platelet transfusions (paradoxical thrombosis). Transition to DOAC once platelets >150k. Anticoagulate >=3 months if isolated HIT, >=3-6 months if HITT. Avoid warfarin until platelet recovery.
+
+---
+
+## Women's Health (9)
+
+### ACOG Endometriosis 2026  
+*2026 · Open*  ·  [source](https://www.acog.org/clinical/clinical-guidance/clinical-practice-guideline/articles/2026/03/diagnosis-of-endometriosis)
+
+> Clinical diagnosis with empiric medical therapy (NSAIDs, CHCs, progestins, GnRH agonists/antagonists, elagolix). TVUS first imaging (deep infiltrating disease). Laparoscopy not required for diagnosis. Avoid biomarker testing.
+
+### ACOG Breast Cancer Screening 2024  
+*2024 · Open*  ·  [source](https://journals.lww.com/greenjournal/fulltext/2025/01000/age_to_initiate_routine_breast_cancer_screening_.29.aspx)
+
+> Begin annual or biennial mammography at age 40 for average-risk (USPSTF 40-74 q2y; ACS 45-54 annually then biennial). Risk assessment for BRCA / family history -> earlier MRI screening. Stop ~age 75 individualized.
+
+### CDC US MEC Contraception 2024  
+*2024 · Open*  ·  [source](https://www.cdc.gov/contraception/hcp/usmec/index.html)
+
+> Categories 1 (no restriction) - 4 (unacceptable). LARC (IUD, implant) most effective; encourage as first-line. CHCs contraindicated in: smokers >=35, migraine with aura, breast cancer, severe HTN, VTE history. Updated for CKD, postpartum, transplant.
+
+### ACOG Hypertension in Pregnancy 2024  
+*2024 · Open*  ·  [source](https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/06/gestational-hypertension-and-preeclampsia)
+
+> Severe features: SBP>=160, DBP>=110, plt<100k, AST/ALT 2x normal, Cr>1.1, pulmonary edema, neuro symptoms. Aspirin 81mg from 12-28 weeks if high-risk preeclampsia. Mag sulfate for severe features / eclampsia. Deliver 37w (no severe) or 34w (severe).
+
+### ACOG Gestational Diabetes 2024 (CPG #2)  
+*2024 · Open*  ·  [source](https://www.acog.org/clinical/clinical-guidance/clinical-practice-guideline/articles/2024/07/screening-for-gestational-and-pregestational-diabetes-in-pregnancy)
+
+> Universal 2-step screen at 24-28 wk: 50g GCT → 100g 3h OGTT if abnormal; Carpenter-Coustan criteria (2 of 4 abnormal). Early screening if BMI ≥25 (≥23 Asian) + risk factors (A1c ≥5.7, prior GDM, PCOS). Lifestyle first; insulin preferred if pharmacologic needed (metformin/glyburide cross placenta, second-line). Targets: fasting <95, 1h pp <140, 2h pp <120. Delivery 39-40w (A1), 39w (A2 controlled). Postpartum 75g OGTT 4-12 wk; 50-70% lifetime T2DM risk.
+
+### USPSTF Cervical Cancer Screening 2023  
+*2023 · Open*  ·  [source](https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/cervical-cancer-screening)
+
+> Ages 21-29: Pap q3y. Ages 30-65: HPV primary q5y (preferred), co-testing q5y, OR Pap q3y. Stop at 65 if adequate screening and no high-grade lesions in 25 years. ACS 2025 update: start age 25, HPV primary preferred (incl. self-collection).
+
+### NAMS Menopause Hormone Therapy 2022  
+*2022 · Open*  ·  [source](https://menopause.org/wp-content/uploads/professional/nams-2022-hormone-therapy-position-statement.pdf)
+
+> HT most effective for VMS. Favorable benefit-risk for symptomatic women <60 OR <10 years from menopause onset. Transdermal estrogen LOWER VTE/stroke risk vs oral. Add progestogen if uterus present. Bazedoxifene/CEE (Duavee) alternative.
+
+### ACOG 2022 Polycystic Ovary Syndrome (Practice Bulletin 194 update)  
+*2022 · Paywalled*  ·  [source](https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2018/06/polycystic-ovary-syndrome)
+
+> Rotterdam criteria: 2 of 3 (oligo-/anovulation, clinical or biochemical hyperandrogenism, polycystic ovarian morphology on US) after exclusion of CAH, Cushing, thyroid, prolactinoma. Screen all for T2DM (2-hr 75g OGTT), dyslipidemia, OSA, endometrial cancer risk. Combined OCs first-line for menstrual regulation/hirsutism; spironolactone adjunct. Metformin for metabolic/glycemic. Letrozole first-line for ovulation induction (PPCOS II: higher live births vs clomiphene). GLP-1 RA emerging for weight.
+
+### NAMS 2020 Genitourinary Syndrome of Menopause Position Statement  
+*2020 · Open*  ·  [source](https://menopause.org/wp-content/uploads/default-document-library/2020-gsm-ps.pdf)
+
+> Non-hormonal lubricants/long-acting moisturizers first for mild symptoms. Low-dose vaginal estrogen (cream, tablet, ring) first-line prescription for moderate-severe GSM; minimal systemic absorption, endometrial protection generally not required. Vaginal DHEA (prasterone) and oral ospemifene (SERM) effective alternatives. Systemic ET if vasomotor symptoms coexist. Energy-based therapies (CO2 laser, RF) insufficient evidence; not recommended outside trials.
+
+---
+
+## Dermatology (8)
+
+### AAD/NPF Psoriasis 2019 + 2024 biologics update  
+*2024 · Open*  ·  [source](https://www.jaad.org/)
+
+> Anti-IL-23 (guselkumab, risankizumab, tildrakizumab) and anti-IL-17 (secukinumab, ixekizumab, brodalumab, bimekizumab) preferred for moderate-severe. Anti-TNF (adalimumab, etanercept, infliximab) alternative. IL-23i favor less frequent dosing, lower candidiasis.
+
+### AAD Atopic Dermatitis 2024  
+*2024 · Open*  ·  [source](https://jcadonline.com/aad-aaaai-guidelines-atopic-dermatitis/)
+
+> Topical steroids + emollients + barrier care first-line. Topical calcineurin inhibitors (tacrolimus, pimecrolimus) for face/folds. Severe: dupilumab (anti-IL-4Ra), tralokinumab (anti-IL-13), abrocitinib/baricitinib/upadacitinib (JAKi). Topical ruxolitinib for mild-moderate.
+
+### AAD Acne 2024  
+*2024 · Open*  ·  [source](https://www.jaad.org/article/S0190-9622(23)03389-3/fulltext)
+
+> Strong recommendations: BPO, topical retinoids (tretinoin, adapalene, tazarotene), topical/oral antibiotics (limited duration), oral spironolactone (women), combined oral contraceptives. Isotretinoin for severe/scarring (iPLEDGE).
+
+### IDSA SSTI / Cellulitis 2014/2024  
+*2024 · Open*  ·  [source](https://www.idsociety.org/practice-guideline/skin-and-soft-tissue-infections/)
+
+> Nonpurulent cellulitis: oral cephalexin or amoxicillin (Strep coverage). Purulent: incision + drainage; add MRSA coverage (TMP-SMX, doxycycline, clindamycin) if SIRS. Severe: IV vancomycin/daptomycin/linezolid. Diabetic foot: extended courses, image for osteomyelitis.
+
+### AAD/HSF Hidradenitis Suppurativa 2019/2024  
+*2024 · Open*  ·  [source](https://www.jaad.org/)
+
+> Adalimumab (anti-TNF) FDA-approved (PIONEER 1/2; HiSCR 40-59%). Secukinumab (anti-IL-17A; SUNRISE/SUNSHINE) approved 2023. Bimekizumab approved 2024. Surgical excision for fibrotic stages.
+
+### AAD 2023/2024 Atopic Dermatitis  
+*2024 · Open*  ·  [source](https://www.aad.org/member/clinical-quality/guidelines/atopic-dermatitis)
+
+> Emollients + bathing, topical corticosteroids first-line; topical calcineurin inhibitors (tacrolimus, pimecrolimus) and crisaborole for face/folds/steroid-sparing; topical ruxolitinib for mild-moderate. NB-UVB phototherapy for refractory. Strong recommendations for dupilumab (anti-IL-4Ra, LIBERTY-AD), tralokinumab (anti-IL-13, ECZTRA), and oral JAKi abrocitinib/upadacitinib/baricitinib (JADE, Measure Up, BREEZE-AD) for moderate-severe.
+
+### USPSTF Skin Cancer Screening 2023  
+*2023 · Open*  ·  [source](https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/skin-cancer-screening)
+
+> Insufficient evidence for routine visual skin screening in asymptomatic adults (I statement). Does not apply to symptomatic, high-risk (immunocompromised, prior cancer, family history, dysplastic nevi). AAD continues to recommend self-exams + dermatologist evaluation.
+
+### AAD-NPF 2020/2021 Psoriasis (Topicals + Biologics)  
+*2021 · Open*  ·  [source](https://www.aad.org/member/clinical-quality/guidelines/psoriasis)
+
+> Topical corticosteroids + vitamin D analogs (calcipotriene) first-line for limited disease; phototherapy (NB-UVB) for moderate. Biologics for moderate-severe: TNFi (etanercept, adalimumab, infliximab), IL-17i (secukinumab, ixekizumab, brodalumab), IL-23i (guselkumab, risankizumab, tildrakizumab). Oral: apremilast, methotrexate, cyclosporine, acitretin, deucravacitinib. Screen all for psoriatic arthritis and cardiometabolic comorbidities.
+
+---
+
+## Allergy/Immuno (7)
+
+### GINA Asthma 2024  
+*2024 · Open*  ·  [source](https://ginasthma.org/2024-report/)
+
+> Track 1 preferred: ICS-formoterol PRN (mild) up to scheduled+PRN reliever (severe). Track 2: SABA + ICS. Type-2 biologics (omalizumab, mepolizumab/reslizumab/benralizumab anti-IL-5, dupilumab anti-IL-4Ra, tezepelumab anti-TSLP) for severe.
+
+### AAAAI Food Allergy / OIT 2024  
+*2024 · Open*  ·  [source](https://www.aaaai.org/)
+
+> Strict avoidance + epinephrine for risk-management. Palforzia (peanut OIT) FDA-approved ages 1-17 (POSEIDON, PALISADE). Omalizumab 2024 FDA approval reduces severe reactions in multi-food allergy (OUtMATCH). SLIT/EPIT emerging.
+
+### AAAAI/ACAAI Anaphylaxis 2023  
+*2023 · Open*  ·  [source](https://www.aaaai.org/Aaaai/media/Media-Library-PDFs/Allergist%20Resources/Statements%20and%20Practice%20Parameters/Anaphylaxis-Practice-Paramaters-2023.pdf)
+
+> IM epinephrine 0.3-0.5 mg first-line (lateral thigh). Biphasic reactions 5-20% within 24h - observation 4-8h. Antihistamines/steroids ADJUNCTS only. Self-injectable epinephrine + 911 activation for at-risk patients.
+
+### AAAAI Allergic Rhinitis 2017/2023  
+*2023 · Open*  ·  [source](https://www.aaaai.org/Aaaai/media/Media-Library-PDFs/Allergist%20Resources/Statements%20and%20Practice%20Parameters/Rhinitis-2020-A-practice-parameter-update.pdf)
+
+> INCS first-line monotherapy. INCS + intranasal antihistamine combination effective. Oral 2nd-gen antihistamines safer than 1st-gen. SCIT/SLIT for refractory/IgE-mediated. Avoid depot steroids.
+
+### AAAAI/ACAAI Drug Allergy 2022  
+*2022 · Open*  ·  [source](https://www.aaaai.org/Aaaai/media/Media-Library-PDFs/Allergist%20Resources/Statements%20and%20Practice%20Parameters/Drug-Allergy-PP-9-2022.pdf)
+
+> Direct oral challenge for low-risk penicillin allergy (95% delabeling). Skin testing for high-risk. Graded challenges for radiocontrast/sulfonamides/NSAIDs. Avoid empiric desensitization without confirmed allergy.
+
+### AAAAI/ACAAI Drug Allergy Practice Parameter 2022  
+*2022 · Open*  ·  [source](https://www.jacionline.org/article/S0091-6749(22)01186-1/fulltext)
+
+> Penicillin allergy delabeling priority — 95% of labeled patients tolerate penicillin; label associated with broader antibiotic use, MRSA/C. difficile, longer admissions. Risk-stratify by history: low-risk (isolated GI symptoms, remote benign rash, family-only history, unknown reaction >10y) eligible for direct oral amoxicillin challenge without skin testing. Moderate-risk (urticaria, pruritus): penicillin skin testing then graded challenge. High-risk (anaphylaxis, SJS/TEN, DRESS): avoid. Sulfonamide antibiotic-to-non-antibiotic cross-reactivity is a myth — sulfasalazine, diuretics, celecoxib safe. RCM premed with prednisone + diphenhydramine.
+
+### HAEA/WAO Hereditary Angioedema 2021  
+*2021 · Open*  ·  [source](https://www.haea.org/)
+
+> On-demand: C1-INH concentrate, ecallantide, icatibant. Long-term prophylaxis: lanadelumab (FcRn anti-pKLK; reduces attacks 86%, HELP), berotralstat (oral pKLK inhibitor), C1-INH SC. Self-administer all therapies.
+
+---
+
+## Psychiatry (7)
+
+### APA Major Depression 2024 + ACP 2023  
+*2024 · Open*  ·  [source](https://www.apa.org/depression-guideline)
+
+> First-line: SSRIs (sertraline, escitalopram), SNRIs, mirtazapine, bupropion. Treatment-resistant (>=2 failed): augmentation (lithium, T3, atypical antipsychotic) OR ketamine/esketamine (NMDA antagonist; STAR*D, TRD-IV). ECT for severe / refractory. CBT/IPT comparable to medication for mild-moderate.
+
+### APA Schizophrenia 2020/2024  
+*2024 · Open*  ·  [source](https://abhfl.org/wp-content/uploads/sites/5/2025/06/APA-Schizophrenia-Clinical-Practice-Guidelines-compressed.pdf)
+
+> Atypical antipsychotic first-line (avoid first-gen unless clozapine intolerance). Clozapine for treatment-resistant (>=2 failed) - reduces suicide. LAI antipsychotics for adherence (1-3 month formulations). Cognitive behavioral therapy + supported employment.
+
+### AASM Insomnia 2017/2024  
+*2024 · Paywalled*  ·  [source](https://jcsm.aasm.org/doi/10.5664/jcsm.6470)
+
+> CBT-I FIRST-line (digital CBT-I expanded access). Pharmacotherapy: dual orexin antagonists (suvorexant, lemborexant, daridorexant) preferred over benzos/Z-drugs. Melatonin/ramelteon for circadian. Avoid chronic benzo/Z-drug use.
+
+### APA PTSD 2023  
+*2023 · Open*  ·  [source](https://www.apa.org/ptsd-guideline)
+
+> First-line: trauma-focused CBT (CPT, PE, EMDR) + SSRI/SNRI (sertraline, paroxetine, venlafaxine FDA-approved). Prazosin for nightmares. Avoid benzos. MDMA-assisted therapy under FDA review (denied 2024 - additional evidence required).
+
+### APA Eating Disorders 2023  
+*2023 · Open*  ·  [source](https://psychiatryonline.org/doi/full/10.1176/appi.ajp.23180001)
+
+> First major update since 2006. Anorexia: weight restoration + family-based therapy (adolescents) or eating-disorder-focused CBT (adults). Bulimia/BED: CBT-ED + SSRI (fluoxetine 60mg). Lisdexamfetamine for BED. Olanzapine for severe AN weight gain.
+
+### SAMHSA TIP 63 / ASAM OUD  
+*2020 · Open*  ·  [source](https://library.samhsa.gov/product/tip-63-medications-opioid-use-disorder/pep21-02-01-002)
+
+> MAT first-line: buprenorphine (mu partial agonist; office-based; X-waiver removed 2023), methadone (opioid agonist; OTP only), naltrexone (mu antagonist; XR-NTX preferred). Concurrent psychosocial. Naloxone co-prescription for overdose risk.
+
+### APA/WFSBP Bipolar Disorder  
+*2002 · Open*  ·  [source](https://www.psychiatry.org/)
+
+> Acute mania: lithium, valproate, atypical antipsychotics. Bipolar depression: lithium or lamotrigine (NOT antidepressant monotherapy - switch risk). Maintenance: lithium gold standard (suicide prevention). Avoid valproate in reproductive-age women (teratogenicity, MHRA).
+
+---
+
+## Geriatrics (6)
+
+### AAHPM End-of-Life 2024  
+*2024 · Open*  ·  [source](https://aahpm.org/)
+
+> Goals-of-care discussions early (ask-tell-ask). Hospice eligibility: prognosis <=6 months. POLST/MOLST documentation across settings. Symptom management hierarchy: pain (opioid titration, adjuvants), dyspnea (opioids), delirium (haloperidol).
+
+### AGS Beers Criteria 2023  
+*2023 · Open*  ·  [source](https://pmc.ncbi.nlm.nih.gov/articles/PMC12478568/)
+
+> Potentially inappropriate medications in >=65: anticholinergics (cumulative burden -> falls/dementia), benzos (falls, delirium), NSAIDs (GI/renal/CV), tertiary TCAs, glyburide, megestrol, PPI >8 weeks. Drug-disease and drug-drug warnings. Cumulative anticholinergic score added 2023.
+
+### AGS/BGS/WFG Falls Prevention 2022 (World Falls Guidelines)  
+*2022 · Open*  ·  [source](https://agsjournals.onlinelibrary.wiley.com/doi/epdf/10.1111/jgs.18734)
+
+> Multifactorial assessment: vision, gait, cognition, medications (esp. anticholinergics, benzos, sleep aids per Beers), home hazards. Exercise + balance training (tai chi). Vitamin D if deficient. STOPPFall medication review. Screen all >=65 annually with Timed Up-and-Go.
+
+### AAOS Hip Fracture 2021  
+*2021 · Open*  ·  [source](https://www.aaos.org/globalassets/quality-and-practice-resources/hip-fractures-in-the-elderly/hipfxcpg.pdf)
+
+> Surgery within 24-48h reduces mortality. Geriatric co-management (NICE/HELLP). Regional anesthesia (fascia iliaca block) for analgesia. Pharmacologic VTE prophylaxis. Bisphosphonate / denosumab for osteoporosis after.
+
+### NPIAP/EPUAP Pressure Injury 2019  
+*2019 · Open*  ·  [source](https://epuap.org/pu-guidelines/)
+
+> Stages 1-4 (+ unstageable, deep tissue). Risk assessment (Braden, Norton). Repositioning q2h, support surfaces, nutritional support. Staging guides treatment: stage 1 protect; 2 hydrocolloid/foam; 3-4 debridement, wound vac, consider surgery.
+
+### AGS Frailty Framework  
+*2019 · Open*  ·  [source](https://www.facs.org/)
+
+> Phenotypic (Fried 5 criteria): unintentional weight loss, weakness, exhaustion, slow gait, low activity. >=3 = frail. Deficits-of-aging (Rockwood Clinical Frailty Scale). Frailty -> increased surgical / hospital risk. Optimize before elective surgery.
+
+---
+
+## Otolaryngology (6)
+
+### AAO-HNS Acute Rhinosinusitis 2025  
+*2025 · Paywalled*  ·  [source](https://aao-hnsfjournals.onlinelibrary.wiley.com/doi/10.1002/ohn.1344)
+
+> Watchful waiting OR amoxicillin-clavulanate 5-7d for uncomplicated ABRS. Watchful waiting if reliable follow-up. Antibiotic if symptoms >=10d or worsening or severe (T>39, facial pain). Imaging only if complications (orbital/intracranial).
+
+### AAN Benign Paroxysmal Positional Vertigo 2023  
+*2023 · Paywalled*  ·  [source](https://onlinelibrary.wiley.com/doi/10.1111/acem.14558)
+
+> Most common cause peripheral vertigo. Dix-Hallpike test for posterior canal: torsional/upbeat nystagmus, latency 5-20s, fatigable, resolves <60s. Epley canalith repositioning maneuver (NNT 2). Brandt-Daroff exercises home alternative.
+
+### AAO-HNS Sudden SNHL 2019  
+*2019 · Paywalled*  ·  [source](https://aao-hnsfjournals.onlinelibrary.wiley.com/doi/10.1177/0194599819859885)
+
+> Idiopathic SNHL: high-dose oral steroids within 2 weeks (prednisone 1 mg/kg x 7-14d). Intratympanic dexamethasone if oral failure / contraindication. Hyperbaric O2 + steroids for salvage <1 mo. MRI to rule out vestibular schwannoma.
+
+### AAO-HNS Hoarseness 2018  
+*2018 · Paywalled*  ·  [source](https://aao-hnsfjournals.onlinelibrary.wiley.com/)
+
+> Laryngoscopy if dysphonia >4 weeks or earlier with red flags (smoker, hemoptysis, neck mass, dysphagia). Avoid empiric PPI for non-LPR symptoms. Voice therapy for muscle tension dysphonia.
+
+### AAP/AAFP Acute Otitis Media 2013  
+*2013 · Open*  ·  [source](https://publications.aap.org/pediatrics/article/131/3/e964/30912/)
+
+> Diagnose with TM bulging or fluid + recent symptoms. Severe: T>=39 or moderate-severe otalgia or >=48h symptoms = antibiotics. Mild + reliable follow-up = watchful waiting. Amoxicillin 80-90 mg/kg/day; amoxicillin-clavulanate if treatment failure / recent ATB.
+
+### IDSA Group A Strep Pharyngitis 2012  
+*2012 · Open*  ·  [source](https://academic.oup.com/cid/article/55/10/e86/321183)
+
+> Centor + age (4 = test/treat empirically; 2-3 = test; 0-1 = no test). Penicillin V or amoxicillin first-line (10 days). Cephalosporin / clindamycin / azithromycin if PCN allergy. No test of cure post-RADT in adults.
+
+---
+
+## Miscellaneous (6)
+
+### AHRQ Quality Indicators (PSI/IQI/PQI)  
+*2024 · Open*  ·  [source](https://qualityindicators.ahrq.gov/)
+
+> Patient Safety Indicators (PSI): hospital-acquired adverse events. Inpatient Quality Indicators (IQI): mortality, utilization. Prevention Quality Indicators (PQI): ambulatory-care-sensitive admissions. Used for hospital comparison and CMS pay-for-performance.
+
+### AMA Code of Medical Ethics 2024  
+*2024 · Open*  ·  [source](https://code-medical-ethics.ama-assn.org/)
+
+> Four principles: autonomy, beneficence, non-maleficence, justice. Capacity (clinical, decision-specific, can fluctuate) vs competence (legal, global). Informed consent: information + voluntariness + capacity. No ethical difference between withholding/withdrawing care.
+
+### USPSTF Methodology + Grade Definitions  
+*2024 · Open*  ·  [source](https://www.uspreventiveservicestaskforce.org/uspstf/grade-definitions)
+
+> Grade A (high certainty, substantial benefit): offer/provide. Grade B (moderate benefit): offer. Grade C (small benefit): selectively offer. Grade D (no benefit/harm): don't offer. Grade I (insufficient): document limitations.
+
+### IHI Model for Improvement (PDSA)  
+*2020 · Open*  ·  [source](https://www.ihi.org/resources/Pages/HowtoImprove/default.aspx)
+
+> Three questions: aim? measures? changes? PDSA cycles (Plan-Do-Study-Act) for iterative testing. Run charts and SPC for measurement. Integrated with Lean / Six Sigma DMAIC.
+
+### IDSA/SHEA Antimicrobial Stewardship  
+*2016 · Open*  ·  [source](https://www.idsociety.org/practice-guideline/implementing-an-ASP/)
+
+> Core elements: leadership commitment, accountability, drug expertise. Strategies: preauthorization, prospective audit + feedback, formulary restriction. Reduces CDI 26%, costs ~$200-400K/yr/hospital. CDC Core Elements mandated by Joint Commission.
+
+### IHI Triple Aim Framework  
+*2008 · Open*  ·  [source](https://www.ihi.org/Engage/Initiatives/TripleAim/Pages/default.aspx)
+
+> Triple Aim: improve population health, improve patient experience, reduce per-capita cost. Quadruple Aim adds clinician wellbeing (Bodenheimer 2014). Implementation requires integrated organizational change.
+
+---
+
+## Ophthalmology (5)
+
+### AAO Primary Open-Angle Glaucoma 2025  
+*2025 · Open*  ·  [source](https://www.aao.org/education/preferred-practice-pattern/primary-open-angle-glaucoma-ppp)
+
+> Latanoprost or other PG analog first-line (UKGTS: -3.8 mmHg, slows VF progression). Add second/third agents to reach target IOP 25-30% reduction. SLT (selective laser trabeculoplasty) per LiGHT trial - first-line alternative. MIGS for moderate disease.
+
+### AAO Diabetic Retinopathy PPP 2024  
+*2024 · Open*  ·  [source](https://www.aao.org/education/preferred-practice-pattern/diabetic-retinopathy-ppp)
+
+> Annual dilated exams: T1DM start 5y after onset; T2DM at diagnosis. Anti-VEGF (aflibercept, ranibizumab, bevacizumab, faricimab) first-line for center-involved DME. PRP for proliferative DR. Tighter glycemic + BP control slow progression (DCCT, UKPDS).
+
+### AAO Age-Related Macular Degeneration 2024  
+*2024 · Open*  ·  [source](https://www.aao.org/education/preferred-practice-pattern/age-related-macular-degeneration-ppp)
+
+> Wet AMD: anti-VEGF (aflibercept, faricimab, ranibizumab, brolucizumab) monthly initially, then treat-and-extend or PRN. Dry AMD: AREDS2 (lutein/zeaxanthin/zinc/Cu/vit C/E) slows progression 25% (no benefit if smoker for AREDS). Geographic atrophy: pegcetacoplan/avacincaptad pegol new.
+
+### ACR/EULAR GCA 2021 (Vision Loss Lens)  
+*2021 · Open*  ·  [source](https://vasculitisfoundation.org/wp-content/uploads/2024/01/2021-ACR-VF-Guideline-for-Management-of-Giant-Cell-Arteritis-and-Takayasu-Artheritis.pdf)
+
+> Sudden vision loss: IV methylprednisolone 1g x 3d -> oral pred 1mg/kg taper. Add tocilizumab (GiACTA: 56% sustained remission vs 14% with steroids alone). Temporal artery biopsy + LV imaging. ESR + CRP + IL-6 monitoring.
+
+### AAN/AAO Optic Neuritis (ONTT)  
+*1992 · Open*  ·  [source](https://www.aaojournal.org/article/S0161-6420(19)32364-4/fulltext)
+
+> ONTT: IV methylprednisolone 1g/d x 3d + oral pred speeds visual recovery (~2 wks vs ~5 wks placebo). Oral pred ALONE inferior - increases recurrence. No long-term VA benefit. MRI predicts MS conversion (15-yr: 50% if abnormal vs 22% if normal).
+
+---
+
+## Prevention (5)
+
+### ACIP Adult Immunizations 2025  
+*2025 · Open*  ·  [source](https://www.cdc.gov/vaccines/acip/recommendations.html)
+
+> Influenza annually, COVID-19. Tdap once + Td q10y. RZV >=50, RSV >=75 (60-74 risk-based), pneumococcal PCV21/PCV20/PCV15 >=50, HPV through 45. MMR/varicella if no immunity. Travel: hepatitis A/B, typhoid, yellow fever.
+
+### ACC/AHA ASCVD Risk Calculator (PREVENT 2025)  
+*2025 · Open*  ·  [source](https://professional.heart.org/en/guidelines-and-statements/prevent-calculator)
+
+> PREVENT replaces pooled cohort equations: more accurate across race/ethnicity. Includes kidney function (eGFR), glycemia, social determinants. 10-year + 30-year ASCVD risk. Statin shared decision >=7.5% 10-year risk.
+
+### USPSTF Recommendations 2024  
+*2024 · Open*  ·  [source](https://www.uspreventiveservicestaskforce.org/uspstf/recommendation-topics/uspstf-a-and-b-recommendations)
+
+> A/B grade: cancer screening (mammography 40-74, colonoscopy/FIT 45-75, lung LDCT 50-80, cervical HPV 30-65). HTN screening adults. Statin 40-75 with ASCVD risk >=10%. Aspirin 40-59 with ASCVD risk >=10% individualized. AAA screening 65-75 male smokers.
+
+### USPSTF Aspirin for Primary CV Prevention 2022  
+*2022 · Open*  ·  [source](https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/aspirin-to-prevent-cardiovascular-disease-preventive-medication)
+
+> Initiate ASA 81 mg in 40-59 with 10-yr ASCVD risk >=10% (C grade - small benefit). Do NOT initiate >=60 (D grade - bleeding outweighs). ARRIVE/ASCEND/ASPREE shifted recommendations away from broad primary prevention.
+
+### USPSTF Tobacco Cessation 2021 + ATS 2020 Pharmacotherapy  
+*2021 · Open*  ·  [source](https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/tobacco-use-in-adults-and-pregnant-women-counseling-and-interventions)
+
+> 5As (Ask, Advise, Assess, Assist, Arrange) all adults (A grade). Combination behavioral + pharmacotherapy most effective. ATS 2020: varenicline (nicotinic partial agonist) > NRT > bupropion (EAGLES showed no excess neuropsychiatric/CV events). Varenicline + nicotine patch superior to monotherapy. Extended duration (12→24 wk) increases abstinence. Pregnancy: behavioral only (insufficient evidence for pharmacotherapy). E-cigarettes: insufficient evidence (I statement); not first-line.
+
+---
+
+## Critical Care (3)
+
+### Surviving Sepsis Campaign 2021/2024  
+*2024 · Open*  ·  [source](https://www.sccm.org/survivingsepsiscampaign)
+
+> Hour-1 bundle. 30 mL/kg crystalloid (balanced > saline per SMART/BaSICS). Norepinephrine first-line; vasopressin add-on. Hydrocortisone 200 mg/day for refractory shock (ADRENAL/APROCCHSS). Lactate-guided resuscitation.
+
+### ICU Liberation (Pain/Sedation/Delirium) 2018/2024  
+*2024 · Open*  ·  [source](https://www.sccm.org/Clinical-Resources/Guidelines)
+
+> ABCDEF bundle: Assess pain, Both SAT/SBT, Choice of sedation, Delirium monitor, Early mobility, Family. Avoid benzos (preferred propofol/dexmedetomidine). Reduces ICU LOS, mortality, delirium.
+
+### ATS/ESICM ARDS 2023  
+*2023 · Open*  ·  [source](https://www.atsjournals.org/doi/10.1164/rccm.202311-2011ST)
+
+> Low TV 4-8 mL/kg PBW. Plateau pressure <30. Prone position >=16h/day for moderate-severe (PROSEVA, NNT 6). NMB for refractory P/F<150 (ROSE). VV-ECMO referral for refractory (CESAR, EOLIA).
+
+---
+
+## Palliative (3)
+
+### AAHPM Pain Management 2024  
+*2024 · Open*  ·  [source](https://aahpm.org/)
+
+> Multimodal: WHO ladder (NSAIDs/acetaminophen -> weak opioids -> strong opioids). Methadone unique (NMDA antagonist + mu agonist - QT, drug interactions). Adjuvants: gabapentinoids (neuropathic), dexamethasone (bone), bisphosphonates. Opioid rotation if dose-limiting toxicity.
+
+### AAHPM Goals-of-Care 2024 (EPAs)  
+*2024 · Open*  ·  [source](https://aahpm.org/wp-content/uploads/2024/03/HPM_EPAs_Final_120319.pdf)
+
+> Ask-tell-ask framework. Elicit values, not just preferences. Document POLST/MOLST across settings. Five wishes / advance directive components: medical decisions, person to make them, comfort, treatment, family. Code status discussion before procedures.
+
+### ASCO Integration of Palliative Care 2017  
+*2017 · Open*  ·  [source](https://ascopubs.org/doi/abs/10.1200/JCO.2016.70.1474)
+
+> Concurrent palliative care + cancer therapy from diagnosis of advanced disease (TEMEL: improved QoL, mood, possibly survival). Hospice eligibility: prognosis <=6 months. Hospital-based palliative care reduces ICU days, costs.
+
+---
+
