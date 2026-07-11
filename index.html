@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-07-35";
+var BUILD_ID = "2026-07-07-36";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5484,33 +5484,62 @@ function pruneFakeReferences(talk) {
 // abstracts (no extra fetch — we already hold them in S.ragChunks) and strip the inline
 // PMID from any claim the source doesn't support.
 async function verifyCitations(talk) {
-  if (!talk || !S.ragChunks || !S.ragChunks.length) return talk;
+  if (!talk || !S.ragChunks || !S.ragChunks.length) { S.citeAudit = {checked:0, dropped:0}; return talk; }
   // Map of PMID -> abstract text for everything we actually retrieved.
   var absByPmid = {};
   for (var i = 0; i < S.ragChunks.length; i++) {
     var ch = S.ragChunks[i];
     if (ch.pmid && ch.text) absByPmid[String(ch.pmid)] = { abstract: ch.text, title: ch.title || "" };
   }
-  if (!Object.keys(absByPmid).length) return talk;
+  if (!Object.keys(absByPmid).length) { S.citeAudit = {checked:0, dropped:0}; return talk; }
 
-  // Collect (claim string, pmid) pairs from inline "PMID 12345" / "(PMID 12345)" markers.
-  // Only verify PMIDs we hold an abstract for; unknown ones are handled by pruneFakeReferences.
+  // Reference id -> PMID, so the [N] CHIPS (what the reader actually sees) can be audited too — not just
+  // bare inline "PMID nnnn" tokens, which was the old blind spot. A reference with no PubMed identity
+  // (society guideline, user upload) has no abstract to check against, so it is left alone rather than
+  // pretending to verify it. (Jenni 2026-07-10)
+  var refPmid = {};
+  (talk.references || []).forEach(function(r){
+    if (!r || r.id == null) return;
+    var pm = r.pmid ? String(r.pmid) : "";
+    if (!pm) { var mm = String(r.url || "").match(/pubmed\.ncbi\.nlm\.nih\.gov\/(\d{6,9})/); if (mm) pm = mm[1]; }
+    if (pm && absByPmid[pm]) refPmid[String(r.id)] = pm;
+  });
+
   var PMID_RE = /PMID\s*[:\-]?\s*(\d{6,9})/gi;
-  var pairs = [];           // { claim, pmid }
-  var seen = {};            // dedupe identical claim+pmid
+  var CHIP_RE = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
+  function cleanClaim(str){
+    return String(str || "")
+      .replace(/\(?\s*PMID\s*[:\-]?\s*\d{6,9}\s*\)?/gi, "")
+      .replace(/\[(\d+(?:\s*,\s*\d+)*)\]/g, "")
+      .replace(/\s{2,}/g, " ").replace(/\s+([,.;:])/g, "$1").trim();
+  }
+
+  var pairs = [];   // { kind:"pmid"|"chip", claim, pmid, refId }
+  var seen = {};
   function collect(str) {
     if (typeof str !== "string") return;
+    var claim = cleanClaim(str);
+    if (claim.length < 12) return;
     var m;
     PMID_RE.lastIndex = 0;
     while ((m = PMID_RE.exec(str)) !== null) {
       var pmid = m[1];
       if (!absByPmid[pmid]) continue;
-      var key = pmid + "::" + str;
-      if (seen[key]) continue;
-      seen[key] = true;
-      // The claim is the sentence/bullet the marker sits in, with citation noise removed.
-      var claim = str.replace(/\(?\s*PMID\s*[:\-]?\s*\d{6,9}\s*\)?/gi, "").replace(/\s{2,}/g, " ").trim();
-      if (claim.length >= 12) pairs.push({ claim: claim, pmid: pmid });
+      var k1 = "p|" + pmid + "|" + claim;
+      if (seen[k1]) continue; seen[k1] = 1;
+      pairs.push({ kind:"pmid", claim: claim, pmid: pmid });
+    }
+    CHIP_RE.lastIndex = 0;
+    while ((m = CHIP_RE.exec(str)) !== null) {
+      var ids = m[1].split(",").map(function(x){ return x.trim(); });
+      for (var j = 0; j < ids.length; j++) {
+        var id = ids[j];
+        var pm = refPmid[id];
+        if (!pm) continue;   // no abstract for this reference -> cannot honestly verify; leave it
+        var k2 = "c|" + id + "|" + claim;
+        if (seen[k2]) continue; seen[k2] = 1;
+        pairs.push({ kind:"chip", claim: claim, pmid: pm, refId: id });
+      }
     }
   }
   function walkCollect(node) {
@@ -5519,41 +5548,50 @@ async function verifyCitations(talk) {
     else if (node && typeof node === "object") for (var k in node) { if (k !== "references") walkCollect(node[k]); }
   }
   walkCollect(talk);
-  if (!pairs.length) return talk;
-  // Bound cost: verify at most the first 14 distinct claim/PMID pairs.
-  pairs = pairs.slice(0, 14);
+  if (!pairs.length) { S.citeAudit = {checked:0, dropped:0}; return talk; }
+  pairs = pairs.slice(0, 30);   // cost bound (was 14)
 
-  // One batched judge call. Returns, per index, whether the abstract supports the claim.
   var items = pairs.map(function(p, idx) {
-    var src = absByPmid[p.pmid];
-    return { i: idx, pmid: p.pmid, claim: p.claim, abstract: (src.abstract || "").slice(0, 1400) };
+    return { i: idx, claim: p.claim, abstract: (absByPmid[p.pmid].abstract || "").slice(0, 1800) };
   });
-  var sys = "You are a strict evidence auditor. For each item you are given a CLAIM from a medical teaching talk and the ABSTRACT of the source cited for it (by PMID). Decide whether the abstract DIRECTLY SUPPORTS the specific claim — i.e. a careful reader would agree the abstract substantiates that exact statement (same drug/threshold/population/direction of effect). General topical relatedness is NOT support. If the abstract is about the same disease but does not establish the specific claim, mark it unsupported. Output ONLY a JSON array, one object per item: {\"i\":<index>,\"supported\":true|false}. No other text.";
-  var inp = JSON.stringify(items);
+  var sys = "You are a strict evidence auditor. For each item you are given a CLAIM from a medical teaching talk and the ABSTRACT of the source cited for that claim. Decide whether the abstract DIRECTLY SUPPORTS that specific claim - meaning a careful reader would agree the abstract substantiates that exact statement (same drug, same threshold, same population, same direction of effect). General topical relatedness is NOT support. If the abstract concerns the same disease but does not establish the specific claim, mark it unsupported. You are seeing ONLY the abstract, so a detail the abstract never states is NOT supported. Output ONLY a JSON array, one object per item: {\"i\":<index>,\"supported\":true|false}. No other text.";
   var verdicts = {};
   try {
-    var res = await callAPIWithFallback(sys, inp, 1024, [MODEL_CRITIC]);
+    // Sonnet judges (Haiku fallback) - the old auditor was Haiku-only, which is thin for this job.
+    var res = await callAPIWithFallback(sys, JSON.stringify(items), 2048, [MODEL_SONNET_FALLBACK, MODEL_CRITIC]);
     var arr = JSON.parse(fixJSON(res.txt));
     if (Array.isArray(arr)) arr.forEach(function(v){ if (v && typeof v.i === "number") verdicts[v.i] = !!v.supported; });
   } catch (e) {
     console.warn("Citation verification failed, leaving citations as-is:", e.message);
-    return talk; // fail open — never block a talk on the auditor
+    S.citeAudit = {checked:0, dropped:0};
+    return talk; // fail open - never block a talk on the auditor
   }
 
-  // Build the set of (claim, pmid) pairs judged UNSUPPORTED, then strip just those inline markers.
-  var stripSet = {};
+  var dropPmid = {}, dropChip = {};
   S.citeAudit = { checked: pairs.length, dropped: 0 };
   for (var pi = 0; pi < pairs.length; pi++) {
-    if (verdicts[pi] === false) { stripSet[pairs[pi].pmid + "::" + pairs[pi].claim] = true; S.citeAudit.dropped++; }
+    if (verdicts[pi] === false) {
+      var p = pairs[pi];
+      if (p.kind === "pmid") dropPmid[p.pmid + "::" + p.claim] = true;
+      else dropChip[p.refId + "::" + p.claim] = true;
+      S.citeAudit.dropped++;
+    }
   }
   if (!S.citeAudit.dropped) return talk;
+
   function stripUnsupported(str) {
     if (typeof str !== "string") return str;
-    var claim = str.replace(/\(?\s*PMID\s*[:\-]?\s*\d{6,9}\s*\)?/gi, "").replace(/\s{2,}/g, " ").trim();
+    var claim = cleanClaim(str);
     var out = str.replace(PMID_RE, function(match, pmid) {
-      return stripSet[pmid + "::" + claim] ? "" : match;
+      return dropPmid[pmid + "::" + claim] ? "" : match;
     });
-    return out.replace(/\(\s*\)/g, "").replace(/\s+([,.;])/g, "$1").replace(/\s{2,}/g, " ").trim();
+    // Remove only the UNSUPPORTED ids from a chip; a chip like [1,2] keeps whichever id still holds up.
+    out = out.replace(CHIP_RE, function(full, inner) {
+      var ids = inner.split(",").map(function(x){ return x.trim(); })
+                     .filter(function(id){ return id && !dropChip[id + "::" + claim]; });
+      return ids.length ? "[" + ids.join(",") + "]" : "";
+    });
+    return out.replace(/\(\s*\)/g, "").replace(/\s+([,.;:])/g, "$1").replace(/\s{2,}/g, " ").trim();
   }
   function walkStrip(node) {
     if (typeof node === "string") return stripUnsupported(node);
@@ -5565,7 +5603,7 @@ async function verifyCitations(talk) {
     }
     return node;
   }
-  console.info("Citation audit: dropped " + S.citeAudit.dropped + "/" + S.citeAudit.checked + " unsupported inline PMID citation(s)");
+  console.info("Citation audit: dropped " + S.citeAudit.dropped + "/" + S.citeAudit.checked + " unsupported citation(s) (inline PMIDs + [N] chips)");
   return walkStrip(talk);
 }
 
@@ -6011,15 +6049,25 @@ async function retrieveRAG(topic, opts) {
   //   • REL_DELTA  — keep only chunks within this gap of the BEST match (the strong cluster)
   // and never starve the prompt (always keep at least the top 2 candidates).
   var ABS_FLOOR = (typeof opts.minSim === "number") ? opts.minSim : 0.30;
-  var REL_DELTA = (typeof opts.relDelta === "number") ? opts.relDelta : 0.08;
-  var MAX_KEEP = opts.maxKeep || 6;
+  var MAX_KEEP = opts.maxKeep || 8;
+  // QUERY EXPANSION (Jenni 2026-07-10): a chalk talk has mechanism / diagnosis / treatment / outcomes
+  // sections, but retrieval used to embed ONLY the bare topic string — so whole sections went ungrounded
+  // and the model had nothing to cite for them. Fan out into facet sub-queries; the Worker embeds them in
+  // one call, retrieves per facet, and merges/dedupes by best score.
+  var _t = String(topic || "").trim();
+  var expandedQueries = [
+    _t,
+    _t + " pathophysiology and mechanism",
+    _t + " diagnosis, workup and diagnostic testing",
+    _t + " treatment, management and guideline recommendations",
+    _t + " outcomes, prognosis, mortality and landmark trials"
+  ];
   try {
     var endpoint = RAG_CONFIG.url.replace(/\/$/, "") + "/retrieve";
     var r = await fetch(endpoint, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      // Pull a wider candidate set, then gate client-side so the relative filter has options.
-      body: JSON.stringify({ query: topic, match_count: opts.match_count || 12, min_similarity: ABS_FLOOR })
+      body: JSON.stringify({ query: _t, queries: expandedQueries, match_count: opts.match_count || 16, min_similarity: ABS_FLOOR })
     });
     if (!r.ok) { console.warn("RAG retrieve failed: " + r.status); return {text: "", chunks: []}; }
     var data = await r.json();
@@ -6027,16 +6075,13 @@ async function retrieveRAG(topic, opts) {
     if (!chunks.length) return {text: "", chunks: []};
     // Absolute floor (backstop in case the worker didn't enforce it).
     chunks = chunks.filter(function(c){ return typeof c.similarity !== "number" || c.similarity >= ABS_FLOOR; });
-    if (chunks.length) {
-      // Relative floor: keep only the top similarity cluster.
-      var topSim = chunks.reduce(function(m,c){ return (typeof c.similarity === "number" && c.similarity > m) ? c.similarity : m; }, 0);
-      var relFloor = topSim - REL_DELTA;
-      var strong = chunks.filter(function(c){ return typeof c.similarity !== "number" || c.similarity >= relFloor; });
-      // Don't starve the prompt — keep the 2 best candidates even if the gate is strict.
-      if (strong.length < 2) strong = chunks.slice(0, 2);
-      chunks = strong.slice(0, MAX_KEEP);
-    }
-    if (!chunks.length) { console.info("RAG: all chunks below similarity floor for \"" + topic + "\""); return {text: "", chunks: []}; }
+    // NOTE: the old RELATIVE floor (keep only within 0.08 of the best match) is deliberately GONE. It made
+    // sense when every chunk was scored against one query, but under expansion a treatment-facet chunk
+    // legitimately scores lower than the best mechanism-facet chunk — the relative gate would prune exactly
+    // the section coverage expansion exists to provide. Each chunk already cleared ABS_FLOOR on the facet
+    // that matched it, and the Worker ranked + deduped them.
+    chunks = chunks.slice(0, MAX_KEEP);
+    if (!chunks.length) { console.info("RAG: all chunks below similarity floor for \"" + _t + "\""); return {text: "", chunks: []}; }
     var lines = chunks.map(function(c, i) {
       var auths = (c.authors || "").split(",").slice(0, 3).join(",");
       if (c.authors && c.authors.split(",").length > 3) auths += " et al.";

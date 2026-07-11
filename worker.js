@@ -486,25 +486,52 @@ async function handleRetrieve(request, env, origin) {
   const allowedSources = Array.isArray(body.allowed_sources) && body.allowed_sources.length > 0 ? body.allowed_sources : null;
   const tierBoostWeight = typeof body.tier_boost_weight === "number" ? body.tier_boost_weight : 0.05;
 
-  let embedding;
-  try { embedding = await embedQuery(env.OPENAI_API_KEY, query); }
+  // QUERY EXPANSION: the caller may send `queries` — several facet sub-queries (mechanism, diagnosis,
+  // treatment, outcomes) alongside the bare topic. We embed them all in one call, retrieve for each, then
+  // merge and dedupe by chunk, keeping each chunk's BEST ranked_score. This grounds every section of the
+  // talk instead of only whatever the bare topic string happened to match. (Jenni 2026-07-10)
+  let queries = Array.isArray(body.queries)
+    ? body.queries.map(q => String(q || "").trim()).filter(q => q.length >= 3 && q.length <= 4000)
+    : [];
+  if (!queries.length) queries = [query];
+  if (queries[0] !== query) queries.unshift(query);
+  queries = queries.slice(0, 6);   // cap fan-out
+
+  let embeddings;
+  try { embeddings = await embedQueries(env.OPENAI_API_KEY, queries); }
   catch (err) { return jsonError(502, "embedding_failed", "Failed to embed query: " + err.message, origin); }
 
-  let chunks;
+  // Per-query pull. Ask for a bit more than we'll keep so the merge has something to choose from.
+  const perQuery = Math.min(RETRIEVE_MAX_MATCH_COUNT, Math.max(matchCount, 8));
+  let merged;
   try {
-    chunks = await callMatchChunks(env, {
-      query_embedding: embedding,
-      match_count: matchCount,
+    const runs = await Promise.all(embeddings.map(emb => callMatchChunks(env, {
+      query_embedding: emb,
+      match_count: perQuery,
       min_similarity: minSimilarity,
       max_age_years: maxAgeYears,
       allowed_sources: allowedSources,
       tier_boost_weight: tierBoostWeight,
+    })));
+    // Dedupe by chunk_id, keeping the highest ranked_score any sub-query achieved for it.
+    const best = new Map();
+    runs.forEach((rows, qi) => {
+      (rows || []).forEach(r => {
+        const k = r.chunk_id;
+        const prev = best.get(k);
+        if (!prev || (r.ranked_score || 0) > (prev.ranked_score || 0)) {
+          best.set(k, Object.assign({}, r, { matched_query: queries[qi] }));
+        }
+      });
     });
+    merged = Array.from(best.values())
+      .sort((a, b) => (b.ranked_score || 0) - (a.ranked_score || 0))
+      .slice(0, matchCount);
   } catch (err) {
     return jsonError(502, "retrieval_failed", "Failed to retrieve chunks: " + err.message, origin);
   }
 
-  return jsonOK({ query, count: chunks.length, chunks }, origin);
+  return jsonOK({ query, queries, count: merged.length, chunks: merged }, origin);
 }
 
 async function handleImageGeneration(request, env, ctx, origin) {
@@ -598,14 +625,23 @@ async function handleImageGeneration(request, env, ctx, origin) {
 }
 
 async function embedQuery(openaiKey, text) {
+  const out = await embedQueries(openaiKey, [text]);
+  return out[0];
+}
+
+// Batch-embed several sub-queries in ONE OpenAI call (the embeddings API takes an array input).
+// Used by query expansion: a talk covers mechanism / diagnosis / treatment / outcomes, but retrieval
+// previously embedded only the bare topic string, so whole sections went ungrounded. (Jenni 2026-07-10)
+async function embedQueries(openaiKey, texts) {
   const res = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: { "Authorization": `Bearer ${openaiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: EMBEDDING_MODEL, input: text, dimensions: EMBEDDING_DIM }),
+    body: JSON.stringify({ model: EMBEDDING_MODEL, input: texts, dimensions: EMBEDDING_DIM }),
   });
   if (!res.ok) throw new Error(`OpenAI ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = await res.json();
-  return data.data[0].embedding;
+  // Preserve request order — the API returns an `index` on each item.
+  return data.data.sort((a, b) => a.index - b.index).map(d => d.embedding);
 }
 
 async function callMatchChunks(env, params) {
