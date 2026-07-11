@@ -185,11 +185,11 @@
   },
   {
     "specialty": "Cardiovascular",
-    "name": "2019 ESC/ERS Acute Pulmonary Embolism",
-    "year": 2019,
+    "name": "2026 AHA/ACC Acute Pulmonary Embolism (US) + ESC 2019",
+    "year": 2026,
     "access": "Open",
-    "url": "https://academic.oup.com/eurheartj/article/41/4/543/5556136",
-    "keys": "Risk-stratify by hemodynamics, sPESI, RV dysfunction (echo/CT), troponin. High-risk (shock/arrest): systemic thrombolysis with alteplase 100mg/2hr (PEITHO informed risk); surgical embolectomy or catheter-directed if contraindicated. Intermediate-high: monitor 48-72h, rescue lysis if decompensation. Catheter-directed thrombolysis emerging (ULTIMA, PE-TRACT). Low-risk (sPESI=0): DOAC outpatient (HoT-PE). Apixaban/rivaroxaban single-drug; dabigatran/edoxaban need parenteral lead-in."
+    "url": "https://professional.heart.org/en/science-news/2026-guideline-for-the-evaluation-and-management-of-acute-pulmonary-embolism-in-adults",
+    "keys": "The 2026 AHA/ACC (with ACCP, ACEP, CHEST, SCAI, SHM, SIR, SVM, SVN) guideline is the FIRST dedicated US PE guideline and is now the US reference. MAJOR CHANGE: it introduces ACUTE PE CLINICAL CATEGORIES A through E with subcategories and RETIRES the massive / submassive vocabulary. ESC 2019 has NOT been re-issued and remains ESC current, using the parallel strata low / intermediate-low / intermediate-high / high - say which taxonomy you are teaching. Management: risk-stratify by hemodynamics, sPESI, RV dysfunction (echo or CT), troponin. High-risk (shock or arrest): systemic thrombolysis (alteplase 100mg over 2h; PEITHO-informed bleeding risk); catheter-directed therapy or surgical embolectomy if lysis is contraindicated. Intermediate-high: monitor 48-72h with rescue lysis on decompensation; catheter-directed thrombolysis evolving (ULTIMA, PE-TRACT). Low-risk (sPESI 0): outpatient DOAC (HoT-PE). Apixaban and rivaroxaban are single-drug regimens; dabigatran and edoxaban need a parenteral lead-in. YEARS algorithm adapts D-dimer cut-off to pretest probability. Anticoagulate at least 3 months."
   },
   {
     "specialty": "Pulmonary",
@@ -225,11 +225,11 @@
   },
   {
     "specialty": "Pulmonary",
-    "name": "2019 ESC PE",
-    "year": 2019,
-    "access": "Paywalled",
-    "url": "https://academic.oup.com/eurheartj/article/41/4/543/5556136",
-    "keys": "YEARS algorithm: D-dimer cut-off adapted to pre-test probability. DOACs first-line over warfarin (apixaban, rivaroxaban with no lead-in). RV dysfunction stratifies severity; >=3 months anticoagulation. Massive PE: systemic thrombolysis (PEITHO) or catheter-directed."
+    "name": "2026 AHA/ACC Acute Pulmonary Embolism (US) + ESC 2019",
+    "year": 2026,
+    "access": "Open",
+    "url": "https://professional.heart.org/en/science-news/2026-guideline-for-the-evaluation-and-management-of-acute-pulmonary-embolism-in-adults",
+    "keys": "The 2026 AHA/ACC (with ACCP, ACEP, CHEST, SCAI, SHM, SIR, SVM, SVN) guideline is the FIRST dedicated US PE guideline and is now the US reference. MAJOR CHANGE: it introduces ACUTE PE CLINICAL CATEGORIES A through E with subcategories and RETIRES the massive / submassive vocabulary. ESC 2019 has NOT been re-issued and remains ESC current, using the parallel strata low / intermediate-low / intermediate-high / high - say which taxonomy you are teaching. Management: risk-stratify by hemodynamics, sPESI, RV dysfunction (echo or CT), troponin. High-risk (shock or arrest): systemic thrombolysis (alteplase 100mg over 2h; PEITHO-informed bleeding risk); catheter-directed therapy or surgical embolectomy if lysis is contraindicated. Intermediate-high: monitor 48-72h with rescue lysis on decompensation; catheter-directed thrombolysis evolving (ULTIMA, PE-TRACT). Low-risk (sPESI 0): outpatient DOAC (HoT-PE). Apixaban and rivaroxaban are single-drug regimens; dabigatran and edoxaban need a parenteral lead-in. YEARS algorithm adapts D-dimer cut-off to pretest probability. Anticoagulate at least 3 months."
   },
   {
     "specialty": "Pulmonary",
@@ -241,11 +241,11 @@
   },
   {
     "specialty": "Pulmonary",
-    "name": "2019 IDSA/ATS CAP",
-    "year": 2019,
+    "name": "ATS 2025 CAP (IDSA did not endorse)",
+    "year": 2025,
     "access": "Open",
-    "url": "https://www.atsjournals.org/doi/10.1164/rccm.201908-1581ST",
-    "keys": "Eliminated HCAP category; assess individual MRSA/Pseudomonas risk. Site-of-care by severity (CURB-65, ATS minor criteria). Standard outpatient: amoxicillin or doxycycline; macrolide if low resistance. Inpatient: beta-lactam + macrolide or fluoroquinolone."
+    "url": "https://www.atsjournals.org/doi/pdf/10.1164/rccm.202507-1692st",
+    "keys": "CONTESTED - there is no longer a single consensus. ATS published a 2025 CAP update; IDSA DECLINED TO ENDORSE it (IDSA accepted 8 of 10 recommendations but rejected the 2 concerning antibiotics in patients with positive viral assays). Teach the split. ATS 2025 changes vs IDSA/ATS 2019: (1) CORTICOSTEROIDS now suggested in SEVERE CAP (conditional, low-quality evidence) EXCEPT influenza pneumonia - a REVERSAL of 2019 which recommended against routine steroids; this is the highest-yield change. (2) SHORTER DURATION - 3 to 5 days conditionally recommended for outpatients with comorbidities and inpatients with non-severe CAP who reach clinical stability (minimum 3 days), down from at least 5 days. (3) Lung ultrasound addressed as a diagnostic modality. UNCHANGED from 2019: HCAP category eliminated, assess individual MRSA/Pseudomonas risk, CURB-65 and ATS minor criteria for site-of-care, outpatient amoxicillin or doxycycline (macrolide only if local resistance is low), inpatient beta-lactam + macrolide or respiratory fluoroquinolone."
   },
   {
     "specialty": "Pulmonary",
@@ -417,11 +417,11 @@
   },
   {
     "specialty": "GI/Hepatology",
-    "name": "AASLD HBV 2018 + updates",
-    "year": 2018,
+    "name": "AASLD/IDSA Chronic Hepatitis B 2025",
+    "year": 2025,
     "access": "Open",
-    "url": "https://www.aasld.org/",
-    "keys": "Treat HBeAg+ with HBV DNA >20,000 + ALT >2x ULN; or HBeAg- with HBV DNA >2,000. Tenofovir / entecavir first-line. Universal screening (anti-HBs, anti-HBc, HBsAg) per CDC 2023."
+    "url": "https://www.aasld.org/aasld-announces-new-practice-guideline-treatment-chronic-hepatitis-b",
+    "keys": "2025 GRADE-based guideline REPLACES AASLD 2018. IMMUNE-TOLERANT PHASE: treat if age over 40, or grade 2 or higher inflammation / stage F2 or higher fibrosis (2018 largely deferred treatment here); shared decision-making under 40. DISCONTINUATION: in HBeAg-negative non-cirrhotic patients with sustained undetectable DNA, do NOT withdraw nucleos(t)ide analogue therapy until HBsAg loss - firmer than the 2018 finite-therapy option. PMTCT: strong recommendation for TDF or TAF at gestational week 28 when HBV DNA is over 200,000 IU/mL, regardless of HBeAg status. Tenofovir and entecavir remain first-line. Baseline treat thresholds: HBeAg-positive with DNA over 20,000 and ALT over 2x ULN; HBeAg-negative with DNA over 2,000 and elevated ALT. New guidance on the indeterminate or grey-zone phase and on HCC surveillance. Universal screening (HBsAg, anti-HBs, anti-HBc) per CDC 2023."
   },
   {
     "specialty": "GI/Hepatology",
@@ -465,19 +465,19 @@
   },
   {
     "specialty": "Endocrinology",
-    "name": "Endocrine Society Primary Aldosteronism 2016",
-    "year": 2016,
+    "name": "Endocrine Society Primary Aldosteronism 2025",
+    "year": 2025,
     "access": "Open",
-    "url": "https://pubmed.ncbi.nlm.nih.gov/26934393/",
-    "keys": "Screen if SBP >150 / resistant HTN / hypokalemia / adrenal incidentaloma / OSA / family history. Aldosterone-renin ratio (ARR) initial test. Confirm with saline infusion or oral salt load. Adrenal vein sampling if surgery considered. Lateralization -> adrenalectomy; bilateral -> spironolactone."
+    "url": "https://academic.oup.com/jcem/article/110/9/2453/8196671",
+    "keys": "2025 guideline REPLACES 2016 and changes practice substantially. SCREEN ALL PATIENTS WITH HYPERTENSION (aldosterone + renin + ARR) - no longer restricted to resistant HTN / hypokalemia / incidentaloma / OSA / family history. CONFIRMATORY TESTING IS NO LONGER MANDATORY: diagnosis may rest on the biochemical triad of suppressed renin + elevated aldosterone + elevated ARR (saline infusion / oral salt loading no longer required in all cases). Measured PA prevalence among hypertensives rises from about 9 percent under 2016 criteria to about 16 percent under 2025 criteria, capturing milder phenotypes. Adrenal vein sampling still used when surgery is considered; lateralized disease -> adrenalectomy, bilateral -> mineralocorticoid receptor antagonist (spironolactone or eplerenone)."
   },
   {
     "specialty": "Endocrinology",
-    "name": "ATA Thyroid Nodules 2015",
+    "name": "ATA Thyroid Nodules 2015 (nodule guidance still ATA current) + ATA DTC 2025",
     "year": 2015,
     "access": "Open",
     "url": "https://www.thyroid.org/professionals/ata-professional-guidelines/",
-    "keys": "US risk stratification (TI-RADS-like): high suspicion -> FNA at >=1cm; intermediate -> 1-1.5cm; low -> 1.5cm; very low -> 2cm. Bethesda categories for FNA. Active surveillance for low-risk PTC <1cm."
+    "keys": "NODULES - this 2015 guidance is STILL ATA CURRENT: ATA split the document, and the 2025 guideline covers DIFFERENTIATED THYROID CANCER only and explicitly EXCLUDES nodules (a separate nodule guideline is planned but not yet published). Nodule workup: ultrasound risk stratification (TI-RADS-like): high suspicion -> FNA at 1cm or more; intermediate -> 1-1.5cm; low -> 1.5cm; very low -> 2cm. Bethesda categories for FNA cytology; molecular testing for indeterminate nodules. THYROID CANCER - use ATA 2025 (Thyroid 2025;35:841), which is a major DE-ESCALATION: new COMPLETE REMISSION concept - low-risk DTC treated with total thyroidectomy plus RAI and a sustained excellent response for 10 to 15 years no longer needs routine biochemical surveillance (previously indefinite); further movement toward ACTIVE SURVEILLANCE over upfront surgery for papillary microcarcinoma; revised dynamic risk stratification plus new molecular and survivorship sections."
   },
   {
     "specialty": "Endocrinology",
@@ -545,11 +545,11 @@
   },
   {
     "specialty": "ID",
-    "name": "IDSA/ATS CAP 2019",
-    "year": 2019,
+    "name": "ATS 2025 CAP (IDSA did not endorse)",
+    "year": 2025,
     "access": "Open",
-    "url": "https://www.idsociety.org/practice-guideline/community-acquired-pneumonia-cap-in-adults/",
-    "keys": "Eliminated HCAP. Assess MRSA/Pseudomonas risk individually. CURB-65 / ATS minor criteria for severity. Outpatient: amoxicillin OR doxycycline OR macrolide (if local resistance <25%). Inpatient: beta-lactam + macrolide OR fluoroquinolone."
+    "url": "https://www.atsjournals.org/doi/pdf/10.1164/rccm.202507-1692st",
+    "keys": "CONTESTED - there is no longer a single consensus. ATS published a 2025 CAP update; IDSA DECLINED TO ENDORSE it (IDSA accepted 8 of 10 recommendations but rejected the 2 concerning antibiotics in patients with positive viral assays). Teach the split. ATS 2025 changes vs IDSA/ATS 2019: (1) CORTICOSTEROIDS now suggested in SEVERE CAP (conditional, low-quality evidence) EXCEPT influenza pneumonia - a REVERSAL of 2019 which recommended against routine steroids; this is the highest-yield change. (2) SHORTER DURATION - 3 to 5 days conditionally recommended for outpatients with comorbidities and inpatients with non-severe CAP who reach clinical stability (minimum 3 days), down from at least 5 days. (3) Lung ultrasound addressed as a diagnostic modality. UNCHANGED from 2019: HCAP category eliminated, assess individual MRSA/Pseudomonas risk, CURB-65 and ATS minor criteria for site-of-care, outpatient amoxicillin or doxycycline (macrolide only if local resistance is low), inpatient beta-lactam + macrolide or respiratory fluoroquinolone."
   },
   {
     "specialty": "ID",
@@ -641,11 +641,11 @@
   },
   {
     "specialty": "ID",
-    "name": "IDSA Candidiasis 2016 (2024 update in review)",
+    "name": "IDSA Candidiasis 2016 (still IDSA current - no update pending)",
     "year": 2016,
     "access": "Open",
     "url": "https://www.idsociety.org/practice-guideline/candidiasis/",
-    "keys": "Candidemia: echinocandin first-line (caspofungin 70→50 mg, micafungin 100 mg, anidulafungin 200→100 mg) — fungicidal, covers C. glabrata/krusei. Step-down to fluconazole 400 mg if susceptible + clinically stable + clearance. Remove central lines. Ophthalmology exam within 1 week (endophthalmitis). 14d from first negative blood culture. C. auris + echinocandin-resistance rising → speciation + AST mandatory. Rezafungin (once-weekly) emerging (ReSTORE)."
+    "keys": "NOTE: there is NO IDSA update pending - candidiasis is not on the IDSA guidelines-in-development register. A separate ECMM/ISHAM/ASM Global Guideline for Candidiasis (Lancet Infect Dis 2025) exists as a contemporary non-IDSA counterpoint but does NOT supersede IDSA 2016. Candidemia: echinocandin first-line (caspofungin 70→50 mg, micafungin 100 mg, anidulafungin 200→100 mg) — fungicidal, covers C. glabrata/krusei. Step-down to fluconazole 400 mg if susceptible + clinically stable + clearance. Remove central lines. Ophthalmology exam within 1 week (endophthalmitis). 14d from first negative blood culture. C. auris + echinocandin-resistance rising → speciation + AST mandatory. Rezafungin (once-weekly) emerging (ReSTORE)."
   },
   {
     "specialty": "Heme/Onc",
@@ -654,14 +654,6 @@
     "access": "Open",
     "url": "https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/venous-thromboembolism-guidelines",
     "keys": "DOACs first-line: apixaban or rivaroxaban (no lead-in heparin); dabigatran/edoxaban require lead-in. Cancer-associated VTE: DOACs noninferior to LMWH (CARAVAGGIO, HOKUSAI-CANCER) - watch GI bleed with edoxaban. Provoked: 3 mo. Unprovoked: indefinite if low bleed risk."
-  },
-  {
-    "specialty": "Heme/Onc",
-    "name": "ASH HIT 2018",
-    "year": 2018,
-    "access": "Open",
-    "url": "https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/heparin-induced-thrombocytopenia-guidelines",
-    "keys": "4Ts score initial. Stop ALL heparin (incl. flushes). Non-heparin anticoagulants: argatroban, bivalirudin, danaparoid, fondaparinux, DOAC (apixaban / rivaroxaban for stable). Avoid platelet transfusion unless bleeding."
   },
   {
     "specialty": "Heme/Onc",
@@ -889,11 +881,11 @@
   },
   {
     "specialty": "Rheumatology",
-    "name": "ACR/SAA/SPARTAN Axial SpA 2019",
-    "year": 2019,
+    "name": "ACR/SAA/SPARTAN Axial SpA 2026",
+    "year": 2026,
     "access": "Open",
-    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6764857/",
-    "keys": "Stable AS: NSAID first-line; failure -> TNFi (any) preferred over IL-17i. PsA-related: TNFi or IL-17i; IL-23i (guselkumab, risankizumab) emerging. Treat-to-target with disease activity measures (BASDAI, ASDAS)."
+    "url": "https://rheumatology.org/press-releases/new-guidelines-advance-treatment-of-axial-spondyloarthritis-in-adults-and-youth",
+    "keys": "2026 update REPLACES 2019 (a first-ever juvenile axSpA companion guideline was released alongside it). NSAIDs remain first-line. MAJOR CHANGE: TNF inhibitors and IL-17 inhibitors are now EQUALLY recommended as the initial biologic - the 2019 guideline preferred TNFi first. JAK INHIBITORS are now recommended, though NOT as first-line b/tsDMARD (they were not an option in 2019). A b/tsDMARD may be initial therapy in patients with risk of progression or inadequate NSAID response. On failure, SWITCH MECHANISM OF ACTION; after two or more class failures reassess for adherence and non-inflammatory pain. Extra-musculoskeletal manifestations drive selection: uveitis or IBD -> monoclonal anti-TNF; psoriasis -> IL-17i. Well-controlled disease: gradual dose reduction may be considered, but abrupt discontinuation is recommended AGAINST. Diagnosis in adults: SI joint radiographs first, then MRI. Treat-to-target with ASDAS or BASDAI."
   },
   {
     "specialty": "Rheumatology",
@@ -1273,11 +1265,11 @@
   },
   {
     "specialty": "Geriatrics",
-    "name": "NPIAP/EPUAP Pressure Injury 2019",
-    "year": 2019,
+    "name": "NPIAP/EPUAP/PPPIA Pressure Injury 2025 (4th ed, living guideline)",
+    "year": 2025,
     "access": "Open",
-    "url": "https://epuap.org/pu-guidelines/",
-    "keys": "Stages 1-4 (+ unstageable, deep tissue). Risk assessment (Braden, Norton). Repositioning q2h, support surfaces, nutritional support. Staging guides treatment: stage 1 protect; 2 hydrocolloid/foam; 3-4 debridement, wound vac, consider surgery."
+    "url": "https://internationalguideline.com/",
+    "keys": "4th edition (2025) SUPERSEDES the 2019 static document and is a LIVING guideline with staged chapter release (prevention chapters live from Feb 2025). Framework unchanged: stages 1-4 plus unstageable and deep tissue injury; risk assessment (Braden, Norton); repositioning, support surfaces, nutritional support; staging guides treatment - stage 1 protect, stage 2 hydrocolloid or foam, stages 3-4 debridement, negative-pressure wound therapy, consider surgery. CAUTION: specific numeric recommendations from 2019 (repositioning interval, support-surface selection, nutrition targets) are being revised chapter by chapter - verify against the current chapter before teaching a specific threshold."
   },
   {
     "specialty": "Geriatrics",
@@ -1289,11 +1281,11 @@
   },
   {
     "specialty": "Geriatrics",
-    "name": "AGS Frailty Framework",
+    "name": "Frailty assessment - Fried phenotype and Rockwood Clinical Frailty Scale",
     "year": 2019,
     "access": "Open",
-    "url": "https://www.facs.org/",
-    "keys": "Phenotypic (Fried 5 criteria): unintentional weight loss, weakness, exhaustion, slow gait, low activity. >=3 = frail. Deficits-of-aging (Rockwood Clinical Frailty Scale). Frailty -> increased surgical / hospital risk. Optimize before elective surgery."
+    "url": "https://agsjournals.onlinelibrary.wiley.com/",
+    "keys": "CAUTION - this entry is a synthesis of the standard frailty instruments, NOT a named AGS practice guideline; do not cite it as an AGS guideline. Phenotypic model (Fried 5 criteria): unintentional weight loss, weakness, exhaustion, slow gait speed, low physical activity - 3 or more equals frail. Deficit-accumulation model: Rockwood Clinical Frailty Scale / Frailty Index. Frailty predicts increased surgical and hospital risk; optimize before elective surgery. NOTE: the instruments are known to be DISCORDANT with one another, and JAGS 2026 proposes a Frailty Trajectory Model subtyping frailty by driver and expected treatment response."
   },
   {
     "specialty": "Geriatrics",
@@ -1433,11 +1425,11 @@
   },
   {
     "specialty": "Otolaryngology",
-    "name": "IDSA Group A Strep Pharyngitis 2012",
-    "year": 2012,
+    "name": "IDSA Group A Strep Pharyngitis 2025 (Part 1: testing) + 2012 (treatment)",
+    "year": 2025,
     "access": "Open",
-    "url": "https://academic.oup.com/cid/article/55/10/e86/321183",
-    "keys": "Centor + age (4 = test/treat empirically; 2-3 = test; 0-1 = no test). Penicillin V or amoxicillin first-line (10 days). Cephalosporin / clindamycin / azithromycin if PCN allergy. No test of cure post-RADT in adults."
+    "url": "https://www.idsociety.org/practice-guideline/streptococcal-pharyngitis2/",
+    "keys": "TESTING - 2025 Part 1 (Oct 2025) CHANGES PRACTICE: clinical scoring systems (Centor/McIsaac, FeverPAIN) now explicitly gate WHETHER TO TEST AT ALL - do NOT test and do not treat low-risk patients. This reverses the 2012 posture of near-universal RADT or culture in adults with pharyngitis. TREATMENT - Part 2 (treatment, duration, penicillin allergy) is still PENDING (estimated late 2026), so 2012 treatment guidance still stands: penicillin V or amoxicillin first-line for 10 days; cephalosporin, clindamycin, or azithromycin if penicillin-allergic; no test of cure after RADT in adults."
   },
   {
     "specialty": "Otolaryngology",
@@ -1473,11 +1465,11 @@
   },
   {
     "specialty": "Miscellaneous",
-    "name": "IHI Triple Aim Framework",
-    "year": 2008,
+    "name": "IHI Quintuple Aim 2022",
+    "year": 2022,
     "access": "Open",
-    "url": "https://www.ihi.org/Engage/Initiatives/TripleAim/Pages/default.aspx",
-    "keys": "Triple Aim: improve population health, improve patient experience, reduce per-capita cost. Quadruple Aim adds clinician wellbeing (Bodenheimer 2014). Implementation requires integrated organizational change."
+    "url": "https://www.ihi.org/library/topics/quintuple-aim",
+    "keys": "The QUINTUPLE AIM is IHI current and supersedes the Triple Aim for teaching. Evolution: TRIPLE Aim (IHI 2008 - improve population health, improve patient experience, reduce per-capita cost) -> QUADRUPLE Aim (Bodenheimer and Sinsky 2014 - adds clinician well-being) -> QUINTUPLE Aim (Nundy, Cooper, Mate; IHI/JAMA 2022 - adds HEALTH EQUITY). Presenting the Triple Aim as IHI current framework is out of date."
   },
   {
     "specialty": "Miscellaneous",
@@ -1569,10 +1561,10 @@
   },
   {
     "specialty": "Palliative",
-    "name": "ASCO Integration of Palliative Care 2017",
-    "year": 2017,
+    "name": "ASCO Palliative Care for Patients With Cancer 2024",
+    "year": 2024,
     "access": "Open",
-    "url": "https://ascopubs.org/doi/abs/10.1200/JCO.2016.70.1474",
-    "keys": "Concurrent palliative care + cancer therapy from diagnosis of advanced disease (TEMEL: improved QoL, mood, possibly survival). Hospice eligibility: prognosis <=6 months. Hospital-based palliative care reduces ICU days, costs."
+    "url": "https://ascopubs.org/doi/10.1200/JCO.24.00542",
+    "keys": "2024 update REPLACES 2017. Core recommendation unchanged: refer to interdisciplinary palliative care EARLY and CONCURRENTLY with cancer therapy from diagnosis of advanced disease (TEMEL: improved QoL, mood, possibly survival). NEW IN 2024: early integration explicitly EXTENDED to patients with HEMATOLOGIC MALIGNANCIES and to patients enrolled on EARLY-PHASE CLINICAL TRIALS - both under-addressed in 2017. Explicit endorsement of TELEHEALTH-delivered palliative care, and of needs-based prioritization plus primary palliative care by the oncology team to manage capacity constraints. Hospice eligibility: prognosis of 6 months or less. Hospital-based palliative care reduces ICU days and costs."
   }
 ]

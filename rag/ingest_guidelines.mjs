@@ -45,7 +45,22 @@ const BATCH           = 64;   // embeddings API takes an array
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
 
-const entries = JSON.parse(readFileSync("rag/guidelines_extracted.json", "utf8"));
+const rawEntries = JSON.parse(readFileSync("rag/guidelines_extracted.json", "utf8"));
+
+// DEDUPE BY NAME. Some guidelines are intentionally filed under two specialties (e.g. CAP under both
+// Pulmonary and ID; PE under both Cardiovascular and Pulmonary) — correct for the keyword path, which is
+// per-specialty. But in the vector store two identical chunks would compete for the same retrieval slots
+// and crowd out a DIFFERENT relevant guideline. Keep one chunk per unique guideline. (Jenni 2026-07-10)
+const seenName = new Map();
+for (const e of rawEntries) {
+  const key = String(e.name || "").trim().toLowerCase();
+  if (!key) continue;
+  if (!seenName.has(key)) seenName.set(key, { ...e, specialties: [e.specialty] });
+  else seenName.get(key).specialties.push(e.specialty);
+}
+const entries = [...seenName.values()];
+const dupes = rawEntries.length - entries.length;
+if (dupes > 0) console.log(`Deduped ${dupes} cross-specialty duplicate(s) by name.`);
 
 // Society acronym from the guideline name (e.g. "KDIGO 2024 CKD..." -> "KDIGO"). Used as `journal`
 // so the citation chip renders a recognizable society label.
@@ -57,9 +72,10 @@ function societyOf(name) {
 // The embedded text. Includes the guideline name + society + specialty so a topic query like
 // "IgA nephropathy treatment" can reach "KDIGO 2024 Glomerular Diseases".
 function chunkText(e) {
+  const specs = (e.specialties && e.specialties.length ? e.specialties : [e.specialty]).filter(Boolean);
   return [
     `${e.name} (${e.year})`,
-    e.specialty ? `Specialty: ${e.specialty}` : "",
+    specs.length ? `Specialty: ${specs.join(", ")}` : "",
     "Key recommendations (summary):",
     e.keys,
   ].filter(Boolean).join("\n");
