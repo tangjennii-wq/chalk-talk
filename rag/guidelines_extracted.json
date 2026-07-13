@@ -761,11 +761,11 @@
   },
   {
     "specialty": "Oncology",
-    "name": "ASCO 2024 Stage IV NSCLC Living Guideline",
-    "year": 2024,
+    "name": "ASCO Stage IV NSCLC Living Guidelines (with / without driver alterations; v2026)",
+    "year": 2026,
     "access": "Open",
-    "url": "https://ascopubs.org/doi/10.1200/JCO-24-02133",
-    "keys": "Universal molecular testing for EGFR/ALK/ROS1/BRAF/KRAS G12C/MET/RET/NTRK/HER2 before first-line therapy. Adjuvant osimertinib x3yr for resected EGFR+ stage IB-IIIA (ADAURA, 73% DFS benefit). Durvalumab x1yr post-concurrent CRT in unresectable stage III (PACIFIC). Metastatic non-driver: pembrolizumab monotherapy if PD-L1 >=50% (KEYNOTE-024); chemo + pembrolizumab regardless of PD-L1 (KEYNOTE-189 nonsquamous, KEYNOTE-407 squamous). Sotorasib/adagrasib for KRAS G12C post-progression (CodeBreaK 200)."
+    "url": "https://ascopubs.org/nsclc-da-living-guideline",
+    "keys": "VERSION FIX: these are LIVING guidelines updated continuously - the 2024 version is superseded (current v2026.3.0, Feb 2026, with SEVEN new regulatory approvals since 2024). Note there are TWO separate documents: Stage IV NSCLC WITH driver alterations, and WITHOUT driver alterations. Cite the version and date you used. BIOMARKER TESTING FIRST - do NOT start therapy in advanced non-squamous NSCLC before molecular results return: EGFR, ALK, ROS1, BRAF V600E, KRAS G12C, MET exon 14 skipping, RET, NTRK, HER2, plus PD-L1. WITH a driver: targeted therapy beats chemo-immunotherapy - osimertinib for EGFR (with intensification options now: osimertinib plus chemo, or amivantamab plus lazertinib); alectinib or lorlatinib for ALK; and there are approved agents for each of the others. WITHOUT a driver: PD-L1 50 percent or more - pembrolizumab monotherapy is an option; PD-L1 under 50 percent - chemotherapy plus immunotherapy. Do NOT give immunotherapy alone to an EGFR/ALK-driven tumor - it works poorly and increases toxicity when a TKI follows. Reassess at progression: repeat biopsy or liquid biopsy for resistance mechanisms."
   },
   {
     "specialty": "Oncology",
@@ -849,11 +849,11 @@
   },
   {
     "specialty": "Rheumatology",
-    "name": "ACR/EULAR Sjögren 2023",
-    "year": 2023,
+    "name": "EULAR Sjögren 2019 management (ACR/EULAR 2016 is CLASSIFICATION criteria only)",
+    "year": 2019,
     "access": "Open",
-    "url": "https://www.eular.org/recommendations-management",
-    "keys": "Sicca symptoms: artificial tears, saliva substitutes, pilocarpine, cevimeline. Systemic: hydroxychloroquine first-line; immunosuppressants (MTX, AZA, MMF) for organ involvement. Rituximab/abatacept for refractory; CD4+/CD20+ targeted therapy emerging."
+    "url": "https://pubmed.ncbi.nlm.nih.gov/31672775/",
+    "keys": "CITATION FIX: there is no ACR/EULAR 2023 Sjogren MANAGEMENT guideline. ACR and EULAR jointly issued CLASSIFICATION CRITERIA (2016) - a research instrument, not management guidance. Management recommendations are EULAR ALONE (Ramos-Casals, Ann Rheum Dis 2020;79:3-18, published 2019). The newest US document is a Sjogrens Foundation/ACR guideline (2025) limited to PERIPHERAL NERVOUS SYSTEM manifestations. TOPICAL/LOCAL THERAPY FIRST for the sicca symptoms that define the disease: artificial tears and ocular lubricants, then topical cyclosporine or lifitegrast for dry eye; saliva substitutes, sugar-free gum, and MUSCARINIC AGONISTS (pilocarpine, cevimeline) for dry mouth. Meticulous dental care - caries risk is high. Hydroxychloroquine for arthralgia/fatigue (evidence is weak but it is widely used). Systemic immunosuppression (steroids, rituximab) only for SYSTEMIC involvement - vasculitis, interstitial lung disease, glomerulonephritis, severe cytopenias, neuropathy - NOT for sicca alone. Anti-Ro/SSA and anti-La/SSB; minor salivary gland biopsy (focus score) when serology is negative. MONITOR FOR LYMPHOMA - risk is 5-10 percent lifetime (MALT); red flags are persistent parotid enlargement, cryoglobulins, low C4, and lymphadenopathy."
   },
   {
     "specialty": "Rheumatology",
@@ -929,11 +929,11 @@
   },
   {
     "specialty": "Neurology",
-    "name": "AHS Migraine 2024",
+    "name": "AHS 2024 Position Statement: CGRP therapies first-line for migraine PREVENTION (not a CPG; prevention only)",
     "year": 2024,
-    "access": "Paywalled",
+    "access": "Open",
     "url": "https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14692",
-    "keys": "Acute: triptans (sumatriptan, eletriptan), gepants (rimegepant, ubrogepant), ditans (lasmiditan), NSAIDs. Preventive: CGRP mAbs (erenumab, fremanezumab, galcanezumab, eptinezumab) FIRST-LINE (no prior trial requirement); atogepant; topiramate, propranolol. Triptans cardiac contraindications."
+    "keys": "SCOPE FIX: this is a POSITION STATEMENT (Charles, Headache 2024;64:333), not a clinical practice guideline, and it covers PREVENTION ONLY - do not cite it for acute migraine treatment. KEY CHANGE: CGRP-targeting therapies are now FIRST-LINE for migraine prevention - the previous STEP-THERAPY requirement (fail 2 or more older preventive classes first) is ABOLISHED. Preventive CGRP options: monoclonal antibodies (erenumab, fremanezumab, galcanezumab, eptinezumab) and oral gepants (atogepant, rimegepant). Other preventives remain valid: topiramate, propranolol/metoprolol, amitriptyline, valproate, onabotulinumtoxinA (chronic migraine only, 15 or more headache days/month). Start prevention when attacks are frequent (4 or more per month), disabling, or acute treatment is failing or overused. ACUTE TREATMENT (from other AHS documents, not this one): triptans first-line for moderate-severe attacks; gepants (ubrogepant, rimegepant, zavegepant nasal) and lasmiditan for triptan non-responders or those with cardiovascular contraindications; NSAIDs for mild-moderate. Treat EARLY and at an adequate dose. MEDICATION-OVERUSE HEADACHE - limit acute treatment to under 10-15 days per month."
   },
   {
     "specialty": "Neurology",
@@ -993,11 +993,11 @@
   },
   {
     "specialty": "Critical Care",
-    "name": "ATS/ESICM ARDS 2023",
+    "name": "ESICM ARDS 2023 (ESICM alone) - note it DISAGREES with ATS 2024",
     "year": 2023,
     "access": "Open",
-    "url": "https://www.atsjournals.org/doi/10.1164/rccm.202311-2011ST",
-    "keys": "Low TV 4-8 mL/kg PBW. Plateau pressure <30. Prone position >=16h/day for moderate-severe (PROSEVA, NNT 6). NMB for refractory P/F<150 (ROSE). VV-ECMO referral for refractory (CESAR, EOLIA)."
+    "url": "https://link.springer.com/article/10.1007/s00134-023-07050-7",
+    "keys": "SOCIETY FIX: there is no joint ATS/ESICM 2023 ARDS guideline. There are TWO separate, independently developed guidelines that PARTLY DISAGREE: ESICM 2023 (Grasselli, Intensive Care Med 2023;49:727) and ATS 2024 (Qadir, AJRCCM 2024;209:24). TEACH THE DISAGREEMENT rather than a fake consensus: they diverge on HIGH PEEP (ATS recommends it in moderate-severe ARDS; ESICM makes NO recommendation), and on the strength of the neuromuscular blockade and ECMO recommendations. AGREED CORE: lung-protective ventilation is the only intervention with clear mortality benefit - TIDAL VOLUME 4-8 mL/kg PREDICTED body weight (use height), PLATEAU PRESSURE under 30 cmH2O, permissive hypercapnia acceptable. PRONE POSITIONING 16 or more hours/day in moderate-severe ARDS (PaO2/FiO2 under 150) - clear mortality benefit (PROSEVA) and badly under-used. Conservative fluids once shock resolves. Corticosteroids reasonable in moderate-severe ARDS. ECMO at an experienced center for refractory hypoxemia. ESICM 2023 also introduced a new ARDS definition including high-flow nasal oxygen and ultrasound-based criteria for resource-limited settings."
   },
   {
     "specialty": "Critical Care",
@@ -1121,11 +1121,11 @@
   },
   {
     "specialty": "Psychiatry",
-    "name": "APA PTSD 2023",
+    "name": "PTSD - VA/DoD 2023 + American PSYCHOLOGICAL Assn 2017/2025 (psychiatric APA has NO PTSD guideline)",
     "year": 2023,
     "access": "Open",
-    "url": "https://www.apa.org/ptsd-guideline",
-    "keys": "First-line: trauma-focused CBT (CPT, PE, EMDR) + SSRI/SNRI (sertraline, paroxetine, venlafaxine FDA-approved). Prazosin for nightmares. Avoid benzos. MDMA-assisted therapy under FDA review (denied 2024 - additional evidence required)."
+    "url": "https://www.healthquality.va.gov/guidelines/MH/ptsd/",
+    "keys": "CITATION FIX - CLASSIC SOCIETY BLEND: the American PSYCHIATRIC Association (psychiatry.org) has NO PTSD guideline on its current list. The PTSD clinical practice guideline belongs to the American PSYCHOLOGICAL Association (a DIFFERENT organization; 2017, updated 2025), and the psychiatric APA instead cross-lists the VA/DoD PTSD CPG. Do not attribute psychological-association recommendations to psychiatry. TRAUMA-FOCUSED PSYCHOTHERAPY IS FIRST-LINE - it outperforms medication: prolonged exposure (PE), cognitive processing therapy (CPT), and EMDR have the strongest evidence. Offer psychotherapy BEFORE or alongside medication when available. PHARMACOTHERAPY when psychotherapy is unavailable, declined, or insufficient: SSRIs (sertraline, paroxetine - both FDA-approved) or venlafaxine. Prazosin for trauma-related nightmares. Do NOT use benzodiazepines - they are ineffective for core PTSD symptoms, worsen outcomes, and interfere with exposure therapy. Screen with the PC-PTSD-5; diagnose by DSM-5 criteria (intrusion, avoidance, negative cognitions/mood, hyperarousal, over 1 month, functional impairment). Screen for comorbid depression, substance use, TBI, and suicidality."
   },
   {
     "specialty": "Psychiatry",
@@ -1169,11 +1169,11 @@
   },
   {
     "specialty": "Geriatrics",
-    "name": "AGS Beers Criteria 2023",
-    "year": 2023,
+    "name": "AGS Beers Criteria 2023 + Beers Alternatives List 2025",
+    "year": 2025,
     "access": "Open",
-    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12478568/",
-    "keys": "Potentially inappropriate medications in >=65: anticholinergics (cumulative burden -> falls/dementia), benzos (falls, delirium), NSAIDs (GI/renal/CV), tertiary TCAs, glyburide, megestrol, PPI >8 weeks. Drug-disease and drug-drug warnings. Cumulative anticholinergic score added 2023."
+    "url": "https://www.americangeriatrics.org/media-center/news/ags-releases-new-beers-criteriar-alternatives-list-support-safer-prescribing",
+    "keys": "The 2023 Beers Criteria (JAGS 2023;71:2052) remain current - there is no 2026 update. MISSING FROM THE APP: AGS released a companion BEERS CRITERIA ALTERNATIVES LIST (July 2025) covering over 20 conditions (insomnia, anxiety, delirium, chronic pain) - it is the actionable what-to-prescribe-INSTEAD companion, which is what learners actually need. Beers lists potentially inappropriate medications in adults 65 and over. AVOID: benzodiazepines and Z-drugs (falls, fractures, delirium - and they are still massively over-prescribed); first-generation antihistamines and other strong ANTICHOLINERGICS (diphenhydramine, oxybutynin, amitriptyline, cyclobenzaprine); ANTIPSYCHOTICS for behavioral symptoms of dementia (increased mortality) unless nonpharmacologic measures fail and the patient is a danger; NSAIDs (GI bleeding, AKI, heart failure); sliding-scale insulin; muscle relaxants; PPIs beyond 8 weeks without indication. Use with caution: aspirin for primary prevention over 70; SSRIs/SNRIs (hyponatremia, falls). DRUG-DISEASE interactions matter: anticholinergics in dementia, NSAIDs in heart failure or CKD. Beers is a PROMPT for review and deprescribing, NOT an absolute prohibition - document the rationale when you use a listed drug."
   },
   {
     "specialty": "Geriatrics",
@@ -1201,11 +1201,11 @@
   },
   {
     "specialty": "Geriatrics",
-    "name": "AAHPM End-of-Life 2024",
-    "year": 2024,
+    "name": "NCP Clinical Practice Guidelines for Quality Palliative Care, 4th ed (2018)",
+    "year": 2018,
     "access": "Open",
-    "url": "https://aahpm.org/",
-    "keys": "Goals-of-care discussions early (ask-tell-ask). Hospice eligibility: prognosis <=6 months. POLST/MOLST documentation across settings. Symptom management hierarchy: pain (opioid titration, adjuvants), dyspnea (opioids), delirium (haloperidol)."
+    "url": "https://www.nationalcoalitionhpc.org/ncp/",
+    "keys": "CITATION FIX: there is no AAHPM end-of-life guideline - AAHPM publishes no clinical practice guidelines. The real document is the National Coalition for Hospice and Palliative Care (NCP) Clinical Practice Guidelines for Quality Palliative Care, 4th edition (2018); AAHPM is a member organization of the coalition. EIGHT DOMAINS: structure and processes; physical; psychological/psychiatric; social; spiritual/religious/existential; cultural; care of the patient nearing the end of life; ethical and legal. Palliative care is for ANY serious illness at ANY stage, ALONGSIDE disease-directed therapy - it is NOT hospice and NOT only for the dying. Hospice eligibility: prognosis of 6 months or less if the disease runs its usual course, and the patient forgoes curative intent. ACTIVE DYING: anticipate and treat pain (opioids, no ceiling), dyspnea (opioids first-line, NOT oxygen unless hypoxic), secretions (glycopyrrolate/scopolamine - reposition, do not suction), agitation/terminal delirium (haloperidol), and nausea. Stop non-essential medications and monitoring. Artificial nutrition and hydration do NOT prolong life or improve comfort at the end of life. Communicate: ask-tell-ask, name the emotion, allow silence."
   },
   {
     "specialty": "Women's Health",
@@ -1217,11 +1217,11 @@
   },
   {
     "specialty": "Women's Health",
-    "name": "USPSTF Cervical Cancer Screening 2023",
-    "year": 2023,
+    "name": "USPSTF Cervical Cancer Screening 2018 (update still in DRAFT - self-collection NOT yet endorsed)",
+    "year": 2018,
     "access": "Open",
     "url": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/cervical-cancer-screening",
-    "keys": "Ages 21-29: Pap q3y. Ages 30-65: HPV primary q5y (preferred), co-testing q5y, OR Pap q3y. Stop at 65 if adequate screening and no high-grade lesions in 25 years. ACS 2025 update: start age 25, HPV primary preferred (incl. self-collection)."
+    "keys": "YEAR FIX: the current FINAL USPSTF cervical cancer recommendation is 2018 (JAMA 2018;320:674) - there is no 2023 version. USPSTF flags the topic as being updated; the Dec 2024 DRAFT proposes self-collected hrHPV but is NOT FINAL as of mid-2026. Do NOT teach self-collection as a USPSTF recommendation (it IS in the ACS 2025/2026 update - attribute it correctly). CURRENT USPSTF (2018): ages 21-29 - cytology alone every 3 years. Ages 30-65 - cytology every 3 years, OR high-risk HPV testing alone every 5 years, OR cotesting every 5 years. UNDER 21 - do NOT screen (Grade D) regardless of sexual history. OVER 65 - stop screening if adequate prior negative screening and not high-risk (Grade D). After HYSTERECTOMY with cervix removed for benign disease - do not screen. HPV VACCINATION does not change screening intervals. Screen regardless of vaccination status. Immunocompromised or DES-exposed or prior CIN2+ patients need more intensive, individualized screening."
   },
   {
     "specialty": "Women's Health",
@@ -1241,11 +1241,11 @@
   },
   {
     "specialty": "Women's Health",
-    "name": "ACOG Hypertension in Pregnancy 2024",
-    "year": 2024,
+    "name": "ACOG Hypertension in Pregnancy - PB 222 (2020) + Clinical Practice Update (2022)",
+    "year": 2022,
     "access": "Open",
-    "url": "https://www.acog.org/clinical/clinical-guidance/practice-bulletin/articles/2020/06/gestational-hypertension-and-preeclampsia",
-    "keys": "Severe features: SBP>=160, DBP>=110, plt<100k, AST/ALT 2x normal, Cr>1.1, pulmonary edema, neuro symptoms. Aspirin 81mg from 12-28 weeks if high-risk preeclampsia. Mag sulfate for severe features / eclampsia. Deliver 37w (no severe) or 34w (severe)."
+    "url": "https://www.acog.org/topics/hypertension-and-preeclampsia-in-pregnancy",
+    "keys": "YEAR FIX: there is no 2024 ACOG hypertension-in-pregnancy guideline. The documents are Practice Bulletin 222 - Gestational Hypertension and Preeclampsia (2020, interim update), Practice Bulletin 203 - Chronic Hypertension in Pregnancy (2019), and the post-CHAP ACOG Clinical Practice Update (2022) that set the treatment threshold. CHRONIC HYPERTENSION: after CHAP, TREAT to a threshold of 140/90 (previously treatment was withheld until 160/110) - this REDUCED adverse pregnancy outcomes without harming fetal growth. Preferred agents: LABETALOL, NIFEDIPINE, methyldopa. ACE inhibitors, ARBs, and direct renin inhibitors are CONTRAINDICATED. PREECLAMPSIA: new-onset hypertension after 20 weeks plus proteinuria OR severe features (platelets under 100k, creatinine over 1.1 or doubled, transaminases 2x normal, pulmonary edema, new cerebral or visual symptoms) - proteinuria is NOT required if severe features are present. SEVERE-RANGE hypertension (160/110 or more) is an EMERGENCY - treat within 30-60 minutes with IV labetalol, IV hydralazine, or oral immediate-release nifedipine. MAGNESIUM SULFATE for seizure prophylaxis in preeclampsia with severe features, and for eclampsia treatment (it is NOT an antihypertensive). Delivery is the only cure - at 37 weeks for preeclampsia without severe features, 34 weeks with severe features. PREVENTION: LOW-DOSE ASPIRIN 81 mg daily from 12-28 weeks (ideally before 16) for high-risk patients."
   },
   {
     "specialty": "Women's Health",
@@ -1257,11 +1257,11 @@
   },
   {
     "specialty": "Women's Health",
-    "name": "ACOG Gestational Diabetes 2024 (CPG #2)",
+    "name": "ACOG Clinical Practice Update: Screening for Diabetes in Pregnancy 2024",
     "year": 2024,
     "access": "Open",
-    "url": "https://www.acog.org/clinical/clinical-guidance/clinical-practice-guideline/articles/2024/07/screening-for-gestational-and-pregestational-diabetes-in-pregnancy",
-    "keys": "Universal 2-step screen at 24-28 wk: 50g GCT → 100g 3h OGTT if abnormal; Carpenter-Coustan criteria (2 of 4 abnormal). Early screening if BMI ≥25 (≥23 Asian) + risk factors (A1c ≥5.7, prior GDM, PCOS). Lifestyle first; insulin preferred if pharmacologic needed (metformin/glyburide cross placenta, second-line). Targets: fasting <95, 1h pp <140, 2h pp <120. Delivery 39-40w (A1), 39w (A2 controlled). Postpartum 75g OGTT 4-12 wk; 50-70% lifetime T2DM risk."
+    "url": "https://journals.lww.com/greenjournal/fulltext/2024/07000/acog_clinical_practice_update__screening_for.34.aspx",
+    "keys": "CITATION FIX: ACOG Clinical Practice Guideline No. 2 is POSTMENOPAUSAL OSTEOPOROSIS, not gestational diabetes. The correct document is the ACOG Clinical Practice UPDATE: Screening for Gestational and Pregestational Diabetes in Pregnancy and Postpartum (Obstet Gynecol 2024;144:e20), which updates Practice Bulletins 190 and 201. SCREEN ALL pregnant patients at 24-28 weeks; screen EARLY (first prenatal visit) if risk factors (obesity, prior GDM, family history, PCOS, high-risk ethnicity) to catch pregestational diabetes. US practice is the TWO-STEP approach: 50 g non-fasting glucose challenge, then a 100 g 3-hour OGTT if abnormal (Carpenter-Coustan thresholds - 2 or more abnormal values diagnoses GDM). MANAGEMENT: nutrition therapy and exercise first - the majority are controlled without medication. INSULIN is the PREFERRED pharmacotherapy when medication is needed (metformin and glyburide cross the placenta; metformin is a reasonable alternative if insulin is declined or unaffordable). Targets: fasting under 95, 1-h postprandial under 140, 2-h under 120. Fetal growth surveillance; consider delivery by 39-40 weeks. POSTPARTUM: 75 g 2-h OGTT at 4-12 weeks - GDM confers a roughly 50 percent lifetime risk of type 2 diabetes; screen every 1-3 years for life."
   },
   {
     "specialty": "Women's Health",
@@ -1449,19 +1449,11 @@
   },
   {
     "specialty": "Palliative",
-    "name": "AAHPM Pain Management 2024",
-    "year": 2024,
+    "name": "CDC Opioid Prescribing 2022 (AAHPM publishes no clinical practice guidelines)",
+    "year": 2022,
     "access": "Open",
-    "url": "https://aahpm.org/",
-    "keys": "Multimodal: WHO ladder (NSAIDs/acetaminophen -> weak opioids -> strong opioids). Methadone unique (NMDA antagonist + mu agonist - QT, drug interactions). Adjuvants: gabapentinoids (neuropathic), dexamethasone (bone), bisphosphonates. Opioid rotation if dose-limiting toxicity."
-  },
-  {
-    "specialty": "Palliative",
-    "name": "AAHPM Goals-of-Care 2024 (EPAs)",
-    "year": 2024,
-    "access": "Open",
-    "url": "https://aahpm.org/wp-content/uploads/2024/03/HPM_EPAs_Final_120319.pdf",
-    "keys": "Ask-tell-ask framework. Elicit values, not just preferences. Document POLST/MOLST across settings. Five wishes / advance directive components: medical decisions, person to make them, comfort, treatment, family. Code status discussion before procedures."
+    "url": "https://www.cdc.gov/mmwr/volumes/71/rr/rr7103a1.htm",
+    "keys": "CITATION FIX: AAHPM does NOT publish clinical practice guidelines (it publishes position statements, CME, and fellowship EPAs) - there is no AAHPM pain management guideline. The operative document is the CDC Clinical Practice Guideline for Prescribing Opioids for Pain (MMWR 2022;71(3)). CDC 2022 SOFTENED the rigid 2016 framing: there are NO hard dose thresholds or duration limits, and abrupt tapering or discontinuation of opioids in patients on long-term therapy is HARMFUL - do not force-taper. Individualize. Start with non-opioid and non-pharmacologic therapy for chronic pain; opioids only when benefits outweigh risks, at the lowest effective dose, with explicit goals. Prescribe naloxone for patients at risk. Check the PDMP. Do NOT dismiss or abandon patients on long-term opioids. IMPORTANT SCOPE NOTE: the CDC guideline explicitly EXCLUDES cancer pain, palliative care, sickle cell crisis, and end-of-life care - do not apply its cautions to a dying patient. In palliative and end-of-life pain, opioids are titrated to effect with no ceiling; the goal is comfort."
   },
   {
     "specialty": "Palliative",
