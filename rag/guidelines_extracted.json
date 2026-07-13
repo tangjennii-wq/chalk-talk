@@ -137,14 +137,6 @@
   },
   {
     "specialty": "Cardiovascular",
-    "name": "2023 Duke-ISCVID Endocarditis Criteria",
-    "year": 2023,
-    "access": "Open",
-    "url": "https://academic.oup.com/cid/article/77/4/518/7151107",
-    "keys": "IE = bacterial valve seeding from bacteremia/dental/IVDU causing vegetation + emboli. Updated 2023 criteria add PCR, metagenomic sequencing, FDG-PET/CT. Sensitivity 84% (vs 75% for modified Duke 2000). Empiric ceftriaxone + vancomycin; POET supports IV-to-PO switch."
-  },
-  {
-    "specialty": "Cardiovascular",
     "name": "2022 ACC/AHA Aortic Disease",
     "year": 2022,
     "access": "Open",
@@ -249,27 +241,19 @@
   },
   {
     "specialty": "Pulmonary",
-    "name": "2024 ATS/CDC/ERS/IDSA TB Treatment",
+    "name": "ATS ARDS Management Update 2024 (ATS alone; the ATS/ESICM/SCCM doc is 2017)",
     "year": 2024,
     "access": "Open",
-    "url": "https://www.atsjournals.org/doi/10.1164/rccm.202410-2096ST",
-    "keys": "4-month RIPM (rifapentine/isoniazid/pyrazinamide/moxifloxacin) for drug-susceptible (Study 31, non-inferior to 6-month standard). 6-month BPaLM for RIF-resistant. LTBI: 3HP weekly x12w or 4R."
+    "url": "https://pubmed.ncbi.nlm.nih.gov/38032683/",
+    "keys": "SOCIETY + YEAR FIX: there is no ATS/ESICM/SCCM 2023 ARDS guideline - the joint ATS/ESICM/SCCM document is 2017. The current US guideline is ATS ALONE: An Update on Management of Adult Patients with ARDS, AJRCCM 2024;209:24 (Qadir). (ESICM separately published its own 2023 ARDS guideline - a different document.) LUNG-PROTECTIVE VENTILATION is the only intervention with a clear mortality benefit: TIDAL VOLUME 4-8 mL/kg PREDICTED body weight (use height, not actual weight) and PLATEAU PRESSURE under 30 cmH2O (ARMA). Permissive hypercapnia is acceptable. HIGHER PEEP in moderate-severe ARDS. PRONE POSITIONING for 16+ hours/day in moderate-severe ARDS (PaO2/FiO2 under 150) - a clear mortality benefit (PROSEVA) and it is UNDER-USED. Neuromuscular blockade: consider early in severe ARDS (evidence is mixed - ACURASYS vs ROSE). Conservative fluid strategy once shock has resolved (FACTT). CORTICOSTEROIDS: reasonable in moderate-severe ARDS (DEXA-ARDS). ECMO for refractory hypoxemia at an experienced center (EOLIA/CESAR). Berlin definition: mild/moderate/severe by PaO2/FiO2 with PEEP 5 or more."
   },
   {
     "specialty": "Pulmonary",
-    "name": "2023 ATS/ESICM/SCCM ARDS",
-    "year": 2023,
+    "name": "AASM OSA - PAP 2019 / surgical 2019 / inpatient 2025 (no 2024 guideline)",
+    "year": 2025,
     "access": "Open",
-    "url": "https://www.atsjournals.org/doi/10.1164/rccm.202311-2011ST",
-    "keys": "Low TV 4-8 mL/kg PBW. Prone position >=16 h/day for moderate-severe (PROSEVA, NNT 6). Neuromuscular blockade for refractory hypoxemia. Conservative fluid; ECMO referral early for refractory."
-  },
-  {
-    "specialty": "Pulmonary",
-    "name": "AASM OSA 2024",
-    "year": 2024,
-    "access": "Paywalled",
-    "url": "https://aasm.org/clinical-resources/practice-standards/practice-guidelines/",
-    "keys": "Inpatient OSA screening in high-risk hospitalized. PAP first-line for moderate-severe. Surgical / oral appliance for select patients. Hypoglossal nerve stimulation (Inspire) for moderate OSA failing CPAP."
+    "url": "https://jcsm.aasm.org/doi/10.5664/jcsm.11864",
+    "keys": "YEAR FIX: there is NO AASM OSA guideline dated 2024. The real documents are PAP treatment (2019), surgical treatment (2019), diagnostic testing (2017), and the NEW inpatient guideline - Evaluation and Management of OSA in Adults Hospitalized for Medical Care, J Clin Sleep Med 2025 - which the app was missing and which is directly relevant to hospitalist teaching (in-hospital screening pathway; PAP for untreated moderate-severe OSA). CPAP is first-line for moderate-severe OSA and for symptomatic mild OSA - it improves sleepiness, quality of life, and blood pressure. Adherence is the whole game: address mask fit, pressure intolerance, and claustrophobia early; auto-titrating PAP is an option. ALTERNATIVES when CPAP fails or is refused: oral appliance (mandibular advancement) for mild-moderate; positional therapy if supine-predominant; WEIGHT LOSS for everyone with obesity (and consider GLP-1s / bariatric surgery); hypoglossal nerve stimulation for selected CPAP-intolerant patients with moderate-severe OSA. Surgery (UPPP) has limited benefit - not first-line. Screen before elective surgery (STOP-BANG) and counsel on drowsy driving."
   },
   {
     "specialty": "Pulmonary",
@@ -281,11 +265,11 @@
   },
   {
     "specialty": "Pulmonary",
-    "name": "ATS/ERS Bronchiectasis 2024",
-    "year": 2024,
-    "access": "Paywalled",
-    "url": "https://publications.ersnet.org/",
-    "keys": "Airway clearance cornerstone. Long-term macrolide for >=2 exacerbations/yr (BAT, EMBRACE). Against chronic ICS unless coexistent COPD/asthma. Inhaled mannitol/hypertonic saline mucolytic options."
+    "name": "ERS Adult Bronchiectasis 2025 (ERS alone - no ATS/ERS bronchiectasis guideline)",
+    "year": 2025,
+    "access": "Open",
+    "url": "https://publications.ersnet.org/content/erj/66/6/2501126",
+    "keys": "SOCIETY + YEAR FIX: there is no ATS/ERS bronchiectasis guideline (the ATS/ERS co-badge belongs to the NTM guideline). Bronchiectasis is ERS ALONE, and the current document is the ERS Clinical Practice Guideline for the Management of Adult Bronchiectasis, ERJ 2025 (Chalmers/Aliberti, Dec 2025) - it SUPERSEDES ERS 2017. NEW STRONG RECOMMENDATIONS in 2025 that 2017 did not make: LONG-TERM INHALED ANTIBIOTICS for patients with Pseudomonas aeruginosa AND frequent exacerbations, and LONG-TERM MACROLIDES (azithromycin) to reduce exacerbations. Core: confirm with HRCT (bronchial dilatation, lack of tapering, signet-ring sign). Find the CAUSE - it changes management: immunodeficiency (immunoglobulins), ABPA, NTM, cystic fibrosis, primary ciliary dyskinesia, post-infectious, alpha-1. Airway clearance and pulmonary rehab for everyone. Sputum culture to define pathogens - Pseudomonas colonization predicts worse outcomes. Treat exacerbations for 14 days targeting the known pathogen. Vaccinate; treat comorbid GERD/rhinosinusitis. Do NOT use inhaled corticosteroids unless there is coexisting asthma or COPD."
   },
   {
     "specialty": "Pulmonary",
@@ -302,14 +286,6 @@
     "access": "Open",
     "url": "https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext",
     "keys": "DOACs (apixaban, rivaroxaban, edoxaban, dabigatran) preferred over warfarin for acute VTE (AMPLIFY, EINSTEIN, RE-COVER, Hokusai). Exceptions favoring warfarin/LMWH: CrCl<30, triple-positive APLS (TRAPS), mechanical valves. Cancer-VTE: apixaban or edoxaban preferred (CARAVAGGIO, Hokusai-Cancer); avoid edoxaban/rivaroxaban with luminal GI tumors. Provoked: 3 months. Unprovoked or persistent factor: indefinite low-dose apixaban 2.5mg BID or rivaroxaban 10mg daily (AMPLIFY-EXT, EINSTEIN-CHOICE)."
-  },
-  {
-    "specialty": "Pulmonary",
-    "name": "ATS ARDS Management Update 2024",
-    "year": 2024,
-    "access": "Open",
-    "url": "https://www.atsjournals.org/doi/10.1164/rccm.202311-2011ST",
-    "keys": "Berlin: acute hypoxemia within 7d, bilateral infiltrates, not fully explained by cardiac failure. Severity by P/F on PEEP >=5: mild 200-300, mod 100-200, severe <100. Low tidal volume 4-8 mL/kg PBW, plateau <30 cm H2O (ARMA). Higher PEEP for moderate-severe (ALVEOLI, LOVS). Prone positioning >=16h/day for P/F<150 (PROSEVA — 50% mortality reduction). NMB (cisatracurium) short-term in severe (ACURASYS; ROSE neutral). VV-ECMO for refractory P/F<80 (EOLIA, CESAR). Steroids suggested (DEXA-ARDS)."
   },
   {
     "specialty": "GI/Hepatology",
@@ -385,11 +361,11 @@
   },
   {
     "specialty": "GI/Hepatology",
-    "name": "AASLD HCV 2023 (living document)",
+    "name": "AASLD-IDSA HCV Guidance (living document at hcvguidelines.org)",
     "year": 2023,
     "access": "Open",
     "url": "https://www.hcvguidelines.org/",
-    "keys": "Universal screening recommended. Glecaprevir/pibrentasvir or sofosbuvir/velpatasvir 8-12 weeks pangenotypic; >95% SVR. Simplified treatment for treatment-naive non-cirrhotic. Pediatric treatment >=3 years."
+    "keys": "SOCIETY FIX: this is a JOINT AASLD-IDSA product, not AASLD alone. It is a LIVING document - cite hcvguidelines.org by access date rather than a fixed year. SCREEN ALL ADULTS 18 and over at least once, and all pregnant people each pregnancy (CDC/USPSTF); repeat testing for ongoing risk (injection drug use). Diagnose with HCV antibody, then HCV RNA to confirm active infection. TREAT EVERYONE with active infection - there is no longer a fibrosis threshold, and treatment is now SIMPLIFIED. Pangenotypic regimens: SOFOSBUVIR/VELPATASVIR 12 weeks, or GLECAPREVIR/PIBRENTASVIR 8 weeks in treatment-naive patients without cirrhosis. Genotyping is NOT required for the simplified pathway. Check for HBV COINFECTION before starting (risk of HBV reactivation - a boxed warning). Assess cirrhosis (FIB-4, elastography) - it changes regimen and mandates lifelong HCC surveillance every 6 months even after cure. Check drug-drug interactions (amiodarone plus sofosbuvir is contraindicated - bradycardia; also PPIs, statins, anticonvulsants). Confirm SVR12 (cure). Reinfection is possible - retest those with ongoing risk. Do NOT withhold treatment for active drug use."
   },
   {
     "specialty": "GI/Hepatology",
@@ -401,11 +377,11 @@
   },
   {
     "specialty": "GI/Hepatology",
-    "name": "AASLD MASLD 2024",
-    "year": 2024,
+    "name": "AASLD MASLD 2023 Practice Guidance + resmetirom 2024 + semaglutide 2025",
+    "year": 2025,
     "access": "Open",
-    "url": "https://www.aasld.org/",
-    "keys": "Renamed from NAFLD (metabolic dysfunction-associated steatotic liver disease). Lifestyle (5-10% weight loss) + comorbidity management; SGLT2i / GLP-1 RA for diabetes/obesity. Resmetirom (THR-beta agonist) FDA-approved for noncirrhotic MASH F2-F3 (MAESTRO-NASH)."
+    "url": "https://pubmed.ncbi.nlm.nih.gov/39422487/",
+    "keys": "UPDATE: base is the AASLD MASLD Practice Guidance (Rinella, Hepatology 2023, plus the 2024 nomenclature update). TWO drug-specific addenda now exist: RESMETIROM (Oct 2024) and SEMAGLUTIDE (Nov 2025 update to AASLD Practice Guidance). Semaglutide 2.4 mg was FDA-approved Aug 2025 and is AASLD-endorsed for MASH with F2-F3 fibrosis - a 2024-vintage slide omits the SECOND approved MASH drug. NOMENCLATURE: NAFLD is now MASLD (metabolic dysfunction-associated steatotic liver disease); NASH is MASH; requires at least 1 cardiometabolic risk factor. MetALD is the overlap with alcohol. RISK-STRATIFY FIBROSIS with FIB-4 first (under 1.3 low risk - no further testing; over 2.67 high risk), then elastography (FibroScan) or ELF for indeterminate. Fibrosis stage - not steatosis - drives outcomes. Weight loss is the foundation: 5 percent reduces steatosis, 7-10 percent resolves MASH, 10 percent or more improves fibrosis. GLP-1s and bariatric surgery. RESMETIROM (THR-beta agonist, FDA-approved March 2024) for MASH with F2-F3. Statins are SAFE and indicated (cardiovascular disease is the leading cause of death in MASLD, not liver disease). Screen for varices/HCC once cirrhotic."
   },
   {
     "specialty": "GI/Hepatology",
@@ -521,11 +497,11 @@
   },
   {
     "specialty": "ID",
-    "name": "DHHS HIV ART 2024",
-    "year": 2024,
+    "name": "HHS/OARAC HIV Antiretroviral Guidelines (living - last updated 2026)",
+    "year": 2026,
     "access": "Open",
     "url": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-arv/whats-new",
-    "keys": "INSTI-based regimens first-line (bictegravir/TAF/FTC, dolutegravir/3TC/ABC). Long-acting cabotegravir/rilpivirine bimonthly for adherence. Earlier statin use per REPRIEVE (35% MACE reduction). Start ART regardless of CD4 count."
+    "keys": "CITATION FIX: this is a LIVING document (HHS Panel/OARAC), continuously updated - last updated May 2026. Cite by ACCESS DATE, not a fixed year, and check the What is New page before teaching. START ART IMMEDIATELY in everyone with HIV, regardless of CD4 count - ideally the same day as diagnosis (rapid start). U=U: sustained viral suppression means HIV is UNTRANSMITTABLE sexually - tell every patient. FIRST-LINE regimens are INSTI-based: bictegravir/TAF/FTC (single tablet), or dolutegravir plus (TAF or TDF)/FTC, or dolutegravir/lamivudine (2-drug, if HBV-negative and VL under 500,000). Baseline: genotype resistance testing, HLA-B*5701 if considering abacavir, HBV serology (co-treat), pregnancy test, renal and hepatic function, lipids. Long-acting injectable cabotegravir/rilpivirine every 2 months for virologically suppressed patients who prefer it. PrEP: daily TDF/FTC or TAF/FTC, or injectable cabotegravir; now also lenacapavir (twice-yearly). Monitor VL at 4-8 weeks then q3 months until suppressed, then q6 months. Screen for OIs by CD4; start PJP prophylaxis if CD4 under 200."
   },
   {
     "specialty": "ID",
@@ -545,19 +521,19 @@
   },
   {
     "specialty": "ID",
-    "name": "AHA 2023 IE Update + Duke-ISCVID",
+    "name": "ESC 2023 Infective Endocarditis + 2023 Duke-ISCVID Criteria (there is no AHA 2023 IE update)",
     "year": 2023,
     "access": "Open",
-    "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001093",
-    "keys": "Healthcare-associated IE increasing. Modified Duke-ISCVID 2023 incorporates molecular diagnostics, FDG-PET. Empiric therapy: ceftriaxone + vancomycin. POET trial: IV-to-PO transition after stabilization (>=10d IV + clinical response)."
+    "url": "https://academic.oup.com/eurheartj/article/44/39/3948/7243107",
+    "keys": "CITATION FIX: there is NO AHA 2023 IE update - the 2023 endocarditis GUIDELINE is ESC (Eur Heart J 2023). AHA IE documents are the 2015 scientific statement and the 2021 prevention statement. The Duke-ISCVID 2023 CRITERIA (Fowler, CID 2023;77:518) are a separate ISCVID document. DUKE-ISCVID 2023 UPDATES the modified Duke criteria: expands MICROBIOLOGY (adds organisms and accepts PCR/sequencing/serology), and expands IMAGING as a major criterion - cardiac CT and 18F-FDG PET/CT now count (especially for PROSTHETIC valves and intracardiac devices), not just echo. Adds intracardiac device leads as a predisposing condition. CORE: 3 sets of blood cultures from separate sites BEFORE antibiotics. Echo - TTE first, but TEE if prosthetic valve, high suspicion, or a negative/nondiagnostic TTE. Empiric therapy covers staph (including MRSA), strep, and enterococcus. SURGERY indications: heart failure from valve dysfunction, uncontrolled infection (abscess, persistent bacteremia), and prevention of embolism (large mobile vegetation over 10 mm with embolic event). Prophylaxis ONLY for the highest-risk cardiac lesions undergoing dental procedures involving gingival manipulation."
   },
   {
     "specialty": "ID",
-    "name": "ATS/CDC/IDSA TB 2024",
-    "year": 2024,
+    "name": "ATS/CDC/ERS/IDSA TB Treatment 2025 (ERS was omitted from the society list)",
+    "year": 2025,
     "access": "Open",
-    "url": "https://www.idsociety.org/practice-guideline/treatment-of-drug-susceptible-tb/",
-    "keys": "4-month rifapentine-moxifloxacin (Study 31) for drug-susceptible TB >=12 years. 6-month BPaLM (bedaquiline-pretomanid-linezolid-moxifloxacin) for RIF-resistant. LTBI: 3HP weekly x12w (preferred) or 4R."
+    "url": "https://academic.oup.com/ajrccm/article/211/1/15/8513358",
+    "keys": "SOCIETY FIX: the society list omitted ERS - it is ATS/CDC/ERS/IDSA (AJRCCM 2025;211:15, online Dec 2024). DRUG-SUSCEPTIBLE TB: a 4-MONTH REGIMEN is now an option for patients 12 and over - rifapentine, isoniazid, pyrazinamide, moxifloxacin (HPMZ, Study 31/A5349) - alongside the standard 6-month RIPE (rifampin, isoniazid, pyrazinamide, ethambutol x2 months, then rifampin plus isoniazid x4 months). DRUG-RESISTANT: BPaLM (bedaquiline, pretomanid, linezolid, moxifloxacin) for 6 MONTHS in rifampin-resistant / fluoroquinolone-susceptible TB - a transformative shortening from 18-20 months. Directly observed therapy (DOT) improves completion. Test EVERYONE for HIV. Get drug-susceptibility testing on the initial isolate. LATENT TB: 3HP (isoniazid plus rifapentine weekly x12), 4R (rifampin daily x4 months), or 3HR - all preferred over 9 months of isoniazid (better completion, less hepatotoxicity). Monitor for hepatotoxicity; pyridoxine with isoniazid. Airborne isolation until 3 negative smears on therapy."
   },
   {
     "specialty": "ID",
@@ -609,19 +585,19 @@
   },
   {
     "specialty": "ID",
-    "name": "IDSA Febrile Neutropenia 2024 + ASCO",
-    "year": 2024,
+    "name": "IDSA Febrile Neutropenia 2010 + ASCO/IDSA 2018 (no 2024 update)",
+    "year": 2018,
     "access": "Open",
     "url": "https://www.idsociety.org/practice-guideline/fever-and-neutropenia-in-adults-with-cancer/",
-    "keys": "MASCC score risk stratification. High-risk (AML, HSCT, prolonged neutropenia >=7d): IV antipseudomonal beta-lactam + +/- vancomycin if mucositis/catheter/SSTI. Outpatient FQ for low-risk. FQ prophylaxis for high-risk."
+    "keys": "YEAR FIX: there is NO 2024 febrile neutropenia update. IDSA is 2010 (Freifeld, CID 52:e56); the joint ASCO/IDSA documents are both 2018 (outpatient management of fever and neutropenia; antimicrobial prophylaxis). A 2024 label falsely implies the fluoroquinolone-prophylaxis and outpatient recommendations have been re-reviewed - they have not. DEFINITION: single temperature 38.3 C or more, or 38.0 C sustained over 1 h, WITH ANC under 500 (or expected to fall below 500). THIS IS AN EMERGENCY: draw blood cultures (peripheral AND each lumen of any central line) and give EMPIRIC BROAD-SPECTRUM ANTIBIOTICS WITHIN 1 HOUR - do not wait for the ANC or for imaging. Monotherapy with an ANTIPSEUDOMONAL BETA-LACTAM (cefepime, piperacillin-tazobactam, or a carbapenem). Add VANCOMYCIN only for specific indications - hemodynamic instability, suspected catheter infection, skin/soft tissue infection, known MRSA colonization, or severe mucositis - NOT routinely. Risk-stratify with MASCC or CISNE: low-risk patients may be managed as OUTPATIENTS on oral cipro plus amoxicillin-clavulanate. Add antifungal coverage if fever persists 4-7 days. G-CSF for prophylaxis, not for treatment of established FN."
   },
   {
     "specialty": "ID",
-    "name": "WHO/IDSA Travel Medicine + Malaria",
-    "year": 2024,
+    "name": "CDC Yellow Book 2026 + WHO Malaria Guidelines (there is no IDSA travel medicine guideline)",
+    "year": 2026,
     "access": "Open",
     "url": "https://www.cdc.gov/yellow-book/",
-    "keys": "Pre-travel risk assessment: destination, activities, comorbidities. Malaria chemoprophylaxis (atovaquone-proguanil, doxycycline, mefloquine, tafenoquine). Severe malaria: IV artesunate + clindamycin. Tafenoquine for P. vivax radical cure."
+    "keys": "CITATION FIX: there is NO joint WHO/IDSA travel medicine document - this was an invented pairing. IDSA does NOT publish a travel medicine guideline (that is ISTM/ASTMH). The operative references are the CDC YELLOW BOOK 2026 for US travel chemoprophylaxis and vaccines, and the WHO Guidelines for Malaria (living document, WHO alone) for global treatment. MALARIA: P. falciparum is the killer - suspect it in ANY febrile returning traveler and get thick and thin smears (or rapid antigen test) URGENTLY; a single negative smear does NOT exclude - repeat every 12-24 h x3. Severe malaria (impaired consciousness, acidosis, hypoglycemia, parasitemia over 5 percent, ARDS, AKI): IV ARTESUNATE is first-line worldwide. Uncomplicated falciparum: artemisinin-based combination therapy (ACT). P. vivax/ovale: add PRIMAQUINE or tafenoquine for hypnozoites - screen G6PD FIRST. Chemoprophylaxis by destination resistance: atovaquone-proguanil, doxycycline, or mefloquine. Pretravel: hepatitis A, typhoid, yellow fever (with certificate), rabies for high-risk; discuss traveler diarrhea and dengue."
   },
   {
     "specialty": "ID",
@@ -688,28 +664,20 @@
     "keys": "4Ts score for pretest probability; low (<=3) rules out HIT, skip testing. Intermediate/high: PF4-heparin ELISA, confirm positive with serotonin release assay (SRA). Stop all heparin (including flushes) immediately; bridge with argatroban, bivalirudin, fondaparinux, or danaparoid. Avoid platelet transfusions (paradoxical thrombosis). Transition to DOAC once platelets >150k. Anticoagulate >=3 months if isolated HIT, >=3-6 months if HITT. Avoid warfarin until platelet recovery."
   },
   {
-    "specialty": "Heme/Onc",
-    "name": "NCCN Cancer-Related Infections v3.2024 (Febrile Neutropenia)",
-    "year": 2024,
-    "access": "Paywalled",
-    "url": "https://www.nccn.org/guidelines/guidelines-detail?category=3&id=1457",
-    "keys": "FN = ANC <500 (or <1000 with predicted nadir) + temp ≥38.3 once or ≥38.0 sustained 1h. MASCC ≥21 OR CISNE <3 = low-risk → oral cipro + amox-clav outpatient (after 2-4h observation). High-risk: IV antipseudomonal beta-lactam (cefepime, piperacillin-tazobactam, meropenem). Add vancomycin for catheter infection, mucositis, SSTI, hemodynamic instability, MRSA colonization. Empiric antifungal (echinocandin or voriconazole) after 4-7d persistent fever. FQ prophylaxis + G-CSF if expected ANC <100 >7d (AML/HSCT)."
-  },
-  {
     "specialty": "Oncology",
-    "name": "NCCN NSCLC v4.2024",
-    "year": 2024,
-    "access": "Paywalled",
+    "name": "NCCN NSCLC (versioned continuously - cite the version you used)",
+    "year": 2026,
+    "access": "Open",
     "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1450",
-    "keys": "All advanced NSCLC: NGS for EGFR/ALK/ROS1/BRAF/KRAS-G12C/MET/RET/NTRK/HER2 + PD-L1 IHC. EGFR mut: osimertinib (FLAURA). ALK: alectinib/lorlatinib. KRAS-G12C: sotorasib/adagrasib (CodeBreaK 200). Adjuvant osimertinib (ADAURA), durvalumab (PACIFIC) post-CRT."
+    "keys": "VERSION CAUTION: NCCN guidelines are versioned CONTINUOUSLY (v4.2024 is long superseded; current is v4.2026 as of April 2026). Always cite the exact version and date you used, and check NCCN before teaching. RECENT CHANGES: datopotamab deruxtecan added as preferred second-line in EGFR-mutant NSCLC after osimertinib; osimertinib plus chemotherapy and amivantamab plus lazertinib elevated to category 1 preferred first-line. CORE: BIOMARKER TESTING BEFORE TREATMENT in advanced non-squamous NSCLC - EGFR, ALK, ROS1, BRAF, KRAS G12C, MET exon 14, RET, NTRK, HER2, plus PD-L1. Do NOT start chemo-immunotherapy before molecular results return in a never-smoker. TARGETED THERAPY beats chemo/immunotherapy when a driver is present: osimertinib (EGFR), alectinib/lorlatinib (ALK), etc. NO driver: PD-L1 50 percent or more - pembrolizumab monotherapy; PD-L1 under 50 percent - chemo plus immunotherapy. Early stage: surgery plus adjuvant (osimertinib for EGFR, atezolizumab/pembrolizumab for PD-L1-positive); neoadjuvant chemo-immunotherapy (CheckMate 816). Stage III unresectable: chemoradiation plus consolidation durvalumab (PACIFIC). LUNG CANCER SCREENING: low-dose CT annually, age 50-80, 20 pack-years, currently smoking or quit within 15 years (USPSTF 2021)."
   },
   {
     "specialty": "Oncology",
-    "name": "NCCN Breast Cancer v3.2024 + ASCO",
-    "year": 2024,
-    "access": "Paywalled",
+    "name": "NCCN Breast Cancer (modular, versioned continuously - cite the version you used)",
+    "year": 2026,
+    "access": "Open",
     "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1419",
-    "keys": "HER2+: trastuzumab + pertuzumab + taxane (CLEOPATRA); T-DXd second-line (DESTINY-Breast03). HR+: CDK4/6 inhibitors + AI/fulvestrant (PALOMA, MONALEESA, MONARCH); ribociclib OS benefit. TNBC: pembrolizumab + chemo (KEYNOTE-522). HER2-low: T-DXd."
+    "keys": "VERSION CAUTION: NCCN versions churn monthly and NCCN has SPLIT breast into modules (Invasive Breast Cancer, Metastatic Breast Cancer, Screening and Diagnosis) - v3.2024 no longer exists as a single document. Cite the exact module and version you used. RECENT: 2026 permits SENTINEL LYMPH NODE BIOPSY OMISSION in selected postmenopausal patients over 50 with early-stage disease receiving whole-breast radiation plus endocrine therapy. CORE: subtype drives everything - ER/PR and HER2 on every tumor, plus Ki-67. HR-POSITIVE/HER2-NEGATIVE early stage: endocrine therapy for 5-10 years (tamoxifen premenopausal; aromatase inhibitor postmenopausal); use a genomic assay (Oncotype DX 21-gene) to decide on chemotherapy - most node-negative, RS under 26 can SKIP chemo (TAILORx); add abemaciclib or ribociclib for high-risk node-positive disease. HER2-POSITIVE: trastuzumab plus pertuzumab plus taxane; T-DM1 or T-DXd for residual disease/metastatic. TRIPLE-NEGATIVE: chemotherapy plus pembrolizumab (KEYNOTE-522); check BRCA (PARP inhibitor - olaparib) and sacituzumab govitecan for metastatic. Metastatic HR-positive: endocrine therapy plus a CDK4/6 INHIBITOR is first-line, not chemotherapy."
   },
   {
     "specialty": "Oncology",
@@ -737,19 +705,19 @@
   },
   {
     "specialty": "Oncology",
-    "name": "USPSTF Cancer Screening 2024",
+    "name": "USPSTF cancer screening - per-topic statements (there is no single USPSTF 2024 document)",
     "year": 2024,
     "access": "Open",
-    "url": "https://www.uspreventiveservicestaskforce.org/uspstf/recommendation-topics/uspstf-a-and-b-recommendations",
-    "keys": "Breast: mammography 40-74 q2y (B). Colon: 45-75 (B 45-49, A 50-75). Lung LDCT: 50-80, >=20 pack-yr, current/former (quit <15y). Cervical: HPV primary q5y 30-65 or co-test. Prostate: shared decision 55-69."
+    "url": "https://www.uspreventiveservicestaskforce.org/uspstf/topic_search_results?topic_status=P",
+    "keys": "CITATION FIX: there is no single USPSTF Cancer Screening 2024 document - USPSTF issues SEPARATE per-cancer statements, each with its own grade and date. Cite the specific statement. CURRENT: BREAST - screening mammography every 2 years, ages 40-74 (Grade B, April 2024 - the start age was lowered from 50 to 40). LUNG - annual low-dose CT, ages 50-80, 20 pack-years, current smoker or quit within 15 years (Grade B, 2021). COLORECTAL - start at age 45 (Grade B for 45-49, Grade A for 50-75); age 76-85 individualize (Grade C) (2021). CERVICAL - ages 21-29 cytology every 3 years; ages 30-65 cytology every 3 years OR hrHPV every 5 years OR cotesting every 5 years (2018). IMPORTANT: the 2024 DRAFT adding SELF-COLLECTED HPV has NOT been finalized as of mid-2026 - do NOT teach self-collection as a USPSTF recommendation. PROSTATE - ages 55-69 individualized shared decision-making (Grade C); 70 and over recommend against (Grade D). Grades: A/B do it, C individualize, D do not, I insufficient evidence."
   },
   {
     "specialty": "Oncology",
-    "name": "ASCO Immunotherapy Toxicity 2024",
-    "year": 2024,
+    "name": "ASCO Immune-Related Adverse Events 2021 (no 2024 update; ASCO alone)",
+    "year": 2021,
     "access": "Open",
-    "url": "https://ascopubs.org/doi/abs/10.1200/JCO.21.01440",
-    "keys": "Grade 1: continue, monitor. Grade 2: hold + consider steroids if persistent. Grade 3: hold + high-dose steroids (prednisone 1-2 mg/kg, taper 4-6 weeks). Grade 4: permanent discontinuation; immunosuppression escalation. Endocrinopathies often need lifelong replacement."
+    "url": "https://ascopubs.org/doi/10.1200/JCO.21.01440",
+    "keys": "YEAR FIX: there is NO 2024 ASCO immunotherapy toxicity guideline - the document is the ASCO Guideline Update, JCO 2021;39:4073 (Schneider). ASCO alone, not ASCO/SITC. GRADE-BASED MANAGEMENT: Grade 1 - continue the checkpoint inhibitor with close monitoring. Grade 2 - HOLD the drug, start prednisone 0.5-1 mg/kg. Grade 3 - hold, HIGH-DOSE steroids (methylprednisolone 1-2 mg/kg), hospitalize; if no improvement in 48-72 h add a second-line agent (INFLIXIMAB for colitis; do NOT use infliximab for hepatitis - use mycophenolate). Grade 4 - PERMANENTLY DISCONTINUE plus high-dose steroids. KEY EXCEPTION: controlled ENDOCRINOPATHIES (hypothyroidism, adrenal insufficiency, type 1 diabetes) do NOT require stopping immunotherapy - just replace the hormone. MYOCARDITIS is rare but often fatal - any troponin rise or new cardiac symptom means stop the drug and give high-dose steroids immediately. Colitis is the classic irAE - rule out C. difficile before blaming the drug. Taper steroids over 4-6 weeks; add PJP prophylaxis if prednisone 20 mg or more for over 4 weeks."
   },
   {
     "specialty": "Oncology",
