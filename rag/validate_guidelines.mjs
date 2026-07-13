@@ -31,6 +31,7 @@ import { readFileSync } from "fs";
 const STRICT = process.argv.includes("--strict");
 const entries = JSON.parse(readFileSync("rag/guidelines_extracted.json", "utf8"));
 let netBlocked = 0;
+let botBlocked = 0;
 
 const NCBI_KEY = process.env.NCBI_API_KEY || "";
 const CONCURRENCY = 6;
@@ -106,8 +107,15 @@ async function validate(e) {
       if (res.status === 0) {
         netBlocked++;
         warnings.push(`could not reach ${e.url} (${res.error}) — network issue, NOT a dead link`);
+      } else if (res.status === 404 || res.status === 410) {
+        // The ONLY statuses that actually mean "this citation does not exist."
+        problems.push(`DEAD LINK (HTTP ${res.status}) — page does not exist: ${e.url}`);
       } else {
-        problems.push(`URL DOES NOT RESOLVE (HTTP ${res.status}): ${e.url}`);
+        // 403 = bot-blocked (ACR, IDSA, AASLD, ASCO all do this). 429 = rate-limited. 5xx = their server.
+        // NONE of these mean the citation is fake. Reporting them as failures would cry wolf and destroy
+        // trust in the one signal that matters. (Jenni 2026-07-11)
+        botBlocked++;
+        warnings.push(`HTTP ${res.status} (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): ${e.url}`);
       }
     }
     // 3) PMID cross-check
@@ -167,7 +175,8 @@ async function main() {
   console.log("═══ SUMMARY ═══");
   console.log(`  clean:    ${clean}`);
   console.log(`  warnings: ${warned.length}`);
-  console.log(`  FAILURES: ${failed.length}`);
+  console.log(`  FAILURES: ${failed.length}   <- real problems: dead links (404), bad PMIDs, year mismatches, missing URLs`);
+  if (botBlocked) console.log(`  (${botBlocked} URLs returned 403/429/5xx — bot-blocked, counted as warnings, not failures)`);
 
   if (netBlocked > entries.length * 0.5) {
     console.log(`\n⚠ ${netBlocked}/${entries.length} URLs were unreachable at the NETWORK level.`);
