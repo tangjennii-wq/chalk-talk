@@ -289,11 +289,11 @@
   },
   {
     "specialty": "Pulmonary",
-    "name": "AASM OSA Diagnostic Testing 2017 (reaffirmed 2024)",
-    "year": 2024,
+    "name": "AASM OSA Diagnostic Testing 2017 (+ AASM inpatient OSA 2025)",
+    "year": 2017,
     "access": "Open",
-    "url": "https://jcsm.aasm.org/doi/10.5664/jcsm.6506",
-    "keys": "Screen high-risk adults with STOP-BANG or Berlin. In-lab PSG gold standard; home sleep apnea testing (HSAT) acceptable only for uncomplicated high pretest probability moderate-severe OSA — repeat with PSG if HSAT negative/inadequate. Avoid HSAT if cardiopulmonary disease, neuromuscular disease, opioid use, or non-OSA sleep disorder suspected. CPAP first-line; mandibular advancement device for mild-moderate or CPAP-intolerant; hypoglossal nerve stimulator (Inspire, STAR) for AHI 15-65 with BMI<32 and non-concentric collapse."
+    "url": "https://aasm.org/clinical-resources/practice-standards/practice-guidelines/",
+    "keys": "YEAR CAUTION: the 2024 reaffirmation could NOT be verified against AASM - treat that claim as unconfirmed. The 2017 diagnostic guideline (Kapur, J Clin Sleep Med 2017;13:479) is unambiguously the current AASM diagnostic document. NEW AND MISSING: the AASM guideline on Evaluation and Management of OSA in Adults HOSPITALIZED for Medical Care (2025) - directly relevant to hospitalist teaching. POLYSOMNOGRAPHY is the standard diagnostic test. HOME SLEEP APNEA TESTING (HSAT) is acceptable ONLY in uncomplicated adults with a high pretest probability of moderate-to-severe OSA - NOT if significant cardiopulmonary disease, neuromuscular disease, opioid use, or suspected hypoventilation/central apnea. A NEGATIVE or technically inadequate HSAT must be followed by polysomnography - do not rule out OSA on a negative HSAT. Questionnaires (STOP-BANG, Epworth) are for RISK STRATIFICATION ONLY - they must NOT be used to diagnose or exclude OSA. Severity by AHI: mild 5-15, moderate 15-30, severe over 30. CPAP is first-line; alternatives include oral appliances, positional therapy, weight loss, and hypoglossal nerve stimulation."
   },
   {
     "specialty": "Pulmonary",
@@ -393,11 +393,11 @@
   },
   {
     "specialty": "GI/Hepatology",
-    "name": "AASLD Cirrhosis & Ascites 2021/2024",
-    "year": 2024,
+    "name": "AASLD Ascites, SBP and Hepatorenal Syndrome 2021 Practice Guidance",
+    "year": 2021,
     "access": "Open",
-    "url": "https://www.aasld.org/practice-guidelines",
-    "keys": "Variceal bleed: octreotide + ceftriaxone (SBP prophylaxis) + EVL. Ascites: spironolactone + furosemide; refractory -> TIPS or LVP + albumin. HRS-AKI: terlipressin + albumin (CONFIRM, 36% reversal vs placebo). HE: lactulose +/- rifaximin."
+    "url": "https://www.aasld.org/practice-guidelines/diagnosis-evaluation-and-management-ascites-spontaneous-bacterial-peritonitis",
+    "keys": "YEAR FIX: there is NO 2024 AASLD ascites guideline - the current document is the 2021 Practice Guidance (Biggins, Hepatology 2021;74:1014). ASCITES: sodium restriction (2 g/day) plus diuretics - spironolactone and furosemide in a 100:40 ratio. Large-volume paracentesis with ALBUMIN (6-8 g per liter removed) when over 5 liters. SAAG 1.1 or more means portal hypertension. Refractory ascites: serial LVP or TIPS; consider transplant. AVOID NSAIDs (precipitate AKI) and be cautious with beta blockers in refractory ascites. SBP: diagnose with ascitic PMN 250 or more per mm3 - treat with cefotaxime plus ALBUMIN (1.5 g/kg day 1, 1 g/kg day 3) which reduces HRS and mortality. Secondary prophylaxis with norfloxacin/ciprofloxacin after an episode. HEPATORENAL SYNDROME (HRS-AKI): terlipressin plus albumin is first-line (approved 2022); midodrine plus octreotide plus albumin if terlipressin unavailable; stop diuretics; transplant is definitive."
   },
   {
     "specialty": "GI/Hepatology",
@@ -473,11 +473,11 @@
   },
   {
     "specialty": "Endocrinology",
-    "name": "AACE/ATA Hypothyroidism 2014/2024",
-    "year": 2024,
+    "name": "ATA Hypothyroidism Treatment 2014 (ATA alone, not AACE/ATA)",
+    "year": 2014,
     "access": "Open",
-    "url": "https://www.endocrinepractice.org/",
-    "keys": "TSH screening; treat if TSH >10 or symptoms with TSH 4.5-10. Levothyroxine 1.6 mcg/kg/day; titrate by TSH. Liothyronine combination not routinely recommended. Subclinical hypothyroidism treatment individualized."
+    "url": "https://www.thyroid.org/professionals/ata-professional-guidelines/",
+    "keys": "YEAR + ATTRIBUTION FIX: there is NO 2024 hypothyroidism update, and this is an ATA guideline ALONE (Jonklaas/Bianco, Thyroid 2014;24:1670) - not AACE/ATA (the joint AACE/ATA document was the 2012 Garber guideline). ATA still lists 2014 as current. LEVOTHYROXINE MONOTHERAPY is the standard of care - do NOT routinely use combination T4/T3 or desiccated thyroid extract. Dose roughly 1.6 mcg/kg/day for full replacement; start low (25-50 mcg) in older adults or coronary disease. Take on an EMPTY STOMACH, 30-60 min before food; separate from calcium, iron, and PPIs by 4 hours. Recheck TSH at 6-8 weeks after any dose change. Target TSH in the normal reference range; do NOT chase T3. SUBCLINICAL hypothyroidism: treat if TSH over 10, or TSH 4.5-10 with symptoms, positive TPO antibodies, or pregnancy/pregnancy intent. PREGNANCY: levothyroxine requirement rises roughly 30 percent - increase the dose immediately on a positive test and check TSH every 4 weeks. Myxedema coma: IV levothyroxine plus stress-dose steroids until adrenal insufficiency is excluded."
   },
   {
     "specialty": "Endocrinology",
@@ -513,11 +513,11 @@
   },
   {
     "specialty": "ID",
-    "name": "Surviving Sepsis Campaign 2021 + 2024 update",
-    "year": 2024,
+    "name": "Surviving Sepsis Campaign 2026",
+    "year": 2026,
     "access": "Open",
-    "url": "https://www.sccm.org/survivingsepsiscampaign/guidelines-and-resources/surviving-sepsis-campaign-adult-guidelines",
-    "keys": "Hour-1 bundle: lactate, blood cultures BEFORE abx, broad-spectrum within 1h, 30 mL/kg crystalloid for hypotension/lactate>=4, norepinephrine first-line for MAP<65 after fluids. Balanced crystalloids (SMART, BaSICS). De-escalate by 48-72h."
+    "url": "https://www.idsociety.org/practice-guideline/surviving-sepsis-campaign-international-guidelines-for-management-of-sepsis-and-septic-shock-2026/",
+    "keys": "PHANTOM-YEAR FIX: there was never a 2024 SSC update (a 2024 re-post of the 2021 PDF is the likely source of that error). SSC 2026 (SCCM/ESICM, Intensive Care Med) is now out and REPLACES 2021 - 129 statements, 46 new. NEW: a conditional recommendation for an initial MAP target of 60-65 mmHg in adults aged 65 and over, rather than a flat 65 for everyone. Core that stands: sepsis = life-threatening organ dysfunction from dysregulated host response; qSOFA is NOT a screening tool (use it to prompt concern, not to rule out). Hour-1 bundle: measure LACTATE, draw BLOOD CULTURES BEFORE antibiotics, give BROAD-SPECTRUM ANTIBIOTICS within 1 hour for septic shock (within 3 h if sepsis without shock and diagnosis uncertain), start 30 mL/kg crystalloid for hypotension or lactate 4 or more, and start VASOPRESSORS to keep MAP at target if fluid-refractory. NOREPINEPHRINE is first-line vasopressor - add vasopressin second rather than escalating norepinephrine indefinitely. Balanced crystalloids over normal saline. Steroids (hydrocortisone) for shock refractory to fluids and pressors. Source control ASAP."
   },
   {
     "specialty": "ID",
@@ -561,27 +561,27 @@
   },
   {
     "specialty": "ID",
-    "name": "IDSA/SHEA C. difficile 2021 + ACG 2024",
-    "year": 2024,
+    "name": "IDSA/SHEA C. difficile 2021 Focused Update (+ ACG 2021)",
+    "year": 2021,
     "access": "Open",
     "url": "https://www.idsociety.org/practice-guideline/clostridioides-difficile-2021-focused-update/",
-    "keys": "Fidaxomicin first-line over vancomycin (lower recurrence). Bezlotoxumab for high-risk recurrence prevention. FMT for >=2 recurrences. Avoid metronidazole except for fulminant CDI."
+    "keys": "YEAR FIX: there is NO ACG 2024 C. difficile guideline - ACG is 2021. The IDSA/SHEA 2021 Focused Update is real and current. TEACH THE SOCIETY DISAGREEMENT explicitly: IDSA/SHEA 2021 PREFERS FIDAXOMICIN over vancomycin for both initial and recurrent CDI; ACG 2021 still permits oral metronidazole as an option for initial non-severe disease. There is no consensus. Diagnosis: only test patients with 3 or more unformed stools in 24 h and no laxatives - do NOT test asymptomatic patients and do NOT repeat a test of cure (PCR detects colonization). Stop the inciting antibiotic. Initial: fidaxomicin (preferred, IDSA) or oral vancomycin 125 mg QID x10 days. Recurrence: fidaxomicin, or vancomycin taper/pulse; BEZLOTOXUMAB to reduce recurrence in high-risk patients. Microbiota therapy for multiply-recurrent CDI is now standardized and FDA-approved: Rebyota (rectal, 2022) and Vowst (ORAL, 2023), plus conventional FMT (AGA 2024 guideline). FULMINANT: high-dose oral vancomycin (500 mg QID) plus IV metronidazole, add rectal vancomycin if ileus, urgent surgical consult."
   },
   {
     "specialty": "ID",
-    "name": "IDSA SSTI 2014 + 2024 updates",
-    "year": 2024,
+    "name": "IDSA Skin and Soft Tissue Infections 2014 (no update exists)",
+    "year": 2014,
     "access": "Open",
     "url": "https://www.idsociety.org/practice-guideline/skin-and-soft-tissue-infections/",
-    "keys": "Stratify by purulent vs nonpurulent and severity. MRSA coverage if penetrating trauma, prior MRSA, severe SIRS. Necrotizing infections: surgical debridement + broad antibiotics + clindamycin (toxin suppression). Diabetic foot: extended courses + osteomyelitis evaluation."
+    "keys": "YEAR FIX: there is NO 2024 IDSA SSTI update and none is in development - the guideline is Stevens et al., CID 2014;59:e10-52. Practice has drifted (shorter courses, clindamycin de-emphasized) WITHOUT a formal IDSA update; do not attribute that drift to IDSA. PURULENT (abscess, furuncle): INCISION AND DRAINAGE is the primary therapy - antibiotics add little for a drained simple abscess. Add antibiotics if severe, systemic signs (SIRS), immunocompromised, or failed I and D - cover MRSA (TMP-SMX or doxycycline). NON-PURULENT cellulitis: cover STREPTOCOCCI (cephalexin, penicillin) - routine MRSA coverage is NOT indicated. Elevate the limb; mark the border and re-examine; treat tinea pedis as a portal of entry. 5 days is usually enough if improving. NECROTIZING FASCIITIS is a SURGICAL EMERGENCY: immediate debridement plus broad-spectrum antibiotics PLUS clindamycin (antitoxin/antiribosomal effect). Red flags: pain out of proportion to exam, crepitus, bullae, skin necrosis, systemic toxicity. Do NOT delay surgery for imaging."
   },
   {
     "specialty": "ID",
-    "name": "IDSA 2010/2025 UTI",
+    "name": "IDSA 2025 Complicated UTI (+ 2010 uncomplicated)",
     "year": 2025,
     "access": "Open",
     "url": "https://www.idsociety.org/practice-guideline/complicated-urinary-tract-infections/",
-    "keys": "Uncomplicated cystitis: nitrofurantoin or TMP-SMX or fosfomycin. Complicated UTI / pyelonephritis: 5-7d fluoroquinolone (FQ) or 7-10d non-FQ. Asymptomatic bacteriuria: only treat in pregnancy or pre-urological surgery."
+    "keys": "VERIFIED REAL: the IDSA 2025 guideline on Management and Treatment of COMPLICATED UTI (Clin Infect Dis) is genuine. It REDEFINES the categories: uncomplicated UTI is now infection CONFINED TO THE BLADDER - and it NOW INCLUDES MEN. The old teaching that any UTI in a male is automatically complicated is OUTDATED. Introduces a 4-STEP EMPIRIC THERAPY ALGORITHM: (1) severity, (2) prior urine cultures from the past 3-6 months, (3) patient-specific risk factors, (4) local antibiogram. Adds guidance on IV-to-oral switch timing and duration. The 2010 IDSA uncomplicated cystitis/pyelonephritis guideline has not been formally replaced: nitrofurantoin, TMP-SMX (if local resistance under 20 percent), or fosfomycin first-line for uncomplicated cystitis; AVOID fluoroquinolones for simple cystitis (reserve for pyelonephritis); do NOT screen or treat ASYMPTOMATIC BACTERIURIA except in pregnancy or before urologic procedures with expected mucosal bleeding."
   },
   {
     "specialty": "ID",
@@ -633,11 +633,11 @@
   },
   {
     "specialty": "Heme/Onc",
-    "name": "ASH 2020 + 2024 VTE Treatment",
-    "year": 2024,
+    "name": "ASH VTE Treatment 2020 (adults; the 2024 update is PEDIATRIC only)",
+    "year": 2020,
     "access": "Open",
-    "url": "https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/venous-thromboembolism-guidelines",
-    "keys": "DOACs first-line: apixaban or rivaroxaban (no lead-in heparin); dabigatran/edoxaban require lead-in. Cancer-associated VTE: DOACs noninferior to LMWH (CARAVAGGIO, HOKUSAI-CANCER) - watch GI bleed with edoxaban. Provoked: 3 mo. Unprovoked: indefinite if low bleed risk."
+    "url": "https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/venous-thromboembolism-guidelines/treatment",
+    "keys": "YEAR FIX: the ASH 2024 VTE document is the ASH/ISTH PEDIATRIC VTE guideline - it does NOT apply to adults. For adults the current guideline is ASH 2020 (Ortel, Blood Adv 2020;4:4693); ASH reviewed it and elected to continue monitoring rather than revise, so 2020 stands. DOACs are PREFERRED over warfarin for most VTE (apixaban and rivaroxaban need no parenteral lead-in; dabigatran and edoxaban DO). Outpatient management for low-risk PE (sPESI 0 / HESTIA). Duration: 3 months for PROVOKED VTE with a transient major risk factor; INDEFINITE anticoagulation for UNPROVOKED VTE or ongoing risk (cancer, thrombophilia), balancing bleeding risk - reassess annually. CANCER-associated thrombosis: DOAC (apixaban, edoxaban, rivaroxaban) or LMWH - caution with edoxaban/rivaroxaban in luminal GI malignancy (higher GI bleeding). Do NOT routinely place an IVC filter - only if anticoagulation is absolutely contraindicated, and remove it when possible. Thrombolysis only for hemodynamically unstable PE. Do NOT routinely test for thrombophilia (it rarely changes management)."
   },
   {
     "specialty": "Heme/Onc",
@@ -649,11 +649,11 @@
   },
   {
     "specialty": "Heme/Onc",
-    "name": "ASH Sickle Cell 2020 + 2024",
-    "year": 2024,
+    "name": "ASH Sickle Cell Disease Guidelines 2019-2021 (no 2024 guideline)",
+    "year": 2020,
     "access": "Open",
-    "url": "https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines/sickle-cell-disease-guidelines",
-    "keys": "Hydroxyurea standard; transfusion for stroke prevention (STOP). Voxelotor withdrawn 2024 (mortality signal); crizanlizumab disappointed in STAND. Gene therapy approved (exa-cel/CRISPR, lovo-cel) for severe SCD. Pain management with multimodal."
+    "url": "https://www.hematology.org/education/clinicians/guidelines-and-quality-care/clinical-practice-guidelines",
+    "keys": "YEAR FIX: there is NO 2024 ASH sickle cell guideline. The five ASH SCD guidelines were published 2019-2021 (cardiopulmonary/kidney, cerebrovascular, transfusion, transplantation, acute and chronic pain). What happened in 2024 was an update of research PRIORITIES and board approval to BEGIN developing a hydroxyurea dosing guideline - neither is a guideline. HYDROXYUREA for all with recurrent vaso-occlusive crises, acute chest syndrome, or severe anemia - it reduces crises, ACS, transfusions, and mortality; titrate to maximum tolerated dose. Vaso-occlusive crisis: rapid, individualized ANALGESIA (opioids within 30-60 min; do NOT under-treat pain and do not label patients drug-seeking), plus hydration and oxygen only if hypoxic. ACUTE CHEST SYNDROME: new infiltrate plus fever/respiratory symptoms - antibiotics (cover atypicals), incentive spirometry, transfusion (simple or exchange). TRANSCRANIAL DOPPLER screening in children (age 2-16) - chronic transfusion if elevated velocity, to prevent stroke. Curative options: allogeneic transplant, and now gene therapies (exagamglogene autotemcel, lovotibeglogene autotemcel, FDA-approved Dec 2023). Vaccinate (encapsulated organisms); penicillin prophylaxis in young children."
   },
   {
     "specialty": "Heme/Onc",
@@ -777,19 +777,19 @@
   },
   {
     "specialty": "Oncology",
-    "name": "ASCO Metastatic Colorectal Cancer Guideline 2022/2024",
-    "year": 2024,
+    "name": "ASCO Metastatic Colorectal Cancer 2022",
+    "year": 2022,
     "access": "Open",
     "url": "https://ascopubs.org/doi/10.1200/JCO.22.01690",
-    "keys": "Adjuvant stage III: FOLFOX or CAPOX x3-6mo (IDEA: 3mo non-inferior for low-risk T1-3N1). Metastatic molecular triage: RAS/BRAF/MSI/HER2 mandatory. RAS-mut or right-sided: doublet + bevacizumab (anti-VEGF). RAS-WT left-sided: doublet + cetuximab/panitumumab (anti-EGFR; PARADIGM, CALGB 80405). BRAF V600E: encorafenib + cetuximab (BEACON). dMMR/MSI-H: pembrolizumab first-line (KEYNOTE-177). Fit selected: FOLFOXIRI + bev (TRIBE)."
+    "keys": "YEAR FIX: there is NO 2024 ASCO mCRC guideline - the document is Morris et al., JCO 2022 (evidence cutoff June 2022). BIOMARKERS FIRST, before choosing therapy: RAS (KRAS/NRAS), BRAF V600E, HER2, and MISMATCH REPAIR / MSI status. MSI-HIGH or dMMR: PEMBROLIZUMAB (or nivolumab plus ipilimumab) FIRST-LINE - immunotherapy, not chemotherapy (KEYNOTE-177). RAS wild-type AND left-sided primary: chemotherapy plus an ANTI-EGFR (cetuximab or panitumumab). RAS MUTANT, or right-sided primary: chemotherapy plus BEVACIZUMAB - anti-EGFR does NOT work in RAS-mutant disease and is inferior in right-sided tumors. BRAF V600E: encorafenib plus cetuximab (BEACON). HER2-amplified: HER2-directed therapy. Backbone chemo: FOLFOX, FOLFIRI, or FOLFOXIRI. Consider resection of liver-limited metastases - potentially curative; involve a multidisciplinary team early."
   },
   {
     "specialty": "Oncology",
-    "name": "ASCO/SITC Immune-Related Adverse Events 2021 (updated 2024)",
-    "year": 2024,
+    "name": "ASCO Immune-Related Adverse Events 2021 (ASCO alone, not ASCO/SITC)",
+    "year": 2021,
     "access": "Open",
     "url": "https://ascopubs.org/doi/10.1200/JCO.21.01440",
-    "keys": "CTCAE v5 grading. Grade 1: continue ICI + monitor. Grade 2: hold ICI, prednisone 0.5-1 mg/kg. Grade 3-4: hold/discontinue, methylprednisolone 1-2 mg/kg + taper >=4-6wk. Steroid-refractory >48-72h: colitis → infliximab 5 mg/kg or vedolizumab 300 mg (wk 0/2/6); pneumonitis → infliximab or MMF; hepatitis → MMF (avoid infliximab); myocarditis → pulse methylpred 1g + ATG/abatacept (high mortality). Hypophysitis: hydrocortisone replacement, do NOT permanently stop ICI."
+    "keys": "YEAR + ATTRIBUTION FIX: this is an ASCO guideline (Schneider/Brahmer, JCO 2021;39:4073) - NOT ASCO/SITC (SITC publishes its own separate irAE guidance) - and there is NO 2024 update. GRADE-BASED FRAMEWORK: Grade 1 - continue the checkpoint inhibitor with close monitoring. Grade 2 - HOLD the ICI, start prednisone 0.5-1 mg/kg. Grade 3 - hold, HIGH-DOSE steroids (1-2 mg/kg methylprednisolone), hospitalize; if no improvement in 48-72 h add a second agent (infliximab for colitis; NOT infliximab for hepatitis - use mycophenolate). Grade 4 - PERMANENTLY DISCONTINUE, high-dose steroids. EXCEPTION: controlled ENDOCRINOPATHIES (hypothyroidism, adrenal insufficiency, type 1 diabetes) do NOT require stopping the ICI - just replace the hormone. Myocarditis is rare but has high mortality - any troponin rise or new cardiac symptom means stop the drug and give high-dose steroids immediately. Taper steroids over 4-6 weeks. Add PJP prophylaxis if on prednisone 20 mg or more for over 4 weeks."
   },
   {
     "specialty": "Oncology",
@@ -993,11 +993,11 @@
   },
   {
     "specialty": "Neurology",
-    "name": "AAN Parkinson Disease 2018 + 2021 update",
+    "name": "AAN Dopaminergic Therapy for Early Parkinson Disease 2021 (reaffirmed 2025)",
     "year": 2021,
     "access": "Open",
     "url": "https://www.aan.com/Guidelines/home/GuidelineDetail/1043",
-    "keys": "Levodopa superior for motor (LEAP); dopamine agonists increase impulse control disorders, hallucinations, edema. MAO-B inhibitors (rasagiline, selegiline) modest. DBS for motor fluctuations / dyskinesias (EARLYSTIM). LCIG infusion for advanced disease."
+    "keys": "YEAR FIX: there is no AAN 2018 Parkinson guideline - the document is the 2021 AAN practice guideline (Pringsheim, Neurology 2021), REAFFIRMED 8 Feb 2025. It is a standalone guideline, not an update to a 2018 one. LEVODOPA is the preferred INITIAL therapy for motor symptoms in early PD (Level B) - it is more effective than dopamine agonists or MAO-B inhibitors. Use the LOWEST EFFECTIVE DOSE. Counsel on dyskinesia: risk in the first 5 years is real but severe/disabling dyskinesia is uncommon - fear of dyskinesia should NOT drive levodopa avoidance in older patients. Dopamine agonists (pramipexole, ropinirole) cause more impulse control disorders (gambling, hypersexuality, shopping - ASK about these directly), somnolence, and hallucinations, especially in older adults. MAO-B inhibitors are modestly effective. Physical therapy and exercise for all. Do NOT use anticholinergics in older adults. Tavapadon (D1/D5 partial agonist) is NOT yet FDA-approved - do not teach it as available."
   },
   {
     "specialty": "Neurology",
@@ -1025,14 +1025,6 @@
   },
   {
     "specialty": "Critical Care",
-    "name": "Surviving Sepsis Campaign 2021/2024",
-    "year": 2024,
-    "access": "Open",
-    "url": "https://www.sccm.org/survivingsepsiscampaign",
-    "keys": "Hour-1 bundle. 30 mL/kg crystalloid (balanced > saline per SMART/BaSICS). Norepinephrine first-line; vasopressin add-on. Hydrocortisone 200 mg/day for refractory shock (ADRENAL/APROCCHSS). Lactate-guided resuscitation."
-  },
-  {
-    "specialty": "Critical Care",
     "name": "ATS/ESICM ARDS 2023",
     "year": 2023,
     "access": "Open",
@@ -1041,11 +1033,11 @@
   },
   {
     "specialty": "Critical Care",
-    "name": "ICU Liberation (Pain/Sedation/Delirium) 2018/2024",
-    "year": 2024,
+    "name": "SCCM PADIS 2018 + 2025 Focused Update (ICU Liberation)",
+    "year": 2025,
     "access": "Open",
-    "url": "https://www.sccm.org/Clinical-Resources/Guidelines",
-    "keys": "ABCDEF bundle: Assess pain, Both SAT/SBT, Choice of sedation, Delirium monitor, Early mobility, Family. Avoid benzos (preferred propofol/dexmedetomidine). Reduces ICU LOS, mortality, delirium."
+    "url": "https://sccm.org/clinical-resources/guidelines/guidelines/focused-update-padis-guideline",
+    "keys": "PHANTOM-YEAR FIX: there is no 2024 PADIS update. The base is SCCM PADIS 2018 (Devlin, Crit Care Med 2018;46:e825), and the real update is the SCCM FOCUSED UPDATE of March 2025. NEW IN 2025: ANXIETY added as a distinct domain, plus five new statements - notably a suggestion for DEXMEDETOMIDINE OVER PROPOFOL for sedation in mechanically ventilated adults when light sedation and/or delirium reduction are priorities. That is a drug-level change. Core (ABCDEF / ICU Liberation bundle): Assess and treat PAIN first (pain drives agitation - do not sedate an untreated pain). Both spontaneous awakening AND breathing trials daily. Choice of sedation - target LIGHT sedation (RASS 0 to -1), avoid benzodiazepines (they increase delirium); prefer propofol or dexmedetomidine. Delirium - assess with CAM-ICU or ICDSC; antipsychotics do NOT prevent or shorten delirium; treat the cause. Early mobility. Family engagement."
   },
   {
     "specialty": "Allergy/Immuno",
@@ -1145,11 +1137,11 @@
   },
   {
     "specialty": "Psychiatry",
-    "name": "APA Major Depression 2024 + ACP 2023",
-    "year": 2024,
+    "name": "ACP Major Depressive Disorder 2023 (APA MDD is 2010 legacy - not current)",
+    "year": 2023,
     "access": "Open",
-    "url": "https://www.apa.org/depression-guideline",
-    "keys": "First-line: SSRIs (sertraline, escitalopram), SNRIs, mirtazapine, bupropion. Treatment-resistant (>=2 failed): augmentation (lithium, T3, atypical antipsychotic) OR ketamine/esketamine (NMDA antagonist; STAR*D, TRD-IV). ECT for severe / refractory. CBT/IPT comparable to medication for mild-moderate."
+    "url": "https://www.acpjournals.org/doi/10.7326/M22-2056",
+    "keys": "CITATION FIX: there is NO APA 2024 depression guideline. APA MDD guideline is the 2010 THIRD EDITION and is NOT on APA current-guidelines list - it is LEGACY. For an internal medicine audience the operative document is the ACP 2023 LIVING CLINICAL GUIDELINE (Qaseem, Ann Intern Med 2023). ACP 2023: for moderate-to-severe MDD in the acute phase, use CBT or a second-generation antidepressant (SSRI/SNRI/bupropion/mirtazapine) as MONOTHERAPY (strong recommendation, moderate certainty). Combination CBT plus antidepressant is a conditional recommendation, low certainty - not automatically better. Choose based on patient preference, cost, and side-effect profile - the SGAs are comparably effective. Screen with PHQ-9; assess SUICIDE RISK explicitly. Allow 4-8 weeks at an adequate dose before declaring failure. If inadequate response: switch agent, augment, or add psychotherapy. Continue for 4-9 months after remission (longer if recurrent). Do not abruptly stop - taper (discontinuation syndrome). VA/DoD 2022 is a useful cross-reference."
   },
   {
     "specialty": "Psychiatry",
@@ -1169,11 +1161,11 @@
   },
   {
     "specialty": "Psychiatry",
-    "name": "APA Schizophrenia 2020/2024",
-    "year": 2024,
+    "name": "APA Schizophrenia 2020",
+    "year": 2020,
     "access": "Open",
-    "url": "https://abhfl.org/wp-content/uploads/sites/5/2025/06/APA-Schizophrenia-Clinical-Practice-Guidelines-compressed.pdf",
-    "keys": "Atypical antipsychotic first-line (avoid first-gen unless clozapine intolerance). Clozapine for treatment-resistant (>=2 failed) - reduces suicide. LAI antipsychotics for adherence (1-3 month formulations). Cognitive behavioral therapy + supported employment."
+    "url": "https://www.psychiatry.org/psychiatrists/practice/clinical-practice-guidelines",
+    "keys": "YEAR FIX: there is NO 2024 APA schizophrenia update - the guideline is APA 2020 (Am J Psychiatry 2020), and it is on APA current-guidelines list with no successor. Antipsychotic for all patients with schizophrenia; continue the same agent that produced response. CLOZAPINE for TREATMENT-RESISTANT schizophrenia (failure of 2 adequate antipsychotic trials) - it is the ONLY agent with proven superiority here, and it is under-used. Clozapine also for persistent suicidality or aggression. Monitor ANC for agranulocytosis, plus myocarditis, seizures, constipation/ileus, and metabolic effects. LONG-ACTING INJECTABLES for nonadherence or preference. Monitor METABOLIC parameters (weight, glucose, lipids) and movement disorders (AIMS) on every antipsychotic. Psychosocial: coordinated specialty care for FIRST-EPISODE psychosis (RAISE), CBT for psychosis, supported employment, family psychoeducation. Do NOT use antipsychotic polypharmacy routinely."
   },
   {
     "specialty": "Psychiatry",
@@ -1193,11 +1185,11 @@
   },
   {
     "specialty": "Psychiatry",
-    "name": "AASM Insomnia 2017/2024",
-    "year": 2024,
-    "access": "Paywalled",
-    "url": "https://jcsm.aasm.org/doi/10.5664/jcsm.6470",
-    "keys": "CBT-I FIRST-line (digital CBT-I expanded access). Pharmacotherapy: dual orexin antagonists (suvorexant, lemborexant, daridorexant) preferred over benzos/Z-drugs. Melatonin/ramelteon for circadian. Avoid chronic benzo/Z-drug use."
+    "name": "AASM Insomnia - pharmacologic 2017 / behavioral 2021 / combination 2025",
+    "year": 2025,
+    "access": "Open",
+    "url": "https://aasm.org/clinical-resources/practice-standards/practice-guidelines/",
+    "keys": "PHANTOM-YEAR FIX: there is no 2024 AASM insomnia guideline. The pharmacologic guideline is 2017 (Sateia, J Clin Sleep Med 2017;13:307) - secondary sources sometimes misrender its Feb 15 2017 date as 2024. Behavioral guideline is 2021 (Edinger). NEW AND MISSING FROM THE APP: the AASM COMBINATION TREATMENT guideline (2025) - it SUGGESTS CBT-I PLUS MEDICATION OVER MEDICATION ALONE, and SUGGESTS AGAINST CBT-I plus medication over CBT-I ALONE. Translation: CBT-I monotherapy is not improved by adding a drug. CBT-I IS FIRST-LINE for chronic insomnia - not a hypnotic. Components: sleep restriction, stimulus control, cognitive restructuring, sleep hygiene (hygiene alone is NOT effective). If pharmacotherapy: use the lowest effective dose for the shortest time; eszopiclone, zolpidem, or doxepin have the best evidence; AVOID diphenhydramine, valerian, and trazodone (insufficient evidence); melatonin is NOT recommended for sleep-onset insomnia in adults. Deprescribe chronic hypnotics, especially in older adults (Beers)."
   },
   {
     "specialty": "Geriatrics",
