@@ -69,6 +69,19 @@ function societyOf(name) {
   return m ? m[1] : null;
 }
 
+// Pull a verifiable identifier out of the entry URL. As of the July 2026 citation audit, 30+ guideline
+// URLs are PubMed links (pubmed.ncbi.nlm.nih.gov/<pmid>) — capture that PMID so the citation chip and
+// verifyCitations() have a real ID to check, and so PMID->PMCID resolution can later gate OA full-text
+// ingestion. DOI is captured when present as a secondary anchor. Returns {pmid, doi} (either may be null).
+function idsFromUrl(url) {
+  const u = String(url || "");
+  const pm = u.match(/pubmed\.ncbi\.nlm\.nih\.gov\/(\d{6,9})/);
+  let doi = null;
+  const d = u.match(/(?:\/doi\/(?:full\/|abs\/|pdf\/|epdf\/)?|doi\.org\/)(10\.\d{4,9}\/[^\s"?#]+)/i);
+  if (d) doi = d[1].replace(/[).,;]+$/, "");
+  return { pmid: pm ? pm[1] : null, doi };
+}
+
 // The embedded text. Includes the guideline name + society + specialty so a topic query like
 // "IgA nephropathy treatment" can reach "KDIGO 2024 Glomerular Diseases".
 function chunkText(e) {
@@ -121,6 +134,7 @@ async function main() {
       const e = slice[j];
       if (!e.keys || e.keys.length < 30) { skip++; continue; }
 
+      const ids = idsFromUrl(e.url);
       const payload = {
         source: "guideline",
         license: "original_summary",           // our own factual summary, not guideline text
@@ -132,7 +146,7 @@ async function main() {
         year: e.year || null,
         published_date: e.year ? `${e.year}-01-01` : null,
         publication_type: "Practice Guideline",
-        pmid: null, pmcid: null, doi: null,
+        pmid: ids.pmid, pmcid: null, doi: ids.doi,
         url: e.url || null,
         abstract: e.keys,
         rcr: null, citation_count: null, is_landmark_trial: false,

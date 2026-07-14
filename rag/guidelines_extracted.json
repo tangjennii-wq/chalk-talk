@@ -52,7 +52,7 @@
     "name": "KDIGO 2025 ADPKD",
     "year": 2025,
     "access": "Open",
-    "url": "https://kdigo.org/guidelines/adpkd/",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/39848746/",
     "keys": "Tolvaptan slows kidney volume increase (TEMPO 3:4) and preserves eGFR in rapid-progressors. Liver enzyme monitoring required. Genetic testing helpful for prognosis and family screening."
   },
   {
@@ -68,7 +68,7 @@
     "name": "2025 AHA/ACC Hypertension (Renal Lens)",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000249",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40811516/",
     "keys": "Target <130/80 for most adults; resistant HTN -> spironolactone (PATHWAY-2 demonstrated mineralocorticoid excess physiology). Expanded primary aldosteronism screening for stage 2 / resistant HTN. PREVENT calculator replaces pooled cohort equations."
   },
   {
@@ -76,7 +76,7 @@
     "name": "2025 AHA/ACC Hypertension Guideline",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000249",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40811516/",
     "keys": "Target BP <130/80 for most adults. PREVENT replaces pooled cohort equations. Expanded aldosteronism screening for stage 2 and resistant HTN. Renal denervation as adjunct for resistant HTN. SPRINT-era data drove targets down for stroke and HF prevention."
   },
   {
@@ -100,7 +100,7 @@
     "name": "2025 ACC/AHA ACS",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001309",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40014670/",
     "keys": "Unified STEMI/NSTEMI framework (plaque instability spectrum). Early invasive for high-risk NSTEMI. Ticagrelor/prasugrel preferred over clopidogrel post-PCI (PLATO, TRITON-TIMI 38). Radial access (RIVAL, MATRIX). DAPT individualized; colchicine (COLCOT, LoDoCo2) as anti-inflammatory secondary prevention."
   },
   {
@@ -116,7 +116,7 @@
     "name": "2025 ESC Myocarditis & Pericarditis",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.escardio.org/guidelines/clinical-practice-guidelines/all-esc-practice-guidelines/myocarditis-and-pericarditis/",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40878297/",
     "keys": "Myopericarditis: viral/autoimmune myocardial inflammation. NSAIDs or colchicine first-line; corticosteroids second-line (recurrence risk). Anakinra/rilonacept for autoimmune/giant-cell forms. CMR-PET-FDG imaging guidance."
   },
   {
@@ -180,7 +180,7 @@
     "name": "2026 AHA/ACC Acute Pulmonary Embolism (US) + ESC 2019",
     "year": 2026,
     "access": "Open",
-    "url": "https://professional.heart.org/en/science-news/2026-guideline-for-the-evaluation-and-management-of-acute-pulmonary-embolism-in-adults",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41712677/",
     "keys": "The 2026 AHA/ACC (with ACCP, ACEP, CHEST, SCAI, SHM, SIR, SVM, SVN) guideline is the FIRST dedicated US PE guideline and is now the US reference. MAJOR CHANGE: it introduces ACUTE PE CLINICAL CATEGORIES A through E with subcategories and RETIRES the massive / submassive vocabulary. ESC 2019 has NOT been re-issued and remains ESC current, using the parallel strata low / intermediate-low / intermediate-high / high - say which taxonomy you are teaching. Management: risk-stratify by hemodynamics, sPESI, RV dysfunction (echo or CT), troponin. High-risk (shock or arrest): systemic thrombolysis (alteplase 100mg over 2h; PEITHO-informed bleeding risk); catheter-directed therapy or surgical embolectomy if lysis is contraindicated. Intermediate-high: monitor 48-72h with rescue lysis on decompensation; catheter-directed thrombolysis evolving (ULTIMA, PE-TRACT). Low-risk (sPESI 0): outpatient DOAC (HoT-PE). Apixaban and rivaroxaban are single-drug regimens; dabigatran and edoxaban need a parenteral lead-in. YEARS algorithm adapts D-dimer cut-off to pretest probability. Anticoagulate at least 3 months."
   },
   {
@@ -188,7 +188,7 @@
     "name": "GOLD 2025 COPD Strategy",
     "year": 2025,
     "access": "Open",
-    "url": "https://goldcopd.org/2025-report/",
+    "url": "https://goldcopd.org/2025-gold-report/",
     "keys": "ABE assessment groups (replaces ABCD). Triple ICS-LABA-LAMA preferred for exacerbators (IMPACT, ETHOS); ensifentrine (PDE3/4 inhibitor) for persistent dyspnea. Anthonisen criteria for exacerbation antibiotics. NIV first-line for hypercapnic respiratory failure. LTOT if SpO2 <=88% (NOTT/MRC)."
   },
   {
@@ -196,7 +196,7 @@
     "name": "GINA 2025 Asthma",
     "year": 2025,
     "access": "Open",
-    "url": "https://ginasthma.org/2025-report/",
+    "url": "https://ginasthma.org/2025-gina-strategy-report/",
     "keys": "Track 1 (preferred): as-needed ICS-formoterol (SMART/MART). Track 2: SABA + separate ICS. Type-2 biologics for severe: omalizumab (IgE), mepolizumab/reslizumab/benralizumab (IL-5), dupilumab (IL-4Ra), tezepelumab (TSLP)."
   },
   {
@@ -212,7 +212,7 @@
     "name": "2022 ESC/ERS Pulmonary Hypertension (+ sotatercept 2024)",
     "year": 2022,
     "access": "Open",
-    "url": "https://www.escardio.org/guidelines/clinical-practice-guidelines/all-esc-practice-guidelines/pulmonary-hypertension-guidelines-on-diagnosis-and-treatment-of/",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/36017548/",
     "keys": "Guideline is still 2022 (ESC register; next revision ~2027), but SOTATERCEPT (Winrevair), a first-in-class activin signaling inhibitor, was FDA-approved 26 March 2024 for PAH (STELLAR) with an expanded indication from ZENITH - it is ABSENT from the 2022 treatment algorithm, so the PAH treatment slide is incomplete. Guideline content that stands: mPAP over 20 mmHg defines PH (lowered from 25); PVR over 2 WU defines pre-capillary. Group 1 PAH: risk-stratify (ESC/ERS 4-strata) and treat with initial COMBINATION therapy - ERA plus PDE5i; add prostacyclin (IV epoprostenol/treprostinil) for high risk. Group 2 (left heart) and Group 3 (lung disease): treat the underlying disease, do NOT use PAH drugs. Group 4 (CTEPH): pulmonary endarterectomy is potentially curative; riociguat/balloon angioplasty if inoperable. Right heart catheterization is required to confirm."
   },
   {
@@ -220,7 +220,7 @@
     "name": "2026 AHA/ACC Acute Pulmonary Embolism (US) + ESC 2019",
     "year": 2026,
     "access": "Open",
-    "url": "https://professional.heart.org/en/science-news/2026-guideline-for-the-evaluation-and-management-of-acute-pulmonary-embolism-in-adults",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41712677/",
     "keys": "The 2026 AHA/ACC (with ACCP, ACEP, CHEST, SCAI, SHM, SIR, SVM, SVN) guideline is the FIRST dedicated US PE guideline and is now the US reference. MAJOR CHANGE: it introduces ACUTE PE CLINICAL CATEGORIES A through E with subcategories and RETIRES the massive / submassive vocabulary. ESC 2019 has NOT been re-issued and remains ESC current, using the parallel strata low / intermediate-low / intermediate-high / high - say which taxonomy you are teaching. Management: risk-stratify by hemodynamics, sPESI, RV dysfunction (echo or CT), troponin. High-risk (shock or arrest): systemic thrombolysis (alteplase 100mg over 2h; PEITHO-informed bleeding risk); catheter-directed therapy or surgical embolectomy if lysis is contraindicated. Intermediate-high: monitor 48-72h with rescue lysis on decompensation; catheter-directed thrombolysis evolving (ULTIMA, PE-TRACT). Low-risk (sPESI 0): outpatient DOAC (HoT-PE). Apixaban and rivaroxaban are single-drug regimens; dabigatran and edoxaban need a parenteral lead-in. YEARS algorithm adapts D-dimer cut-off to pretest probability. Anticoagulate at least 3 months."
   },
   {
@@ -236,7 +236,7 @@
     "name": "ATS 2025 CAP (IDSA did not endorse)",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.atsjournals.org/doi/pdf/10.1164/rccm.202507-1692st",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40679934/",
     "keys": "CONTESTED - there is no longer a single consensus. ATS published a 2025 CAP update; IDSA DECLINED TO ENDORSE it (IDSA accepted 8 of 10 recommendations but rejected the 2 concerning antibiotics in patients with positive viral assays). Teach the split. ATS 2025 changes vs IDSA/ATS 2019: (1) CORTICOSTEROIDS now suggested in SEVERE CAP (conditional, low-quality evidence) EXCEPT influenza pneumonia - a REVERSAL of 2019 which recommended against routine steroids; this is the highest-yield change. (2) SHORTER DURATION - 3 to 5 days conditionally recommended for outpatients with comorbidities and inpatients with non-severe CAP who reach clinical stability (minimum 3 days), down from at least 5 days. (3) Lung ultrasound addressed as a diagnostic modality. UNCHANGED from 2019: HCAP category eliminated, assess individual MRSA/Pseudomonas risk, CURB-65 and ATS minor criteria for site-of-care, outpatient amoxicillin or doxycycline (macrolide only if local resistance is low), inpatient beta-lactam + macrolide or respiratory fluoroquinolone."
   },
   {
@@ -268,7 +268,7 @@
     "name": "ERS Adult Bronchiectasis 2025 (ERS alone - no ATS/ERS bronchiectasis guideline)",
     "year": 2025,
     "access": "Open",
-    "url": "https://publications.ersnet.org/content/erj/66/6/2501126",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41016738/",
     "keys": "SOCIETY + YEAR FIX: there is no ATS/ERS bronchiectasis guideline (the ATS/ERS co-badge belongs to the NTM guideline). Bronchiectasis is ERS ALONE, and the current document is the ERS Clinical Practice Guideline for the Management of Adult Bronchiectasis, ERJ 2025 (Chalmers/Aliberti, Dec 2025) - it SUPERSEDES ERS 2017. NEW STRONG RECOMMENDATIONS in 2025 that 2017 did not make: LONG-TERM INHALED ANTIBIOTICS for patients with Pseudomonas aeruginosa AND frequent exacerbations, and LONG-TERM MACROLIDES (azithromycin) to reduce exacerbations. Core: confirm with HRCT (bronchial dilatation, lack of tapering, signet-ring sign). Find the CAUSE - it changes management: immunodeficiency (immunoglobulins), ABPA, NTM, cystic fibrosis, primary ciliary dyskinesia, post-infectious, alpha-1. Airway clearance and pulmonary rehab for everyone. Sputum culture to define pathogens - Pseudomonas colonization predicts worse outcomes. Treat exacerbations for 14 days targeting the known pathogen. Vaccinate; treat comorbid GERD/rhinosinusitis. Do NOT use inhaled corticosteroids unless there is coexisting asthma or COPD."
   },
   {
@@ -300,7 +300,7 @@
     "name": "ACG Eosinophilic Esophagitis 2025",
     "year": 2025,
     "access": "Open",
-    "url": "https://journals.lww.com/ajg/",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/39745304/",
     "keys": ">=15 eos/hpf diagnostic. Shared decision: 1-FED/2-FED elimination diet, topical steroids (fluticasone/budesonide), or dupilumab (LIBERTY-EoE). Maintenance therapy required to prevent fibrostenosis."
   },
   {
@@ -324,7 +324,7 @@
     "name": "AGA Living Guideline: Moderate-Severe Crohn Disease 2025",
     "year": 2025,
     "access": "Open",
-    "url": "https://gastro.org/clinical-guidance/pharmacological-management-of-moderate-to-severe-crohns-disease/",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41274746/",
     "keys": "2025 AGA Living Guideline REPLACES 2020 and REVERSES the algorithm: AGA now suggests UPFRONT ADVANCED THERAPY rather than step-up (steroid/immunomodulator-first) therapy in moderate-to-severe Crohn disease. Teaching step-up in 2026 teaches against guideline. Current agent list: infliximab, adalimumab, ustekinumab, risankizumab, mirikizumab, guselkumab, upadacitinib. (ACG also published its own Crohn guideline for adults in June 2025.) Steroids remain for short-term induction only, never maintenance; assess for perianal/fistulizing disease; treat-to-target with endoscopic healing."
   },
   {
@@ -356,7 +356,7 @@
     "name": "ACG Acute Pancreatitis 2024",
     "year": 2024,
     "access": "Open",
-    "url": "https://journals.lww.com/ajg/",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/38857482/",
     "keys": "Early oral feeding within 24-48h for mild AP. Enteral nutrition prevents infection in moderate-severe. Lactated Ringer's preferred over normal saline (WATERFALL). Delay intervention 4+ weeks for walled-off necrosis."
   },
   {
@@ -388,7 +388,7 @@
     "name": "AASLD/IDSA Chronic Hepatitis B 2025",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.aasld.org/aasld-announces-new-practice-guideline-treatment-chronic-hepatitis-b",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41186418/",
     "keys": "2025 GRADE-based guideline REPLACES AASLD 2018. IMMUNE-TOLERANT PHASE: treat if age over 40, or grade 2 or higher inflammation / stage F2 or higher fibrosis (2018 largely deferred treatment here); shared decision-making under 40. DISCONTINUATION: in HBeAg-negative non-cirrhotic patients with sustained undetectable DNA, do NOT withdraw nucleos(t)ide analogue therapy until HBsAg loss - firmer than the 2018 finite-therapy option. PMTCT: strong recommendation for TDF or TAF at gestational week 28 when HBV DNA is over 200,000 IU/mL, regardless of HBeAg status. Tenofovir and entecavir remain first-line. Baseline treat thresholds: HBeAg-positive with DNA over 20,000 and ALT over 2x ULN; HBeAg-negative with DNA over 2,000 and elevated ALT. New guidance on the indeterminate or grey-zone phase and on HCC surveillance. Universal screening (HBsAg, anti-HBs, anti-HBc) per CDC 2023."
   },
   {
@@ -404,7 +404,7 @@
     "name": "AGA 2025 Moderate-Severe Crohn's Disease",
     "year": 2025,
     "access": "Open",
-    "url": "https://gastro.org/clinical-guidance/pharmacological-management-of-moderate-to-severe-crohns-disease/",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41274746/",
     "keys": "Biologic-naive: higher-efficacy first — infliximab + immunomodulator combo (SONIC), adalimumab, ustekinumab (UNITI), risankizumab (ADVANCE/MOTIVATE), guselkumab, mirikizumab; vedolizumab gut-selective option. Previously exposed: adalimumab, risankizumab, guselkumab, or upadacitinib (U-EXCEL/U-EXCEED) preferred; ustekinumab/mirikizumab intermediate. Treat-to-target with mucosal/endoscopic healing (STRIDE-II, CALM). Avoid prolonged steroids. Certolizumab pegol and vedolizumab lower efficacy in pretreated."
   },
   {
@@ -436,7 +436,7 @@
     "name": "Endocrine Society Primary Aldosteronism 2025",
     "year": 2025,
     "access": "Open",
-    "url": "https://academic.oup.com/jcem/article/110/9/2453/8196671",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40658480/",
     "keys": "2025 guideline REPLACES 2016 and changes practice substantially. SCREEN ALL PATIENTS WITH HYPERTENSION (aldosterone + renin + ARR) - no longer restricted to resistant HTN / hypokalemia / incidentaloma / OSA / family history. CONFIRMATORY TESTING IS NO LONGER MANDATORY: diagnosis may rest on the biochemical triad of suppressed renin + elevated aldosterone + elevated ARR (saline infusion / oral salt loading no longer required in all cases). Measured PA prevalence among hypertensives rises from about 9 percent under 2016 criteria to about 16 percent under 2025 criteria, capturing milder phenotypes. Adrenal vein sampling still used when surgery is considered; lateralized disease -> adrenalectomy, bilateral -> mineralocorticoid receptor antagonist (spironolactone or eplerenone)."
   },
   {
@@ -492,7 +492,7 @@
     "name": "Surviving Sepsis Campaign 2026",
     "year": 2026,
     "access": "Open",
-    "url": "https://www.idsociety.org/practice-guideline/surviving-sepsis-campaign-international-guidelines-for-management-of-sepsis-and-septic-shock-2026/",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41869847/",
     "keys": "PHANTOM-YEAR FIX: there was never a 2024 SSC update (a 2024 re-post of the 2021 PDF is the likely source of that error). SSC 2026 (SCCM/ESICM, Intensive Care Med) is now out and REPLACES 2021 - 129 statements, 46 new. NEW: a conditional recommendation for an initial MAP target of 60-65 mmHg in adults aged 65 and over, rather than a flat 65 for everyone. Core that stands: sepsis = life-threatening organ dysfunction from dysregulated host response; qSOFA is NOT a screening tool (use it to prompt concern, not to rule out). Hour-1 bundle: measure LACTATE, draw BLOOD CULTURES BEFORE antibiotics, give BROAD-SPECTRUM ANTIBIOTICS within 1 hour for septic shock (within 3 h if sepsis without shock and diagnosis uncertain), start 30 mL/kg crystalloid for hypotension or lactate 4 or more, and start VASOPRESSORS to keep MAP at target if fluid-refractory. NOREPINEPHRINE is first-line vasopressor - add vasopressin second rather than escalating norepinephrine indefinitely. Balanced crystalloids over normal saline. Steroids (hydrocortisone) for shock refractory to fluids and pressors. Source control ASAP."
   },
   {
@@ -508,7 +508,7 @@
     "name": "ATS 2025 CAP (IDSA did not endorse)",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.atsjournals.org/doi/pdf/10.1164/rccm.202507-1692st",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40679934/",
     "keys": "CONTESTED - there is no longer a single consensus. ATS published a 2025 CAP update; IDSA DECLINED TO ENDORSE it (IDSA accepted 8 of 10 recommendations but rejected the 2 concerning antibiotics in patients with positive viral assays). Teach the split. ATS 2025 changes vs IDSA/ATS 2019: (1) CORTICOSTEROIDS now suggested in SEVERE CAP (conditional, low-quality evidence) EXCEPT influenza pneumonia - a REVERSAL of 2019 which recommended against routine steroids; this is the highest-yield change. (2) SHORTER DURATION - 3 to 5 days conditionally recommended for outpatients with comorbidities and inpatients with non-severe CAP who reach clinical stability (minimum 3 days), down from at least 5 days. (3) Lung ultrasound addressed as a diagnostic modality. UNCHANGED from 2019: HCAP category eliminated, assess individual MRSA/Pseudomonas risk, CURB-65 and ATS minor criteria for site-of-care, outpatient amoxicillin or doxycycline (macrolide only if local resistance is low), inpatient beta-lactam + macrolide or respiratory fluoroquinolone."
   },
   {
@@ -532,7 +532,7 @@
     "name": "ATS/CDC/ERS/IDSA TB Treatment 2025 (ERS was omitted from the society list)",
     "year": 2025,
     "access": "Open",
-    "url": "https://academic.oup.com/ajrccm/article/211/1/15/8513358",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40693952/",
     "keys": "SOCIETY FIX: the society list omitted ERS - it is ATS/CDC/ERS/IDSA (AJRCCM 2025;211:15, online Dec 2024). DRUG-SUSCEPTIBLE TB: a 4-MONTH REGIMEN is now an option for patients 12 and over - rifapentine, isoniazid, pyrazinamide, moxifloxacin (HPMZ, Study 31/A5349) - alongside the standard 6-month RIPE (rifampin, isoniazid, pyrazinamide, ethambutol x2 months, then rifampin plus isoniazid x4 months). DRUG-RESISTANT: BPaLM (bedaquiline, pretomanid, linezolid, moxifloxacin) for 6 MONTHS in rifampin-resistant / fluoroquinolone-susceptible TB - a transformative shortening from 18-20 months. Directly observed therapy (DOT) improves completion. Test EVERYONE for HIV. Get drug-susceptibility testing on the initial isolate. LATENT TB: 3HP (isoniazid plus rifapentine weekly x12), 4R (rifampin daily x4 months), or 3HR - all preferred over 9 months of isoniazid (better completion, less hepatotoxicity). Monitor for hepatotoxicity; pyridoxine with isoniazid. Airborne isolation until 3 negative smears on therapy."
   },
   {
@@ -580,7 +580,7 @@
     "name": "ACIP Adult Immunizations 2025",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.cdc.gov/vaccines/acip/recommendations.html",
+    "url": "https://www.cdc.gov/mmwr/volumes/74/wr/mm7402a3.htm",
     "keys": "RZV (recombinant zoster) for all adults >=50. RSV vaccine universally for >=75; risk-based for 60-74. Pneumococcal: PCV21/PCV20/PCV15 for all >=50 (lowered from 65). Annual influenza, COVID-19, Tdap once + Td q10y."
   },
   {
@@ -636,7 +636,7 @@
     "name": "ISTH TTP 2020 + 2025 Focused Update (NOT an ASH guideline)",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.jthjournal.org/article/S1538-7836(25)00360-5/fulltext",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40533296/",
     "keys": "ATTRIBUTION FIX: the TTP guideline is an ISTH guideline (Zheng et al.), NOT an ASH guideline. 2025 ISTH FOCUSED UPDATE changes congenital TTP: new STRONG recommendation for RECOMBINANT ADAMTS13 (Adzynma, FDA-approved Nov 2023) OVER fresh frozen plasma in cTTP remission - the cTTP paradigm changed entirely. IMMUNE TTP UNCHANGED: caplacizumab recommendation REAFFIRMED after review of new efficacy/survival/cost data, so HERCULES-based teaching still stands. iTTP triad: therapeutic plasma exchange + immunosuppression (steroids, rituximab) + caplacizumab. ADAMTS13 activity under 10 percent confirms; PLASMIC score risk-stratifies before the assay returns. Do NOT transfuse platelets unless life-threatening bleeding."
   },
   {
@@ -681,26 +681,26 @@
   },
   {
     "specialty": "Oncology",
-    "name": "NCCN Colorectal v2.2026",
+    "name": "NCCN Colon v2.2026 (Rectal is a separate NCCN guideline, id=1461)",
     "year": 2026,
     "access": "Paywalled",
-    "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1438",
+    "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1428",
     "keys": "Universal MMR/MSI testing. dMMR/MSI-H metastatic: pembrolizumab first-line (KEYNOTE-177; ORR ~30%, OS not reached). BRAF V600E: encorafenib + cetuximab/panitumumab (BEACON). Adjuvant FOLFOX/CAPOX +/- atezolizumab for stage III dMMR."
   },
   {
     "specialty": "Oncology",
-    "name": "NCCN Prostate v5.2026",
+    "name": "NCCN Prostate v3.2026",
     "year": 2026,
     "access": "Paywalled",
-    "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1444",
+    "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1459",
     "keys": "Localized: surgery / radiation +/- ADT. Metastatic hormone-sensitive: ADT + docetaxel (CHAARTED) OR androgen receptor targeted (abiraterone/enzalutamide/apalutamide; LATITUDE/STAMPEDE/TITAN/ARCHES). CRPC: olaparib (BRCA, PROfound). PARPi for HRR mutations."
   },
   {
     "specialty": "Oncology",
-    "name": "NCCN Multiple Myeloma v4.2026",
+    "name": "NCCN Multiple Myeloma v5.2026",
     "year": 2026,
     "access": "Paywalled",
-    "url": "https://www.nccn.org/guidelines/",
+    "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1445",
     "keys": "IMWG diagnosis: clonal plasma cells >=10% + myeloma-defining events (CRAB, biomarker SLiM-CRAB). Triplet/quadruplet induction (VRd, Dara-VRd; GRIFFIN, PERSEUS); ASCT eligibility-based. CAR-T (cilta-cel, ide-cel) for relapsed (CARTITUDE, KarMMa)."
   },
   {
@@ -772,7 +772,7 @@
     "name": "ASCO 2025 mCRPC Living Guideline",
     "year": 2025,
     "access": "Open",
-    "url": "https://ascopubs.org/doi/10.1200/JCO-25-00007",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40315400/",
     "keys": "Continue ADT lifelong; layer abiraterone + prednisone or enzalutamide first-line for mCRPC (COU-AA-301, AFFIRM, PREVAIL). nmCRPC with PSADT <=10mo: apalutamide (SPARTAN), enzalutamide (PROSPER), or darolutamide (ARAMIS) added to ADT. HRR testing universal; olaparib for BRCA1/2 (PROfound) or olaparib+abiraterone (PROpel). PSMA-PET-positive post-taxane/ARPI: 177Lu-PSMA-617 (VISION, 4mo OS gain). Docetaxel then cabazitaxel (CARD) for taxane sequencing."
   },
   {
@@ -876,7 +876,7 @@
     "name": "ACR 2025 SLE Treatment Guideline",
     "year": 2025,
     "access": "Open",
-    "url": "https://rheumatology.org/lupus-guideline",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41182321/",
     "keys": "Hydroxychloroquine for ALL (target weight-based ≤5 mg/kg, retinal screen q1y after 5y). Organ-domain framework. Lupus nephritis Class III/IV: MMF + steroids + belimumab (BLISS-LN) OR voclosporin (AURORA-1, calcineurin inhibitor) triple therapy preferred over MMF alone. Non-renal SLE: anifrolumab (anti-IFNAR, TULIP-1/2) for cutaneous/articular. Steroid taper to ≤5 mg prednisone by 6 mo. Aspirin + statin + bone/vaccine/reproductive planning integrated. Belimumab maintenance reduces flares (BLISS-52/76)."
   },
   {
@@ -908,7 +908,7 @@
     "name": "2026 AHA/ASA Early Management of Acute Ischemic Stroke",
     "year": 2026,
     "access": "Open",
-    "url": "https://www.ahajournals.org/doi/10.1161/STR.0000000000000513",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41582814/",
     "keys": "SUPERSEDED: the 2026 AHA/ASA acute ischemic stroke guideline (published 26 Jan 2026) explicitly REPLACES the 2018 guideline and its 2019 update. (There was never a 2024 AIS guideline - the 2024 document was PRIMARY PREVENTION of stroke, a different scope.) MAJOR CHANGES: TENECTEPLASE is endorsed within 4.5 hours (simpler single bolus vs alteplase infusion). ENDOVASCULAR THROMBECTOMY eligibility BROADENED to include BASILAR ARTERY OCCLUSION and LARGE ISCHEMIC CORE - both previously excluded. Mobile stroke units endorsed; refined EMS triage; first-ever pediatric AIS recommendations. A talk on the 2019 text teaches an obsolete reperfusion algorithm. Core that stands: time is brain; NIHSS; noncontrast CT to exclude hemorrhage; thrombolysis within 4.5 h; EVT for large vessel occlusion (window extended to 24 h with perfusion imaging per DAWN/DEFUSE-3); permissive hypertension unless thrombolysis (then under 185/110); dysphagia screen before anything by mouth; start secondary prevention early."
   },
   {
@@ -1004,7 +1004,7 @@
     "name": "SCCM PADIS 2018 + 2025 Focused Update (ICU Liberation)",
     "year": 2025,
     "access": "Open",
-    "url": "https://sccm.org/clinical-resources/guidelines/guidelines/focused-update-padis-guideline",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/39982143/",
     "keys": "PHANTOM-YEAR FIX: there is no 2024 PADIS update. The base is SCCM PADIS 2018 (Devlin, Crit Care Med 2018;46:e825), and the real update is the SCCM FOCUSED UPDATE of March 2025. NEW IN 2025: ANXIETY added as a distinct domain, plus five new statements - notably a suggestion for DEXMEDETOMIDINE OVER PROPOFOL for sedation in mechanically ventilated adults when light sedation and/or delirium reduction are priorities. That is a drug-level change. Core (ABCDEF / ICU Liberation bundle): Assess and treat PAIN first (pain drives agitation - do not sedate an untreated pain). Both spontaneous awakening AND breathing trials daily. Choice of sedation - target LIGHT sedation (RASS 0 to -1), avoid benzodiazepines (they increase delirium); prefer propofol or dexmedetomidine. Delirium - assess with CAM-ICU or ICDSC; antipsychotics do NOT prevent or shorten delirium; treat the cause. Early mobility. Family engagement."
   },
   {
@@ -1252,7 +1252,7 @@
     "name": "ACOG Endometriosis 2026",
     "year": 2026,
     "access": "Open",
-    "url": "https://www.acog.org/clinical/clinical-guidance/clinical-practice-guideline/articles/2026/03/diagnosis-of-endometriosis",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41712950/",
     "keys": "Clinical diagnosis with empiric medical therapy (NSAIDs, CHCs, progestins, GnRH agonists/antagonists, elagolix). TVUS first imaging (deep infiltrating disease). Laparoscopy not required for diagnosis. Avoid biomarker testing."
   },
   {
@@ -1321,10 +1321,10 @@
   },
   {
     "specialty": "Otolaryngology",
-    "name": "AAO-HNS Acute Rhinosinusitis 2025",
+    "name": "AAO-HNS Adult Sinusitis Update 2025",
     "year": 2025,
     "access": "Paywalled",
-    "url": "https://aao-hnsfjournals.onlinelibrary.wiley.com/doi/10.1002/ohn.1344",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40742114/",
     "keys": "Watchful waiting OR amoxicillin-clavulanate 5-7d for uncomplicated ABRS. Watchful waiting if reliable follow-up. Antibiotic if symptoms >=10d or worsening or severe (T>39, facial pain). Imaging only if complications (orbital/intracranial)."
   },
   {
@@ -1340,7 +1340,7 @@
     "name": "IDSA Group A Strep Pharyngitis 2025 (Part 1: testing) + 2012 (treatment)",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.idsociety.org/practice-guideline/streptococcal-pharyngitis2/",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/41343363/",
     "keys": "TESTING - 2025 Part 1 (Oct 2025) CHANGES PRACTICE: clinical scoring systems (Centor/McIsaac, FeverPAIN) now explicitly gate WHETHER TO TEST AT ALL - do NOT test and do not treat low-risk patients. This reverses the 2012 posture of near-universal RADT or culture in adults with pharyngitis. TREATMENT - Part 2 (treatment, duration, penicillin allergy) is still PENDING (estimated late 2026), so 2012 treatment guidance still stands: penicillin V or amoxicillin first-line for 10 days; cephalosporin, clindamycin, or azithromycin if penicillin-allergic; no test of cure after RADT in adults."
   },
   {
@@ -1420,7 +1420,7 @@
     "name": "ACIP Adult Immunizations 2025",
     "year": 2025,
     "access": "Open",
-    "url": "https://www.cdc.gov/vaccines/acip/recommendations.html",
+    "url": "https://www.cdc.gov/mmwr/volumes/74/wr/mm7402a3.htm",
     "keys": "Influenza annually, COVID-19. Tdap once + Td q10y. RZV >=50, RSV >=75 (60-74 risk-based), pneumococcal PCV21/PCV20/PCV15 >=50, HPV through 45. MMR/varicella if no immunity. Travel: hepatitis A/B, typhoid, yellow fever."
   },
   {
