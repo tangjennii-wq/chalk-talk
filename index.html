@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-13-05";
+var BUILD_ID = "2026-07-15-01";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5472,7 +5472,10 @@ function stripCitations(str) {
 // looked up in the retrieved RAG chunks (which carry title + journal + year); if it isn't already a
 // reference, one is created. An inline PMID we have NO metadata for is dropped (it's noise the reader can't
 // act on). Also tidies the double-paren "( (PMID …))" the model sometimes emits. (Jenni 2026-07-13)
-function _normalizeInlinePmids(talk){
+function _normalizeInlinePmids(talk, extraMeta){
+  // extraMeta (optional, refine path only): map pmid -> {title, journal, year} for PMIDs that were
+  // verbatim in the user's pasted feedback AND verified against PubMed eutils — the refine flow has
+  // no S.ragChunks entry for them, so without this they'd be dropped as unknowable. (Jenni 2026-07-15)
   if(!talk || typeof talk !== "object") return talk;
   var refs = Array.isArray(talk.references) ? talk.references.slice() : [];
   var byPmid = {};
@@ -5484,16 +5487,18 @@ function _normalizeInlinePmids(talk){
   function refIdForPmid(pmid){
     if(byPmid[pmid]) return byPmid[pmid].id;
     var c = chunkByPmid[pmid];
-    if(!c) return null;   // no metadata -> cannot build an honest chip; drop the inline token
+    var xm = (!c && extraMeta) ? extraMeta[pmid] : null;
+    if(!c && !xm) return null;   // no metadata -> cannot build an honest chip; drop the inline token
     var nr = {
       id: ++maxId,
-      source: c.title || ("PMID " + pmid),
-      year: c.year || null,
-      society: c.journal || "",
+      source: (c ? c.title : xm.title) || ("PMID " + pmid),
+      year: (c ? c.year : xm.year) || null,
+      society: (c ? c.journal : xm.journal) || "",
       url: "https://pubmed.ncbi.nlm.nih.gov/" + pmid + "/",
-      type: c.is_landmark_trial ? "trial" : "review",
+      type: (c && c.is_landmark_trial) ? "trial" : "review",
       pmid: String(pmid)
     };
+    if(xm) nr.src_verified = "pubmed";   // survives pruneFakeReferences (it isn't in S.ragChunks)
     refs.push(nr); byPmid[pmid] = nr;
     return nr.id;
   }
@@ -5519,6 +5524,86 @@ function _normalizeInlinePmids(talk){
   return out;
 }
 
+// ═══════════ REFINE CITATION GUARD (Jenni 2026-07-15 — HANDOFF_GUIDELINES.md top task) ═══════════
+// The refine/proofread path (weaveFeedbackTalk) does NO RAG retrieval and NO web search — a single
+// plain model call. So a reference the model "adds" during refine can only honestly come from the
+// pasted feedback itself; anything else is invented from model memory — the exact fabrication the
+// July 2026 guideline audit spent weeks removing, happening live. These three helpers enforce:
+//   Option A: a new ref survives ONLY if its identifier (PMID/DOI/URL) appears VERBATIM in the paste.
+//   Option B: surviving PMIDs are verified against PubMed eutils; metadata is replaced with PubMed's
+//             own title/journal/year so a mangled citation can't survive either. Fails OPEN on a
+//             network blip (A is the floor, B is the upgrade).
+
+// Batched PubMed esummary lookup (one call, comma-joined ids). Returns map pmid -> {ok, year, title,
+// journal}, or null when the LOOKUP ITSELF failed (offline/eutils down) so callers can fail open.
+async function _esummaryBatch(pmids){
+  var ids = (pmids||[]).map(String).filter(function(p,i,a){ return /^\d{6,9}$/.test(p) && a.indexOf(p)===i; });
+  if(!ids.length) return {};
+  try{
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var t = ctrl ? setTimeout(function(){ ctrl.abort(); }, 10000) : null;
+    var r = await fetch("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=" + ids.join(","), ctrl ? { signal: ctrl.signal } : {});
+    if(t) clearTimeout(t);
+    if(!r.ok) return null;
+    var j = await r.json();
+    var out = {};
+    ids.forEach(function(p){
+      var rec = j && j.result && j.result[p];
+      if(rec && !rec.error){
+        out[p] = { ok:true, year: parseInt(String(rec.pubdate||"").slice(0,4),10)||null,
+                   title: String(rec.title||"").replace(/\.\s*$/,""),
+                   journal: rec.fulljournalname || rec.source || "" };
+      } else out[p] = { ok:false };
+    });
+    return out;
+  }catch(e){
+    console.warn("PubMed esummary lookup failed - failing open, keeping paste-sourced refs as claimed:", e && e.message);
+    return null;
+  }
+}
+
+// Option A filter: keep an add_references entry only if its PMID, DOI, or URL is literally present
+// in the pasted feedback. No identifier in the paste -> the correction still applies, UNCITED.
+function _filterRefsToPaste(addRefs, paste){
+  var kept = [], droppedIds = [], hay = String(paste||"");
+  (Array.isArray(addRefs) ? addRefs : []).forEach(function(r){
+    if(!r) return;
+    var pmid = r.pmid ? String(r.pmid) : "";
+    if(!pmid){ var m = String(r.url||"").match(/pubmed\.ncbi\.nlm\.nih\.gov\/(\d{6,9})/); if(m) pmid = m[1]; }
+    var dm = String(r.doi || r.url || "").match(/10\.\d{4,9}\/[^\s"'<>)\]]+/);
+    var doi = dm ? dm[0] : "";
+    var ok = false;
+    if(pmid && hay.indexOf(pmid) !== -1) ok = true;
+    else if(doi && hay.toLowerCase().indexOf(doi.toLowerCase()) !== -1) ok = true;
+    else if(r.url && String(r.url).length > 12 && hay.indexOf(String(r.url).replace(/\/+$/,"")) !== -1) ok = true;
+    if(ok){ if(pmid && !r.pmid) r.pmid = pmid; kept.push(r); }
+    else if(r.id != null) droppedIds.push(String(r.id));
+  });
+  return { kept: kept, droppedIds: droppedIds };
+}
+
+// Remove the [N] chips that point at refs the guard rejected — otherwise they'd render as dangling
+// citations to nothing. Only call with ids that do NOT belong to a surviving reference.
+function _stripChipIds(talk, ids){
+  if(!ids || !ids.length) return talk;
+  var drop = {}; ids.forEach(function(i){ drop[String(i)] = true; });
+  var CHIP = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
+  function conv(s){
+    if(typeof s !== "string" || s.indexOf("[") < 0) return s;
+    return s.replace(CHIP, function(full, inner){
+      var keep = inner.split(",").map(function(x){ return x.trim(); }).filter(function(x){ return !drop[x]; });
+      return keep.length ? "[" + keep.join(",") + "]" : "";
+    }).replace(/\s+([,.;:])/g, "$1").replace(/\s{2,}/g, " ");
+  }
+  function walk(n){
+    if(typeof n === "string") return conv(n);
+    if(Array.isArray(n)) return n.map(walk);
+    if(n && typeof n === "object"){ var o = {}; for(var k in n){ o[k] = (k === "references") ? n[k] : walk(n[k]); } return o; }
+    return n;
+  }
+  return walk(talk);
+}
+
 function pruneFakeReferences(talk) {
   if (!talk || !Array.isArray(talk.references) || talk.references.length === 0) return talk;
   var bodyText = JSON.stringify(talk);
@@ -5534,7 +5619,12 @@ function pruneFakeReferences(talk) {
     var bodyMentions = r.source && bodyText.indexOf(r.source) !== -1;
     // User uploads are trusted by definition — the user explicitly handed us this source
     var isUserUpload = r.type === "user-upload" || r.type === "user_upload" || r.type === "upload";
-    return isRetrieved || bodyMentions || isUserUpload;
+    // Refine citation guard (Jenni 2026-07-15): src_verified means the identifier was verbatim in the
+    // user's pasted feedback ("paste") and/or resolved on PubMed ("pubmed") — these refs aren't in
+    // S.ragChunks and their PubMed-canonical titles may not appear in body prose, so without this
+    // they'd be pruned here, leaving their [N] chips dangling.
+    var isVerifiedSource = !!r.src_verified;
+    return isRetrieved || bodyMentions || isUserUpload || isVerifiedSource;
   });
   // ── NEW: audit inline PMIDs in the body prose. If Claude wrote "PMID 12345678" but that PMID is
   // neither in the retrieved RAG chunks nor in the (now-pruned) references array, strip the PMID
@@ -7092,7 +7182,7 @@ async function weaveFeedbackTalk(userMsg){
     '  "changed_sections": [ { "index": <0-based section index from the talk below>, "heading": "...", "points": ["...all bullets of this section, corrected..."], "mechanism": "...", "teaching_pearl": "...", "board_tip": "..." } ],\n' +
     '  "changed_summary_points": ["...full updated array..."] ,   // include ONLY if a correction affects the summary; else omit\n' +
     '  "changed_vmc": {"top_left":"...","top_right":"...","bottom_left":"...","bottom_right":"..."},  // ONLY the quadrant(s) that changed; else omit\n' +
-    '  "add_references": [ {"id":<int>,"source":"...","year":2024,"society":"...","url":"...","type":"guideline"} ],  // any NEW references a correction introduced; else omit\n' +
+    '  "add_references": [ {"id":<int>,"source":"...","year":2024,"society":"...","url":"...","pmid":"...","type":"guideline"} ],  // ONLY refs whose PMID/DOI/URL appears VERBATIM in the reviewer feedback; else omit\n' +
     '  "changed_key_point": "..." ,  // boards only, if the key point changed; else omit\n' +
     '  "applied": ["short description of each change you made", ...],\n' +
     '  "global": true|false\n' +
@@ -7100,7 +7190,8 @@ async function weaveFeedbackTalk(userMsg){
     "RULES:\n" +
     "- List a section in changed_sections ONLY if you changed something in it. Do NOT list unchanged sections.\n" +
     "- When you DO include a section, return its FULL corrected content — ALL its bullets, keeping every bullet and [N] citation you didn't need to change. A changed section must keep at least as many bullets as it had, unless the feedback explicitly says to remove specific content.\n" +
-    "- NEVER drop a reference. A new clinical claim needs a [N] — reuse an existing reference id or add one via add_references.\n" +
+    "- NEVER drop a reference. When a corrected claim needs a citation, PREFER reusing an existing reference id.\n" +
+    "- NEW REFERENCES — STRICT: you may add a reference via add_references ONLY if its identifier (a PMID, DOI, or URL) appears VERBATIM in the reviewer feedback above. Copy the identifier EXACTLY as written (put a PMID in the pmid field) — do not alter digits. NEVER create a citation from your own knowledge or memory: in this app an UNCITED statement is acceptable; a fabricated or mis-attributed citation is not. If a correction has no citation in the pasted feedback, apply the correction and leave it UNCITED (no new [N], no new reference). Invented references are discarded automatically, so they only waste output.\n" +
     "- If a correction changes the core mechanism/findings/workup/first-line treatment, include the affected changed_vmc quadrant(s).\n" +
     "- If a recommendation is vague, non-actionable, or merely confirms the talk is correct, SKIP it (do not invent changes). If NOTHING is actionable, return \"changed_sections\": [] and \"applied\": [].\n" +
     "- Set \"global\": true only if the feedback genuinely requires changing most/all sections.\n" +
@@ -7115,6 +7206,36 @@ async function weaveFeedbackTalk(userMsg){
   // below without charging. Only consume once we have a usable result. (Jenni 2026-07-03)
   var parsed = JSON.parse(fixJSON(txt));
   if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
+  // ── REFINE CITATION GUARD (Jenni 2026-07-15) — see helpers above _esummaryBatch et al. ──
+  // Option A: drop any add_references whose PMID/DOI/URL is not verbatim in the paste — the model
+  // invented it from memory. Option B: batch-verify surviving PMIDs (plus inline "PMID nnnn" tokens
+  // carried over from the paste) against PubMed and swap in PubMed's own title/journal/year.
+  var _guard = _filterRefsToPaste(parsed.add_references, userMsg);
+  var _refDroppedPaste = _guard.droppedIds.slice();
+  var _refDroppedPubmed = [];
+  var _inlinePm = {};   // inline PMIDs in the model output that were also verbatim in the paste
+  var _imre = /PMID[:\s.\-]*(\d{6,9})/gi, _im, _parsedTxt = JSON.stringify(parsed);
+  while((_im = _imre.exec(_parsedTxt)) !== null){ if(String(userMsg).indexOf(_im[1]) !== -1) _inlinePm[_im[1]] = true; }
+  var _checkIds = _guard.kept.filter(function(r){ return r.pmid; }).map(function(r){ return String(r.pmid); }).concat(Object.keys(_inlinePm));
+  var _pmMap = _checkIds.length ? await _esummaryBatch(_checkIds) : {};
+  var _keptRefs = [];
+  _guard.kept.forEach(function(r){
+    var v = (r.pmid && _pmMap) ? _pmMap[String(r.pmid)] : null;
+    if(v && v.ok === false){ if(r.id != null) _refDroppedPubmed.push(String(r.id)); return; }   // PMID does not exist on PubMed
+    if(v && v.ok){
+      if(v.title) r.source = v.title;
+      if(v.year) r.year = v.year;
+      if(v.journal) r.society = v.journal;
+      r.url = "https://pubmed.ncbi.nlm.nih.gov/" + r.pmid + "/";
+      r.src_verified = "pubmed";
+    } else {
+      r.src_verified = "paste";   // identifier was verbatim in the feedback; PubMed lookup unavailable — fail open
+    }
+    _keptRefs.push(r);
+  });
+  parsed.add_references = _keptRefs;
+  var _extraMeta = {};
+  if(_pmMap) Object.keys(_inlinePm).forEach(function(p){ var v = _pmMap[p]; if(v && v.ok) _extraMeta[p] = { title: v.title, journal: v.journal, year: v.year }; });
   // Reconstruct: clone the original, splice in only the changed pieces — untouched content is
   // literally carried over, so it can't be lost.
   var revised = JSON.parse(JSON.stringify(S.talk));
@@ -7143,9 +7264,18 @@ async function weaveFeedbackTalk(userMsg){
     parsed.add_references.forEach(function(r){ if(r && r.id!=null && !seen[r.id]){ revised.references = (revised.references||[]).concat([r]); seen[r.id] = true; } });
   }
   if(typeof parsed.changed_key_point === "string" && parsed.changed_key_point.trim()) revised.key_point = parsed.changed_key_point;
+  // Strip the [N] chips of guard-rejected refs (never ids that belong to a surviving reference).
+  var _dropIds = _refDroppedPaste.concat(_refDroppedPubmed).filter(function(id){
+    return !(revised.references||[]).some(function(r){ return r && String(r.id) === String(id); });
+  });
+  if(_dropIds.length) revised = _stripChipIds(revised, _dropIds);
   if(typeof deepCleanCitations === "function") revised = deepCleanCitations(revised);
+  // Same inline-PMID→chip normalization as generate — real pasted+verified PMIDs become proper chips;
+  // inline PMIDs with no verifiable metadata (invented, or unverifiable offline) are dropped as noise.
+  revised = _normalizeInlinePmids(revised, _extraMeta);
   if(typeof pruneFakeReferences === "function") revised = pruneFakeReferences(revised);
-  return { talk: revised, applied: Array.isArray(parsed.applied)?parsed.applied:[], vmcTouched: vmcTouched };
+  return { talk: revised, applied: Array.isArray(parsed.applied)?parsed.applied:[], vmcTouched: vmcTouched,
+           refGuard: { droppedPaste: _refDroppedPaste.length, droppedPubmed: _refDroppedPubmed.length, added: _keptRefs.length } };
 }
 
 // Orchestrator: history snapshot, model call, safety guard (keep original if content dropped),
@@ -7186,7 +7316,38 @@ async function applyProofreadFeedback(userMsg){
         S.vmcStale = !(result.vmcTouched === true);
         var summary = result.applied.slice(0,8).map(function(x){return "• "+x}).join("\n");
         var more = result.applied.length > 8 ? "\n…and "+(result.applied.length-8)+" more" : "";
-        S.msgs.push({r:"a",t:"✓ Applied "+result.applied.length+" correction"+(result.applied.length===1?"":"s")+" from the feedback. Everything else untouched — tap Undo to revert.\n\n"+summary+more});
+        // Honesty note (Jenni 2026-07-15): tell the user when the citation guard rejected refs the
+        // model tried to add — the corrections still applied, just uncited. Never silent.
+        var _g = result.refGuard || null;
+        var _nDrop = _g ? (_g.droppedPaste + _g.droppedPubmed) : 0;
+        var guardNote = _nDrop > 0
+          ? "\n\n🛡 " + _nDrop + " suggested citation" + (_nDrop===1?" was":"s were") + " NOT added — no verifiable source (identifier missing from your pasted feedback, or not found on PubMed). Those corrections applied uncited; this app never mints citations from model memory."
+          : "";
+        S.msgs.push({r:"a",t:"✓ Applied "+result.applied.length+" correction"+(result.applied.length===1?"":"s")+" from the feedback. Everything else untouched — tap Undo to revert.\n\n"+summary+more+guardNote});
+        // Refine now flows through the SAME background chip audit as generate (Jenni 2026-07-15) —
+        // previously the semantic claim-vs-abstract audit only ever re-ran after generate.
+        if(S.ragChunks && S.ragChunks.length){
+          S.citationAuditPending = true;
+          var _auditTarget = S.talk;
+          (async function(){
+            try{
+              var audited = await verifyCitations(_auditTarget);
+              if(S.talk !== _auditTarget) return;   // user navigated / regenerated / refined again
+              S.talk = audited;
+              S.citationAuditPending = false;
+              render();
+              var _ca = S.citeAudit || null;
+              var _ck = _ca ? (_ca.checked || 0) : 0, _dr = _ca ? (_ca.dropped || 0) : 0;
+              if(_ck > 0){
+                S.savedFlash = "✓ Checked " + _ck + " PubMed citation" + (_ck===1?"":"s") + " against their abstracts" + (_dr > 0 ? " · " + _dr + " dropped as unsupported" : "");
+                render();
+                setTimeout(function(){ S.savedFlash=""; render() }, 4000);
+              }
+            }catch(_e){
+              if(S.talk === _auditTarget){ S.citationAuditPending = false; render(); }
+            }
+          })();
+        }
       }
     } else {
       S.msgs.push({r:"a",t:"Couldn't parse the corrected version — your original is intact. Try again, or apply the feedback one point at a time."});

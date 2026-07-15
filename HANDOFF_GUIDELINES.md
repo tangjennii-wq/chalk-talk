@@ -1,11 +1,53 @@
 # HANDOFF — Guideline Integrity Work (Chalk Talk)
 
-**Written:** 2026-07-11 · **Updated:** 2026-07-13 · **Last build:** `2026-07-13-05` · **Entries:** 183
+**Written:** 2026-07-11 · **Updated:** 2026-07-15 · **Last build:** `2026-07-15-01` · **Entries:** 183
 **For:** the next Claude session. Read this first.
 
 ---
 
-## ⭐ TOP PRIORITY TASK (added 2026-07-13): REFINE MUST NOT MINT UNVERIFIED CITATIONS
+## ✅ SHIPPED 2026-07-15: REFINE CITATION GUARD (was the top-priority task)
+
+Both Option A and Option B below are **built, tested, and committed** (build `2026-07-15-01`).
+What was implemented, all in `index.html`:
+
+- **Option A (cite-only-from-paste).** `weaveFeedbackTalk`'s prompt now forbids inventing references
+  (identifier must be VERBATIM in the paste; uncited > fabricated). Belt-and-braces enforcement in code:
+  `_filterRefsToPaste()` drops any `add_references` whose PMID/DOI/URL isn't literally in `userMsg`.
+- **Option B (PubMed verify).** `_esummaryBatch()` — ONE batched eutils esummary call per refine, from
+  the browser — verifies every surviving PMID (plus inline `PMID nnnn` tokens carried over from the
+  paste). Non-existent PMIDs → ref dropped. Resolving PMIDs → the model's claimed title/journal/year
+  are **replaced with PubMed's own**, so a mangled citation can't survive either. **Fails OPEN** on a
+  network error (paste-sourced refs kept as claimed) — A is the floor, B is the upgrade.
+- Dangling `[N]` chips of rejected refs are stripped (`_stripChipIds()`); ids belonging to existing
+  refs are never touched.
+- `_normalizeInlinePmids(talk, extraMeta)` grew an optional second param: pasted+PubMed-verified inline
+  PMIDs become proper chips with real metadata; unverifiable inline PMIDs are dropped as noise. Runs on
+  every refine now, not just generate.
+- Guard-created refs carry `src_verified: "pubmed" | "paste"`; `pruneFakeReferences()` has a keep-rule
+  for them (they aren't in `S.ragChunks` and PubMed-canonical titles may not appear in prose).
+- Refine now kicks off the **same background chip audit** (`verifyCitations`) as generate.
+- Honesty UX: the refine success message tells the user when suggested citations were rejected
+  ("applied uncited; this app never mints citations from model memory").
+
+**Tests:** `test_refine_guard.mjs` (repo root, `node test_refine_guard.mjs`, no network — eutils is
+mocked; it extracts the guard functions from index.html so it always tests live code). Covers the
+acceptance test from this handoff: one real PMID in paste → exactly one new verified chip; invented
+refs dropped + chips stripped; fail-open on network error. All passing. Syntax check: 0 errors.
+
+**Two loose ends for a future session:**
+1. **CORS on eutils was NOT verifiable from the sandbox** (egress allowlist blocks NCBI). eutils has
+   sent `Access-Control-Allow-Origin: *` for years, but verify once in the browser: refine a talk with
+   a pasted PMID and check DevTools → Network for the `esummary.fcgi` call. If it's CORS-blocked, the
+   guard silently degrades to Option A (still safe) — fix would be proxying esummary through worker.js.
+2. **The SURGICAL edit path (`weaveTalk` patch schema, ~line 7480) still allows `add_references` from
+   memory.** Lower risk (user-directed single edits, and uploads are legit primary sources) but the
+   same class of hole. The same two helpers can be reused there; decide how strict to be when the user
+   *asks* for a citation from memory ("cite SPRINT") — probably: eutils-verify if a PMID is offered,
+   else add UNCITED with a note.
+
+---
+
+## ⭐ ORIGINAL TASK SPEC (2026-07-13, kept for context): REFINE MUST NOT MINT UNVERIFIED CITATIONS
 
 **The problem.** Jenni's real workflow: paste her talk into OpenEvidence, get prose feedback, paste
 that feedback back into Chalk Talk's refine box to apply corrections. She noticed **new inline citations
