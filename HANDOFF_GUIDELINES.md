@@ -1,7 +1,56 @@
 # HANDOFF — Guideline Integrity Work (Chalk Talk)
 
-**Written:** 2026-07-11 · **Last build:** `2026-07-07-43` · **Entries:** 183
+**Written:** 2026-07-11 · **Updated:** 2026-07-13 · **Last build:** `2026-07-13-05` · **Entries:** 183
 **For:** the next Claude session. Read this first.
+
+---
+
+## ⭐ TOP PRIORITY TASK (added 2026-07-13): REFINE MUST NOT MINT UNVERIFIED CITATIONS
+
+**The problem.** Jenni's real workflow: paste her talk into OpenEvidence, get prose feedback, paste
+that feedback back into Chalk Talk's refine box to apply corrections. She noticed **new inline citations
+and journal-name chips appear during refine** and asked whether the app looks anything up. It does **not.**
+
+The refine/proofread path is `weaveFeedbackTalk()` (index.html, ~line 7072) → `applyProofreadFeedback()`.
+Verified by reading it:
+- It does **NOT** call `retrieveRAG()` — no RAG retrieval.
+- It passes **NO tools** to the model — no web search. It's a single plain `callAPI()` (line ~7113).
+- It lets the model emit `add_references` — brand-new references **invented from the model's memory** (plus
+  whatever citation text was in the paste).
+
+**Why this is dangerous — it's the exact fabrication we spent the audit removing, but happening LIVE:**
+1. `pruneFakeReferences()` keeps a new ref if its `source` string merely *appears in the talk body* — which
+   is trivially true for text the model just wrote. So invented refs survive.
+2. `verifyCitations()` (the background chip audit) only checks inline `PMID nnnn` tokens against abstracts
+   **retrieved during the ORIGINAL generation** (`S.ragChunks`). A ref added during refine has no retrieved
+   abstract, so it is **never verified** — it just gets a journal chip and looks authoritative.
+3. `_normalizeInlinePmids()` (the new inline-PMID→chip converter) only runs in `generate()`, NOT in refine.
+
+**Saving grace:** citations *inside* the OpenEvidence paste are real (OpenEvidence cites real papers). The
+danger is the model (a) mangling those or (b) adding EXTRA ones from memory that were never in the paste.
+
+**Two fixes to spec (Jenni approved building this next):**
+
+- **Option A — cite-only-from-paste (safer, simpler, do this first).** In `weaveFeedbackTalk`'s system
+  prompt, forbid inventing references: *"You may add a reference ONLY if its identifier (PMID/DOI/URL)
+  appears verbatim in the reviewer feedback above. NEVER create a citation from your own knowledge. If a
+  correction has no citation in the pasted feedback, apply it but leave it UNCITED."* Then, post-parse,
+  **drop any `add_references` whose PMID/DOI/URL is not literally present in `userMsg`.** This is a few
+  lines and needs no network call.
+
+- **Option B — verify new PMIDs against PubMed (stronger, needs a lookup).** For each `add_references`
+  entry with a PMID, call the worker/eutils to confirm the PMID exists and (ideally) that the title/journal
+  match what the model claimed; drop refs that don't resolve. Reuse the logic in
+  `rag/validate_guidelines.mjs::checkPmid`. Runs one batched eutils call per refine.
+
+**Recommended:** ship A immediately (it removes the invent-from-memory hole), then layer B for PMIDs.
+Also: run `_normalizeInlinePmids()` on the refined talk too, so any real pasted PMIDs become proper chips.
+And make the refine result flow through the **same chip audit** — currently the audit only re-runs after
+generate, not refine.
+
+**Acceptance test:** paste feedback containing exactly one real PMID and one uncited recommendation →
+the talk gains exactly one new chip (the real PMID), and the uncited correction is applied with NO chip.
+Paste feedback with a claim and NO citation → the correction applies, zero new references.
 
 ---
 
