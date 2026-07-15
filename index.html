@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-13-02";
+var BUILD_ID = "2026-07-13-03";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1693,6 +1693,7 @@ async function resumeAsyncJobIfAny(){
       }catch(_){}
     }
     finalTalk = pruneFakeReferences(finalTalk);
+    finalTalk = _normalizeInlinePmids(finalTalk);
     if(S.genCancelled || _myGenId !== S.genId) return;
     // NOTE: no client consume here — the background job already consumed quota SERVER-SIDE on success
     // (worker runGeneration). We only refresh the badge below. (Jenni 2026-07-03)
@@ -5410,6 +5411,59 @@ function stripCitations(str) {
 
 
 // Strip references the model didn't actually cite in body text AND that aren't in retrieved RAG chunks.
+// Convert INLINE "PMID 12345678" tokens (which the RAG-sources prompt tells the model to write in running
+// text) into "[N]" citation markers that map to the references array — so they render as the SAME hoverable
+// journal chip as guideline/trial citations, instead of ugly raw "(PMID 30926722)" text. Each PMID is
+// looked up in the retrieved RAG chunks (which carry title + journal + year); if it isn't already a
+// reference, one is created. An inline PMID we have NO metadata for is dropped (it's noise the reader can't
+// act on). Also tidies the double-paren "( (PMID …))" the model sometimes emits. (Jenni 2026-07-13)
+function _normalizeInlinePmids(talk){
+  if(!talk || typeof talk !== "object") return talk;
+  var refs = Array.isArray(talk.references) ? talk.references.slice() : [];
+  var byPmid = {};
+  refs.forEach(function(r){ if(r && r.pmid) byPmid[String(r.pmid)] = r; });
+  var chunkByPmid = {};
+  (S.ragChunks||[]).forEach(function(c){ if(c && c.pmid) chunkByPmid[String(c.pmid)] = c; });
+  var maxId = 0;
+  refs.forEach(function(r){ var n = parseInt(r && r.id, 10); if(!isNaN(n) && n > maxId) maxId = n; });
+  function refIdForPmid(pmid){
+    if(byPmid[pmid]) return byPmid[pmid].id;
+    var c = chunkByPmid[pmid];
+    if(!c) return null;   // no metadata -> cannot build an honest chip; drop the inline token
+    var nr = {
+      id: ++maxId,
+      source: c.title || ("PMID " + pmid),
+      year: c.year || null,
+      society: c.journal || "",
+      url: "https://pubmed.ncbi.nlm.nih.gov/" + pmid + "/",
+      type: c.is_landmark_trial ? "trial" : "review",
+      pmid: String(pmid)
+    };
+    refs.push(nr); byPmid[pmid] = nr;
+    return nr.id;
+  }
+  // Eats optional wrapping parens/space around the PMID token so "( (PMID 30926722))" -> "[N]".
+  var RE = /[(\s]*PMID[:\s.\-]*(\d{6,9})[)\s]*/gi;
+  function conv(str){
+    if(typeof str !== "string") return str;
+    if(str.indexOf("PMID") < 0 && str.indexOf("pmid") < 0) return str;
+    var out = str.replace(RE, function(m, pmid){
+      var id = refIdForPmid(pmid);
+      return id ? " [" + id + "]" : "";
+    });
+    return out.replace(/\(\s*\)/g, "").replace(/\s+([,.;:])/g, "$1").replace(/\s{2,}/g, " ").trim();
+  }
+  function walk(node){
+    if(typeof node === "string") return conv(node);
+    if(Array.isArray(node)) return node.map(walk);
+    if(node && typeof node === "object"){ var o = {}; for(var k in node){ o[k] = (k === "references") ? node[k] : walk(node[k]); } return o; }
+    return node;
+  }
+  var out = walk(talk);
+  out.references = refs;
+  return out;
+}
+
 function pruneFakeReferences(talk) {
   if (!talk || !Array.isArray(talk.references) || talk.references.length === 0) return talk;
   var bodyText = JSON.stringify(talk);
@@ -6488,6 +6542,8 @@ async function generate(){
     // Step 3a: Presence prune (cheap, synchronous) — strip citations to PMIDs we don't even have
     // an abstract for. Always runs before showing the talk; it's fast.
     finalTalk = pruneFakeReferences(finalTalk);
+    // Turn any remaining inline "PMID nnnn" into [N] chips (unify RAG citations with guideline chips).
+    finalTalk = _normalizeInlinePmids(finalTalk);
 
     // If the user cancelled mid-flight, discard the result so they don't suddenly
   // see a talk appear after they tapped Cancel (Jenni 2026-06-08).
