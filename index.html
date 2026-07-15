@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-13-03";
+var BUILD_ID = "2026-07-13-04";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -4748,15 +4748,36 @@ function _exportTalkBody(talkOverride){
 function exportTalkPDF(talkOverride){
   var t = talkOverride || S.talk;
   if(!t)return;
-  var w=window.open("","_blank","width=900,height=1100");
-  if(!w){alert("Popup blocked. Allow popups for this page to export PDF.");return}
+  // Use a hidden IFRAME rather than window.open()+document.write. Safari (and popup blockers) frequently
+  // render a document.write'd popup as a BLANK window — the "Save as PDF does nothing" bug. An iframe
+  // renders reliably, needs no popup permission, and prints just its own content. (Jenni 2026-07-13)
   var css='<style>@page{margin:0.5in}'+_exportSharedCSS()+'@media print{.noprint{display:none}}</style>';
-  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+escapeHtml(t.title||"Chalk Talk")+'</title>'+css+'</head><body>';
-  html+='<div class="noprint" style="background:#eee6f3;padding:12px 16px;border-radius:8px;margin-bottom:20px;text-align:center"><b>Tip:</b> Use your browser\'s "Save as PDF" option in the print dialog. <button onclick="window.print()" style="margin-left:10px;background:#330662;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-weight:600">Print / Save as PDF</button></div>';
-  html+=_exportTalkBody(t);
-  html+='</body></html>';
-  w.document.open();w.document.write(html);w.document.close();
-  setTimeout(function(){try{w.focus();w.print()}catch(e){}},400);
+  var body;
+  try { body = _exportTalkBody(t); }
+  catch(e){ alert("Couldn't build the PDF: "+(e&&e.message||e)); return; }
+  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+escapeHtml(t.title||"Chalk Talk")+'</title>'+css+'</head><body>'+body+'</body></html>';
+
+  var iframe=document.createElement("iframe");
+  iframe.setAttribute("aria-hidden","true");
+  iframe.style.cssText="position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none";
+  document.body.appendChild(iframe);
+
+  var printed=false;
+  function cleanup(){ setTimeout(function(){ try{ document.body.removeChild(iframe); }catch(_){} }, 1000); }
+  function go(){
+    if(printed) return; printed=true;
+    try{ iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+    catch(e){ alert("Print failed: "+(e&&e.message||e)); }
+    // Remove the frame AFTER the print dialog has had time to open (removing too early cancels it).
+    if("onafterprint" in iframe.contentWindow){ iframe.contentWindow.onafterprint=cleanup; setTimeout(cleanup,60000); }
+    else { setTimeout(cleanup,60000); }
+  }
+
+  var idoc=iframe.contentWindow.document;
+  idoc.open(); idoc.write(html); idoc.close();
+  // Wait for layout + the base64 visual-aid image (if any) before printing.
+  if(idoc.readyState==="complete") setTimeout(go,350);
+  else iframe.onload=function(){ setTimeout(go,350); };
 }
 
 // Library export: fetch a saved talk by id (cloud or local) and PDF it without disturbing current state.
