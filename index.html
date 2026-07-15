@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-13-04";
+var BUILD_ID = "2026-07-13-05";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -4850,6 +4850,40 @@ function exportSlidesImage(){
 
 // ── PRINT helpers (Jenni 2026-07-03) ────────────────────────────────────────────────────────
 // Open a print window containing a single image sized to the page and fire the print dialog.
+// Convert a base64 PNG (the AI-generated image) into a JPEG Blob. JPEG has no alpha, so flatten any
+// transparency onto white first. (Jenni 2026-07-13)
+function _pngB64ToJpegBlob(b64, cb){
+  try{
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var c=document.createElement("canvas");
+        c.width=img.naturalWidth||img.width; c.height=img.naturalHeight||img.height;
+        var ctx=c.getContext("2d");
+        ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,c.width,c.height);
+        ctx.drawImage(img,0,0);
+        if(c.toBlob){ c.toBlob(function(blob){ cb(blob); }, "image/jpeg", 0.95); }
+        else {
+          // Safari fallback: dataURL -> Blob
+          var d=c.toDataURL("image/jpeg",0.95), bin=atob(d.split(",")[1]), u=new Uint8Array(bin.length);
+          for(var i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+          cb(new Blob([u],{type:"image/jpeg"}));
+        }
+      }catch(e){ cb(null); }
+    };
+    img.onerror=function(){ cb(null); };
+    img.src="data:image/png;base64,"+b64;
+  }catch(e){ cb(null); }
+}
+// Trigger a plain file download of a Blob.
+function _saveBlob(blob, filename){
+  try{
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url; a.download=filename; document.body.appendChild(a); a.click();
+    setTimeout(function(){ try{ document.body.removeChild(a); URL.revokeObjectURL(url); }catch(_){} }, 1000);
+  }catch(e){ alert("Save failed: "+(e&&e.message||e)); }
+}
 function _printImageDataURL(dataURL, title){
   var w = window.open("", "_blank");
   if(!w){ alert("Please allow pop-ups for this site to print."); return; }
@@ -10285,7 +10319,13 @@ function renderMain(){
       // if the talk carries a saved image (persisted in savedVisuals, kept on publish), hydrate it so
       // it renders here for the owner on reload AND for viewers of a shared/featured talk.
       if(!S.dg && S.talk && S.talk.savedVisuals && S.talk.savedVisuals.length){
-        var _lv = S.talk.savedVisuals[S.talk.savedVisuals.length-1];
+        // Only re-hydrate a saved image whose PROVIDER matches the one currently selected — otherwise
+        // switching provider (Gemini -> ChatGPT) would immediately pull the old Gemini image back and
+        // the user could never generate with the new provider. A shared viewer (no toggle) just gets the
+        // latest saved image regardless. (Jenni 2026-07-13)
+        var _cands = S.talk.savedVisuals, _lv = null;
+        if(S.sharedTalk){ _lv = _cands[_cands.length-1]; }
+        else { for(var _hi=_cands.length-1; _hi>=0; _hi--){ if(_cands[_hi] && _cands[_hi].imgB64 && (_cands[_hi].mode||"ai")===S.dgMode){ _lv=_cands[_hi]; break; } } }
         if(_lv && _lv.imgB64) S.dg = { imgB64: _lv.imgB64, mode: _lv.mode || "ai" };
       }
       h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)">';
@@ -10324,7 +10364,7 @@ function renderMain(){
         if(!S.sharedTalk){
           h+='  <button id="dgSaveImgBtn" '+(_alreadySaved?'disabled':'')+' style="flex:1;min-width:110px;background:'+(_alreadySaved?'var(--lavender-bg)':'linear-gradient(135deg,var(--plum-rich),var(--plum-deep))')+';border:none;border-radius:10px;padding:11px;color:'+(_alreadySaved?'var(--plum)':'#fff')+';font-size:13px;font-weight:600;cursor:'+(_alreadySaved?'default':'pointer')+'">'+(_alreadySaved?'★ Saved — on your profile when shared':'★ Save to library')+'</button>';
         }
-        h+='  <button id="dgDownloadBtn" style="flex:1;min-width:110px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">⬇ Download PNG</button>';
+        h+='  <button id="dgDownloadBtn" style="flex:1;min-width:110px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">⬇ Save JPG</button>';
         if(!S.sharedTalk) h+='  <button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="flex:1;min-width:110px;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">↻ Regenerate</button>';
         h+='</div>';
       }
@@ -11071,20 +11111,25 @@ function bindMain(){
   var dsb=document.getElementById("dgStaleRegenBtn");if(dsb)dsb.onclick=genDiagram;
   // Save the current visual to the lesson record + library. Persists with the talk.
   var dsi=document.getElementById("dgSaveImgBtn");if(dsi)dsi.onclick=function(){ saveCurrentVisualToLibrary(); };
-  // Download the generated raster image (Gemini Nano Banana Pro or OpenAI gpt-image-2) as PNG.
+  // Save the generated raster image (Gemini Nano Banana Pro or OpenAI gpt-image-2) as a JPG.
+  // On iPhone/iPad we route through the native share sheet (navigator.share with a file) — the only
+  // reliable way to land it in the Photos library; the share sheet's "Save Image" does exactly that.
+  // On desktop we just download the .jpg. (Jenni 2026-07-13)
   var ddb=document.getElementById("dgDownloadBtn");if(ddb)ddb.onclick=function(){
     if(!S.dg||!S.dg.imgB64)return;
-    try{
-      var bin=atob(S.dg.imgB64);
-      var bytes=new Uint8Array(bin.length);
-      for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-      var blob=new Blob([bytes],{type:"image/png"});
-      var url=URL.createObjectURL(blob);
-      var a=document.createElement("a");
-      var slug=((S.talk&&S.talk.title)||S.topic||"chalk-talk-visual").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60);
-      a.href=url;a.download=slug+"-visual.png";a.click();
-      URL.revokeObjectURL(url);
-    }catch(e){alert("Download failed: "+e.message)}
+    var slug=((S.talk&&S.talk.title)||S.topic||"chalk-talk-visual").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60);
+    var filename=slug+"-visual.jpg";
+    _pngB64ToJpegBlob(S.dg.imgB64, function(blob){
+      if(!blob){ alert("Couldn't prepare the image — try again."); return; }
+      var file=null; try{ file=new File([blob],filename,{type:"image/jpeg"}); }catch(_){}
+      var isMobile=false; try{ isMobile=(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches)||/iphone|ipad|ipod|android/i.test(navigator.userAgent); }catch(_){}
+      if(isMobile && file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+        navigator.share({ files:[file], title:(S.talk&&S.talk.title)||"Chalk Talk visual" })
+          .catch(function(err){ if(err && err.name==="AbortError") return; _saveBlob(blob,filename); });
+      } else {
+        _saveBlob(blob,filename);
+      }
+    });
   };
   document.querySelectorAll(".dgModeBtn").forEach(function(b){b.onclick=function(){S._dgModeUserSet=true;if(S.dgMode!==b.dataset.m){S.dgMode=b.dataset.m;S.dg=null;S.dgErr="";render()}}});
   // resetKey/resetClaudeKey handlers deleted — those IDs no longer rendered.
