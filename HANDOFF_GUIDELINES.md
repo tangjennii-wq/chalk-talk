@@ -1,6 +1,14 @@
 # HANDOFF — Guideline Integrity Work (Chalk Talk)
 
-**Written:** 2026-07-11 · **Updated:** 2026-07-15 · **Last build:** `2026-07-15-01` · **Entries:** 183
+**Written:** 2026-07-11 · **Updated:** 2026-07-15 · **Last build:** `2026-07-15-02` · **Entries:** 183
+
+**Also in `2026-07-15-02`:** (1) fixed the silent-eat send bug — sendChat's busy/loading early-return
+used to swallow the user's composer text with zero feedback if a refine/generation was still running
+(the "sometimes my text doesn't add or refine" report); it now restores the text and says why.
+(2) Section **Reorder mode** — "↕ Reorder" button in the outline header collapses sections into
+compact rows with ↑/↓ arrows (touch-friendly by design; drag-and-drop deliberately avoided — it
+fights the full-re-render architecture and doesn't work on mobile). Each move is undoable.
+`smoke_reorder.mjs` is a playwright smoke test for it (`npm i playwright --no-save` first).
 **For:** the next Claude session. Read this first.
 
 ---
