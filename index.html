@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-15-02";
+var BUILD_ID = "2026-07-15-03";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -4820,11 +4820,14 @@ function exportSlidesImage(){
     try{
       window.html2canvas(target,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false}).then(function(canvas){
         // JPEG @0.92 — visually lossless for text/poster content, ~5-10× smaller than PNG. (Jenni 2026-06-08)
-        var url=canvas.toDataURL("image/jpeg",0.92);
-        var a=document.createElement("a");a.href=url;a.download="chalk-talk-slides-"+slug+".jpg";
-        document.body.appendChild(a);a.click();document.body.removeChild(a);
-        toast.textContent="✓ Slides image downloaded";
-        setTimeout(cleanup,1500);
+        var fn="chalk-talk-slides-"+slug+".jpg";
+        var finish=function(blob){
+          _saveImageForDevice(blob, fn, (t.title||"Chalk Talk")+" — slides");
+          toast.textContent="✓ Slides image ready";
+          setTimeout(cleanup,1500);
+        };
+        if(canvas.toBlob){ canvas.toBlob(function(blob){ finish(blob || _dataURLToBlob(canvas.toDataURL("image/jpeg",0.92))); }, "image/jpeg", 0.92); }
+        else { finish(_dataURLToBlob(canvas.toDataURL("image/jpeg",0.92))); }
       }).catch(function(err){
         toast.textContent="❌ Image export failed: "+(err.message||err);
         setTimeout(cleanup,2500);
@@ -4875,6 +4878,15 @@ function _pngB64ToJpegBlob(b64, cb){
     img.src="data:image/png;base64,"+b64;
   }catch(e){ cb(null); }
 }
+// data: URL -> Blob (fallback when canvas.toBlob is unavailable).
+function _dataURLToBlob(dataURL){
+  try{
+    var parts=String(dataURL).split(","), mime=(parts[0].match(/:(.*?);/)||[])[1]||"image/jpeg";
+    var bin=atob(parts[1]), u=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+    return new Blob([u],{type:mime});
+  }catch(e){ return null; }
+}
 // Trigger a plain file download of a Blob.
 function _saveBlob(blob, filename){
   try{
@@ -4883,6 +4895,21 @@ function _saveBlob(blob, filename){
     a.href=url; a.download=filename; document.body.appendChild(a); a.click();
     setTimeout(function(){ try{ document.body.removeChild(a); URL.revokeObjectURL(url); }catch(_){} }, 1000);
   }catch(e){ alert("Save failed: "+(e&&e.message||e)); }
+}
+// Save an image Blob to the device. On mobile (iOS/Android) route through the native share sheet so the
+// user gets "Save Image" -> Photos library (the only reliable path on iOS Safari); on desktop just
+// download it. User-cancel of the share sheet is respected; other failures fall back to download.
+// Shared by the AI-image save, the Slides image, and the full-talk image. (Jenni 2026-07-13)
+function _saveImageForDevice(blob, filename, title){
+  if(!blob){ alert("Couldn't prepare the image — try again."); return; }
+  var file=null; try{ file=new File([blob], filename, {type: blob.type||"image/jpeg"}); }catch(_){}
+  var isMobile=false; try{ isMobile=(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches)||/iphone|ipad|ipod|android/i.test(navigator.userAgent); }catch(_){}
+  if(isMobile && file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+    navigator.share({ files:[file], title:title||"Chalk Talk" })
+      .catch(function(err){ if(err && err.name==="AbortError") return; _saveBlob(blob,filename); });
+  } else {
+    _saveBlob(blob,filename);
+  }
 }
 function _printImageDataURL(dataURL, title){
   var w = window.open("", "_blank");
@@ -8314,22 +8341,19 @@ async function downloadVMC(){
     S.savedFlash="\u2713 Image downloaded! Great for Twitter or slides.";render();
     setTimeout(function(){S.savedFlash="";render()},3500);
   }
+  var _vmcDone=function(blob){
+    _saveImageForDevice(blob, "vmc-"+slug+".jpg", (S.talk&&S.talk.title||"Chalk Talk")+" \u2014 memory card");
+    S.savedFlash="\u2713 Image ready! Great for Twitter or slides.";render();
+    setTimeout(function(){S.savedFlash="";render()},3500);
+  };
   try{
     var canvas=await html2canvas(vmc,{scale:2,backgroundColor:"#330662",useCORS:true,logging:false,allowTaint:true});
-    // JPEG @0.92 \u2014 smaller files, visually lossless for poster content. (Jenni 2026-06-08)
+    // JPEG @0.92 \u2014 smaller files, visually lossless for poster content. On mobile this routes through
+    // the share sheet so it can land in Photos. (Jenni 2026-07-13)
     if(canvas.toBlob){
-      canvas.toBlob(function(blob){
-        if(!blob){
-          // toBlob returned null (some Safari builds) \u2014 fall back to data URL
-          try{triggerDownload(canvas.toDataURL("image/jpeg",0.92),false)}
-          catch(e2){S.savedFlash="Image generation failed: "+e2.message;render();setTimeout(function(){S.savedFlash="";render()},4500)}
-        }else{
-          triggerDownload(URL.createObjectURL(blob),true);
-        }
-      },"image/jpeg",0.92);
+      canvas.toBlob(function(blob){ _vmcDone(blob || _dataURLToBlob(canvas.toDataURL("image/jpeg",0.92))); },"image/jpeg",0.92);
     }else{
-      // toBlob unsupported \u2014 straight to data URL
-      triggerDownload(canvas.toDataURL("image/jpeg",0.92),false);
+      _vmcDone(_dataURLToBlob(canvas.toDataURL("image/jpeg",0.92)));
     }
   }catch(e){
     console.error("downloadVMC error",e);
@@ -11315,15 +11339,7 @@ function bindMain(){
     var slug=((S.talk&&S.talk.title)||S.topic||"chalk-talk-visual").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60);
     var filename=slug+"-visual.jpg";
     _pngB64ToJpegBlob(S.dg.imgB64, function(blob){
-      if(!blob){ alert("Couldn't prepare the image — try again."); return; }
-      var file=null; try{ file=new File([blob],filename,{type:"image/jpeg"}); }catch(_){}
-      var isMobile=false; try{ isMobile=(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches)||/iphone|ipad|ipod|android/i.test(navigator.userAgent); }catch(_){}
-      if(isMobile && file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
-        navigator.share({ files:[file], title:(S.talk&&S.talk.title)||"Chalk Talk visual" })
-          .catch(function(err){ if(err && err.name==="AbortError") return; _saveBlob(blob,filename); });
-      } else {
-        _saveBlob(blob,filename);
-      }
+      _saveImageForDevice(blob, filename, (S.talk&&S.talk.title)||"Chalk Talk visual");
     });
   };
   document.querySelectorAll(".dgModeBtn").forEach(function(b){b.onclick=function(){S._dgModeUserSet=true;if(S.dgMode!==b.dataset.m){S.dgMode=b.dataset.m;S.dg=null;S.dgErr="";render()}}});
