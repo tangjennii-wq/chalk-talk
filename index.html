@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-15-03";
+var BUILD_ID = "2026-07-15-04";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -4902,14 +4902,37 @@ function _saveBlob(blob, filename){
 // Shared by the AI-image save, the Slides image, and the full-talk image. (Jenni 2026-07-13)
 function _saveImageForDevice(blob, filename, title){
   if(!blob){ alert("Couldn't prepare the image — try again."); return; }
-  var file=null; try{ file=new File([blob], filename, {type: blob.type||"image/jpeg"}); }catch(_){}
   var isMobile=false; try{ isMobile=(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches)||/iphone|ipad|ipod|android/i.test(navigator.userAgent); }catch(_){}
-  if(isMobile && file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
-    navigator.share({ files:[file], title:title||"Chalk Talk" })
-      .catch(function(err){ if(err && err.name==="AbortError") return; _saveBlob(blob,filename); });
-  } else {
-    _saveBlob(blob,filename);
-  }
+  // DESKTOP: just download.
+  if(!isMobile){ _saveBlob(blob,filename); return; }
+  // MOBILE: the image was prepared ASYNC (html2canvas / image decode), so the original tap's user
+  // activation has expired — calling navigator.share() here throws NotAllowedError and iOS never shows the
+  // share sheet. Instead, show the finished image in a preview: (1) the "Save to Photos" button gives a
+  // FRESH gesture so share() actually fires, and (2) the user can also long-press the image itself, which
+  // is the guaranteed native iOS "Save to Photos" path. (Jenni 2026-07-15)
+  var url=URL.createObjectURL(blob);
+  var file=null; try{ file=new File([blob], filename, {type: blob.type||"image/jpeg"}); }catch(_){}
+  var ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(15,8,22,0.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px;-webkit-user-select:none";
+  ov.innerHTML=
+    '<div style="color:#fff;font-size:13px;line-height:1.45;text-align:center;max-width:340px;font-family:inherit">Tap <b>Save to Photos</b> below — or press &amp; hold the image and choose <b>Add to Photos</b>.</div>'+
+    '<img src="'+url+'" style="max-width:92vw;max-height:60vh;border-radius:10px;box-shadow:0 10px 34px rgba(0,0,0,0.55);-webkit-touch-callout:default">'+
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">'+
+      '<button id="_imgShareBtn" style="background:linear-gradient(135deg,#8a3fc0,#330662);color:#fff;border:none;border-radius:999px;padding:13px 24px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">💾 Save to Photos</button>'+
+      '<button id="_imgCloseBtn" style="background:rgba(255,255,255,0.16);color:#fff;border:none;border-radius:999px;padding:13px 20px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer">Close</button>'+
+    '</div>';
+  document.body.appendChild(ov);
+  var close=function(){ try{ document.body.removeChild(ov); }catch(_){} setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(_){} }, 2000); };
+  ov.addEventListener("click", function(e){ if(e.target===ov) close(); });
+  var cb=ov.querySelector("#_imgCloseBtn"); if(cb) cb.onclick=close;
+  var sb=ov.querySelector("#_imgShareBtn"); if(sb) sb.onclick=function(){
+    // Fresh user gesture here -> navigator.share works. Fall back to download only if sharing is truly unavailable.
+    if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      navigator.share({ files:[file], title:title||"Chalk Talk" })
+        .then(close)
+        .catch(function(err){ if(err && err.name==="AbortError") return; _saveBlob(blob,filename); close(); });
+    } else { _saveBlob(blob,filename); close(); }
+  };
 }
 function _printImageDataURL(dataURL, title){
   var w = window.open("", "_blank");
