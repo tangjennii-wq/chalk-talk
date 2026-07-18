@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-17-01";
+var BUILD_ID = "2026-07-17-02";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3893,6 +3893,7 @@ async function loadPublicTalkByToken(token){
     var data = await res.json();
     if(!data || !data.talk_json) throw new Error("Empty talk payload");
     S.talk = data.talk_json;
+    _assignConfidence(S.talk);   // retro-gate: legacy talks get confidence filled from identifier presence (§5d)
     S.topic = data.topic || data.title || "";
     S.style = data.style || "lecture";
     S.depth = data.depth || "concise";
@@ -4584,6 +4585,7 @@ async function loadSavedTalk(id){
     return;
   }
   S.topic=entry.topic||"";S.style=entry.style||"lecture";S.talk=entry.talk;S.podScript=entry.podScript||"";S.dg=entry.dg||null;S.glRef=entry.glRef||null;
+  _assignConfidence(S.talk);   // retro-gate legacy saved talks (§5d)
   if(entry.depth) S.depth = entry.depth;
   // Cache the depth_variants map so the depth toggle can instant-swap. (Jenni 2026-06-08 Option B)
   S.depthVariantsCache = entry._depthVariantsFull || null;
@@ -5282,9 +5284,18 @@ function renderCite(text, refs, seen) {
   while ((m = re.exec(s)) !== null) {
     html += esc(s.slice(lastIdx, m.index));
     var ids = m[1].split(",").map(function(x){return x.trim()});
-    // Collect resolved refs (skip unknown ids)
-    var resolved = [];
-    for(var i=0;i<ids.length;i++){ if(refMap[ids[i]]) resolved.push({id:ids[i], ref:refMap[ids[i]]}); }
+    // Collect resolved refs (skip unknown ids). PROVENANCE GATE (CITATION_CONFIDENCE_SPEC.md): a ref whose
+    // persisted confidence is "low" (model-knowledge, no resolvable identifier) is KNOWN but NOT chippable —
+    // it drops out of `resolved` here, and if that empties the marker we render plain text (no chip), never
+    // a raw "[N]". Refs with no confidence field (sample talks, pre-assignment) are treated as displayable
+    // so the gate only ever tightens, never breaks existing behavior.
+    var resolved = [], suppressedLow = false;
+    for(var i=0;i<ids.length;i++){
+      var _rf = refMap[ids[i]];
+      if(!_rf) continue;                       // unknown id
+      if(_rf.confidence === "low"){ suppressedLow = true; continue; }   // gated out — uncited claim, no chip
+      resolved.push({id:ids[i], ref:_rf});
+    }
     // Dedup mode: chip only the refs not yet shown in this section, then mark all as seen.
     var display = resolved;
     if (seen) {
@@ -5292,8 +5303,13 @@ function renderCite(text, refs, seen) {
       for(var di=0; di<resolved.length; di++){ seen[resolved[di].id] = true; }
     }
     if(resolved.length === 0){
-      // No matches — render raw bracketed text so the user can still see the marker
-      for(var ix=0;ix<ids.length;ix++) html += '[' + ids[ix] + ']';
+      if(suppressedLow){
+        // Marker pointed only at low-confidence (uncited) source(s) — drop it silently, trim trailing space.
+        html = html.replace(/[ \t]+$/,"");
+      } else {
+        // No matches at all — render raw bracketed text so the user can still see the dangling marker.
+        for(var ix=0;ix<ids.length;ix++) html += '[' + ids[ix] + ']';
+      }
     } else if(display.length === 0){
       // Every source here was already cited earlier in this section — drop the marker; trim a trailing
       // space so we don't leave "word ." with a gap before the period.
@@ -5585,6 +5601,7 @@ function _normalizeInlinePmids(talk, extraMeta){
   }
   var out = walk(talk);
   out.references = refs;
+  _assignConfidence(out);   // refs this just added (from a retrieved chunk / verified PMID) get their confidence baked in
   return out;
 }
 
@@ -5736,7 +5753,46 @@ function pruneFakeReferences(talk) {
     }
     return node;
   }
-  return walk(talk);
+  var _pruned = walk(talk);
+  // Bake persisted confidence onto every surviving reference (see CITATION_CONFIDENCE_SPEC.md).
+  _assignConfidence(_pruned);
+  return _pruned;
+}
+
+// ═══════════ PROVENANCE-GATED CITATION CONFIDENCE (CITATION_CONFIDENCE_SPEC.md, Jenni 2026-07-17) ═══════════
+// Every reference carries a PERSISTED confidence so a reloaded talk (whose S.ragChunks is gone) still
+// renders honestly. renderCite() chips only high|medium; "low" (model-knowledge, no resolvable id) renders
+// as plain text with NO chip — that gate is what stops refine from decorating invented claims with false
+// authority. High requires real grounding (retrieved from the store / PubMed-verified / user upload); a
+// bare society string is deliberately NOT enough (a fabricated "guideline" carries a fake society).
+var _CONF_RANK = { low: 1, medium: 2, high: 3 };
+function _confidenceOf(r, retrievedPmids){
+  if(!r) return null;
+  var type = String(r.type || "").toLowerCase();
+  if(type === "user-upload" || type === "user_upload" || type === "upload") return ["high", "user_upload"];
+  if(r.pmid && retrievedPmids[String(r.pmid)]) return ["high", "retrieved"];      // actually pulled from the vector store this session
+  if(r.src_verified === "pubmed") return ["high", "pubmed_verified"];             // PMID resolved on NCBI eutils
+  if(r.src_verified === "paste") return ["medium", "paste_asserted"];             // identifier verbatim in paste, PubMed unreachable — don't punish a blip
+  if(r.pmid || _safeUrl(r.url)) return ["medium", "identifier_only"];             // has a link the reader can verify, but no session grounding
+  return ["low", "model_knowledge"];                                             // nothing backs it -> no chip
+}
+// Idempotent + reload-safe: NEVER downgrades a confidence baked in when retrieval context was live, so a
+// re-run on a reloaded talk (empty S.ragChunks) can't strip a real "high". Fills in missing confidence on
+// legacy talks (the §5d fallback is just the identifier_only/model_knowledge branches above).
+function _assignConfidence(talk){
+  if(!talk || !Array.isArray(talk.references)) return talk;
+  var retrievedPmids = {};
+  (S.ragChunks || []).forEach(function(c){ if(c && c.pmid) retrievedPmids[String(c.pmid)] = true; });
+  talk.references.forEach(function(r){
+    if(!r) return;
+    var computed = _confidenceOf(r, retrievedPmids);
+    if(!computed) return;
+    var existing = (r.confidence && _CONF_RANK[r.confidence]) ? r.confidence : null;
+    if(existing && _CONF_RANK[existing] >= _CONF_RANK[computed[0]]) return;   // keep the stronger baked-in value
+    r.confidence = computed[0];
+    r.provenance = computed[1];
+  });
+  return talk;
 }
 
 // ═══════════ CLAIM-LEVEL CITATION VERIFICATION ═══════════
