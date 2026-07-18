@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-15-04";
+var BUILD_ID = "2026-07-17-01";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5039,7 +5039,21 @@ var loadTimer = null;
 var refineTimer = null; // ticks S.refineSec during a refine/proofread so the wait shows progress
 
 // ═══════════ UTILS ═══════════
-function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+// Coerce to string FIRST so a non-string arg (e.g. a bullet the model emitted as an object) can never
+// throw here. The old form `(s||"")` left an object as-is, so `.replace` blew up — which crashed the
+// section-edit render and made the ✎ pencil look dead on any section with a non-string field. (Jenni 2026-07-17)
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+// Flatten an arbitrary section field to editable text. Strings pass through; objects the model sometimes
+// emits for a bullet ({text|point|content|...}) get their text pulled out; arrays join with spaces. Used
+// when opening the section editor so no section can crash or show "[object Object]". (Jenni 2026-07-17)
+function _coerceStr(v){
+  if(v==null) return "";
+  if(typeof v==="string") return v;
+  if(typeof v==="number"||typeof v==="boolean") return String(v);
+  if(Array.isArray(v)) return v.map(_coerceStr).filter(Boolean).join(" ");
+  if(typeof v==="object") return _coerceStr(v.text||v.point||v.content||v.value||v.bullet||v.detail||"");
+  return String(v);
+}
 
 // ─── Drug-name typo guard (Jenni 2026-06-09) ───
 // Mirrors the LLM-prompt drug list. Catches the same common LLM-mangling AND human typos in
@@ -11520,6 +11534,16 @@ function bindMain(){
     var idx=parseInt(b.dataset.i,10);var src=S.talk.sections[idx];if(!src)return;
     S.editingSection = idx;
     S.editingDraft = JSON.parse(JSON.stringify(src));
+    // Normalize any non-string fields to editable text so the edit form can't crash or show
+    // "[object Object]" (root cause of the "one section won't edit" bug). (Jenni 2026-07-17)
+    var _d = S.editingDraft;
+    _d.heading = _coerceStr(_d.heading);
+    if(Array.isArray(_d.points)) _d.points = _d.points.map(_coerceStr);
+    else if(_d.points!=null) _d.points = [_coerceStr(_d.points)];
+    else _d.points = [];
+    if(_d.teaching_pearl!=null) _d.teaching_pearl = _coerceStr(_d.teaching_pearl);
+    if(_d.board_tip!=null) _d.board_tip = _coerceStr(_d.board_tip);
+    if(_d.mechanism!=null) _d.mechanism = _coerceStr(_d.mechanism);
     S.activeSection = idx; // open this section
     render();
   }});
