@@ -29,9 +29,11 @@ Every reference carries a **persisted** `confidence` and a `provenance` reason. 
 
 | confidence | provenance reasons | chip? |
 |---|---|---|
-| **high** | `retrieved` (pmid in `S.ragChunks`) · `guideline` (source_tier 1 / validated society id) · `pubmed_verified` (`src_verified="pubmed"`) · `user_upload` | yes |
-| **medium** | `paste_asserted` (`src_verified="paste"`, unresolved) · `review_abstract` (retrieved but review/background, not practice-changing) | yes |
-| **low** | `body_mention_only` (source string in prose, no id, not retrieved) · `model_knowledge` (no identifier at all) | **no chip — plain text** |
+| **high** | `retrieved` (matched a chunk in `S.ragChunks` by **pmid, url, or title**) · `pubmed_verified` (`src_verified="pubmed"`) · `user_upload` | yes |
+| **medium** | `paste_asserted` (`src_verified="paste"`, unresolved) · `identifier_only` (has a pmid/url the reader can check, but no session grounding) | yes |
+| **low** | `model_knowledge` (no resolvable identifier, not retrieved) | **no chip — plain text** |
+
+> **A bare `society` string is deliberately NOT sufficient for `high`.** A fabricated guideline (e.g. the audit's `AAN/AAOS Anti-Amyloid` — AAOS is the *orthopaedic* academy) carries a society field that looks identical to a real one, so trusting it would reopen the exact hole this feature exists to close. Real guidelines still reach `high` via the `retrieved` match on url/title — guideline chunks usually have no pmid, which is why matching is not pmid-only. A guideline that was never retrieved and carries only a url lands at `medium` (still chips, reader can verify); one with no identifier at all lands at `low`.
 
 Rule of thumb Codex asked for, encoded: *guideline/trial beats review beats model memory*, and *nothing uncited earns a chip*.
 

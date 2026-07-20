@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-17-02";
+var BUILD_ID = "2026-07-17-03";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5358,15 +5358,22 @@ function _stripCiteId(text, id){
 // Dominant "default" source id for a section, or "" if none clearly dominates. Counts each source once per
 // item across points + pearl + tip + mechanism; qualifies only when it covers >=2 items AND at least half
 // the cited items (so it genuinely reads as the section default, not just one of several).
-function _dominantSectionCite(sec){
+// `refs` (optional) applies the SAME provenance gate as inline chips: a low-confidence source that
+// renderCite suppresses from every bullet must not reappear as the section's "default" source in the
+// header. Without this the gate leaked at the header. (Codex review 2026-07-17, P2)
+function _dominantSectionCite(sec, refs){
   if(!sec) return "";
+  var lowIds = {};
+  if(refs && refs.length){
+    for(var li=0; li<refs.length; li++){ if(refs[li] && refs[li].confidence === "low") lowIds[String(refs[li].id)] = true; }
+  }
   var items = (sec.points||[]).slice();
   if(sec.teaching_pearl) items.push(sec.teaching_pearl);
   if(sec.board_tip) items.push(sec.board_tip);
   if(sec.mechanism) items.push(sec.mechanism);
   var counts={}, cited=0;
   for(var i=0;i<items.length;i++){
-    var ids=_citeIdsOf(items[i]);
+    var ids=_citeIdsOf(items[i]).filter(function(id){ return !lowIds[String(id)]; });   // low-confidence can't headline a section
     if(!ids.length) continue;
     cited++;
     for(var j=0;j<ids.length;j++){ counts[ids[j]]=(counts[ids[j]]||0)+1; }
@@ -5687,7 +5694,22 @@ function _stripChipIds(talk, ids){
 
 function pruneFakeReferences(talk) {
   if (!talk || !Array.isArray(talk.references) || talk.references.length === 0) return talk;
-  var bodyText = JSON.stringify(talk);
+  // Serialize the BODY ONLY. Including talk.references meant every reference trivially "mentioned"
+  // itself, so bodyMentions was always true and a model-invented ref could never be pruned — the
+  // check was a no-op. (Codex review 2026-07-17, P1)
+  var _bodyOnly = {};
+  for (var _bk in talk) { if (_bk !== "references") _bodyOnly[_bk] = talk[_bk]; }
+  var bodyText = JSON.stringify(_bodyOnly);
+  // Which ref ids are ACTUALLY cited by a [N] marker in the body. This is the real "is this reference
+  // used?" test — refs are normally cited via markers, NOT by writing the source name into prose. Without
+  // it, removing the self-mention bug above would delete legitimate refs (a guideline cited only as [3]).
+  // Fabricated-but-cited refs still survive here and are neutralized downstream by the confidence gate
+  // (low -> no chip, hidden from the References block). (Jenni 2026-07-17)
+  var citedIds = {};
+  bodyText.replace(/\[(\d+(?:\s*,\s*\d+)*)\]/g, function(_m, inner){
+    inner.split(",").forEach(function(x){ var d = x.trim(); if(d) citedIds[d] = true; });
+    return _m;
+  });
   var retrievedPmids = {};
   if (S.ragChunks && S.ragChunks.length) {
     for (var k = 0; k < S.ragChunks.length; k++) {
@@ -5696,6 +5718,7 @@ function pruneFakeReferences(talk) {
   }
   talk.references = talk.references.filter(function(r) {
     if (!r) return false;
+    var isCited = citedIds[String(r.id)];
     var isRetrieved = r.pmid && retrievedPmids[String(r.pmid)];
     var bodyMentions = r.source && bodyText.indexOf(r.source) !== -1;
     // User uploads are trusted by definition — the user explicitly handed us this source
@@ -5705,7 +5728,7 @@ function pruneFakeReferences(talk) {
     // S.ragChunks and their PubMed-canonical titles may not appear in body prose, so without this
     // they'd be pruned here, leaving their [N] chips dangling.
     var isVerifiedSource = !!r.src_verified;
-    return isRetrieved || bodyMentions || isUserUpload || isVerifiedSource;
+    return isCited || isRetrieved || bodyMentions || isUserUpload || isVerifiedSource;
   });
   // ── NEW: audit inline PMIDs in the body prose. If Claude wrote "PMID 12345678" but that PMID is
   // neither in the retrieved RAG chunks nor in the (now-pruned) references array, strip the PMID
@@ -5766,14 +5789,21 @@ function pruneFakeReferences(talk) {
 // authority. High requires real grounding (retrieved from the store / PubMed-verified / user upload); a
 // bare society string is deliberately NOT enough (a fabricated "guideline" carries a fake society).
 var _CONF_RANK = { low: 1, medium: 2, high: 3 };
-function _confidenceOf(r, retrievedPmids){
+function _confidenceOf(r, retrieved){
   if(!r) return null;
   var type = String(r.type || "").toLowerCase();
   if(type === "user-upload" || type === "user_upload" || type === "upload") return ["high", "user_upload"];
-  if(r.pmid && retrievedPmids[String(r.pmid)]) return ["high", "retrieved"];      // actually pulled from the vector store this session
+  if(r.pmid && retrieved.pmids[String(r.pmid)]) return ["high", "retrieved"];     // actually pulled from the vector store this session
+  // Guideline chunks usually have NO pmid (ingest_guidelines.mjs sets pmid only for PubMed-linked entries),
+  // so a genuinely retrieved society guideline would otherwise fall to medium. Match on url/title too — a
+  // FABRICATED guideline still can't match, because it was never retrieved. (Codex review 2026-07-17, P3)
+  var _u = _safeUrl(r.url);
+  if(_u && retrieved.urls[_u]) return ["high", "retrieved"];
+  var _srcKey = String(r.source || "").trim().toLowerCase();
+  if(_srcKey && retrieved.titles[_srcKey]) return ["high", "retrieved"];
   if(r.src_verified === "pubmed") return ["high", "pubmed_verified"];             // PMID resolved on NCBI eutils
   if(r.src_verified === "paste") return ["medium", "paste_asserted"];             // identifier verbatim in paste, PubMed unreachable — don't punish a blip
-  if(r.pmid || _safeUrl(r.url)) return ["medium", "identifier_only"];             // has a link the reader can verify, but no session grounding
+  if(r.pmid || _u) return ["medium", "identifier_only"];                          // has a link the reader can verify, but no session grounding
   return ["low", "model_knowledge"];                                             // nothing backs it -> no chip
 }
 // Idempotent + reload-safe: NEVER downgrades a confidence baked in when retrieval context was live, so a
@@ -5781,11 +5811,16 @@ function _confidenceOf(r, retrievedPmids){
 // legacy talks (the §5d fallback is just the identifier_only/model_knowledge branches above).
 function _assignConfidence(talk){
   if(!talk || !Array.isArray(talk.references)) return talk;
-  var retrievedPmids = {};
-  (S.ragChunks || []).forEach(function(c){ if(c && c.pmid) retrievedPmids[String(c.pmid)] = true; });
+  var retrieved = { pmids:{}, urls:{}, titles:{} };
+  (S.ragChunks || []).forEach(function(c){
+    if(!c) return;
+    if(c.pmid) retrieved.pmids[String(c.pmid)] = true;
+    var cu = _safeUrl(c.url); if(cu) retrieved.urls[cu] = true;
+    var ct = String(c.title || "").trim().toLowerCase(); if(ct) retrieved.titles[ct] = true;
+  });
   talk.references.forEach(function(r){
     if(!r) return;
-    var computed = _confidenceOf(r, retrievedPmids);
+    var computed = _confidenceOf(r, retrieved);
     if(!computed) return;
     var existing = (r.confidence && _CONF_RANK[r.confidence]) ? r.confidence : null;
     if(existing && _CONF_RANK[existing] >= _CONF_RANK[computed[0]]) return;   // keep the stronger baked-in value
@@ -5923,7 +5958,11 @@ async function verifyCitations(talk) {
     return node;
   }
   console.info("Citation audit: dropped " + S.citeAudit.dropped + "/" + S.citeAudit.checked + " unsupported citation(s) (inline PMIDs + [N] chips)");
-  return walkStrip(talk);
+  // Re-prune AFTER stripping. walkStrip passes `references` through untouched, so a ref whose only chip
+  // was just removed would keep its bibliography entry — the inline citation vanishes but the unsupported
+  // source still shows under References. Re-running prune (whose bodyMentions check is now honest) drops
+  // it, and re-assigns confidence. (Codex review 2026-07-17, P1)
+  return pruneFakeReferences(walkStrip(talk));
 }
 
 function deepCleanCitations(obj) {
@@ -10326,7 +10365,7 @@ function renderMain(){
           var isEditing = (S.editingSection === si2);
           var open=S.allExpanded || (S.activeSection===si2) || isEditing;
           // Section default source (shown as a muted chip in the title; suppressed from matching items).
-          var _secCite = _dominantSectionCite(x);
+          var _secCite = _dominantSectionCite(x, t.references);
           h+='<div class="tk-acc '+(open?"open":"")+'">';
           // Section header — minutes replaced by ✎ edit pencil (Jenni 2026-06-04)
           h+='<div style="display:flex;align-items:center;gap:0;position:relative">';
@@ -10426,23 +10465,32 @@ function renderMain(){
       // References inline (compact, collapsible). Show first 3 by default; rest hidden behind <details> toggle.
       if(t.references&&t.references.length){
         var REF_PREVIEW = 3;
+        // Low-confidence refs get no inline chip (renderCite gates them), so listing them here would
+        // reassert in the bibliography exactly the authority the gate just removed. Refs with NO
+        // confidence field (sample/legacy talks) still show. (Codex review 2026-07-17, P1)
+        var _refsShown = t.references.filter(function(rf){ return rf && rf.confidence !== "low"; });
         function _renderRef(rf){
           var meta=[];if(rf.year)meta.push(String(rf.year));if(rf.society)meta.push(esc(rf.society));
-          return '<li style="display:flex;gap:8px;font-size:11.5px;line-height:1.5;color:var(--ink);margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed var(--line-soft)"><span style="background:var(--lavender-bg);color:var(--plum);border-radius:4px;padding:0 6px;font-size:10px;font-weight:600;flex-shrink:0;height:fit-content;margin-top:1px">'+esc(String(rf.id))+'</span><span style="flex:1"><strong style="color:var(--plum-deep)">'+esc(rf.source||("Reference "+rf.id))+'</strong>'+(meta.length?' <span style="font-size:10.5px;color:var(--ink-muted)">· '+meta.join(" · ")+'</span>':'')+(rf.url?'<br><a href="'+esc(rf.url)+'" target="_blank" rel="noopener" style="color:var(--plum);text-decoration:none;font-size:10.5px;border-bottom:1px solid var(--lavender)">'+esc(rf.url.length>50?rf.url.slice(0,50)+"…":rf.url)+'</a>':'')+'</span></li>';
+          // _safeUrl: refs come from the model, so a stray "javascript:" URL must never reach an href.
+          // The popover already did this; the References block was using rf.url raw. (Codex review 2026-07-17, P2)
+          var _u = _safeUrl(rf.url);
+          return '<li style="display:flex;gap:8px;font-size:11.5px;line-height:1.5;color:var(--ink);margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed var(--line-soft)"><span style="background:var(--lavender-bg);color:var(--plum);border-radius:4px;padding:0 6px;font-size:10px;font-weight:600;flex-shrink:0;height:fit-content;margin-top:1px">'+esc(String(rf.id))+'</span><span style="flex:1"><strong style="color:var(--plum-deep)">'+esc(rf.source||("Reference "+rf.id))+'</strong>'+(meta.length?' <span style="font-size:10.5px;color:var(--ink-muted)">· '+meta.join(" · ")+'</span>':'')+(_u?'<br><a href="'+esc(_u)+'" target="_blank" rel="noopener" style="color:var(--plum);text-decoration:none;font-size:10.5px;border-bottom:1px solid var(--lavender)">'+esc(_u.length>50?_u.slice(0,50)+"…":_u)+'</a>':'')+'</span></li>';
         }
+        if(_refsShown.length){
         h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0 8px">';
-        h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:8px">References <span style="font-weight:500;color:var(--ink-soft);letter-spacing:0">('+t.references.length+')</span></div>';
+        h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:8px">References <span style="font-weight:500;color:var(--ink-soft);letter-spacing:0">('+_refsShown.length+')</span></div>';
         h+='<ol style="list-style:none;padding:0;margin:0">';
-        var visibleCount = Math.min(REF_PREVIEW, t.references.length);
-        for(var rfi=0;rfi<visibleCount;rfi++) h += _renderRef(t.references[rfi]);
+        var visibleCount = Math.min(REF_PREVIEW, _refsShown.length);
+        for(var rfi=0;rfi<visibleCount;rfi++) h += _renderRef(_refsShown[rfi]);
         h+='</ol>';
-        if(t.references.length > REF_PREVIEW){
-          h+='<details style="margin-top:4px"><summary style="cursor:pointer;color:var(--plum);font-size:11.5px;font-weight:600;list-style:none;padding:6px 0;display:inline-flex;align-items:center;gap:5px">Show '+(t.references.length-REF_PREVIEW)+' more <span style="font-size:10px">⌄</span></summary>';
+        if(_refsShown.length > REF_PREVIEW){
+          h+='<details style="margin-top:4px"><summary style="cursor:pointer;color:var(--plum);font-size:11.5px;font-weight:600;list-style:none;padding:6px 0;display:inline-flex;align-items:center;gap:5px">Show '+(_refsShown.length-REF_PREVIEW)+' more <span style="font-size:10px">⌄</span></summary>';
           h+='<ol style="list-style:none;padding:0;margin:6px 0 0" start="'+(REF_PREVIEW+1)+'">';
-          for(var rfi2=REF_PREVIEW;rfi2<t.references.length;rfi2++) h += _renderRef(t.references[rfi2]);
+          for(var rfi2=REF_PREVIEW;rfi2<_refsShown.length;rfi2++) h += _renderRef(_refsShown[rfi2]);
           h+='</ol></details>';
         }
         h+='</div>';
+        }
       }
 
       // Guidelines + RAG sources (moved here from above the lesson outline — supporting material at bottom)
