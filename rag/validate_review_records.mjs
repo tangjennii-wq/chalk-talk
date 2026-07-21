@@ -33,8 +33,14 @@ const manifestRaw = JSON.parse(readFileSync("rag/landmark_trials.json", "utf8"))
 const manifest = Array.isArray(manifestRaw) ? manifestRaw : Object.values(manifestRaw)[0];
 const manifestPmids = new Set(manifest.map((t) => String(t.expected_pmid || "")));
 
-const TRIAL_PUBTYPES = ["Randomized Controlled Trial","Clinical Trial","Controlled Clinical Trial","Pragmatic Clinical Trial","Clinical Trial, Phase II","Clinical Trial, Phase III","Clinical Trial, Phase IV","Equivalence Trial","Multicenter Study"];
-const NOT_PRIMARY = /\b(rationale|study design|design and methods|protocol|statistical analysis plan)\b/i;
+// "Multicenter Study" is deliberately NOT here. It describes study LOGISTICS, not design — a
+// multicentre observational cohort carries that label and would pass as a trial. Every type below
+// implies allocation to an intervention. (Codex review 2026-07-17)
+const TRIAL_PUBTYPES = ["Randomized Controlled Trial","Clinical Trial","Controlled Clinical Trial","Pragmatic Clinical Trial","Clinical Trial, Phase II","Clinical Trial, Phase III","Clinical Trial, Phase IV","Equivalence Trial"];
+// "protocol" alone produced a FALSE POSITIVE on ProCESS — "A randomized trial of protocol-based
+// care for early septic shock" is the INTERVENTION NAME, not a protocol paper. Require phrasing that
+// actually denotes a design/protocol publication. (validator run 2026-07-17)
+const NOT_PRIMARY = /\b(rationale and design|study design|design and methods|study protocol|trial protocol|:\s*protocol\b|statistical analysis plan)\b/i;
 const SECONDARY   = /\b(post hoc|post-hoc|subgroup analys|pooled analys|meta-analysis|systematic review|secondary analys)\b/i;
 
 const GAP = NCBI_KEY ? 110 : 350;
@@ -67,6 +73,14 @@ async function esummary(pmid, attempt = 0) {
 
 // ── structural checks that need no network ──
 const seen = new Map(), structural = [];
+// Integrity of the file itself. A truncated or half-written records file must fail loudly rather
+// than validate a subset and report success. (Codex review 2026-07-17)
+if (!Array.isArray(records) || records.length === 0) {
+  structural.push({ name: "(file)", issue: "review record set is EMPTY or not an array — nothing to validate" });
+}
+if (typeof db.total === "number" && db.total !== records.length) {
+  structural.push({ name: "(file)", issue: `db.total (${db.total}) !== records.length (${records.length}) — file may be truncated or stale` });
+}
 for (const r of records) {
   if (!r.pmid || !/^\d{6,9}$/.test(String(r.pmid))) { structural.push({ name: r.name, issue: `malformed/missing PMID: ${r.pmid}` }); continue; }
   if (seen.has(r.pmid)) structural.push({ name: r.name, issue: `DUPLICATE PMID ${r.pmid} — also used by ${seen.get(r.pmid)}` });
@@ -85,7 +99,15 @@ for (const r of records) {
   if (pm.year && r.year && Math.abs(pm.year - r.year) > 2) probs.push(`year ${pm.year} vs recorded ${r.year}`);
   if (NOT_PRIMARY.test(pm.title)) probs.push("looks like a protocol/design paper");
   if (SECONDARY.test(pm.title))   probs.push("looks like a secondary/pooled analysis");
-  if (!(pm.pubtypes || []).some((p) => TRIAL_PUBTYPES.includes(p))) probs.push(`pubtypes not trial-like [${(pm.pubtypes || []).join(", ")}]`);
+  // A record may carry pubtype_override:"manual_2026-07" when PubMed indexed an unambiguous RCT only
+  // as "Journal Article". The override must state a reason and is surfaced in the OK detail so it is
+  // never silent.
+  const trialish = (pm.pubtypes || []).some((p) => TRIAL_PUBTYPES.includes(p));
+  if (!trialish && r.pubtype_override === "manual_2026-07") {
+    out.note = `pubtype manually overridden: ${r.pubtype_override_reason || "(no reason given)"}`;
+  } else if (!trialish) {
+    probs.push(`pubtypes not trial-like [${(pm.pubtypes || []).join(", ")}]`);
+  }
   out.status = probs.length ? "MISMATCH" : "OK";
   out.detail = probs.join(" | ");
   out.title = pm.title; out.journal = pm.journal; out.pubyear = pm.year;
@@ -94,7 +116,27 @@ for (const r of records) {
 }
 if (!AS_JSON) console.log("\n");
 
-if (AS_JSON) { console.log(JSON.stringify({ structural, results }, null, 2)); process.exit(0); }
+// ── exit code is computed ONCE and applies to BOTH output modes ──
+// The first version returned early for --json with process.exit(0), so an offline JSON run reported
+// success having verified nothing. That is the same false-green this file exists to prevent, and it
+// was reintroduced in a second code path. Compute the verdict before choosing a renderer.
+// (Codex review 2026-07-17)
+const _by = (s) => results.filter((r) => r.status === s);
+const problemCount   = _by("SUSPECT").length + _by("MISMATCH").length + structural.length;
+const unreachedCount = _by("UNREACHABLE").length;
+const verifiedAll    = problemCount === 0 && unreachedCount === 0 && _by("OK").length === results.length && results.length > 0;
+const exitCode       = problemCount ? 1 : (verifiedAll ? 0 : 2);
+
+if (AS_JSON) {
+  console.log(JSON.stringify({
+    verdict: exitCode === 0 ? "VERIFIED" : exitCode === 1 ? "PROBLEMS" : "INCONCLUSIVE",
+    exit_code: exitCode,
+    counts: { records: results.length, ok: _by("OK").length, mismatch: _by("MISMATCH").length,
+              suspect: _by("SUSPECT").length, unreachable: unreachedCount, structural: structural.length },
+    structural, results,
+  }, null, 2));
+  process.exit(exitCode);
+}
 
 if (structural.length) {
   console.log(`═══ STRUCTURAL (${structural.length}) ═══`);

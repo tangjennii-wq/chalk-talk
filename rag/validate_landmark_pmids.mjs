@@ -41,7 +41,7 @@ const raw = JSON.parse(readFileSync("rag/landmark_trials.json", "utf8"));
 const trials = Array.isArray(raw) ? raw : Object.values(raw)[0];
 
 const TRIAL_PUBTYPES = ["Randomized Controlled Trial","Clinical Trial","Controlled Clinical Trial","Pragmatic Clinical Trial","Clinical Trial, Phase II","Clinical Trial, Phase III"];
-const NOT_PRIMARY_RE = /\b(rationale|study design|design and methods|protocol|statistical analysis plan)\b/i;
+const NOT_PRIMARY_RE = /\b(rationale and design|study design|design and methods|study protocol|trial protocol|:\s*protocol\b|statistical analysis plan)\b/i;
 const VERIFIED_OK = ["pubmed_2026-07", "manual_2026-07"];
 
 const GAP = NCBI_KEY ? 110 : 350;

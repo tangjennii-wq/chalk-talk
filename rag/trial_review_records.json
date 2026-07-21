@@ -574,7 +574,9 @@
       "gl": "too recent for the 2026 IDSA/ESCMID SAB guidance",
       "conf": "high",
       "note": "NAMING CAVEAT: DOTS tests IV dalbavancin, NOT 'partial oral therapy' as the queue described. Confirm this is the intended trial.",
-      "batch": 2
+      "batch": 2,
+      "pubtype_override": "manual_2026-07",
+      "pubtype_override_reason": "JAMA 2025 — title states 'The DOTS Randomized Clinical Trial'; PubMed indexed only as Journal Article"
     },
     {
       "name": "SAFE",
@@ -858,7 +860,7 @@
     },
     {
       "name": "NAVIGATE ESUS",
-      "pmid": "30188630",
+      "pmid": null,
       "year": 2018,
       "spec": "Neurology",
       "q": "Rivaroxaban vs aspirin after embolic stroke of undetermined source",
@@ -866,8 +868,8 @@
       "why": "Refutes empiric anticoagulation for ESUS",
       "role": "important negative trial",
       "gl": "incorporated (AHA/ASA: no routine anticoagulation)",
-      "conf": "high",
-      "note": null,
+      "conf": "SUSPECT",
+      "note": "WRONG PMID FOUND BY VALIDATOR: 30188630 has pubtypes [Letter, Comment] — it is correspondence, NOT the trial. Verified primary paper is NEJM 2018;378(23):2191-2201, DOI 10.1056/NEJMoa1802686 (Hart RG et al, NAVIGATE ESUS Investigators). PMID not asserted here — resolve the DOI to a PMID and re-run the validator before promotion.",
       "batch": 2
     },
     {

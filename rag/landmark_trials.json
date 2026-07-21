@@ -172,11 +172,11 @@
   {
     "name": "TESTING",
     "full": "Methylprednisolone IgA Nephropathy",
-    "year": 2017,
+    "year": 2022,
     "specialty": "nephrology",
     "expected_pmid": "35579642",
     "pmid_verified": "pubmed_2026-07",
-    "pmid_note": "corrected from 28763548 — stored PMID is the 2017 halted-early phase; definitive results Lv, JAMA 2022"
+    "pmid_note": "corrected from 28763548 — stored PMID is the 2017 halted-early phase; definitive results Lv, JAMA 2022 YEAR corrected 2017->2022 to match the definitive TESTING paper (Lv, JAMA 2022). The 2017 paper was the halted-early phase."
   },
   {
     "name": "PROTECT",
@@ -552,7 +552,8 @@
     "year": 2021,
     "specialty": "pulm-cc",
     "expected_pmid": "34375394",
-    "pmid_verified": "pubmed_2026-07"
+    "pmid_verified": "manual_2026-07",
+    "pmid_note": " MANUAL: JAMA 2021 balanced solution vs saline — randomised clinical trial per its own title; PubMed indexed only as Journal Article."
   },
   {
     "name": "PLUS",
@@ -666,7 +667,8 @@
     "year": 2019,
     "specialty": "heme-onc",
     "expected_pmid": "31166681",
-    "pmid_verified": "pubmed_2026-07"
+    "pmid_verified": "manual_2026-07",
+    "pmid_note": " MANUAL: NEJM 2019 venetoclax-obinutuzumab — phase 3 RCT; PubMed indexed only as Journal Article."
   },
   {
     "name": "MAIA",
