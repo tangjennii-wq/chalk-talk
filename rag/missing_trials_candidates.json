@@ -1,0 +1,2236 @@
+{
+  "generated": "2026-07-21",
+  "manifest_size": 124,
+  "guideline_trials_listed": 219,
+  "already_present": 65,
+  "unique_candidates": 148,
+  "note": "READ-ONLY audit. A candidate is NOT approved for ingestion until a canonical primary-results PMID is verified. PubMed relevance search is not proof.",
+  "candidates": [
+    {
+      "guideline_spelling": "HELP",
+      "normalized": "HELP",
+      "specialty": "Allergy/Immuno",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Allergy/Immuno"
+      ],
+      "spellings": [
+        "HELP"
+      ]
+    },
+    {
+      "guideline_spelling": "POSEIDON",
+      "normalized": "POSEIDON",
+      "specialty": "Allergy/Immuno",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Allergy/Immuno"
+      ],
+      "spellings": [
+        "POSEIDON"
+      ]
+    },
+    {
+      "guideline_spelling": "AFFIRM-AHF",
+      "normalized": "AFFIRM-AHF",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "AFFIRM-AHF"
+      ]
+    },
+    {
+      "guideline_spelling": "CASTLE-AF",
+      "normalized": "CASTLE-AF",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "CASTLE-AF"
+      ]
+    },
+    {
+      "guideline_spelling": "CLEAR Outcomes",
+      "normalized": "CLEAR OUTCOMES",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "CLEAR Outcomes"
+      ]
+    },
+    {
+      "guideline_spelling": "COAPT",
+      "normalized": "COAPT",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "COAPT"
+      ]
+    },
+    {
+      "guideline_spelling": "COLCOT",
+      "normalized": "COLCOT",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "COLCOT"
+      ]
+    },
+    {
+      "guideline_spelling": "DELIVER",
+      "normalized": "DELIVER",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "DELIVER"
+      ]
+    },
+    {
+      "guideline_spelling": "EAST-AFNET 4",
+      "normalized": "EAST-AFNET 4",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "EAST-AFNET 4"
+      ]
+    },
+    {
+      "guideline_spelling": "EXPLORER-HCM",
+      "normalized": "EXPLORER-HCM",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "EXPLORER-HCM"
+      ]
+    },
+    {
+      "guideline_spelling": "LIPID",
+      "normalized": "LIPID",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "LIPID"
+      ]
+    },
+    {
+      "guideline_spelling": "LoDoCo2",
+      "normalized": "LODOCO2",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "LoDoCo2"
+      ]
+    },
+    {
+      "guideline_spelling": "MATRIX",
+      "normalized": "MATRIX",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "MATRIX"
+      ]
+    },
+    {
+      "guideline_spelling": "PARTNER 1",
+      "normalized": "PARTNER 1",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "PARTNER 1"
+      ]
+    },
+    {
+      "guideline_spelling": "PARTNER 2",
+      "normalized": "PARTNER 2",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "PARTNER 2"
+      ]
+    },
+    {
+      "guideline_spelling": "PARTNER 3",
+      "normalized": "PARTNER 3",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "PARTNER 3"
+      ]
+    },
+    {
+      "guideline_spelling": "PLATO",
+      "normalized": "PLATO",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "PLATO"
+      ]
+    },
+    {
+      "guideline_spelling": "RIVAL",
+      "normalized": "RIVAL",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "RIVAL"
+      ]
+    },
+    {
+      "guideline_spelling": "ROCKET-AF",
+      "normalized": "ROCKET-AF",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "ROCKET-AF"
+      ]
+    },
+    {
+      "guideline_spelling": "STICH",
+      "normalized": "STICH",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "STICH"
+      ]
+    },
+    {
+      "guideline_spelling": "TRITON-TIMI 38",
+      "normalized": "TRITON-TIMI 38",
+      "specialty": "Cardiovascular",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "TRITON-TIMI 38"
+      ]
+    },
+    {
+      "guideline_spelling": "PIONEER 1",
+      "normalized": "PIONEER 1",
+      "specialty": "Dermatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Dermatology"
+      ],
+      "spellings": [
+        "PIONEER 1"
+      ]
+    },
+    {
+      "guideline_spelling": "PIONEER 2",
+      "normalized": "PIONEER 2",
+      "specialty": "Dermatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Dermatology"
+      ],
+      "spellings": [
+        "PIONEER 2"
+      ]
+    },
+    {
+      "guideline_spelling": "SUNRISE",
+      "normalized": "SUNRISE",
+      "specialty": "Dermatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Dermatology"
+      ],
+      "spellings": [
+        "SUNRISE"
+      ]
+    },
+    {
+      "guideline_spelling": "SUNSHINE",
+      "normalized": "SUNSHINE",
+      "specialty": "Dermatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Dermatology"
+      ],
+      "spellings": [
+        "SUNSHINE"
+      ]
+    },
+    {
+      "guideline_spelling": "CANVAS",
+      "normalized": "CANVAS",
+      "specialty": "Endocrinology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Endocrinology"
+      ],
+      "spellings": [
+        "CANVAS"
+      ]
+    },
+    {
+      "guideline_spelling": "SURMOUNT",
+      "normalized": "SURMOUNT",
+      "specialty": "Endocrinology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Endocrinology"
+      ],
+      "spellings": [
+        "SURMOUNT"
+      ]
+    },
+    {
+      "guideline_spelling": "CALM",
+      "normalized": "CALM",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "CALM"
+      ]
+    },
+    {
+      "guideline_spelling": "CONFIRM",
+      "normalized": "CONFIRM",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "CONFIRM"
+      ]
+    },
+    {
+      "guideline_spelling": "GEMINI",
+      "normalized": "GEMINI",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "GEMINI"
+      ]
+    },
+    {
+      "guideline_spelling": "LIBERTY-EoE",
+      "normalized": "LIBERTY-EOE",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "LIBERTY-EoE"
+      ]
+    },
+    {
+      "guideline_spelling": "MAESTRO-NASH",
+      "normalized": "MAESTRO-NASH",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "MAESTRO-NASH"
+      ]
+    },
+    {
+      "guideline_spelling": "MOTIVATE",
+      "normalized": "MOTIVATE",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "MOTIVATE"
+      ]
+    },
+    {
+      "guideline_spelling": "OCTAVE",
+      "normalized": "OCTAVE",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "OCTAVE"
+      ]
+    },
+    {
+      "guideline_spelling": "SONIC",
+      "normalized": "SONIC",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "SONIC"
+      ]
+    },
+    {
+      "guideline_spelling": "STRIDE-II",
+      "normalized": "STRIDE-II",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "STRIDE-II"
+      ]
+    },
+    {
+      "guideline_spelling": "U-ACHIEVE",
+      "normalized": "U-ACHIEVE",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "U-ACHIEVE"
+      ]
+    },
+    {
+      "guideline_spelling": "U-EXCEED",
+      "normalized": "U-EXCEED",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "U-EXCEED"
+      ]
+    },
+    {
+      "guideline_spelling": "U-EXCEL",
+      "normalized": "U-EXCEL",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "U-EXCEL"
+      ]
+    },
+    {
+      "guideline_spelling": "UNIFI",
+      "normalized": "UNIFI",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "UNIFI"
+      ]
+    },
+    {
+      "guideline_spelling": "UNITI",
+      "normalized": "UNITI",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "UNITI"
+      ]
+    },
+    {
+      "guideline_spelling": "WATERFALL",
+      "normalized": "WATERFALL",
+      "specialty": "GI/Hepatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "GI/Hepatology"
+      ],
+      "spellings": [
+        "WATERFALL"
+      ]
+    },
+    {
+      "guideline_spelling": "AMPLIFY",
+      "normalized": "AMPLIFY",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "AMPLIFY"
+      ]
+    },
+    {
+      "guideline_spelling": "CARAVAGGIO",
+      "normalized": "CARAVAGGIO",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "CARAVAGGIO"
+      ]
+    },
+    {
+      "guideline_spelling": "EINSTEIN",
+      "normalized": "EINSTEIN",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "EINSTEIN"
+      ]
+    },
+    {
+      "guideline_spelling": "HERCULES",
+      "normalized": "HERCULES",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "HERCULES"
+      ]
+    },
+    {
+      "guideline_spelling": "HOKUSAI-CANCER",
+      "normalized": "HOKUSAI-CANCER",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "HOKUSAI-CANCER"
+      ]
+    },
+    {
+      "guideline_spelling": "HOKUSAI-VTE",
+      "normalized": "HOKUSAI-VTE",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "HOKUSAI-VTE"
+      ]
+    },
+    {
+      "guideline_spelling": "RE-COVER",
+      "normalized": "RE-COVER",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "RE-COVER"
+      ]
+    },
+    {
+      "guideline_spelling": "REALITY",
+      "normalized": "REALITY",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "REALITY"
+      ]
+    },
+    {
+      "guideline_spelling": "STAND",
+      "normalized": "STAND",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "STAND"
+      ]
+    },
+    {
+      "guideline_spelling": "STOP",
+      "normalized": "STOP",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "STOP"
+      ]
+    },
+    {
+      "guideline_spelling": "TRAPS",
+      "normalized": "TRAPS",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "TRAPS"
+      ]
+    },
+    {
+      "guideline_spelling": "TRICC",
+      "normalized": "TRICC",
+      "specialty": "Heme/Onc",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "TRICC"
+      ]
+    },
+    {
+      "guideline_spelling": "REPRIEVE",
+      "normalized": "REPRIEVE",
+      "specialty": "ID",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "ID"
+      ],
+      "spellings": [
+        "REPRIEVE"
+      ]
+    },
+    {
+      "guideline_spelling": "AURORA-1",
+      "normalized": "AURORA-1",
+      "specialty": "Nephrology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Nephrology",
+        "Rheumatology"
+      ],
+      "spellings": [
+        "AURORA-1"
+      ]
+    },
+    {
+      "guideline_spelling": "PATHWAY-2",
+      "normalized": "PATHWAY-2",
+      "specialty": "Nephrology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Nephrology",
+        "Cardiovascular"
+      ],
+      "spellings": [
+        "PATHWAY-2"
+      ]
+    },
+    {
+      "guideline_spelling": "TEMPO 3:4",
+      "normalized": "TEMPO 34",
+      "specialty": "Nephrology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Nephrology"
+      ],
+      "spellings": [
+        "TEMPO 3:4"
+      ]
+    },
+    {
+      "guideline_spelling": "AcT",
+      "normalized": "ACT",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "AcT"
+      ]
+    },
+    {
+      "guideline_spelling": "ADAPT",
+      "normalized": "ADAPT",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "ADAPT"
+      ]
+    },
+    {
+      "guideline_spelling": "ATACH-2",
+      "normalized": "ATACH-2",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "ATACH-2"
+      ]
+    },
+    {
+      "guideline_spelling": "CHANCE",
+      "normalized": "CHANCE",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "CHANCE"
+      ]
+    },
+    {
+      "guideline_spelling": "CLARITY-AD",
+      "normalized": "CLARITY-AD",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "CLARITY-AD"
+      ]
+    },
+    {
+      "guideline_spelling": "DELIVER-MS",
+      "normalized": "DELIVER-MS",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "DELIVER-MS"
+      ]
+    },
+    {
+      "guideline_spelling": "EARLYSTIM",
+      "normalized": "EARLYSTIM",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "EARLYSTIM"
+      ]
+    },
+    {
+      "guideline_spelling": "ECASS III",
+      "normalized": "ECASS III",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "ECASS III"
+      ]
+    },
+    {
+      "guideline_spelling": "ESETT",
+      "normalized": "ESETT",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "ESETT"
+      ]
+    },
+    {
+      "guideline_spelling": "EXTEND",
+      "normalized": "EXTEND",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "EXTEND"
+      ]
+    },
+    {
+      "guideline_spelling": "INTERACT2",
+      "normalized": "INTERACT2",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "INTERACT2"
+      ]
+    },
+    {
+      "guideline_spelling": "LEAP",
+      "normalized": "LEAP",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "LEAP"
+      ]
+    },
+    {
+      "guideline_spelling": "MGTX",
+      "normalized": "MGTX",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "MGTX"
+      ]
+    },
+    {
+      "guideline_spelling": "ORATORIO",
+      "normalized": "ORATORIO",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "ORATORIO"
+      ]
+    },
+    {
+      "guideline_spelling": "POINT",
+      "normalized": "POINT",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "POINT"
+      ]
+    },
+    {
+      "guideline_spelling": "THALES",
+      "normalized": "THALES",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "THALES"
+      ]
+    },
+    {
+      "guideline_spelling": "TRAILBLAZER-ALZ-2",
+      "normalized": "TRAILBLAZER-ALZ-2",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "TRAILBLAZER-ALZ-2"
+      ]
+    },
+    {
+      "guideline_spelling": "TREAT-MS",
+      "normalized": "TREAT-MS",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "TREAT-MS"
+      ]
+    },
+    {
+      "guideline_spelling": "WAKE-UP",
+      "normalized": "WAKE-UP",
+      "specialty": "Neurology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Neurology"
+      ],
+      "spellings": [
+        "WAKE-UP"
+      ]
+    },
+    {
+      "guideline_spelling": "ADAURA",
+      "normalized": "ADAURA",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "ADAURA"
+      ]
+    },
+    {
+      "guideline_spelling": "ARAMIS",
+      "normalized": "ARAMIS",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "ARAMIS"
+      ]
+    },
+    {
+      "guideline_spelling": "ARCHES",
+      "normalized": "ARCHES",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "ARCHES"
+      ]
+    },
+    {
+      "guideline_spelling": "BEACON",
+      "normalized": "BEACON",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "BEACON"
+      ]
+    },
+    {
+      "guideline_spelling": "CARD",
+      "normalized": "CARD",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "CARD"
+      ]
+    },
+    {
+      "guideline_spelling": "CARTITUDE-1",
+      "normalized": "CARTITUDE-1",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "CARTITUDE-1"
+      ]
+    },
+    {
+      "guideline_spelling": "CHAARTED",
+      "normalized": "CHAARTED",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "CHAARTED"
+      ]
+    },
+    {
+      "guideline_spelling": "CLEOPATRA",
+      "normalized": "CLEOPATRA",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "CLEOPATRA"
+      ]
+    },
+    {
+      "guideline_spelling": "CodeBreaK 200",
+      "normalized": "CODEBREAK 200",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "CodeBreaK 200"
+      ]
+    },
+    {
+      "guideline_spelling": "COU-AA-301",
+      "normalized": "COU-AA-301",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "COU-AA-301"
+      ]
+    },
+    {
+      "guideline_spelling": "DESTINY-Breast03",
+      "normalized": "DESTINY-BREAST03",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "DESTINY-Breast03"
+      ]
+    },
+    {
+      "guideline_spelling": "FLAURA",
+      "normalized": "FLAURA",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "FLAURA"
+      ]
+    },
+    {
+      "guideline_spelling": "GRIFFIN",
+      "normalized": "GRIFFIN",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "GRIFFIN"
+      ]
+    },
+    {
+      "guideline_spelling": "KarMMa-3",
+      "normalized": "KARMMA-3",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "KarMMa-3"
+      ]
+    },
+    {
+      "guideline_spelling": "KEYNOTE-177",
+      "normalized": "KEYNOTE-177",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "KEYNOTE-177"
+      ]
+    },
+    {
+      "guideline_spelling": "KEYNOTE-189",
+      "normalized": "KEYNOTE-189",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "KEYNOTE-189"
+      ]
+    },
+    {
+      "guideline_spelling": "KEYNOTE-407",
+      "normalized": "KEYNOTE-407",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "KEYNOTE-407"
+      ]
+    },
+    {
+      "guideline_spelling": "KEYNOTE-522",
+      "normalized": "KEYNOTE-522",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "KEYNOTE-522"
+      ]
+    },
+    {
+      "guideline_spelling": "LATITUDE",
+      "normalized": "LATITUDE",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "LATITUDE"
+      ]
+    },
+    {
+      "guideline_spelling": "MONALEESA-2/3/7",
+      "normalized": "MONALEESA-237",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "MONALEESA-2/3/7"
+      ]
+    },
+    {
+      "guideline_spelling": "MONARCH-2/3",
+      "normalized": "MONARCH-23",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "MONARCH-2/3"
+      ]
+    },
+    {
+      "guideline_spelling": "PACIFIC",
+      "normalized": "PACIFIC",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "PACIFIC"
+      ]
+    },
+    {
+      "guideline_spelling": "PALOMA-1/2/3",
+      "normalized": "PALOMA-123",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "PALOMA-1/2/3"
+      ]
+    },
+    {
+      "guideline_spelling": "PERSEUS",
+      "normalized": "PERSEUS",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "PERSEUS"
+      ]
+    },
+    {
+      "guideline_spelling": "PREVAIL",
+      "normalized": "PREVAIL",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "PREVAIL"
+      ]
+    },
+    {
+      "guideline_spelling": "PROfound",
+      "normalized": "PROFOUND",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "PROfound"
+      ]
+    },
+    {
+      "guideline_spelling": "PROpel",
+      "normalized": "PROPEL",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "PROpel"
+      ]
+    },
+    {
+      "guideline_spelling": "PROSPER",
+      "normalized": "PROSPER",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "PROSPER"
+      ]
+    },
+    {
+      "guideline_spelling": "SPARTAN",
+      "normalized": "SPARTAN",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "SPARTAN"
+      ]
+    },
+    {
+      "guideline_spelling": "STAMPEDE",
+      "normalized": "STAMPEDE",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "STAMPEDE"
+      ]
+    },
+    {
+      "guideline_spelling": "TITAN",
+      "normalized": "TITAN",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "TITAN"
+      ]
+    },
+    {
+      "guideline_spelling": "VISION",
+      "normalized": "VISION",
+      "specialty": "Oncology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Oncology"
+      ],
+      "spellings": [
+        "VISION"
+      ]
+    },
+    {
+      "guideline_spelling": "AREDS",
+      "normalized": "AREDS",
+      "specialty": "Ophthalmology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Ophthalmology"
+      ],
+      "spellings": [
+        "AREDS"
+      ]
+    },
+    {
+      "guideline_spelling": "AREDS2",
+      "normalized": "AREDS2",
+      "specialty": "Ophthalmology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Ophthalmology"
+      ],
+      "spellings": [
+        "AREDS2"
+      ]
+    },
+    {
+      "guideline_spelling": "LiGHT",
+      "normalized": "LIGHT",
+      "specialty": "Ophthalmology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Ophthalmology"
+      ],
+      "spellings": [
+        "LiGHT"
+      ]
+    },
+    {
+      "guideline_spelling": "ONTT",
+      "normalized": "ONTT",
+      "specialty": "Ophthalmology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Ophthalmology"
+      ],
+      "spellings": [
+        "ONTT"
+      ]
+    },
+    {
+      "guideline_spelling": "UKGTS",
+      "normalized": "UKGTS",
+      "specialty": "Ophthalmology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Ophthalmology"
+      ],
+      "spellings": [
+        "UKGTS"
+      ]
+    },
+    {
+      "guideline_spelling": "UKPDS",
+      "normalized": "UKPDS",
+      "specialty": "Ophthalmology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Ophthalmology"
+      ],
+      "spellings": [
+        "UKPDS"
+      ]
+    },
+    {
+      "guideline_spelling": "ARRIVE",
+      "normalized": "ARRIVE",
+      "specialty": "Prevention",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Prevention"
+      ],
+      "spellings": [
+        "ARRIVE"
+      ]
+    },
+    {
+      "guideline_spelling": "ASPREE",
+      "normalized": "ASPREE",
+      "specialty": "Prevention",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Prevention"
+      ],
+      "spellings": [
+        "ASPREE"
+      ]
+    },
+    {
+      "guideline_spelling": "PREVENT cohort",
+      "normalized": "PREVENT COHORT",
+      "specialty": "Prevention",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Prevention"
+      ],
+      "spellings": [
+        "PREVENT cohort"
+      ]
+    },
+    {
+      "guideline_spelling": "EAGLES",
+      "normalized": "EAGLES",
+      "specialty": "Psychiatry",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Psychiatry"
+      ],
+      "spellings": [
+        "EAGLES"
+      ]
+    },
+    {
+      "guideline_spelling": "STAR*D",
+      "normalized": "STARD",
+      "specialty": "Psychiatry",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Psychiatry"
+      ],
+      "spellings": [
+        "STAR*D"
+      ]
+    },
+    {
+      "guideline_spelling": "TRD-IV",
+      "normalized": "TRD-IV",
+      "specialty": "Psychiatry",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Psychiatry"
+      ],
+      "spellings": [
+        "TRD-IV"
+      ]
+    },
+    {
+      "guideline_spelling": "ACURASYS",
+      "normalized": "ACURASYS",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "ACURASYS"
+      ]
+    },
+    {
+      "guideline_spelling": "AMBITION",
+      "normalized": "AMBITION",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary",
+        "Rheumatology"
+      ],
+      "spellings": [
+        "AMBITION"
+      ]
+    },
+    {
+      "guideline_spelling": "ARMA",
+      "normalized": "ARMA",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "ARMA"
+      ]
+    },
+    {
+      "guideline_spelling": "BPaLM",
+      "normalized": "BPALM",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "BPaLM"
+      ]
+    },
+    {
+      "guideline_spelling": "CAPACITY",
+      "normalized": "CAPACITY",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "CAPACITY"
+      ]
+    },
+    {
+      "guideline_spelling": "DEXA-ARDS",
+      "normalized": "DEXA-ARDS",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "DEXA-ARDS"
+      ]
+    },
+    {
+      "guideline_spelling": "ETHOS",
+      "normalized": "ETHOS",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "ETHOS"
+      ]
+    },
+    {
+      "guideline_spelling": "IMPACT",
+      "normalized": "IMPACT",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "IMPACT"
+      ]
+    },
+    {
+      "guideline_spelling": "INPULSIS-1",
+      "normalized": "INPULSIS-1",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "INPULSIS-1"
+      ]
+    },
+    {
+      "guideline_spelling": "INPULSIS-2",
+      "normalized": "INPULSIS-2",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "INPULSIS-2"
+      ]
+    },
+    {
+      "guideline_spelling": "MIST2",
+      "normalized": "MIST2",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "MIST2"
+      ]
+    },
+    {
+      "guideline_spelling": "MRC",
+      "normalized": "MRC",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "MRC"
+      ]
+    },
+    {
+      "guideline_spelling": "NOTT",
+      "normalized": "NOTT",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "NOTT"
+      ]
+    },
+    {
+      "guideline_spelling": "PEITHO",
+      "normalized": "PEITHO",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary",
+        "Heme/Onc"
+      ],
+      "spellings": [
+        "PEITHO"
+      ]
+    },
+    {
+      "guideline_spelling": "REDUCE",
+      "normalized": "REDUCE",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "REDUCE"
+      ]
+    },
+    {
+      "guideline_spelling": "STELLAR",
+      "normalized": "STELLAR",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary"
+      ],
+      "spellings": [
+        "STELLAR"
+      ]
+    },
+    {
+      "guideline_spelling": "Study 31",
+      "normalized": "STUDY 31",
+      "specialty": "Pulmonary",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Pulmonary",
+        "ID"
+      ],
+      "spellings": [
+        "Study 31"
+      ]
+    },
+    {
+      "guideline_spelling": "BLISS-LN",
+      "normalized": "BLISS-LN",
+      "specialty": "Rheumatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Rheumatology"
+      ],
+      "spellings": [
+        "BLISS-LN"
+      ]
+    },
+    {
+      "guideline_spelling": "CARES",
+      "normalized": "CARES",
+      "specialty": "Rheumatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Rheumatology"
+      ],
+      "spellings": [
+        "CARES"
+      ]
+    },
+    {
+      "guideline_spelling": "focuSSced",
+      "normalized": "FOCUSSCED",
+      "specialty": "Rheumatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Rheumatology"
+      ],
+      "spellings": [
+        "focuSSced"
+      ]
+    },
+    {
+      "guideline_spelling": "GiACTA",
+      "normalized": "GIACTA",
+      "specialty": "Rheumatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Rheumatology",
+        "Ophthalmology"
+      ],
+      "spellings": [
+        "GiACTA"
+      ]
+    },
+    {
+      "guideline_spelling": "MAINRITSAN",
+      "normalized": "MAINRITSAN",
+      "specialty": "Rheumatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Rheumatology"
+      ],
+      "spellings": [
+        "MAINRITSAN"
+      ]
+    },
+    {
+      "guideline_spelling": "MIRRA",
+      "normalized": "MIRRA",
+      "specialty": "Rheumatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Rheumatology"
+      ],
+      "spellings": [
+        "MIRRA"
+      ]
+    },
+    {
+      "guideline_spelling": "ORAL Surveillance",
+      "normalized": "ORAL SURVEILLANCE",
+      "specialty": "Rheumatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Rheumatology"
+      ],
+      "spellings": [
+        "ORAL Surveillance"
+      ]
+    },
+    {
+      "guideline_spelling": "RITUXVAS",
+      "normalized": "RITUXVAS",
+      "specialty": "Rheumatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Rheumatology"
+      ],
+      "spellings": [
+        "RITUXVAS"
+      ]
+    },
+    {
+      "guideline_spelling": "SENSCIS",
+      "normalized": "SENSCIS",
+      "specialty": "Rheumatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Rheumatology"
+      ],
+      "spellings": [
+        "SENSCIS"
+      ]
+    },
+    {
+      "guideline_spelling": "TULIP",
+      "normalized": "TULIP",
+      "specialty": "Rheumatology",
+      "in_manifest": false,
+      "matched_via": null,
+      "manifest_name": null,
+      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "specialties": [
+        "Rheumatology"
+      ],
+      "spellings": [
+        "TULIP"
+      ]
+    }
+  ]
+}
