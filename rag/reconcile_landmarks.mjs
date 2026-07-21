@@ -22,9 +22,10 @@
 import { readFileSync } from "fs";
 import { createClient } from "@supabase/supabase-js";
 
+import { requireEnv } from "./loadenv.mjs";   // loads .env + validates with clear errors
+requireEnv(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]);
 const APPLY = process.argv.includes("--apply");
 const URL = process.env.SUPABASE_URL, KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!URL || !KEY) { console.error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY"); process.exit(1); }
 const sb = createClient(URL, KEY, { auth: { persistSession: false } });
 
 const raw = JSON.parse(readFileSync("rag/landmark_trials.json", "utf8"));

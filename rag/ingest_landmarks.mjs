@@ -7,16 +7,13 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
+import { requireEnv } from "./loadenv.mjs";   // loads .env + validates with clear errors
 
+requireEnv(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "OPENAI_API_KEY"]);
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const OPENAI_KEY   = process.env.OPENAI_API_KEY;
 const NCBI_KEY     = process.env.NCBI_API_KEY || "";
-
-if (!SUPABASE_URL || !SUPABASE_KEY || !OPENAI_KEY) {
-  console.error("Missing required env vars.");
-  process.exit(1);
-}
 
 const TRIALS = JSON.parse(readFileSync("rag/landmark_trials.json", "utf8"));
 const REQUEST_DELAY_MS = NCBI_KEY ? 110 : 350;
