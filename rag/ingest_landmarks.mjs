@@ -39,8 +39,32 @@ async function eutilsFetch(path, params) {
   return res;
 }
 
+/**
+ * Resolve the trial to its CANONICAL PRIMARY-RESULTS paper.
+ *
+ * Relevance search was the original approach and it silently picked the wrong paper again and again:
+ * design/rationale papers (RE-LY, ARISTOTLE, ACCORD, SOLVD), reviews about the trial (PARTNER,
+ * STOP-IgAN), an editorial (HOPE), a statistical analysis plan (LOVIT), and outright different trials
+ * (SPRINT resolved to a Mayo isometric-exercise review; MR CLEAN resolved to ASTER). PubMed relevance
+ * does not know which paper IS the trial.
+ *
+ * So: prefer an explicit expected_pmid from landmark_trials.json. Only fall back to search when none
+ * is recorded, and even then require the result to look like a trial. (Jenni 2026-07-17)
+ */
+const TRIAL_PUBTYPES = ["Randomized Controlled Trial","Clinical Trial","Controlled Clinical Trial","Pragmatic Clinical Trial","Clinical Trial, Phase II","Clinical Trial, Phase III"];
+const NOT_PRIMARY_RE = /\b(rationale|study design|design and methods|protocol|statistical analysis plan)\b/i;
+
+function isPrimaryTrialRecord(r) {
+  const pts = r.pubtypes || [];
+  if (!pts.some((p) => TRIAL_PUBTYPES.includes(p))) return false;   // a review is never the trial
+  if (NOT_PRIMARY_RE.test(r.title || "")) return false;             // design paper is not the results
+  return true;
+}
+
 async function searchTrial(trial) {
-  // Build a query: prefer the full descriptive name + year window
+  // 1) Explicit canonical PMID wins — no guessing.
+  if (trial.expected_pmid) return [String(trial.expected_pmid)];
+  // 2) No PMID recorded: fall back to the old search, but callers must still validate the record.
   const ymin = trial.year - 1, ymax = trial.year + 2;
   const q = `(${trial.full}) AND ("${ymin}"[Date - Publication] : "${ymax}"[Date - Publication])`;
   try {
@@ -150,10 +174,21 @@ async function ingestTrial(trial) {
     mesh_terms: r.mesh && r.mesh.length ? r.mesh.slice(0, 30) : null,
     rcr: ic.rcr,
     citation_count: ic.citation_count,
-    is_landmark_trial: true,
-    raw_metadata: { landmark_name: trial.name, landmark_year: trial.year, landmark_specialty: trial.specialty, pubtypes: r.pubtypes },
+    // Only claim landmark status when the record actually IS the trial: either it matches the
+    // hand-verified expected_pmid, or PubMed's own pubtypes confirm a primary trial report.
+    // Blanket true is what put 568 reviews/guidelines behind a trial chip. (Jenni 2026-07-17)
+    is_landmark_trial: (trial.expected_pmid && String(r.pmid) === String(trial.expected_pmid)) || isPrimaryTrialRecord(r),
+    raw_metadata: {
+      landmark_name: trial.name, landmark_year: trial.year, landmark_specialty: trial.specialty,
+      pubtypes: r.pubtypes,
+      pmid_matches_expected: trial.expected_pmid ? String(r.pmid) === String(trial.expected_pmid) : null,
+      pmid_verified: trial.pmid_verified || null,
+    },
     updated_at: new Date().toISOString(),
   };
+  if (!payload.is_landmark_trial) {
+    console.warn(`    ! ${trial.name}: PMID ${r.pmid} is not a primary trial report — ingesting WITHOUT landmark flag`);
+  }
 
   const { data: doc, error: dErr } = await sb.from("documents").upsert(payload, { onConflict: "pmid" }).select("id").single();
   if (dErr) return { status: "db_error", error: dErr.message };

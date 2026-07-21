@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-17-06";
+var BUILD_ID = "2026-07-17-07";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5559,6 +5559,23 @@ function stripCitations(str) {
 // looked up in the retrieved RAG chunks (which carry title + journal + year); if it isn't already a
 // reference, one is created. An inline PMID we have NO metadata for is dropped (it's noise the reader can't
 // act on). Also tidies the double-paren "( (PMID …))" the model sometimes emits. (Jenni 2026-07-13)
+// A "trial" chip must point at an actual trial. is_landmark_trial ALONE is not enough — a July 2026
+// audit found 568 of 632 flagged documents were reviews, meta-analyses or guidelines that merely
+// MENTIONED a trial acronym, all of which rendered with a trial chip. Require the publication type to
+// agree, and prefer the more specific label when the pubtypes say guideline/meta-analysis.
+// (Codex review 2026-07-17)
+var _TRIAL_PUBTYPES = ["Randomized Controlled Trial","Clinical Trial","Controlled Clinical Trial","Pragmatic Clinical Trial","Clinical Trial, Phase II","Clinical Trial, Phase III"];
+function _refTypeFor(c){
+  if(!c) return "review";
+  var pts = c.pubtypes || (c.raw_metadata && c.raw_metadata.pubtypes) || [];
+  if(!Array.isArray(pts)) pts = [];
+  var has = function(list){ return pts.some(function(p){ return list.indexOf(p) >= 0; }); };
+  if(has(["Practice Guideline","Guideline"])) return "guideline";
+  if(has(_TRIAL_PUBTYPES)) return c.is_landmark_trial ? "trial" : "trial";
+  if(has(["Meta-Analysis","Systematic Review"])) return "review";
+  // Flagged as landmark but the pubtypes do not confirm a trial -> do NOT claim it is one.
+  return "review";
+}
 function _normalizeInlinePmids(talk, extraMeta){
   // extraMeta (optional, refine path only): map pmid -> {title, journal, year} for PMIDs that were
   // verbatim in the user's pasted feedback AND verified against PubMed eutils — the refine flow has
@@ -5582,7 +5599,7 @@ function _normalizeInlinePmids(talk, extraMeta){
       year: (c ? c.year : xm.year) || null,
       society: (c ? c.journal : xm.journal) || "",
       url: "https://pubmed.ncbi.nlm.nih.gov/" + pmid + "/",
-      type: (c && c.is_landmark_trial) ? "trial" : "review",
+      type: _refTypeFor(c),
       pmid: String(pmid)
     };
     if(xm) nr.src_verified = "pubmed";   // survives pruneFakeReferences (it isn't in S.ragChunks)
