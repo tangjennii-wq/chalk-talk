@@ -65,6 +65,58 @@ const ALIASES = {
   "ISIS2": "ISIS-2",
 };
 
+/**
+ * CLINICAL TRIAGE (Codex review 2026-07-17). The raw candidate count is a DISCOVERY number, not a
+ * list of ingestible RCTs. Several entries are not randomized trials at all, several are punctuation
+ * aliases of trials already present, and several are umbrella program names covering multiple
+ * distinct trials. Ingesting the raw list would put non-RCT evidence behind a "trial" chip — the
+ * exact error class fixed earlier today.
+ */
+const TRIAGE = {
+  // Not an RCT — different evidence type, must not carry a trial chip
+  "non-rct-reclassify": {
+    "STRIDE-II": "consensus treat-to-target document, not an RCT — store as guidance",
+    "PREVENT": "risk-equation development/validation study — belongs under prediction evidence",
+    "PREVENT COHORT": "risk-equation development/validation study — belongs under prediction evidence",
+  },
+  // Punctuation/spacing variants of trials already in the manifest
+  "alias-already-present": {
+    "ROCKET-AF": "ROCKET AF", "ECASS III": "ECASS-III", "ECASS-3": "ECASS-III",
+    "ARMA": "ARDS Network (identical paper, PMID 10793162)",
+  },
+  // Umbrella program names covering multiple distinct trials — must be split or precisely named
+  "trial-family-split": {
+    "UKPDS": "umbrella; UKPDS 33 and 34 already present",
+    "SURMOUNT": "umbrella; SURMOUNT-1 already present",
+    "PARTNER": "PARTNER 1A/1B/2/3 are distinct trials",
+    "PALOMA": "PALOMA-1/2/3 distinct", "MONALEESA": "MONALEESA-2/3/7 distinct",
+    "MONARCH": "MONARCH-2/3 distinct", "GEMINI": "GEMINI 1/2 distinct",
+    "UNITI": "UNITI-1/2 distinct", "OCTAVE": "OCTAVE Induction/Sustain distinct",
+    "CAPACITY": "CAPACITY-1/2 reported together", "INPULSIS": "INPULSIS-1/2 reported together — one record naming both",
+  },
+  // Definitive primary results may not be published yet — cannot enter a PMID-based corpus
+  "awaiting-results": {
+    "TREAT-MS": "confirm definitive primary results are published",
+    "DELIVER-MS": "confirm definitive primary results are published",
+  },
+  // Name is ambiguous without a disease/context qualifier
+  "ambiguous-name": {
+    "STOP":"", "STAND":"", "TRD-IV":"", "REDUCE":"", "CONFIRM":"", "HELP":"", "POSEIDON":"",
+  },
+};
+// Specialties deferred to their own curated pass so they cannot swamp a general-IM corpus
+const DEEP_DIVE_SPECIALTIES = new Set(["Oncology", "Ophthalmology", "Dermatology"]);
+
+function triageOf(normName, specialty) {
+  for (const [status, table] of Object.entries(TRIAGE)) {
+    if (Object.prototype.hasOwnProperty.call(table, normName)) {
+      return { status, note: table[normName] || "" };
+    }
+  }
+  if (DEEP_DIVE_SPECIALTIES.has(specialty)) return { status: "specialty-deep-dive", note: "own curated pass; would dominate a general-IM corpus" };
+  return { status: "priority", note: "general-IM relevant — needs canonical primary-results PMID" };
+}
+
 const haveByNorm = new Map();
 for (const t of manifest) {
   haveByNorm.set(norm(t.name), t);
@@ -99,7 +151,8 @@ for (const specialty of Object.keys(G)) {
       in_manifest: !!found,
       matched_via: found ? found.via : null,
       manifest_name: found ? found.hit.name : null,
-      review_status: found ? "present" : "CANDIDATE — needs canonical PMID lookup",
+      review_status: found ? "present" : triageOf(norm(nameOnly), specialty).status,
+      triage_note: found ? null : triageOf(norm(nameOnly), specialty).note,
     };
     (found ? present : candidates).push(rec);
   }
@@ -150,10 +203,10 @@ md += `Normalization is deliberately conservative — \`AKIKI\` vs \`AKIKI-2\`, 
 
 for (const spec of Object.keys(bySpec).sort()) {
   md += `## ${spec} (${bySpec[spec].length})\n\n`;
-  md += `| trial (as written in guideline) | normalized | also listed under | status |\n|---|---|---|---|\n`;
+  md += `| trial (as written in guideline) | normalized | also listed under | triage | note |\n|---|---|---|---|---|\n`;
   for (const c of bySpec[spec]) {
     const others = c.specialties.slice(1).join(", ") || "—";
-    md += `| ${c.spellings[0].replace(/\|/g, "\\|")} | \`${c.normalized}\` | ${others} | needs PMID |\n`;
+    md += `| ${c.spellings[0].replace(/\|/g, "\\|")} | \`${c.normalized}\` | ${others} | **${c.review_status}** | ${c.triage_note || ""} |\n`;
   }
   md += `\n`;
 }

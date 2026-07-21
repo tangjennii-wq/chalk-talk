@@ -13,7 +13,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "ambiguous-name",
+      "triage_note": "",
       "specialties": [
         "Allergy/Immuno"
       ],
@@ -28,7 +29,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "ambiguous-name",
+      "triage_note": "",
       "specialties": [
         "Allergy/Immuno"
       ],
@@ -43,7 +45,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -58,7 +61,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -73,7 +77,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -88,7 +93,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -103,7 +109,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -118,7 +125,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -133,7 +141,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -148,7 +157,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -163,7 +173,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -178,7 +189,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -193,7 +205,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -208,7 +221,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -223,7 +237,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -238,7 +253,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -253,7 +269,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -268,7 +285,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -283,7 +301,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "alias-already-present",
+      "triage_note": "ROCKET AF",
       "specialties": [
         "Cardiovascular"
       ],
@@ -298,7 +317,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -313,7 +333,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Cardiovascular"
       ],
@@ -328,7 +349,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Dermatology"
       ],
@@ -343,7 +365,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Dermatology"
       ],
@@ -358,7 +381,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Dermatology"
       ],
@@ -373,7 +397,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Dermatology"
       ],
@@ -388,7 +413,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Endocrinology"
       ],
@@ -403,7 +429,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "trial-family-split",
+      "triage_note": "umbrella; SURMOUNT-1 already present",
       "specialties": [
         "Endocrinology"
       ],
@@ -418,7 +445,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -433,7 +461,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "ambiguous-name",
+      "triage_note": "",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -448,7 +477,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "trial-family-split",
+      "triage_note": "GEMINI 1/2 distinct",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -463,7 +493,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -478,7 +509,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -493,7 +525,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -508,7 +541,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "trial-family-split",
+      "triage_note": "OCTAVE Induction/Sustain distinct",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -523,7 +557,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -538,7 +573,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "non-rct-reclassify",
+      "triage_note": "consensus treat-to-target document, not an RCT — store as guidance",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -553,7 +589,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -568,7 +605,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -583,7 +621,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -598,7 +637,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -613,7 +653,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "trial-family-split",
+      "triage_note": "UNITI-1/2 distinct",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -628,7 +669,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "GI/Hepatology"
       ],
@@ -643,7 +685,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Heme/Onc"
       ],
@@ -658,7 +701,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Heme/Onc"
       ],
@@ -673,7 +717,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Heme/Onc"
       ],
@@ -688,7 +733,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Heme/Onc"
       ],
@@ -703,7 +749,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Heme/Onc"
       ],
@@ -718,7 +765,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Heme/Onc"
       ],
@@ -733,7 +781,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Heme/Onc"
       ],
@@ -748,7 +797,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Heme/Onc"
       ],
@@ -763,7 +813,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "ambiguous-name",
+      "triage_note": "",
       "specialties": [
         "Heme/Onc"
       ],
@@ -778,7 +829,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "ambiguous-name",
+      "triage_note": "",
       "specialties": [
         "Heme/Onc"
       ],
@@ -793,7 +845,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Heme/Onc"
       ],
@@ -808,7 +861,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Heme/Onc"
       ],
@@ -823,7 +877,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "ID"
       ],
@@ -838,7 +893,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Nephrology",
         "Rheumatology"
@@ -854,7 +910,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Nephrology",
         "Cardiovascular"
@@ -870,7 +927,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Nephrology"
       ],
@@ -885,7 +943,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -900,7 +959,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -915,7 +975,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -930,7 +991,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -945,7 +1007,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -960,7 +1023,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "awaiting-results",
+      "triage_note": "confirm definitive primary results are published",
       "specialties": [
         "Neurology"
       ],
@@ -975,7 +1039,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -990,7 +1055,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "alias-already-present",
+      "triage_note": "ECASS-III",
       "specialties": [
         "Neurology"
       ],
@@ -1005,7 +1071,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -1020,7 +1087,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -1035,7 +1103,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -1050,7 +1119,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -1065,7 +1135,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -1080,7 +1151,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -1095,7 +1167,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -1110,7 +1183,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -1125,7 +1199,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -1140,7 +1215,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "awaiting-results",
+      "triage_note": "confirm definitive primary results are published",
       "specialties": [
         "Neurology"
       ],
@@ -1155,7 +1231,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Neurology"
       ],
@@ -1170,7 +1247,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1185,7 +1263,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1200,7 +1279,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1215,7 +1295,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1230,7 +1311,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1245,7 +1327,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1260,7 +1343,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1275,7 +1359,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1290,7 +1375,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1305,7 +1391,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1320,7 +1407,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1335,7 +1423,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1350,7 +1439,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1365,7 +1455,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1380,7 +1471,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1395,7 +1487,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1410,7 +1503,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1425,7 +1519,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1440,7 +1535,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1455,7 +1551,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1470,7 +1567,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1485,7 +1583,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1500,7 +1599,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1515,7 +1615,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1530,7 +1631,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1545,7 +1647,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1560,7 +1663,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1575,7 +1679,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1590,7 +1695,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1605,7 +1711,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1620,7 +1727,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1635,7 +1743,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Oncology"
       ],
@@ -1650,7 +1759,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Ophthalmology"
       ],
@@ -1665,7 +1775,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Ophthalmology"
       ],
@@ -1680,7 +1791,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Ophthalmology"
       ],
@@ -1695,7 +1807,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Ophthalmology"
       ],
@@ -1710,7 +1823,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "specialty-deep-dive",
+      "triage_note": "own curated pass; would dominate a general-IM corpus",
       "specialties": [
         "Ophthalmology"
       ],
@@ -1725,7 +1839,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "trial-family-split",
+      "triage_note": "umbrella; UKPDS 33 and 34 already present",
       "specialties": [
         "Ophthalmology"
       ],
@@ -1740,7 +1855,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Prevention"
       ],
@@ -1755,7 +1871,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Prevention"
       ],
@@ -1770,7 +1887,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "non-rct-reclassify",
+      "triage_note": "risk-equation development/validation study — belongs under prediction evidence",
       "specialties": [
         "Prevention"
       ],
@@ -1785,7 +1903,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Psychiatry"
       ],
@@ -1800,7 +1919,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Psychiatry"
       ],
@@ -1815,7 +1935,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "ambiguous-name",
+      "triage_note": "",
       "specialties": [
         "Psychiatry"
       ],
@@ -1830,7 +1951,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -1845,7 +1967,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary",
         "Rheumatology"
@@ -1861,7 +1984,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "alias-already-present",
+      "triage_note": "ARDS Network (identical paper, PMID 10793162)",
       "specialties": [
         "Pulmonary"
       ],
@@ -1876,7 +2000,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -1891,7 +2016,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "trial-family-split",
+      "triage_note": "CAPACITY-1/2 reported together",
       "specialties": [
         "Pulmonary"
       ],
@@ -1906,7 +2032,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -1921,7 +2048,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -1936,7 +2064,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -1951,7 +2080,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -1966,7 +2096,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -1981,7 +2112,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -1996,7 +2128,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -2011,7 +2144,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -2026,7 +2160,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary",
         "Heme/Onc"
@@ -2042,7 +2177,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "ambiguous-name",
+      "triage_note": "",
       "specialties": [
         "Pulmonary"
       ],
@@ -2057,7 +2193,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary"
       ],
@@ -2072,7 +2209,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Pulmonary",
         "ID"
@@ -2088,7 +2226,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Rheumatology"
       ],
@@ -2103,7 +2242,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Rheumatology"
       ],
@@ -2118,7 +2258,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Rheumatology"
       ],
@@ -2133,7 +2274,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Rheumatology",
         "Ophthalmology"
@@ -2149,7 +2291,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Rheumatology"
       ],
@@ -2164,7 +2307,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Rheumatology"
       ],
@@ -2179,7 +2323,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Rheumatology"
       ],
@@ -2194,7 +2339,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Rheumatology"
       ],
@@ -2209,7 +2355,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Rheumatology"
       ],
@@ -2224,7 +2371,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "CANDIDATE — needs canonical PMID lookup",
+      "review_status": "priority",
+      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
       "specialties": [
         "Rheumatology"
       ],
