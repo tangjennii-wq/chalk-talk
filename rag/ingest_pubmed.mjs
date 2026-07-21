@@ -141,11 +141,39 @@ async function fetchICite(pmids) {
     return map;
   } catch (e) { return {}; }
 }
-function detectLandmark(title, abstract) {
-  const text = ((title || "") + " " + (abstract || "")).toLowerCase();
+// Acronyms that are also ordinary English words. Matched case-insensitively against prose these
+// produced enormous false positives — "we hope to protect patients" flagged a review as a landmark
+// trial. Only accept these when they appear in ALL CAPS in the title. (Jenni 2026-07-17)
+const AMBIGUOUS_ACRONYMS = new Set([
+  "HOPE", "PROTECT", "RACE II", "DAWN", "AFFIRM", "COMPASS", "CARE", "ADVANCE",
+  "SELECT", "SMART", "PLUS", "ROSE", "FLOW", "COURAGE", "COMPASS", "COMPANION",
+]);
+
+/**
+ * Is this record the PRIMARY REPORT of a landmark trial?
+ *
+ * The old version scanned title AND ABSTRACT for any acronym, case-insensitively. That flags every
+ * review that CITES a landmark trial — which is what good reviews do. Result: 552 of 632 flagged
+ * documents were not trials at all (285 reviews, 169 meta-analyses, 64 practice guidelines), and
+ * ZERO of them carried a trial pubtype. Mentioning a trial is not being one. (Jenni 2026-07-17)
+ *
+ * Now requires BOTH: the acronym in the TITLE, and a genuine trial publication type.
+ */
+const TRIAL_PUBTYPES = ["Randomized Controlled Trial", "Clinical Trial", "Clinical Trial, Phase III", "Clinical Trial, Phase II", "Pragmatic Clinical Trial"];
+function detectLandmark(title, abstract, pubtypes) {
+  const t0 = String(title || "");
+  const isTrialType = Array.isArray(pubtypes) && pubtypes.some((p) => TRIAL_PUBTYPES.includes(p));
+  if (!isTrialType) return false;                       // a review is never the trial
+  // Design/rationale/protocol papers are not the results paper.
+  if (/\b(rationale|study design|design and methods|protocol|statistical analysis plan)\b/i.test(t0)) return false;
   for (const t of LANDMARK_TRIALS) {
-    const re = new RegExp(`\\b${t.replace(/[-/]/g, "[-/\\s]?").toLowerCase()}\\b`, "i");
-    if (re.test(text)) return true;
+    if (AMBIGUOUS_ACRONYMS.has(t)) {
+      // must appear as an all-caps token in the title
+      if (new RegExp(`\\b${t.replace(/[-/]/g, "[-/\\s]?")}\\b`).test(t0)) return true;
+      continue;
+    }
+    const re = new RegExp(`\\b${t.replace(/[-/]/g, "[-/\\s]?")}\\b`, "i");
+    if (re.test(t0)) return true;
   }
   return false;
 }
@@ -168,7 +196,7 @@ async function ingestSubspecialty(name) {
     if (!r.abstract || r.abstract.length < 50) { skip++; continue; }
     const tier = tierForPubtypes(r.pubtypes);
     const ic = icite[r.pmid] || {};
-    const isLm = detectLandmark(r.title, r.abstract);
+    const isLm = detectLandmark(r.title, r.abstract, r.pubtypes);
     const payload = {
       source: "pubmed", license: "public_domain", source_tier: tier,
       title: r.title || "(untitled)", authors: r.authors || null,
