@@ -221,8 +221,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
+      "review_status": "trial-family-split",
+      "triage_note": "PARTNER 1A/1B/2/3 are distinct trials",
       "specialties": [
         "Cardiovascular"
       ],
@@ -237,8 +237,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
+      "review_status": "trial-family-split",
+      "triage_note": "PARTNER 1A/1B/2/3 are distinct trials",
       "specialties": [
         "Cardiovascular"
       ],
@@ -253,8 +253,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
+      "review_status": "trial-family-split",
+      "triage_note": "PARTNER 1A/1B/2/3 are distinct trials",
       "specialties": [
         "Cardiovascular"
       ],
@@ -1551,8 +1551,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "specialty-deep-dive",
-      "triage_note": "own curated pass; would dominate a general-IM corpus",
+      "review_status": "trial-family-split",
+      "triage_note": "MONALEESA-2/3/7 distinct",
       "specialties": [
         "Oncology"
       ],
@@ -1567,8 +1567,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "specialty-deep-dive",
-      "triage_note": "own curated pass; would dominate a general-IM corpus",
+      "review_status": "trial-family-split",
+      "triage_note": "MONARCH-2/3 distinct",
       "specialties": [
         "Oncology"
       ],
@@ -1599,8 +1599,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "specialty-deep-dive",
-      "triage_note": "own curated pass; would dominate a general-IM corpus",
+      "review_status": "trial-family-split",
+      "triage_note": "PALOMA-1/2/3 distinct",
       "specialties": [
         "Oncology"
       ],
@@ -2080,8 +2080,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
+      "review_status": "trial-family-split",
+      "triage_note": "INPULSIS-1/2 reported together — one record naming both",
       "specialties": [
         "Pulmonary"
       ],
@@ -2096,8 +2096,8 @@
       "in_manifest": false,
       "matched_via": null,
       "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
+      "review_status": "trial-family-split",
+      "triage_note": "INPULSIS-1/2 reported together — one record naming both",
       "specialties": [
         "Pulmonary"
       ],

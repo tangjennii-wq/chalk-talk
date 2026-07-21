@@ -43,9 +43,9 @@ Normalization is deliberately conservative — `AKIKI` vs `AKIKI-2`, `UKPDS 33` 
 | LIPID | `LIPID` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | LoDoCo2 | `LODOCO2` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | MATRIX | `MATRIX` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| PARTNER 1 | `PARTNER 1` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| PARTNER 2 | `PARTNER 2` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| PARTNER 3 | `PARTNER 3` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
+| PARTNER 1 | `PARTNER 1` | — | **trial-family-split** | PARTNER 1A/1B/2/3 are distinct trials |
+| PARTNER 2 | `PARTNER 2` | — | **trial-family-split** | PARTNER 1A/1B/2/3 are distinct trials |
+| PARTNER 3 | `PARTNER 3` | — | **trial-family-split** | PARTNER 1A/1B/2/3 are distinct trials |
 | PLATO | `PLATO` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | RIVAL | `RIVAL` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | ROCKET-AF | `ROCKET-AF` | — | **alias-already-present** | ROCKET AF |
@@ -166,10 +166,10 @@ Normalization is deliberately conservative — `AKIKI` vs `AKIKI-2`, `UKPDS 33` 
 | KEYNOTE-407 | `KEYNOTE-407` | — | **specialty-deep-dive** | own curated pass; would dominate a general-IM corpus |
 | KEYNOTE-522 | `KEYNOTE-522` | — | **specialty-deep-dive** | own curated pass; would dominate a general-IM corpus |
 | LATITUDE | `LATITUDE` | — | **specialty-deep-dive** | own curated pass; would dominate a general-IM corpus |
-| MONALEESA-2/3/7 | `MONALEESA-237` | — | **specialty-deep-dive** | own curated pass; would dominate a general-IM corpus |
-| MONARCH-2/3 | `MONARCH-23` | — | **specialty-deep-dive** | own curated pass; would dominate a general-IM corpus |
+| MONALEESA-2/3/7 | `MONALEESA-237` | — | **trial-family-split** | MONALEESA-2/3/7 distinct |
+| MONARCH-2/3 | `MONARCH-23` | — | **trial-family-split** | MONARCH-2/3 distinct |
 | PACIFIC | `PACIFIC` | — | **specialty-deep-dive** | own curated pass; would dominate a general-IM corpus |
-| PALOMA-1/2/3 | `PALOMA-123` | — | **specialty-deep-dive** | own curated pass; would dominate a general-IM corpus |
+| PALOMA-1/2/3 | `PALOMA-123` | — | **trial-family-split** | PALOMA-1/2/3 distinct |
 | PERSEUS | `PERSEUS` | — | **specialty-deep-dive** | own curated pass; would dominate a general-IM corpus |
 | PREVAIL | `PREVAIL` | — | **specialty-deep-dive** | own curated pass; would dominate a general-IM corpus |
 | PROfound | `PROFOUND` | — | **specialty-deep-dive** | own curated pass; would dominate a general-IM corpus |
@@ -219,8 +219,8 @@ Normalization is deliberately conservative — `AKIKI` vs `AKIKI-2`, `UKPDS 33` 
 | DEXA-ARDS | `DEXA-ARDS` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | ETHOS | `ETHOS` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | IMPACT | `IMPACT` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| INPULSIS-1 | `INPULSIS-1` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| INPULSIS-2 | `INPULSIS-2` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
+| INPULSIS-1 | `INPULSIS-1` | — | **trial-family-split** | INPULSIS-1/2 reported together — one record naming both |
+| INPULSIS-2 | `INPULSIS-2` | — | **trial-family-split** | INPULSIS-1/2 reported together — one record naming both |
 | MIST2 | `MIST2` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | MRC | `MRC` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | NOTT | `NOTT` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |

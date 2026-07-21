@@ -107,10 +107,27 @@ const TRIAGE = {
 // Specialties deferred to their own curated pass so they cannot swamp a general-IM corpus
 const DEEP_DIVE_SPECIALTIES = new Set(["Oncology", "Ophthalmology", "Dermatology"]);
 
+/**
+ * Family match must be PREFIX-based, not exact-key. The first version compared exact keys, so
+ * "PARTNER 1", "INPULSIS-1", "PALOMA-123" and "MONALEESA-237" all slipped through and were labelled
+ * `priority` — i.e. queued for ingestion as if they were single trials. A trial family flagged for
+ * splitting must stay flagged no matter which sibling suffix the guideline happened to write.
+ * (Codex review 2026-07-17, finding #5)
+ */
+function familyMatch(normName, key) {
+  if (normName === key) return true;
+  if (!normName.startsWith(key)) return false;
+  const rest = normName.slice(key.length);
+  return /^[\s\-–—/]?\d/.test(rest) || /^[\s\-–—/]/.test(rest);   // "PARTNER 1", "INPULSIS-1", "PALOMA-123"
+}
+
 function triageOf(normName, specialty) {
   for (const [status, table] of Object.entries(TRIAGE)) {
-    if (Object.prototype.hasOwnProperty.call(table, normName)) {
-      return { status, note: table[normName] || "" };
+    for (const key of Object.keys(table)) {
+      const isFamily = status === "trial-family-split";
+      if (isFamily ? familyMatch(normName, key) : normName === key) {
+        return { status, note: table[key] || "" };
+      }
     }
   }
   if (DEEP_DIVE_SPECIALTIES.has(specialty)) return { status: "specialty-deep-dive", note: "own curated pass; would dominate a general-IM corpus" };
