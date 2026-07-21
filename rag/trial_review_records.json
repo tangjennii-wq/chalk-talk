@@ -860,7 +860,7 @@
     },
     {
       "name": "NAVIGATE ESUS",
-      "pmid": null,
+      "pmid": "29766772",
       "year": 2018,
       "spec": "Neurology",
       "q": "Rivaroxaban vs aspirin after embolic stroke of undetermined source",
@@ -868,8 +868,8 @@
       "why": "Refutes empiric anticoagulation for ESUS",
       "role": "important negative trial",
       "gl": "incorporated (AHA/ASA: no routine anticoagulation)",
-      "conf": "SUSPECT",
-      "note": "WRONG PMID FOUND BY VALIDATOR: 30188630 has pubtypes [Letter, Comment] — it is correspondence, NOT the trial. Verified primary paper is NEJM 2018;378(23):2191-2201, DOI 10.1056/NEJMoa1802686 (Hart RG et al, NAVIGATE ESUS Investigators). PMID not asserted here — resolve the DOI to a PMID and re-run the validator before promotion.",
+      "conf": "high",
+      "note": "PMID CORRECTED (Codex + verified): was 30188630 = correspondence [Letter, Comment]. Canonical primary results = Hart RG et al, NEJM 2018;378:2191-2201, PMID 29766772, n=7213, stopped early for lack of efficacy + harm.",
       "batch": 2
     },
     {
