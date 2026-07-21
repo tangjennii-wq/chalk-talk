@@ -1,0 +1,256 @@
+Validating 183 guideline citations…
+
+  6/183  12/183  18/183  24/183  30/183  36/183  42/183  48/183  54/183  60/183  66/183  72/183  78/183  84/183  90/183  96/183  102/183  108/183  114/183  120/183  126/183  132/183  138/183  144/183  150/183  156/183  162/183  168/183  174/183  180/183  183/183
+
+═══ HARD FAILURES ═══
+
+✖ [Cardiovascular] 2025 ACC/AHA ACS (2025)
+    PMID 40014670 INVALID — eutils 429
+
+✖ [Cardiovascular] 2025 ESC Myocarditis & Pericarditis (2025)
+    PMID 40878297 INVALID — eutils 429
+
+✖ [Cardiovascular] 2026 AHA/ACC Acute Pulmonary Embolism (US) + ESC 2019 (2026)
+    PMID 41712677 INVALID — eutils 429
+
+✖ [Pulmonary] ATS ARDS Management Update 2024 (ATS alone; the ATS/ESICM/SCCM doc is 2017) (2024)
+    PMID 38032683 INVALID — eutils 429
+
+✖ [Pulmonary] ERS Adult Bronchiectasis 2025 (ERS alone - no ATS/ERS bronchiectasis guideline) (2025)
+    PMID 41016738 INVALID — eutils 429
+
+✖ [GI/Hepatology] ACG Eosinophilic Esophagitis 2025 (2025)
+    PMID 39745304 INVALID — eutils 429
+
+✖ [GI/Hepatology] AGA Living Guideline: Moderate-Severe Crohn Disease 2025 (2025)
+    PMID 41274746 INVALID — eutils 429
+
+✖ [GI/Hepatology] AGA 2025 Moderate-Severe Crohn's Disease (2025)
+    PMID 41274746 INVALID — eutils 429
+
+✖ [Endocrinology] Endocrine Society Primary Aldosteronism 2025 (2025)
+    PMID 40658480 INVALID — eutils 429
+
+═══ WARNINGS (phantom-year lint) ═══
+
+⚠ [Nephrology] KDIGO Glomerular Diseases - IgAN 2025 / Lupus Nephritis 2024 / ANCA 2024 (2021 base being retired)
+    TWO YEARS IN TITLE (2025, 2024, 2024, 2021) — verify the later year corresponds to a REAL document
+⚠ [Nephrology] KDIGO 2012 AKI (2026 update in review)
+    TWO YEARS IN TITLE (2012, 2026) — verify the later year corresponds to a REAL document
+⚠ [Nephrology] AUA 2026 BPH / LUTS Guideline
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.auanet.org/guidelines-and-quality/guidelines/bph-guideline
+⚠ [Cardiovascular] 2023 ACC/AHA/ACCP/HRS Atrial Fibrillation
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193
+⚠ [Cardiovascular] 2022 AHA/ACC/HFSA Heart Failure (+ finerenone 2025)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063
+    TWO YEARS IN TITLE (2022, 2025) — verify the later year corresponds to a REAL document
+⚠ [Cardiovascular] 2020 ACC/AHA Valvular Heart Disease (+ EARLY TAVR 2025)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/CIR.0000000000000923
+    TWO YEARS IN TITLE (2020, 2025) — verify the later year corresponds to a REAL document
+⚠ [Cardiovascular] 2026 ACC/AHA Dyslipidemia
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/CIR.0000000000001423
+⚠ [Cardiovascular] 2017 ACC/AHA/HRS Syncope
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/CIR.0000000000000499
+⚠ [Cardiovascular] 2022 ACC/AHA Aortic Disease
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/CIR.0000000000001106
+⚠ [Cardiovascular] 2024 AHA/ACC HCM
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/CIR.0000000000001250
+⚠ [Cardiovascular] 2023 AHA/ACC Chronic Coronary Disease
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168
+⚠ [Cardiovascular] 2021 ACC/AHA/SCAI Coronary Revascularization
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/CIR.0000000000001038
+⚠ [Cardiovascular] 2024 ACC/AHA Multisociety Lower Extremity PAD
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/CIR.0000000000001251
+⚠ [Pulmonary] ATS/ERS/JRS/ALAT IPF + Progressive PF 2022 (+ nerandomilast 2025)
+    TWO YEARS IN TITLE (2022, 2025) — verify the later year corresponds to a REAL document
+⚠ [Pulmonary] 2022 ESC/ERS Pulmonary Hypertension (+ sotatercept 2024)
+    TWO YEARS IN TITLE (2022, 2024) — verify the later year corresponds to a REAL document
+⚠ [Pulmonary] 2026 AHA/ACC Acute Pulmonary Embolism (US) + ESC 2019
+    TWO YEARS IN TITLE (2026, 2019) — verify the later year corresponds to a REAL document
+⚠ [Pulmonary] 2023 BTS Pleural Disease
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://thorax.bmj.com/
+⚠ [Pulmonary] AASM OSA - PAP 2019 / surgical 2019 / inpatient 2025 (no 2024 guideline)
+    could not reach https://jcsm.aasm.org/doi/10.5664/jcsm.11864 (fetch failed) — network issue, NOT a dead link
+    TWO YEARS IN TITLE (2019, 2019, 2025, 2024) — verify the later year corresponds to a REAL document
+⚠ [Pulmonary] Fleischner 2017 Pulmonary Nodules
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://pubs.rsna.org/doi/full/10.1148/radiol.2017161659
+⚠ [Pulmonary] AASM OSA Diagnostic Testing 2017 (+ AASM inpatient OSA 2025)
+    TWO YEARS IN TITLE (2017, 2025) — verify the later year corresponds to a REAL document
+⚠ [Pulmonary] CHEST/ACCP Antithrombotic Therapy for VTE 2021
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://journal.chestnet.org/article/S0012-3692(21)01506-3/fulltext
+⚠ [GI/Hepatology] ACG H. pylori Treatment 2024
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://journals.lww.com/ajg/fulltext/2024/09000/acg_clinical_guideline__treatment_of_helicobacter.13.aspx
+⚠ [GI/Hepatology] ACG Celiac Disease 2023
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://journals.lww.com/ajg/fulltext/2023/01000/american_college_of_gastroenterology_guidelines.17.aspx
+⚠ [GI/Hepatology] ACG IBS 2021
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://journals.lww.com/ajg/fulltext/2021/01000/acg_clinical_guideline__management_of_irritable.11.aspx
+⚠ [GI/Hepatology] ACG C. difficile 2021 (+ AGA FMT 2024, FDA-approved microbiota products)
+    TWO YEARS IN TITLE (2021, 2024) — verify the later year corresponds to a REAL document
+⚠ [GI/Hepatology] AASLD MASLD 2023 Practice Guidance + resmetirom 2024 + semaglutide 2025
+    TWO YEARS IN TITLE (2023, 2024, 2025) — verify the later year corresponds to a REAL document
+⚠ [Endocrinology] Endocrine Society Hypopituitarism 2016
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://academic.oup.com/jcem/article/101/11/3888/2764912
+⚠ [Endocrinology] Endocrine Society Cushing 2015
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://academic.oup.com/jcem/article/100/8/2807/2836065
+⚠ [Endocrinology] ATA Thyroid Nodules 2015 (nodule guidance still ATA current) + ATA DTC 2025
+    TWO YEARS IN TITLE (2015, 2025) — verify the later year corresponds to a REAL document
+⚠ [Endocrinology] ATA Hyperthyroidism & Thyrotoxicosis 2016
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.liebertpub.com/doi/full/10.1089/thy.2016.0229
+⚠ [Endocrinology] ATA Hypothyroidism Treatment 2014
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.liebertpub.com/doi/10.1089/thy.2014.0028
+⚠ [ID] IDSA/ATS HAP/VAP 2016
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://academic.oup.com/cid/article/63/5/e61/2237650
+⚠ [ID] ESC 2023 Infective Endocarditis + 2023 Duke-ISCVID Criteria (there is no AHA 2023 IE update)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://academic.oup.com/eurheartj/article/44/39/3948/7243107
+    TWO YEARS IN TITLE (2023, 2023, 2023) — verify the later year corresponds to a REAL document
+⚠ [ID] IDSA/SHEA C. difficile 2021 Focused Update (+ ACG 2021)
+    TWO YEARS IN TITLE (2021, 2021) — verify the later year corresponds to a REAL document
+⚠ [ID] IDSA 2025 Complicated UTI (+ 2010 uncomplicated)
+    TWO YEARS IN TITLE (2025, 2010) — verify the later year corresponds to a REAL document
+⚠ [ID] IDSA Bacterial Meningitis 2004 (still standard)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://academic.oup.com/cid/article/39/9/1267/402080
+⚠ [ID] IDSA Febrile Neutropenia 2010 + ASCO/IDSA 2018 (no 2024 update)
+    TWO YEARS IN TITLE (2010, 2018, 2024) — verify the later year corresponds to a REAL document
+⚠ [Heme/Onc] ASH VTE Treatment 2020 (adults; the 2024 update is PEDIATRIC only)
+    TWO YEARS IN TITLE (2020, 2024) — verify the later year corresponds to a REAL document
+⚠ [Heme/Onc] ASH ITP 2019
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ashpublications.org/bloodadvances/article/3/23/3829/428701
+⚠ [Heme/Onc] ASH Sickle Cell Disease Guidelines 2019-2021 (no 2024 guideline)
+    TWO YEARS IN TITLE (2019, 2021, 2024) — verify the later year corresponds to a REAL document
+⚠ [Heme/Onc] ISTH TTP 2020 + 2025 Focused Update (NOT an ASH guideline)
+    TWO YEARS IN TITLE (2020, 2025) — verify the later year corresponds to a REAL document
+⚠ [Heme/Onc] AABB Transfusion Threshold 2023
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://jamanetwork.com/journals/jama/fullarticle/2810754
+⚠ [Heme/Onc] ASH 2018 Heparin-Induced Thrombocytopenia
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ashpublications.org/bloodadvances/article/2/22/3360/16129/
+⚠ [Oncology] ASCO Immune-Related Adverse Events 2021 (no 2024 update; ASCO alone)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ascopubs.org/doi/10.1200/JCO.21.01440
+    TWO YEARS IN TITLE (2021, 2024) — verify the later year corresponds to a REAL document
+⚠ [Oncology] Cairo-Bishop TLS Definition
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://onlinelibrary.wiley.com/doi/10.1111/j.1365-2141.2004.05094.x
+⚠ [Oncology] ASCO Cancer Pain 2024
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ascopubs.org/journal/jco
+⚠ [Oncology] ASCO Early Breast Cancer / CDK4/6 Rapid Update 2024
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ascopubs.org/doi/10.1200/JCO.24.00886
+⚠ [Oncology] ASCO Metastatic Colorectal Cancer 2022
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ascopubs.org/doi/10.1200/JCO.22.01690
+⚠ [Oncology] ASCO Immune-Related Adverse Events 2021 (ASCO alone, not ASCO/SITC)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ascopubs.org/doi/10.1200/JCO.21.01440
+⚠ [Oncology] ASCO Stage IV NSCLC Living Guidelines (with / without driver alterations; v2026)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ascopubs.org/nsclc-da-living-guideline
+⚠ [Oncology] ASCO 2020 Antiemetics Guideline Update
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ascopubs.org/doi/10.1200/JCO.20.01296
+⚠ [Oncology] ASCO WBC Growth Factors 2025 Update
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ascopubs.org/doi/10.1200/JCO-25-02938
+⚠ [Rheumatology] ACR Gout 2020 (+ pegloticase-methotrexate co-therapy 2022)
+    TWO YEARS IN TITLE (2020, 2022) — verify the later year corresponds to a REAL document
+⚠ [Rheumatology] EULAR SLE 2023
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ard.eular.org/article/S0003-4967(24)66542-8/fulltext
+⚠ [Rheumatology] ACR/VF ANCA Vasculitis 2021 + KDIGO 2024 (avacopan)
+    TWO YEARS IN TITLE (2021, 2024) — verify the later year corresponds to a REAL document
+⚠ [Rheumatology] ACR/VF Giant Cell Arteritis 2021 (+ upadacitinib 2025, EULAR imaging 2023)
+    TWO YEARS IN TITLE (2021, 2025, 2023) — verify the later year corresponds to a REAL document
+⚠ [Rheumatology] GRAPPA PsA 2021 (published 2022) (+ bimekizumab 2024)
+    TWO YEARS IN TITLE (2021, 2022, 2024) — verify the later year corresponds to a REAL document
+⚠ [Rheumatology] EULAR Sjögren 2019 management (ACR/EULAR 2016 is CLASSIFICATION criteria only)
+    TWO YEARS IN TITLE (2019, 2016) — verify the later year corresponds to a REAL document
+⚠ [Rheumatology] EULAR Systemic Sclerosis 2023
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ard.eular.org/
+⚠ [Rheumatology] ACR Osteoarthritis 2019
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://acrjournals.onlinelibrary.wiley.com/doi/10.1002/art.41142
+⚠ [Rheumatology] EULAR 2022 / KDIGO 2024 ANCA-Associated Vasculitis
+    TWO YEARS IN TITLE (2022, 2024) — verify the later year corresponds to a REAL document
+⚠ [Rheumatology] EULAR 2023 Imaging in Large Vessel Vasculitis (there is no EULAR 2022 GCA guideline)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ard.eular.org/article/S0003-4967(24)00130-4/fulltext
+    TWO YEARS IN TITLE (2023, 2022) — verify the later year corresponds to a REAL document
+⚠ [Rheumatology] ASAS-EULAR 2022 / ACR 2019 Axial Spondyloarthritis
+    TWO YEARS IN TITLE (2022, 2019) — verify the later year corresponds to a REAL document
+⚠ [Neurology] AHA/ASA ICH 2022
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/STR.0000000000000407
+⚠ [Neurology] AES Status Epilepticus 2016 (+ ESETT 2019) - not an AAN guideline
+    TWO YEARS IN TITLE (2016, 2019) — verify the later year corresponds to a REAL document
+⚠ [Neurology] AHS 2024 Position Statement: CGRP therapies first-line for migraine PREVENTION (not a CPG; prevention only)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://headachejournal.onlinelibrary.wiley.com/doi/10.1111/head.14692
+⚠ [Neurology] International Consensus MG - 2020 Update (Neurology 2021); armamentarium now outdated
+    TWO YEARS IN TITLE (2020, 2021) — verify the later year corresponds to a REAL document
+⚠ [Neurology] EAN/PNS Guillain-Barré 2023
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://onlinelibrary.wiley.com/doi/10.1111/jns.12594
+⚠ [Neurology] AAN Dopaminergic Therapy for Early Parkinson Disease 2021 (reaffirmed 2025)
+    TWO YEARS IN TITLE (2021, 2025) — verify the later year corresponds to a REAL document
+⚠ [Neurology] AAN 2018 (reaffirmed 2024) DMT for Adults with MS
+    TWO YEARS IN TITLE (2018, 2024) — verify the later year corresponds to a REAL document
+⚠ [Neurology] AHA/ASA 2021 Secondary Stroke Prevention
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.ahajournals.org/doi/10.1161/STR.0000000000000375
+⚠ [Critical Care] ESICM ARDS 2023 (ESICM alone) - note it DISAGREES with ATS 2024
+    TWO YEARS IN TITLE (2023, 2024) — verify the later year corresponds to a REAL document
+⚠ [Critical Care] SCCM PADIS 2018 + 2025 Focused Update (ICU Liberation)
+    TWO YEARS IN TITLE (2018, 2025) — verify the later year corresponds to a REAL document
+⚠ [Allergy/Immuno] JTFPP Anaphylaxis 2023 (+ intranasal epinephrine 2024)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.annallergy.org/article/S1081-1206(23)01304-6/fulltext
+    TWO YEARS IN TITLE (2023, 2024) — verify the later year corresponds to a REAL document
+⚠ [Allergy/Immuno] WAO Hereditary Angioedema 2025
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.worldallergyorganizationjournal.org/article/S1939-4551(26)00168-7/fulltext
+⚠ [Allergy/Immuno] Food allergy - JTFPP peanut PP 2020 / food allergy PP 2014 (no 2024 parameter exists)
+    TWO YEARS IN TITLE (2020, 2014, 2024) — verify the later year corresponds to a REAL document
+⚠ [Allergy/Immuno] JTFPP Rhinitis 2020 Practice Parameter Update
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.jacionline.org/article/S0091-6749(20)30945-2/fulltext
+⚠ [Dermatology] AAD Atopic Dermatitis - 2023 base + 2025 adult focused update + 2026 pediatric
+    TWO YEARS IN TITLE (2023, 2025, 2026) — verify the later year corresponds to a REAL document
+⚠ [Dermatology] AAD Acne 2024
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.jaad.org/article/S0190-9622(23)03389-3/fulltext
+⚠ [Dermatology] US/Canadian HS Foundations Hidradenitis Suppurativa 2019 (NOT an AAD guideline)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.jaad.org/article/S0190-9622(19)30368-8/fulltext
+⚠ [Dermatology] AAD-NPF Psoriasis 2019/2021 (armamentarium now outdated)
+    TWO YEARS IN TITLE (2019, 2021) — verify the later year corresponds to a REAL document
+⚠ [Psychiatry] ACP Major Depressive Disorder 2023 (APA MDD is 2010 legacy - not current)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.acpjournals.org/doi/10.7326/M22-2056
+    TWO YEARS IN TITLE (2023, 2010) — verify the later year corresponds to a REAL document
+⚠ [Psychiatry] PTSD - VA/DoD 2023 + American PSYCHOLOGICAL Assn 2017/2025 (psychiatric APA has NO PTSD guideline)
+    TWO YEARS IN TITLE (2023, 2017, 2025) — verify the later year corresponds to a REAL document
+⚠ [Psychiatry] ASAM OUD 2020 / SAMHSA TIP 63 (X-waiver ABOLISHED 2023)
+    TWO YEARS IN TITLE (2020, 2023) — verify the later year corresponds to a REAL document
+⚠ [Psychiatry] APA Eating Disorders 2023
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://psychiatryonline.org/doi/full/10.1176/appi.ajp.23180001
+⚠ [Psychiatry] AASM Insomnia - pharmacologic 2017 / behavioral 2021 / combination 2025
+    TWO YEARS IN TITLE (2017, 2021, 2025) — verify the later year corresponds to a REAL document
+⚠ [Geriatrics] AGS/BGS/WFG Falls Prevention 2022 (World Falls Guidelines)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://agsjournals.onlinelibrary.wiley.com/doi/epdf/10.1111/jgs.18734
+⚠ [Geriatrics] AGS Beers Criteria 2023 + Beers Alternatives List 2025
+    TWO YEARS IN TITLE (2023, 2025) — verify the later year corresponds to a REAL document
+⚠ [Geriatrics] AAOS Hip Fracture 2021
+    could not reach https://www.aaos.org/globalassets/quality-and-practice-resources/hip-fractures-in-the-elderly/hipfxcpg.pdf (fetch failed) — network issue, NOT a dead link
+⚠ [Geriatrics] Frailty assessment - Fried phenotype and Rockwood Clinical Frailty Scale
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://agsjournals.onlinelibrary.wiley.com/
+⚠ [Women's Health] ACOG Breast Cancer Screening 2024
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://journals.lww.com/greenjournal/fulltext/2025/01000/age_to_initiate_routine_breast_cancer_screening_.29.aspx
+⚠ [Women's Health] NAMS/Menopause Society Hormone Therapy 2022 (FDA boxed warning REMOVED 2025)
+    TWO YEARS IN TITLE (2022, 2025) — verify the later year corresponds to a REAL document
+⚠ [Women's Health] ACOG Hypertension in Pregnancy - PB 222 (2020) + Clinical Practice Update (2022)
+    TWO YEARS IN TITLE (2020, 2022) — verify the later year corresponds to a REAL document
+⚠ [Women's Health] ACOG Clinical Practice Update: Screening for Diabetes in Pregnancy 2024
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://journals.lww.com/greenjournal/fulltext/2024/07000/acog_clinical_practice_update__screening_for.34.aspx
+⚠ [Women's Health] PCOS - 2023 International Evidence-Based Guideline (ACOG PB 194 is 2018, reaffirmed 2025)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://academic.oup.com/jcem/article/108/10/2447/7242360
+    TWO YEARS IN TITLE (2023, 2018, 2025) — verify the later year corresponds to a REAL document
+⚠ [Ophthalmology] AAN/AAO Optic Neuritis (ONTT)
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://www.aaojournal.org/article/S0161-6420(19)32364-4/fulltext
+⚠ [Otolaryngology] AAP/AAFP Acute Otitis Media 2013
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://publications.aap.org/pediatrics/article/131/3/e964/30912/
+⚠ [Otolaryngology] IDSA Group A Strep Pharyngitis 2025 (Part 1: testing) + 2012 (treatment)
+    TWO YEARS IN TITLE (2025, 2012) — verify the later year corresponds to a REAL document
+⚠ [Otolaryngology] AAO-HNS Sudden SNHL 2019
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://aao-hnsfjournals.onlinelibrary.wiley.com/doi/10.1177/0194599819859885
+⚠ [Otolaryngology] AAO-HNS Hoarseness 2018
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://aao-hnsfjournals.onlinelibrary.wiley.com/
+⚠ [Prevention] USPSTF Tobacco Cessation 2021 + ATS 2020 Pharmacotherapy
+    TWO YEARS IN TITLE (2021, 2020) — verify the later year corresponds to a REAL document
+⚠ [Palliative] ASCO Palliative Care for Patients With Cancer 2024
+    HTTP 403 (bot-blocked or server-side, NOT a dead link — verify by hand if unsure): https://ascopubs.org/doi/10.1200/JCO.24.00542
+
+═══ SUMMARY ═══
+  clean:    72
+  warnings: 102
+  FAILURES: 9   <- real problems: dead links (404), bad PMIDs, year mismatches, missing URLs
+  (61 URLs returned 403/429/5xx — bot-blocked, counted as warnings, not failures)
+
+✖ Validation failed (9 problems).
