@@ -130,6 +130,31 @@ if (WRITE) {
   console.log("\n-> wrote verified status back to rag/landmark_trials.json");
 }
 
-const bad = by("SUSPECT").length + by("MISMATCH").length;
-if (bad) { console.log(`\n✖ ${bad} problem(s). Every trial chip must point at the canonical primary trial paper.`); process.exit(1); }
-console.log("\n✔ Every landmark trial resolves to a verified primary-results paper.");
+// ── EXIT SEMANTICS ────────────────────────────────────────────────────────────
+// A run that could not REACH PubMed has verified NOTHING. The first version of this script
+// counted only SUSPECT+MISMATCH, so a fully-offline run printed "Every landmark trial resolves"
+// and exited 0 — a false green, and precisely the bug class this file exists to catch: a transport
+// failure masquerading as a result. Three distinct outcomes now:
+//   0 = verified      (OK === total)
+//   1 = real problems (SUSPECT / MISMATCH)
+//   2 = inconclusive  (anything UNREACHABLE — verified nothing, claim nothing)
+// (Codex review 2026-07-17)
+const problems  = by("SUSPECT").length + by("MISMATCH").length;
+const unreached = by("UNREACHABLE").length;
+
+if (problems) {
+  console.log(`\n✖ ${problems} problem(s). Every trial chip must point at the canonical primary trial paper.`);
+  if (unreached) console.log(`  (also ${unreached} unreachable — this run is ALSO incomplete)`);
+  process.exit(1);
+}
+if (unreached) {
+  console.log(`\n⚠ INCONCLUSIVE — ${unreached}/${results.length} entries could not be reached.`);
+  console.log("  This run verified NOTHING about those entries. It is not a pass.");
+  console.log("  Re-run with network access; set NCBI_API_KEY to reduce rate-limiting.");
+  process.exit(2);
+}
+if (by("OK").length !== results.length) {
+  console.log(`\n⚠ INCONCLUSIVE — only ${by("OK").length}/${results.length} entries reached OK.`);
+  process.exit(2);
+}
+console.log(`\n✔ All ${results.length} landmark trials resolve to a verified primary-results paper.`);

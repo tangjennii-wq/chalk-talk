@@ -116,7 +116,7 @@
     "name": "CREDENCE",
     "full": "Canagliflozin renal events diabetic nephropathy",
     "year": 2019,
-    "specialty": "nephro",
+    "specialty": "nephrology",
     "expected_pmid": "30990260",
     "pmid_verified": "pubmed_2026-07"
   },
@@ -124,7 +124,7 @@
     "name": "DAPA-CKD",
     "full": "Dapagliflozin chronic kidney disease",
     "year": 2020,
-    "specialty": "nephro",
+    "specialty": "nephrology",
     "expected_pmid": "32970396",
     "pmid_verified": "pubmed_2026-07"
   },
@@ -132,7 +132,7 @@
     "name": "EMPA-KIDNEY",
     "full": "Empagliflozin chronic kidney disease",
     "year": 2023,
-    "specialty": "nephro",
+    "specialty": "nephrology",
     "expected_pmid": "36331190",
     "pmid_verified": "pubmed_2026-07"
   },
@@ -140,7 +140,7 @@
     "name": "FIDELIO-DKD",
     "full": "Finerenone outcomes diabetic kidney disease",
     "year": 2020,
-    "specialty": "nephro",
+    "specialty": "nephrology",
     "expected_pmid": "33264825",
     "pmid_verified": "pubmed_2026-07"
   },
@@ -148,7 +148,7 @@
     "name": "FIGARO-DKD",
     "full": "Finerenone cardiovascular events diabetic kidney",
     "year": 2021,
-    "specialty": "nephro",
+    "specialty": "nephrology",
     "expected_pmid": "34449181",
     "pmid_verified": "pubmed_2026-07",
     "pmid_note": "corrected from 35023547 — stored PMID is the FIDELITY pooled analysis; FIGARO-DKD is Pitt, NEJM 2021"
@@ -157,7 +157,7 @@
     "name": "FLOW",
     "full": "Semaglutide kidney outcomes diabetes",
     "year": 2024,
-    "specialty": "nephro",
+    "specialty": "nephrology",
     "expected_pmid": "38785209",
     "pmid_verified": "pubmed_2026-07"
   },
@@ -165,7 +165,7 @@
     "name": "STOP-IgAN",
     "full": "Supportive Care Immunosuppression Progressive IgA Nephropathy",
     "year": 2015,
-    "specialty": "nephro",
+    "specialty": "nephrology",
     "expected_pmid": "26630142",
     "pmid_verified": "pubmed_2026-07"
   },
@@ -173,7 +173,7 @@
     "name": "TESTING",
     "full": "Methylprednisolone IgA Nephropathy",
     "year": 2017,
-    "specialty": "nephro",
+    "specialty": "nephrology",
     "expected_pmid": "35579642",
     "pmid_verified": "pubmed_2026-07",
     "pmid_note": "corrected from 28763548 — stored PMID is the 2017 halted-early phase; definitive results Lv, JAMA 2022"
@@ -182,7 +182,7 @@
     "name": "PROTECT",
     "full": "Sparsentan IgA Nephropathy",
     "year": 2023,
-    "specialty": "nephro",
+    "specialty": "nephrology",
     "expected_pmid": "37931634",
     "pmid_verified": "pubmed_2026-07"
   },
@@ -692,5 +692,313 @@
     "specialty": "palliative",
     "expected_pmid": "20818875",
     "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "IDEAL",
+    "full": "Initiating Dialysis Early and Late",
+    "year": 2010,
+    "specialty": "nephrology",
+    "expected_pmid": "20581422",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "HEMO",
+    "full": "Hemodialysis (HEMO) Study",
+    "year": 2002,
+    "specialty": "nephrology",
+    "expected_pmid": "12490682",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "4D",
+    "full": "Die Deutsche Diabetes Dialyse Studie",
+    "year": 2005,
+    "specialty": "nephrology",
+    "expected_pmid": "16034009",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "AURORA",
+    "full": "Rosuvastatin in subjects on regular hemodialysis",
+    "year": 2009,
+    "specialty": "nephrology",
+    "expected_pmid": "19332456",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "SHARP",
+    "full": "Study of Heart and Renal Protection",
+    "year": 2011,
+    "specialty": "nephrology",
+    "expected_pmid": "21663949",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "TiME",
+    "full": "Time to Reduce Mortality in ESRD",
+    "year": 2019,
+    "specialty": "nephrology",
+    "expected_pmid": "31000566",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "FHN Daily",
+    "full": "Frequent Hemodialysis Network Daily Trial",
+    "year": 2010,
+    "specialty": "nephrology",
+    "expected_pmid": "21091062",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "PIVOTAL",
+    "full": "Proactive IV Iron Therapy in Haemodialysis Patients",
+    "year": 2019,
+    "specialty": "nephrology",
+    "expected_pmid": "30365356",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "EVOLVE",
+    "full": "Evaluation of Cinacalcet HCl Therapy to Lower Cardiovascular Events",
+    "year": 2012,
+    "specialty": "nephrology",
+    "expected_pmid": "23121374",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "ACTIVE Dialysis",
+    "full": "A Clinical Trial of IntensiVE Dialysis",
+    "year": 2017,
+    "specialty": "nephrology",
+    "expected_pmid": "28151412",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "ELITE-Symphony",
+    "full": "Reduced exposure to calcineurin inhibitors in renal transplantation",
+    "year": 2007,
+    "specialty": "nephrology",
+    "expected_pmid": "18094377",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "BENEFIT",
+    "full": "Belatacept Evaluation of Nephroprotection and Efficacy as First-line Immunosuppression Trial",
+    "year": 2010,
+    "specialty": "nephrology",
+    "expected_pmid": "20415897",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "BENEFIT-EXT",
+    "full": "Belatacept vs cyclosporine, extended criteria donors",
+    "year": 2010,
+    "specialty": "nephrology",
+    "expected_pmid": "20415898",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "MDRD",
+    "full": "Modification of Diet in Renal Disease Study",
+    "year": 1994,
+    "specialty": "nephrology",
+    "expected_pmid": "8114857",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "AASK",
+    "full": "African American Study of Kidney Disease and Hypertension",
+    "year": 2002,
+    "specialty": "nephrology",
+    "expected_pmid": "12435255",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "REIN",
+    "full": "Ramipril Efficacy In Nephropathy",
+    "year": 1997,
+    "specialty": "nephrology",
+    "expected_pmid": "9217756",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "RENAAL",
+    "full": "Reduction of Endpoints in NIDDM with the Angiotensin II Antagonist Losartan",
+    "year": 2001,
+    "specialty": "nephrology",
+    "expected_pmid": "11565518",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "IDNT",
+    "full": "Irbesartan Diabetic Nephropathy Trial",
+    "year": 2001,
+    "specialty": "nephrology",
+    "expected_pmid": "11565517",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "TREAT",
+    "full": "Trial to Reduce Cardiovascular Events with Aranesp Therapy",
+    "year": 2009,
+    "specialty": "nephrology",
+    "expected_pmid": "19880844",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "ATN",
+    "full": "VA/NIH Acute Renal Failure Trial Network",
+    "year": 2008,
+    "specialty": "nephrology",
+    "expected_pmid": "18492867",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "RENAL",
+    "full": "Randomised Evaluation of Normal vs Augmented Level of Replacement Therapy",
+    "year": 2009,
+    "specialty": "nephrology",
+    "expected_pmid": "19846848",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "STARRT-AKI",
+    "full": "Standard versus Accelerated Initiation of Renal-Replacement Therapy in AKI",
+    "year": 2020,
+    "specialty": "nephrology",
+    "expected_pmid": "32668114",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "AKIKI",
+    "full": "Artificial Kidney Initiation in Kidney Injury",
+    "year": 2016,
+    "specialty": "nephrology",
+    "expected_pmid": "27181456",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "AKIKI-2",
+    "full": "Artificial Kidney Initiation in Kidney Injury 2",
+    "year": 2021,
+    "specialty": "nephrology",
+    "expected_pmid": "33812488",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "ELAIN",
+    "full": "Early versus Late Initiation of RRT in Critically Ill Patients with AKI",
+    "year": 2016,
+    "specialty": "nephrology",
+    "expected_pmid": "27209269",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "IDEAL-ICU",
+    "full": "Timing of Renal-Replacement Therapy in AKI and Sepsis",
+    "year": 2018,
+    "specialty": "nephrology",
+    "expected_pmid": "30304656",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "PRESERVE",
+    "full": "Prevention of Serious Adverse Events Following Angiography",
+    "year": 2018,
+    "specialty": "nephrology",
+    "expected_pmid": "29130810",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "IVOIRE",
+    "full": "High-Volume versus Standard-Volume Haemofiltration for Septic Shock with AKI",
+    "year": 2013,
+    "specialty": "nephrology",
+    "expected_pmid": "23740278",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "PEXIVAS",
+    "full": "Plasma Exchange and Glucocorticoids in Severe ANCA-Associated Vasculitis",
+    "year": 2020,
+    "specialty": "nephrology",
+    "expected_pmid": "32053298",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "RAVE",
+    "full": "Rituximab versus Cyclophosphamide for ANCA-Associated Vasculitis",
+    "year": 2010,
+    "specialty": "nephrology",
+    "expected_pmid": "20647199",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "MENTOR",
+    "full": "Rituximab or Cyclosporine in the Treatment of Membranous Nephropathy",
+    "year": 2019,
+    "specialty": "nephrology",
+    "expected_pmid": "31269364",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "NefIgArd",
+    "full": "Targeted-release budesonide (Nefecon) in primary IgA nephropathy",
+    "year": 2023,
+    "specialty": "nephrology",
+    "expected_pmid": "37591292",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "APPLAUSE-IgAN",
+    "full": "Alternative Complement Pathway Inhibition with Iptacopan in IgA Nephropathy",
+    "year": 2025,
+    "specialty": "nephrology",
+    "expected_pmid": "39453772",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "REDUCE-IT",
+    "full": "Cardiovascular Risk Reduction with Icosapent Ethyl for Hypertriglyceridemia",
+    "year": 2019,
+    "specialty": "cards",
+    "expected_pmid": "30415628",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "VITAL",
+    "full": "Marine n-3 Fatty Acids and Prevention of Cardiovascular Disease and Cancer",
+    "year": 2019,
+    "specialty": "cards",
+    "expected_pmid": "30415637",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "STRENGTH",
+    "full": "Omega-3 Carboxylic Acids vs Corn Oil in High Cardiovascular Risk",
+    "year": 2020,
+    "specialty": "cards",
+    "expected_pmid": "33190147",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "ASCEND",
+    "full": "Effects of n-3 Fatty Acid Supplements in Diabetes Mellitus",
+    "year": 2018,
+    "specialty": "cards",
+    "expected_pmid": "30146932",
+    "pmid_verified": "pubmed_2026-07"
+  },
+  {
+    "name": "ADVOCATE",
+    "full": "Avacopan for the Treatment of ANCA-Associated Vasculitis",
+    "year": 2021,
+    "specialty": "nephrology",
+    "expected_pmid": "33596356",
+    "pmid_verified": "pubmed_2026-07",
+    "retracted": true,
+    "retraction_date": "2026-06-29",
+    "retraction_notice": "NEJMe2608684",
+    "do_not_teach": "RETRACTED by NEJM 29 Jun 2026 — do NOT cite as evidence for avacopan. FDA found sponsor employees re-adjudicated the primary endpoint in 9 patients after unblinding. KDIGO 2024 lists avacopan as a practice point based on this now-retracted trial; flag that dependency explicitly."
   }
 ]
