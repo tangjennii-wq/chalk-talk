@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-17-03";
+var BUILD_ID = "2026-07-17-04";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -10641,12 +10641,16 @@ function renderMain(){
       // ─── References band (Jenni 2026-06-08) ───
       // Compact academic bibliography pinned to the poster so the screenshot carries citations.
       // Mirrors Overview's references block in content; tighter formatting to keep the poster scannable.
-      if(t.references && t.references.length){
+      // Apply the SAME provenance gate + URL sanitizer as the Overview references block. Without this
+      // the poster/export could surface a low-confidence ref that Overview suppresses, and could put a
+      // raw model-supplied "javascript:" URL into an href. (Codex review 2026-07-17)
+      var _refsPoster = (t.references || []).filter(function(rf){ return rf && rf.confidence !== "low"; });
+      if(_refsPoster.length){
         h+='<div style="background:#fafafa;border-top:1px solid var(--line);padding:12px 16px">';
-        h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:8px">References <span style="font-weight:500;color:var(--ink-soft);letter-spacing:0">('+t.references.length+')</span></div>';
+        h+='<div style="font-size:10.5px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:8px">References <span style="font-weight:500;color:var(--ink-soft);letter-spacing:0">('+_refsPoster.length+')</span></div>';
         h+='<ol style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px">';
-        for(var rfsi=0; rfsi<t.references.length; rfsi++){
-          var rfs = t.references[rfsi];
+        for(var rfsi=0; rfsi<_refsPoster.length; rfsi++){
+          var rfs = _refsPoster[rfsi];
           var metaBits=[];
           if(rfs.year) metaBits.push(esc(String(rfs.year)));
           if(rfs.society) metaBits.push(esc(rfs.society));
@@ -10654,8 +10658,9 @@ function renderMain(){
           var srcLabel = esc(rfs.source || ("Reference "+rfs.id));
           // Numbered chip + source name + year/society. URL is rendered as a clickable link on-screen;
           // html2canvas will capture the rendered text in screenshots.
-          var linkHtml = rfs.url
-            ? ' <a href="'+esc(rfs.url)+'" target="_blank" rel="noopener" style="color:var(--plum);text-decoration:none;border-bottom:1px solid var(--lavender);font-size:10px">↗</a>'
+          var _rfsUrl = _safeUrl(rfs.url);
+          var linkHtml = _rfsUrl
+            ? ' <a href="'+esc(_rfsUrl)+'" target="_blank" rel="noopener" style="color:var(--plum);text-decoration:none;border-bottom:1px solid var(--lavender);font-size:10px">↗</a>'
             : '';
           h+='<li style="display:flex;gap:7px;font-size:10.5px;line-height:1.45;color:var(--ink)">';
           h+='<span style="background:var(--lavender-bg);color:var(--plum);border-radius:4px;padding:0 5px;font-size:9.5px;font-weight:700;flex-shrink:0;height:fit-content;margin-top:1px">'+esc(String(rfs.id))+'</span>';
