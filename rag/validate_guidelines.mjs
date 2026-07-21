@@ -71,20 +71,50 @@ async function checkUrl(url) {
   }
 }
 
-/** Verify a PMID exists and return its real publication year + title, straight from NCBI. */
-async function checkPmid(pmid) {
+// NCBI eutils allows 3 req/sec without an API key, 10/sec with one. The validator was firing PMID
+// lookups inside the same concurrency-6 loop as the URL checks, blowing straight past that limit — so
+// NCBI returned 429 and EVERY rate-limited lookup was reported as "PMID INVALID". That is a false
+// accusation of fabrication, and it is nondeterministic (one run said 6 failures, the next said 9 on
+// the SAME corpus). Same principle already applied to bot-blocked 403s: a transport problem must never
+// masquerade as a bad citation. (Jenni 2026-07-17)
+const EUTILS_MIN_GAP_MS = NCBI_KEY ? 110 : 350;
+let _eutilsNext = 0;
+async function eutilsThrottle() {
+  const now = Date.now();
+  const wait = Math.max(0, _eutilsNext - now);
+  _eutilsNext = Math.max(now, _eutilsNext) + EUTILS_MIN_GAP_MS;
+  if (wait) await new Promise((r) => setTimeout(r, wait));
+}
+
+/**
+ * Verify a PMID exists and return its real publication year + title, straight from NCBI.
+ * Returns { ok } on success, { transient:true } when the LOOKUP failed (429/5xx/network) — the caller
+ * must treat transient as a WARNING, never a hard failure — and { ok:false } only when PubMed
+ * affirmatively says the PMID does not exist.
+ */
+async function checkPmid(pmid, attempt = 0) {
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${pmid}&retmode=json`
             + (NCBI_KEY ? `&api_key=${NCBI_KEY}` : "");
+  await eutilsThrottle();
   try {
     const r = await withTimeout(fetch(url, { headers: { "User-Agent": UA } }), TIMEOUT_MS);
-    if (!r.ok) return { ok: false, error: `eutils ${r.status}` };
+    // 429 = rate limited, 5xx = NCBI having a bad day. Back off and retry before giving up.
+    if (r.status === 429 || r.status >= 500) {
+      if (attempt < 3) {
+        await new Promise((res) => setTimeout(res, 800 * Math.pow(2, attempt)));
+        return checkPmid(pmid, attempt + 1);
+      }
+      return { ok: false, transient: true, error: `eutils ${r.status} (rate-limited/server — NOT a bad PMID)` };
+    }
+    if (!r.ok) return { ok: false, transient: true, error: `eutils ${r.status}` };
     const j = await r.json();
     const rec = j?.result?.[pmid];
+    // Only THIS is a real finding: PubMed answered, and the PMID isn't there.
     if (!rec || rec.error) return { ok: false, error: "PMID not found in PubMed" };
     const year = parseInt(String(rec.pubdate || "").slice(0, 4), 10) || null;
     return { ok: true, year, title: rec.title || "" };
   } catch (e) {
-    return { ok: false, error: e.message };
+    return { ok: false, transient: true, error: e.message };
   }
 }
 
@@ -122,7 +152,11 @@ async function validate(e) {
     const pmid = pmidFrom(e.url);
     if (pmid) {
       const pm = await checkPmid(pmid);
-      if (!pm.ok) {
+      if (pm.transient) {
+        // Lookup itself failed (rate limit / NCBI down / no network). Says NOTHING about the citation.
+        netBlocked++;
+        warnings.push(`could not verify PMID ${pmid} — ${pm.error}`);
+      } else if (!pm.ok) {
         problems.push(`PMID ${pmid} INVALID — ${pm.error}`);
       } else if (pm.year && e.year && Math.abs(pm.year - e.year) > 1) {
         problems.push(`YEAR MISMATCH — entry says ${e.year}, PubMed says ${pm.year} (PMID ${pmid}: "${(pm.title||'').slice(0,70)}")`);
