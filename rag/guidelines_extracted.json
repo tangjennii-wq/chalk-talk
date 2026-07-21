@@ -897,11 +897,11 @@
   },
   {
     "specialty": "Rheumatology",
-    "name": "ASAS-EULAR 2022 / ACR 2019 Axial Spondyloarthritis",
+    "name": "ASAS-EULAR 2022 / ACR 2019 Axial Spondyloarthritis (ACR update announced Jun 2026)",
     "year": 2022,
     "access": "Open",
     "url": "https://ard.bmj.com/content/82/1/19",
-    "keys": "NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria)."
+    "keys": "CURRENCY: the ACR/SAA/SPARTAN guideline was UPDATED - approved by the ACR Board 31 May 2026 and announced 24 Jun 2026, replacing the 2019 adult recommendations and adding a first-ever JUVENILE axSpA guideline. Headline change: JAKi UPGRADED to strongly recommended, which reverses the 2019/ASAS-EULAR positioning below. Full manuscript was not yet peer-reviewed and journal-published at announcement, so cite the 2026 update as announced-not-yet-published and prefer it over the 2019 ACR positions. ASAS-EULAR 2022 remains current. Legacy 2019/2022 content follows: NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria)."
   },
   {
     "specialty": "Neurology",
@@ -1233,11 +1233,11 @@
   },
   {
     "specialty": "Women's Health",
-    "name": "NAMS/Menopause Society Hormone Therapy 2022 (FDA boxed warning REMOVED 2025)",
+    "name": "NAMS/Menopause Society Hormone Therapy 2022 (FDA boxed warning removal APPROVED Feb 2026, phased)",
     "year": 2022,
     "access": "Open",
     "url": "https://menopause.org/",
-    "keys": "MAJOR CHANGE OUTSIDE THE GUIDELINE: on 10 Nov 2025 the FDA REMOVED THE BOXED WARNING from menopausal hormone therapy products - the cardiovascular disease, breast cancer, and probable dementia boxed language is gone (the endometrial cancer boxed warning is RETAINED for systemic estrogen-only products), including removal from LOW-DOSE VAGINAL ESTROGEN. Labels are being rewritten with age-specific guidance emphasizing benefit when initiated within 10 years of menopause onset. The WHI black-box slide most IM teachers use is now inaccurate, and the counseling/consent script has changed. The Menopause Society supported the action. Guideline content that stands: HT is most favorable when started under age 60 or within 10 years of menopause; systemic HT for vasomotor symptoms; LOW-DOSE VAGINAL ESTROGEN for genitourinary syndrome alone (minimal systemic absorption); add progestogen if uterus present; individualize by risk."
+    "keys": "MAJOR CHANGE OUTSIDE THE GUIDELINE: the FDA ANNOUNCED it was initiating removal of the boxed warning on 10 Nov 2025, and APPROVED the first labeling changes on 12 Feb 2026 - for the approved products the cardiovascular disease, breast cancer, and probable dementia boxed language is removed (the endometrial cancer boxed warning is RETAINED for systemic estrogen-only products), including removal from LOW-DOSE VAGINAL ESTROGEN. DO NOT TEACH THIS AS A BLANKET REMOVAL: it is a PHASED, product-by-product rollout - only 6 of 29 submitted products had been cleared as of Feb 2026, so any individual product may still carry the old label. Verify the specific product before stating its labeling. Labels are being rewritten with age-specific guidance emphasizing benefit when initiated within 10 years of menopause onset. The WHI black-box slide most IM teachers use is now inaccurate, and the counseling/consent script has changed. The Menopause Society supported the action. Guideline content that stands: HT is most favorable when started under age 60 or within 10 years of menopause; systemic HT for vasomotor symptoms; LOW-DOSE VAGINAL ESTROGEN for genitourinary syndrome alone (minimal systemic absorption); add progestogen if uterus present; individualize by risk."
   },
   {
     "specialty": "Women's Health",
