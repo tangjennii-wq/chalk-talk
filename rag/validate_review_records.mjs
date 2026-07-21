@@ -72,7 +72,7 @@ async function esummary(pmid, attempt = 0) {
 }
 
 // ── structural checks that need no network ──
-const seen = new Map(), structural = [];
+const seen = new Map(), structural = [], promoted = [];
 // Integrity of the file itself. A truncated or half-written records file must fail loudly rather
 // than validate a subset and report success. (Codex review 2026-07-17)
 if (!Array.isArray(records) || records.length === 0) {
@@ -85,7 +85,9 @@ for (const r of records) {
   if (!r.pmid || !/^\d{6,9}$/.test(String(r.pmid))) { structural.push({ name: r.name, issue: `malformed/missing PMID: ${r.pmid}` }); continue; }
   if (seen.has(r.pmid)) structural.push({ name: r.name, issue: `DUPLICATE PMID ${r.pmid} — also used by ${seen.get(r.pmid)}` });
   else seen.set(r.pmid, r.name);
-  if (manifestPmids.has(String(r.pmid))) structural.push({ name: r.name, issue: `PMID ${r.pmid} is ALREADY in landmark_trials.json` });
+  // Being in the manifest is a FAILURE only before promotion (accidental duplication). After the 90
+  // are deliberately promoted it is the desired end state, so this is informational, not a failure.
+  if (manifestPmids.has(String(r.pmid))) promoted.push(r.name);
 }
 
 const results = [];
@@ -161,6 +163,7 @@ console.log(`  MISMATCH:    ${by("MISMATCH").length}`);
 console.log(`  SUSPECT:     ${by("SUSPECT").length}`);
 console.log(`  UNREACHABLE: ${by("UNREACHABLE").length}  (transport, not citation problems)`);
 console.log(`  structural:  ${structural.length}`);
+if (promoted.length) console.log(`  promoted:    ${promoted.length}  (already in landmark_trials.json — expected after promotion)`);
 
 const problems = by("SUSPECT").length + by("MISMATCH").length + structural.length;
 const unreached = by("UNREACHABLE").length;
@@ -170,4 +173,5 @@ if (unreached) {
   console.log("  Re-run with network access; set NCBI_API_KEY to reduce rate-limiting.");
   process.exit(2);
 }
-console.log(`\n✔ All ${records.length} review records verified — ready for promotion.`);
+if (promoted.length === records.length) console.log(`\n✔ All ${records.length} review records verified AND promoted into landmark_trials.json.`);
+else console.log(`\n✔ All ${records.length} review records verified — ${promoted.length} already promoted, ${records.length - promoted.length} still to promote.`);
