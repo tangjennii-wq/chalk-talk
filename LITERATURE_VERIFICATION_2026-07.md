@@ -75,3 +75,47 @@ Split as-is, a learner could read them as two unrelated topics. Better as one `A
 ## Recurring pattern worth noting
 
 Most two-year titles are **base guideline + a real non-guideline development** (drug approval, trial, FDA action). That's legitimate content tripping a title-convention lint, not fabrication. The distinction the corpus should make consistently: *a drug approval is not a guideline update.* Several entries would read more honestly as "X is FDA-approved but not yet reflected in the guideline text."
+
+---
+
+## Corpus composition (measured 2026-07-17)
+
+`publication_type` stores only the FIRST PubMed type, which understated reviews badly. Real composition from `raw_metadata->pubtypes`:
+
+| type | n | % |
+|---|---|---|
+| Review | 1209 | 58% |
+| Systematic Review | 641 | 31% |
+| Meta-Analysis | 428 | 21% |
+| Practice Guideline | 198 | 9.5% |
+| **Randomized Controlled Trial** | **64** | **3%** |
+
+(Types overlap — a paper can carry several.)
+
+**Conclusion: do NOT add more general reviews.** The corpus is already review-dominant. The shortage is correctly-identified primary trial evidence to back practice-changing claims — reviews should support pathophysiology and background, not carry a treatment recommendation on their own.
+
+## BUG: `is_landmark_trial` is wrong on 568 of 632 documents
+
+`rag/ingest_landmarks.mjs` searches PubMed for each trial name with `retmax: 3, sort: relevance` and marks **every** returned record `is_landmark_trial: true, source_tier: 1`. So reviews and meta-analyses *about* a trial get flagged as the trial.
+
+| flagged `is_landmark_trial` | 632 |
+|---|---|
+| actually RCT pubtype | 64 |
+| actually Review | 285 |
+| actually Meta-Analysis | 169 |
+| actually Practice Guideline | 64 |
+| **not a trial of any kind** | **568 (90%)** |
+
+**Impact:** `_normalizeInlinePmids` sets `type: is_landmark_trial ? "trial" : "review"`, which drives `_citeClass` — so a narrative review renders to the user with a landmark-trial chip, and inherits `source_tier: 1`.
+
+**Fix (post-launch, needs re-ingest):** only set `is_landmark_trial` when the record actually carries a trial pubtype (`Randomized Controlled Trial` / `Clinical Trial` / `Clinical Trial, Phase III`), or when the title contains the trial acronym. Take the top hit, not the top 3. Then re-run the landmark ingest.
+
+## Provenance, stated accurately
+
+Three layers, three different methods — worth keeping straight in launch copy:
+
+1. **PubMed corpus (2,085 docs)** — 227 ABIM subspecialty groups / 1,003 topic strings drive relevance-ranked PubMed searches, restricted to journals curated society-by-society in `journal_whitelist.json` (tiered 1/2/3 → `journal_rank`). *Journals* were curated by hand; *papers* were selected automatically.
+2. **Landmark trials (86 in `landmark_trials.json`)** — ingested deliberately, but see the flagging bug above.
+3. **Society guideline summaries (183)** — hand-authored in `index.html`, keyword-matched at generation time, **never ingested into the vector store**.
+
+Honest one-liner: *retrieval over ~2,000 papers from journals curated society-by-society, plus landmark trials, plus hand-written summaries of society guidelines.*
