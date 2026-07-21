@@ -5,7 +5,7 @@
     "year": 1993,
     "specialty": "endo",
     "expected_pmid": "8366922",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "UKPDS 33",
@@ -13,7 +13,7 @@
     "year": 1998,
     "specialty": "endo",
     "expected_pmid": "9742976",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "UKPDS 34",
@@ -21,7 +21,7 @@
     "year": 1998,
     "specialty": "endo",
     "expected_pmid": "9742977",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "ACCORD",
@@ -36,9 +36,9 @@
     "full": "Action in Diabetes and Vascular Disease intensive glucose",
     "year": 2008,
     "specialty": "endo",
-    "expected_pmid": null,
-    "pmid_verified": "SUSPECT",
-    "pmid_note": "production PMID 18539917 is the ACCORD paper; ADVANCE primary results need verification"
+    "expected_pmid": "18539916",
+    "pmid_verified": "pubmed_2026-07",
+    "pmid_note": "corrected (was unset) — production had ACCORD's PMID 18539917; ADVANCE is Patel, NEJM 2008;358:2560"
   },
   {
     "name": "VADT",
@@ -46,7 +46,7 @@
     "year": 2009,
     "specialty": "endo",
     "expected_pmid": "19092145",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "EMPA-REG OUTCOME",
@@ -54,7 +54,7 @@
     "year": 2015,
     "specialty": "endo",
     "expected_pmid": "26378978",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "LEADER",
@@ -62,7 +62,7 @@
     "year": 2016,
     "specialty": "endo",
     "expected_pmid": "27295427",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "SUSTAIN-6",
@@ -70,7 +70,7 @@
     "year": 2016,
     "specialty": "endo",
     "expected_pmid": "27633186",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "REWIND",
@@ -78,7 +78,7 @@
     "year": 2019,
     "specialty": "endo",
     "expected_pmid": "31189511",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "DECLARE-TIMI 58",
@@ -86,7 +86,7 @@
     "year": 2019,
     "specialty": "endo",
     "expected_pmid": "30415602",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "STEP-1",
@@ -94,7 +94,7 @@
     "year": 2021,
     "specialty": "endo",
     "expected_pmid": "33567185",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "SELECT",
@@ -102,7 +102,7 @@
     "year": 2023,
     "specialty": "endo",
     "expected_pmid": "37952131",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "SURMOUNT-1",
@@ -118,7 +118,7 @@
     "year": 2019,
     "specialty": "nephro",
     "expected_pmid": "30990260",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "DAPA-CKD",
@@ -126,7 +126,7 @@
     "year": 2020,
     "specialty": "nephro",
     "expected_pmid": "32970396",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "EMPA-KIDNEY",
@@ -134,7 +134,7 @@
     "year": 2023,
     "specialty": "nephro",
     "expected_pmid": "36331190",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "FIDELIO-DKD",
@@ -142,15 +142,16 @@
     "year": 2020,
     "specialty": "nephro",
     "expected_pmid": "33264825",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "FIGARO-DKD",
     "full": "Finerenone cardiovascular events diabetic kidney",
     "year": 2021,
     "specialty": "nephro",
-    "expected_pmid": "35023547",
-    "pmid_verified": "unverified_from_production"
+    "expected_pmid": "34449181",
+    "pmid_verified": "pubmed_2026-07",
+    "pmid_note": "corrected from 35023547 — stored PMID is the FIDELITY pooled analysis; FIGARO-DKD is Pitt, NEJM 2021"
   },
   {
     "name": "FLOW",
@@ -173,8 +174,9 @@
     "full": "Methylprednisolone IgA Nephropathy",
     "year": 2017,
     "specialty": "nephro",
-    "expected_pmid": "28763548",
-    "pmid_verified": "unverified_from_production"
+    "expected_pmid": "35579642",
+    "pmid_verified": "pubmed_2026-07",
+    "pmid_note": "corrected from 28763548 — stored PMID is the 2017 halted-early phase; definitive results Lv, JAMA 2022"
   },
   {
     "name": "PROTECT",
@@ -182,7 +184,7 @@
     "year": 2023,
     "specialty": "nephro",
     "expected_pmid": "37931634",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "ISIS-2",
@@ -198,7 +200,7 @@
     "year": 1994,
     "specialty": "cards",
     "expected_pmid": "7968073",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "CARE",
@@ -214,7 +216,7 @@
     "year": 2002,
     "specialty": "cards",
     "expected_pmid": "12114036",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "JUPITER",
@@ -222,7 +224,7 @@
     "year": 2008,
     "specialty": "cards",
     "expected_pmid": "18997196",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "IMPROVE-IT",
@@ -230,7 +232,7 @@
     "year": 2015,
     "specialty": "cards",
     "expected_pmid": "26039521",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "FOURIER",
@@ -238,7 +240,7 @@
     "year": 2017,
     "specialty": "cards",
     "expected_pmid": "28304224",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "ODYSSEY OUTCOMES",
@@ -246,7 +248,7 @@
     "year": 2018,
     "specialty": "cards",
     "expected_pmid": "30403574",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "HOPE",
@@ -262,7 +264,7 @@
     "year": 2002,
     "specialty": "cards",
     "expected_pmid": "12479763",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "SPRINT",
@@ -278,7 +280,7 @@
     "year": 1987,
     "specialty": "cards",
     "expected_pmid": "2883575",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "SOLVD",
@@ -294,7 +296,7 @@
     "year": 1999,
     "specialty": "cards",
     "expected_pmid": "10376614",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "COPERNICUS",
@@ -302,7 +304,7 @@
     "year": 2001,
     "specialty": "cards",
     "expected_pmid": "11386263",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "EMPHASIS-HF",
@@ -310,7 +312,7 @@
     "year": 2011,
     "specialty": "cards",
     "expected_pmid": "21073363",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "PARADIGM-HF",
@@ -318,7 +320,7 @@
     "year": 2014,
     "specialty": "cards",
     "expected_pmid": "25176015",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "DAPA-HF",
@@ -326,7 +328,7 @@
     "year": 2019,
     "specialty": "cards",
     "expected_pmid": "31535829",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "EMPEROR-Reduced",
@@ -342,7 +344,7 @@
     "year": 2021,
     "specialty": "cards",
     "expected_pmid": "34449189",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "AFFIRM",
@@ -350,7 +352,7 @@
     "year": 2002,
     "specialty": "cards",
     "expected_pmid": "12466506",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "RACE II",
@@ -390,7 +392,7 @@
     "year": 2013,
     "specialty": "cards",
     "expected_pmid": "24251359",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "CABANA",
@@ -438,7 +440,7 @@
     "year": 1995,
     "specialty": "neuro",
     "expected_pmid": "7477192",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "ECASS-III",
@@ -478,7 +480,7 @@
     "year": 2000,
     "specialty": "pulm-cc",
     "expected_pmid": "10793162",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "PROSEVA",
@@ -486,7 +488,7 @@
     "year": 2013,
     "specialty": "pulm-cc",
     "expected_pmid": "23688302",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "ROSE",
@@ -494,7 +496,7 @@
     "year": 2019,
     "specialty": "pulm-cc",
     "expected_pmid": "31112383",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "EOLIA",
@@ -502,7 +504,7 @@
     "year": 2018,
     "specialty": "pulm-cc",
     "expected_pmid": "29791822",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "CESAR",
@@ -510,7 +512,7 @@
     "year": 2009,
     "specialty": "pulm-cc",
     "expected_pmid": "19762075",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "ADRENAL",
@@ -518,7 +520,7 @@
     "year": 2018,
     "specialty": "pulm-cc",
     "expected_pmid": "29347874",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "APROCCHSS",
@@ -526,7 +528,7 @@
     "year": 2018,
     "specialty": "pulm-cc",
     "expected_pmid": "29490185",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "VASST",
@@ -534,7 +536,7 @@
     "year": 2008,
     "specialty": "pulm-cc",
     "expected_pmid": "18305265",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "SMART",
@@ -542,7 +544,7 @@
     "year": 2018,
     "specialty": "pulm-cc",
     "expected_pmid": "29485925",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "BaSICS",
@@ -558,7 +560,7 @@
     "year": 2022,
     "specialty": "pulm-cc",
     "expected_pmid": "35041780",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "ANDROMEDA-SHOCK",
@@ -566,7 +568,7 @@
     "year": 2019,
     "specialty": "pulm-cc",
     "expected_pmid": "30772908",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "LOVIT",
@@ -582,7 +584,7 @@
     "year": 2019,
     "specialty": "id",
     "expected_pmid": "30152252",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "RECOVERY",
@@ -590,7 +592,7 @@
     "year": 2020,
     "specialty": "id",
     "expected_pmid": "32678530",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "ACTT-1",
@@ -621,8 +623,9 @@
     "full": "Sofosbuvir velpatasvir HCV",
     "year": 2015,
     "specialty": "gi-hep",
-    "expected_pmid": "28564569",
-    "pmid_verified": "unverified_from_production"
+    "expected_pmid": "26571066",
+    "pmid_verified": "pubmed_2026-07",
+    "pmid_note": "corrected from 28564569 — stored PMID is POLARIS-1/4; ASTRAL-1 is Feld, NEJM 2015"
   },
   {
     "name": "PALISADE",
@@ -630,7 +633,7 @@
     "year": 2018,
     "specialty": "allergy",
     "expected_pmid": "30449234",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "OUtMATCH",
@@ -646,15 +649,16 @@
     "year": 2015,
     "specialty": "heme-onc",
     "expected_pmid": "26027431",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   },
   {
     "name": "KEYNOTE-024",
     "full": "Pembrolizumab non-small-cell lung cancer first-line",
     "year": 2016,
     "specialty": "heme-onc",
-    "expected_pmid": "29658856",
-    "pmid_verified": "unverified_from_production"
+    "expected_pmid": "27718847",
+    "pmid_verified": "pubmed_2026-07",
+    "pmid_note": "corrected from 29658856 — stored PMID is KEYNOTE-189 (pembro+chemo); 024 is Reck, NEJM 2016 monotherapy"
   },
   {
     "name": "CLL14",
@@ -677,8 +681,9 @@
     "full": "Daratumumab bortezomib multiple myeloma",
     "year": 2018,
     "specialty": "heme-onc",
-    "expected_pmid": "32325490",
-    "pmid_verified": "unverified_from_production"
+    "expected_pmid": "29231133",
+    "pmid_verified": "pubmed_2026-07",
+    "pmid_note": "corrected from 32325490 — stored PMID is the GRIFFIN trial, not ALCYONE (Mateos, NEJM 2018)"
   },
   {
     "name": "TEMEL",
@@ -686,6 +691,6 @@
     "year": 2010,
     "specialty": "palliative",
     "expected_pmid": "20818875",
-    "pmid_verified": "unverified_from_production"
+    "pmid_verified": "pubmed_2026-07"
   }
 ]

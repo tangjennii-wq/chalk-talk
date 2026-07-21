@@ -177,7 +177,13 @@ async function ingestTrial(trial) {
     // Only claim landmark status when the record actually IS the trial: either it matches the
     // hand-verified expected_pmid, or PubMed's own pubtypes confirm a primary trial report.
     // Blanket true is what put 568 reviews/guidelines behind a trial chip. (Jenni 2026-07-17)
-    is_landmark_trial: (trial.expected_pmid && String(r.pmid) === String(trial.expected_pmid)) || isPrimaryTrialRecord(r),
+    // Only a VERIFIED provenance status earns the landmark authority label. An
+    // unverified_from_production PMID may still be ingested for retrieval, but it does not get to
+    // claim "landmark trial" — that label drives the trial chip users see. (Codex review 2026-07-17)
+    is_landmark_trial:
+      (["pubmed_2026-07", "manual_2026-07"].includes(trial.pmid_verified) &&
+       trial.expected_pmid && String(r.pmid) === String(trial.expected_pmid))
+      || (!trial.expected_pmid && isPrimaryTrialRecord(r)),
     raw_metadata: {
       landmark_name: trial.name, landmark_year: trial.year, landmark_specialty: trial.specialty,
       pubtypes: r.pubtypes,
