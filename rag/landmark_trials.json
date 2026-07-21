@@ -1002,5 +1002,905 @@
     "retraction_date": "2026-06-29",
     "retraction_notice": "NEJMe2608684",
     "do_not_teach": "RETRACTED by NEJM 29 Jun 2026 — do NOT cite as evidence for avacopan. FDA found sponsor employees re-adjudicated the primary endpoint in 9 patients after unblinding. KDIGO 2024 lists avacopan as a practice point based on this now-retracted trial; flag that dependency explicitly."
+  },
+  {
+    "name": "DELIVER",
+    "full": "DELIVER",
+    "year": 2022,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "36027570",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "EAST-AFNET 4",
+    "full": "EAST-AFNET 4",
+    "year": 2020,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "32865375",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "CASTLE-AF",
+    "full": "CASTLE-AF",
+    "year": 2018,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "29385358",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "COAPT",
+    "full": "COAPT",
+    "year": 2018,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "30280640",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "CLEAR Outcomes",
+    "full": "CLEAR Outcomes",
+    "year": 2023,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "36876740",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "COLCOT",
+    "full": "COLCOT",
+    "year": 2019,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "31733140",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "STICH",
+    "full": "STICH",
+    "year": 2011,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "21463150",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 1
+  },
+  {
+    "name": "AFFIRM-AHF",
+    "full": "AFFIRM-AHF",
+    "year": 2020,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "33197395",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "LoDoCo2",
+    "full": "LoDoCo2",
+    "year": 2020,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "32865380",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "NOTT",
+    "full": "NOTT",
+    "year": 1980,
+    "specialty": "Pulmonary",
+    "expected_pmid": "6776858",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "IMPACT",
+    "full": "IMPACT",
+    "year": 2018,
+    "specialty": "Pulmonary",
+    "expected_pmid": "29668352",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "ETHOS",
+    "full": "ETHOS",
+    "year": 2020,
+    "specialty": "Pulmonary",
+    "expected_pmid": "32579807",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "PEITHO",
+    "full": "PEITHO",
+    "year": 2014,
+    "specialty": "Pulmonary",
+    "expected_pmid": "24716681",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 1
+  },
+  {
+    "name": "MIST2",
+    "full": "MIST2",
+    "year": 2011,
+    "specialty": "Pulmonary",
+    "expected_pmid": "21830966",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "ACURASYS",
+    "full": "ACURASYS",
+    "year": 2010,
+    "specialty": "Pulmonary",
+    "expected_pmid": "20843245",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "evidence reversal (positive, later contradicted)",
+    "source_batch": 1
+  },
+  {
+    "name": "DEXA-ARDS",
+    "full": "DEXA-ARDS",
+    "year": 2020,
+    "specialty": "Pulmonary",
+    "expected_pmid": "32043986",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "AMPLIFY",
+    "full": "AMPLIFY",
+    "year": 2013,
+    "specialty": "Heme",
+    "expected_pmid": "23808982",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "CARAVAGGIO",
+    "full": "CARAVAGGIO",
+    "year": 2020,
+    "specialty": "Heme",
+    "expected_pmid": "32223112",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "TRICC",
+    "full": "TRICC",
+    "year": 1999,
+    "specialty": "Heme",
+    "expected_pmid": "9971864",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "REALITY",
+    "full": "REALITY",
+    "year": 2021,
+    "specialty": "Heme",
+    "expected_pmid": "33560322",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 1
+  },
+  {
+    "name": "TRAPS",
+    "full": "TRAPS",
+    "year": 2018,
+    "specialty": "Heme",
+    "expected_pmid": "30002145",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 1
+  },
+  {
+    "name": "HOKUSAI-VTE Cancer",
+    "full": "HOKUSAI-VTE Cancer",
+    "year": 2018,
+    "specialty": "Heme",
+    "expected_pmid": "29231094",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "SELECT-D",
+    "full": "SELECT-D",
+    "year": 2018,
+    "specialty": "Heme",
+    "expected_pmid": "29746227",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "WAKE-UP",
+    "full": "WAKE-UP",
+    "year": 2018,
+    "specialty": "Neurology",
+    "expected_pmid": "29766770",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "EXTEND",
+    "full": "EXTEND",
+    "year": 2019,
+    "specialty": "Neurology",
+    "expected_pmid": "31067369",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "AcT",
+    "full": "AcT",
+    "year": 2022,
+    "specialty": "Neurology",
+    "expected_pmid": "35779553",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "CHANCE",
+    "full": "CHANCE",
+    "year": 2013,
+    "specialty": "Neurology",
+    "expected_pmid": "23803136",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "POINT",
+    "full": "POINT",
+    "year": 2018,
+    "specialty": "Neurology",
+    "expected_pmid": "29766750",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 1
+  },
+  {
+    "name": "THALES",
+    "full": "THALES",
+    "year": 2020,
+    "specialty": "Neurology",
+    "expected_pmid": "32668111",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 1
+  },
+  {
+    "name": "WATERFALL",
+    "full": "WATERFALL",
+    "year": 2022,
+    "specialty": "GI/Hepatology",
+    "expected_pmid": "36103415",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 1
+  },
+  {
+    "name": "SONIC",
+    "full": "SONIC",
+    "year": 2010,
+    "specialty": "GI/Hepatology",
+    "expected_pmid": "20393175",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "CALM",
+    "full": "CALM",
+    "year": 2017,
+    "specialty": "GI/Hepatology",
+    "expected_pmid": "29096949",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "CONFIRM",
+    "full": "CONFIRM",
+    "year": 2021,
+    "specialty": "GI/Hepatology",
+    "expected_pmid": "33657294",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 1
+  },
+  {
+    "name": "REPRIEVE",
+    "full": "REPRIEVE",
+    "year": 2023,
+    "specialty": "ID",
+    "expected_pmid": "37486775",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "Study 31 / A5349",
+    "full": "Study 31 / A5349",
+    "year": 2021,
+    "specialty": "ID",
+    "expected_pmid": "33951360",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 1
+  },
+  {
+    "name": "BALANCE (bacteremia)",
+    "full": "BALANCE (bacteremia)",
+    "year": 2025,
+    "specialty": "ID",
+    "expected_pmid": "39565030",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "OVIVA",
+    "full": "OVIVA",
+    "year": 2019,
+    "specialty": "ID",
+    "expected_pmid": "30699315",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "STOP-IT",
+    "full": "STOP-IT",
+    "year": 2015,
+    "specialty": "ID",
+    "expected_pmid": "25992746",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 2
+  },
+  {
+    "name": "MERINO",
+    "full": "MERINO",
+    "year": 2018,
+    "specialty": "ID",
+    "expected_pmid": "30208454",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 2
+  },
+  {
+    "name": "SABATO",
+    "full": "SABATO",
+    "year": 2024,
+    "specialty": "ID",
+    "expected_pmid": "38244557",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "guideline-supporting",
+    "source_batch": 2
+  },
+  {
+    "name": "DOTS",
+    "full": "DOTS",
+    "year": 2025,
+    "specialty": "ID",
+    "expected_pmid": "40802264",
+    "pmid_verified": "manual_2026-07",
+    "teaching_role": "guideline-supporting",
+    "source_batch": 2
+  },
+  {
+    "name": "SAFE",
+    "full": "SAFE",
+    "year": 2004,
+    "specialty": "Critical care",
+    "expected_pmid": "15163774",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 2
+  },
+  {
+    "name": "FACTT",
+    "full": "FACTT",
+    "year": 2006,
+    "specialty": "Critical care",
+    "expected_pmid": "16714767",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "CLOVERS",
+    "full": "CLOVERS",
+    "year": 2023,
+    "specialty": "Critical care",
+    "expected_pmid": "36688507",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 2
+  },
+  {
+    "name": "CLASSIC",
+    "full": "CLASSIC",
+    "year": 2022,
+    "specialty": "Critical care",
+    "expected_pmid": "35709019",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 2
+  },
+  {
+    "name": "TRISS",
+    "full": "TRISS",
+    "year": 2014,
+    "specialty": "Critical care",
+    "expected_pmid": "25270275",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "guideline-supporting",
+    "source_batch": 2
+  },
+  {
+    "name": "MIND-USA",
+    "full": "MIND-USA",
+    "year": 2018,
+    "specialty": "Critical care",
+    "expected_pmid": "30346242",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 2
+  },
+  {
+    "name": "RALES",
+    "full": "RALES",
+    "year": 1999,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "10471456",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "EPHESUS",
+    "full": "EPHESUS",
+    "year": 2003,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "12668699",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "COMPLETE",
+    "full": "COMPLETE",
+    "year": 2019,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "31475795",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "FAME",
+    "full": "FAME",
+    "year": 2009,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "19144937",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "diagnostic strategy",
+    "source_batch": 2
+  },
+  {
+    "name": "FREEDOM",
+    "full": "FREEDOM",
+    "year": 2012,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "23121323",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "AUGUSTUS",
+    "full": "AUGUSTUS",
+    "year": 2019,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "30883055",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "INVICTUS",
+    "full": "INVICTUS",
+    "year": 2022,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "36036525",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 2
+  },
+  {
+    "name": "TORCH",
+    "full": "TORCH",
+    "year": 2007,
+    "specialty": "Pulmonary",
+    "expected_pmid": "17314337",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 2
+  },
+  {
+    "name": "FLAME",
+    "full": "FLAME",
+    "year": 2016,
+    "specialty": "Pulmonary",
+    "expected_pmid": "27181606",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "LOTT",
+    "full": "LOTT",
+    "year": 2016,
+    "specialty": "Pulmonary",
+    "expected_pmid": "27783918",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 2
+  },
+  {
+    "name": "HOT-HMV",
+    "full": "HOT-HMV",
+    "year": 2017,
+    "specialty": "Pulmonary",
+    "expected_pmid": "28528348",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "SAMMPRIS",
+    "full": "SAMMPRIS",
+    "year": 2011,
+    "specialty": "Neurology",
+    "expected_pmid": "21899409",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 2
+  },
+  {
+    "name": "NASCET",
+    "full": "NASCET",
+    "year": 1991,
+    "specialty": "Neurology",
+    "expected_pmid": "1852179",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "SPS3 (antiplatelet)",
+    "full": "SPS3 (antiplatelet)",
+    "year": 2012,
+    "specialty": "Neurology",
+    "expected_pmid": "22931315",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 2
+  },
+  {
+    "name": "NAVIGATE ESUS",
+    "full": "NAVIGATE ESUS",
+    "year": 2018,
+    "specialty": "Neurology",
+    "expected_pmid": "29766772",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 2
+  },
+  {
+    "name": "SORT (albumin in SBP)",
+    "full": "SORT (albumin in SBP)",
+    "year": 1999,
+    "specialty": "GI/Hepatology",
+    "expected_pmid": "10432325",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "STOPAH",
+    "full": "STOPAH",
+    "year": 2015,
+    "specialty": "GI/Hepatology",
+    "expected_pmid": "25901427",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 2
+  },
+  {
+    "name": "ATTIRE",
+    "full": "ATTIRE",
+    "year": 2021,
+    "specialty": "GI/Hepatology",
+    "expected_pmid": "33657293",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 2
+  },
+  {
+    "name": "HALT-IT",
+    "full": "HALT-IT",
+    "year": 2020,
+    "specialty": "GI/Hepatology",
+    "expected_pmid": "32563378",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 2
+  },
+  {
+    "name": "DPP",
+    "full": "DPP",
+    "year": 2002,
+    "specialty": "Endocrinology",
+    "expected_pmid": "11832527",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 2
+  },
+  {
+    "name": "WHI (E+P)",
+    "full": "WHI (E+P)",
+    "year": 2002,
+    "specialty": "Prevention",
+    "expected_pmid": "12117397",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 2
+  },
+  {
+    "name": "HERS",
+    "full": "HERS",
+    "year": 1998,
+    "specialty": "Prevention",
+    "expected_pmid": "9718051",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 2
+  },
+  {
+    "name": "CATIE",
+    "full": "CATIE",
+    "year": 2005,
+    "specialty": "Psychiatry",
+    "expected_pmid": "16172203",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "guideline-supporting",
+    "source_batch": 2
+  },
+  {
+    "name": "STICHES",
+    "full": "STICHES",
+    "year": 2016,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "27040723",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "evidence reversal (neutral at 5y, positive at 10y)",
+    "source_batch": 1
+  },
+  {
+    "name": "ProCESS",
+    "full": "ProCESS",
+    "year": 2014,
+    "specialty": "Critical care",
+    "expected_pmid": "24635773",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "evidence reversal",
+    "source_batch": 3
+  },
+  {
+    "name": "ARISE",
+    "full": "ARISE",
+    "year": 2014,
+    "specialty": "Critical care",
+    "expected_pmid": "25272316",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "evidence reversal",
+    "source_batch": 3
+  },
+  {
+    "name": "ProMISe",
+    "full": "ProMISe",
+    "year": 2015,
+    "specialty": "Critical care",
+    "expected_pmid": "25776532",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "evidence reversal",
+    "source_batch": 3
+  },
+  {
+    "name": "SPICE III",
+    "full": "SPICE III",
+    "year": 2019,
+    "specialty": "Critical care",
+    "expected_pmid": "31112380",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 3
+  },
+  {
+    "name": "SHIFT",
+    "full": "SHIFT",
+    "year": 2010,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "20801500",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 3
+  },
+  {
+    "name": "MADIT-II",
+    "full": "MADIT-II",
+    "year": 2002,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "11907286",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 3
+  },
+  {
+    "name": "SCD-HeFT",
+    "full": "SCD-HeFT",
+    "year": 2005,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "15659722",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 3
+  },
+  {
+    "name": "PIONEER AF-PCI",
+    "full": "PIONEER AF-PCI",
+    "year": 2016,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "27959713",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "guideline-supporting",
+    "source_batch": 3
+  },
+  {
+    "name": "RE-DUAL PCI",
+    "full": "RE-DUAL PCI",
+    "year": 2017,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "28844193",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "guideline-supporting",
+    "source_batch": 3
+  },
+  {
+    "name": "FAME 2",
+    "full": "FAME 2",
+    "year": 2012,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "22924638",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "diagnostic strategy",
+    "source_batch": 3
+  },
+  {
+    "name": "UPLIFT",
+    "full": "UPLIFT",
+    "year": 2008,
+    "specialty": "Pulmonary",
+    "expected_pmid": "18836213",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 3
+  },
+  {
+    "name": "NETT",
+    "full": "NETT",
+    "year": 2003,
+    "specialty": "Pulmonary",
+    "expected_pmid": "12759479",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 3
+  },
+  {
+    "name": "CREST",
+    "full": "CREST",
+    "year": 2010,
+    "specialty": "Neurology",
+    "expected_pmid": "20505173",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "guideline-supporting",
+    "source_batch": 3
+  },
+  {
+    "name": "RE-SPECT ESUS",
+    "full": "RE-SPECT ESUS",
+    "year": 2019,
+    "specialty": "Neurology",
+    "expected_pmid": "31091372",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 3
+  },
+  {
+    "name": "RESPECT (PFO)",
+    "full": "RESPECT (PFO)",
+    "year": 2013,
+    "specialty": "Neurology",
+    "expected_pmid": "23514286",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "evidence reversal (neutral at 2013, positive on long-term follow-up)",
+    "source_batch": 3
+  },
+  {
+    "name": "CLOSE",
+    "full": "CLOSE",
+    "year": 2017,
+    "specialty": "Neurology",
+    "expected_pmid": "28902593",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 3
+  },
+  {
+    "name": "Look AHEAD",
+    "full": "Look AHEAD",
+    "year": 2013,
+    "specialty": "Prevention",
+    "expected_pmid": "23796131",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 3
+  },
+  {
+    "name": "ORIGIN",
+    "full": "ORIGIN",
+    "year": 2012,
+    "specialty": "Prevention",
+    "expected_pmid": "22686416",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "important negative trial",
+    "source_batch": 3
+  },
+  {
+    "name": "LIFE (geriatrics)",
+    "full": "LIFE (geriatrics)",
+    "year": 2014,
+    "specialty": "Prevention",
+    "expected_pmid": "24866862",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 3
   }
 ]
