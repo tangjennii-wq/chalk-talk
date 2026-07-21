@@ -40,7 +40,12 @@ const NCBI_KEY = process.env.NCBI_API_KEY || "";
 const raw = JSON.parse(readFileSync("rag/landmark_trials.json", "utf8"));
 const trials = Array.isArray(raw) ? raw : Object.values(raw)[0];
 
-const TRIAL_PUBTYPES = ["Randomized Controlled Trial","Clinical Trial","Controlled Clinical Trial","Pragmatic Clinical Trial","Clinical Trial, Phase II","Clinical Trial, Phase III"];
+// MUST stay identical to the list in validate_review_records.mjs — a trial that passes review
+// validation must also pass manifest validation. Divergence flagged BALANCE (Equivalence Trial) as a
+// mismatch after it had passed review 90/90. "Equivalence Trial" and "Phase IV" are legitimate
+// randomized-trial pubtypes; "Multicenter Study" is deliberately excluded (logistics, not design).
+// (validator run 2026-07-17)
+const TRIAL_PUBTYPES = ["Randomized Controlled Trial","Clinical Trial","Controlled Clinical Trial","Pragmatic Clinical Trial","Clinical Trial, Phase II","Clinical Trial, Phase III","Clinical Trial, Phase IV","Equivalence Trial"];
 const NOT_PRIMARY_RE = /\b(rationale and design|study design|design and methods|study protocol|trial protocol|:\s*protocol\b|statistical analysis plan)\b/i;
 const VERIFIED_OK = ["pubmed_2026-07", "manual_2026-07"];
 
