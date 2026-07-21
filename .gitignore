@@ -27,3 +27,4 @@ tmp/
 # Cloudflare Workers (Step 2) — auto-generated
 .wrangler/
 .dev.vars
+.cd
