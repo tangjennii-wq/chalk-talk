@@ -1,65 +1,61 @@
-# Landmark trial review — batches 1 & 2 · FOR PHYSICIAN REVIEW
+# Landmark trial review — batches 1-3 · FOR PHYSICIAN REVIEW
 
-Generated 2026-07-21 · **70 trials** · nothing ingested, `landmark_trials.json` untouched
+Generated 2026-07-21 · **90 trials** · nothing ingested, `landmark_trials.json` untouched
 
-All counts in this document are COMPUTED from `rag/trial_review_records.json`, not typed. The previous draft had inconsistent totals (36 rows described as 37, role totals summing to 34 against 35 recommended) — generating them removes that error class.
+All counts are COMPUTED from `rag/trial_review_records.json`, never typed.
 
-## Corrections applied after Codex review of batch 1
-
-- **DELIVER** — CORRECTED per Codex: originally claimed 'incorporated into 2022 guideline' — chronologically impossible.
-- **CLEAR Outcomes** — CORRECTED per Codex: originally cited the 2022 pathway, which predates the result. Metadata also secondary-sourced (PubMed rate-limited).
-- **ACURASYS** — CORRECTED per Codex: was mislabeled 'important negative trial'. ACURASYS was POSITIVE; ROSE contradicted it.
-- **AcT** — CORRECTED per Codex: previously cited a vague '2023 update'.
-- **CONFIRM** — REPLACES an incorrect entry. The prior draft substituted a 1995 octreotide/sclerotherapy variceal-bleeding study — a different clinical question entirely. Caught by Codex.
-
-## Totals
+**Before promotion run:** `node rag/validate_review_records.mjs` — confirms every PMID resolves, has trial-like publication types, and is not a protocol or secondary analysis. Exits 2 (inconclusive) if PubMed is unreachable, so an offline run can never look like a pass.
 
 | batch | n |
 |---|---|
-| batch 1 | 35 |
+| batch 1 | 36 |
 | batch 2 | 35 |
+| batch 3 | 19 |
 
 | teaching role | n |
 |---|---|
-| practice-changing benefit | 39 |
-| safety/harm | 14 |
-| important negative trial | 11 |
-| guideline-supporting | 4 |
+| practice-changing benefit | 44 |
+| important negative trial | 16 |
+| safety/harm | 15 |
+| guideline-supporting | 7 |
+| evidence reversal | 3 |
+| diagnostic strategy | 2 |
 | evidence reversal (positive, later contradicted) | 1 |
-| diagnostic strategy | 1 |
+| evidence reversal (neutral at 5y, positive at 10y) | 1 |
+| evidence reversal (neutral at 2013, positive on long-term follow-up) | 1 |
 
 | specialty | n |
 |---|---|
-| Cardiovascular | 16 |
-| Pulmonary | 11 |
-| Neurology | 10 |
+| Cardiovascular | 23 |
+| Neurology | 14 |
+| Pulmonary | 13 |
+| Critical care | 10 |
 | GI/Hepatology | 8 |
 | ID | 8 |
 | Heme | 7 |
-| Critical care | 6 |
-| Prevention | 2 |
+| Prevention | 5 |
 | Endocrinology | 1 |
 | Psychiatry | 1 |
 
 | confidence | n |
 |---|---|
-| high | 67 |
-| med | 3 |
+| high | 88 |
+| med | 2 |
 
 ---
 
-## Cardiovascular (16)
+## Cardiovascular (23)
 
-| trial | PMID | yr | question | result | teaching role | guideline relationship | conf |
+| trial | PMID | yr | question | result | teaching role | guideline | conf |
 |---|---|---|---|---|---|---|---|
 | **DELIVER** | 36027570 | 2022 | Dapagliflozin vs placebo, HF with EF >40% | ↓ worsening HF/CV death, HR 0.82 | practice-changing benefit | POSTDATES the Apr-2022 AHA/ACC/HFSA guideline (DELIVER published Sep 2022). Supports current practice; NOT evidence incorporated into that guideline. | high |
 | **EAST-AFNET 4** | 32865375 | 2020 | Early rhythm control vs usual care, AF ≤1yr | ↓ composite HR 0.79; stopped early | practice-changing benefit | incorporated (2023 ACC/AHA/ACCP/HRS AF) | high |
 | **CASTLE-AF** | 29385358 | 2018 | Ablation vs medical therapy, AF + HFrEF | ↓ death/HF hosp HR 0.62 | practice-changing benefit | incorporated (2023 AF guideline) | high |
 | **COAPT** | 30280640 | 2018 | TEER + GDMT vs GDMT, secondary MR | ↓ HF hosp 35.8 vs 67.9%/pt-yr; ↓ mortality 29.1 vs 46.1% | practice-changing benefit | incorporated (2020 ACC/AHA VHD, Class IIa) | high |
-| **CLEAR Outcomes** | 36876740 | 2023 | Bempedoic acid vs placebo, statin-intolerant | ↓ MACE HR 0.87 | practice-changing benefit | incorporated into the 2026 dyslipidemia guideline. The 2022 ACC nonstatin pathway described CLEAR Outcomes as still ONGOING. | med |
+| **CLEAR Outcomes** | 36876740 | 2023 | Bempedoic acid vs placebo, statin-intolerant | ↓ MACE HR 0.87 | practice-changing benefit | incorporated into the 2026 dyslipidemia guideline. The 2022 ACC nonstatin pathway described CLEAR Outcomes as still ONGOING. | high |
 | **COLCOT** | 31733140 | 2019 | Colchicine 0.5mg post-MI | ↓ composite HR 0.77 | practice-changing benefit | incorporated (2023 CCD guideline) | high |
 | **STICH** | 21463150 | 2011 | CABG + medical vs medical alone, EF ≤35% | Primary: no mortality benefit at 5y (HR 0.86, p=0.12) | important negative trial | incorporated (2021 ACC/AHA/SCAI, Class I) | high |
-| **AFFIRM-AHF** | 33197395 | 2020 | IV ferric carboxymaltose post-acute HF | ↓ HF hosp RR 0.74; primary composite p=0.059 | practice-changing benefit | incorporated (2022 AHA/ACC/HFSA, Class IIa) | med |
+| **AFFIRM-AHF** | 33197395 | 2020 | IV ferric carboxymaltose post-acute HF | ↓ HF hosp RR 0.74; primary composite p=0.059 | practice-changing benefit | incorporated (2022 AHA/ACC/HFSA, Class IIa) | high |
 | **LoDoCo2** | 32865380 | 2020 | Colchicine in chronic coronary disease | ↓ composite HR 0.69 | practice-changing benefit | incorporated (2023 CCD guideline, Class IIb) | high |
 | **RALES** | 10471456 | 1999 | Spironolactone in NYHA III-IV HFrEF | Mortality 35 vs 46%, RR 0.70; stopped early | practice-changing benefit | incorporated (2022 AHA/ACC/HFSA) | high |
 | **EPHESUS** | 12668699 | 2003 | Eplerenone post-MI with EF ≤40% | Mortality 14.4 vs 16.7%, RR 0.85; ↑ serious hyperkalemia | practice-changing benefit | incorporated (ACC/AHA MI + HF) | high |
@@ -68,21 +64,32 @@ All counts in this document are COMPUTED from `rag/trial_review_records.json`, n
 | **FREEDOM** | 23121323 | 2012 | CABG vs PCI in diabetes with multivessel CAD | 5-yr composite 18.7 vs 26.6% favouring CABG; stroke higher with CABG 5.2 vs 2.4% | practice-changing benefit | incorporated (2021 revascularization guideline) | high |
 | **AUGUSTUS** | 30883055 | 2019 | 2x2: apixaban vs VKA, aspirin vs placebo, AF after ACS/PCI | Apixaban less bleeding HR 0.69; aspirin MORE bleeding HR 1.89 without ischemic benefit | practice-changing benefit | incorporated (2023 AF guideline) | high |
 | **INVICTUS** | 36036525 | 2022 | Rivaroxaban vs VKA in rheumatic heart disease AF | Rivaroxaban WORSE (HR ~1.7 favouring VKA) | safety/harm | incorporated/reinforces existing contraindication | high |
+| **STICHES** | 27040723 | 2016 | STICH Extension Study: CABG + medical therapy vs medical therapy alone, ischemic cardiomyopathy, 10-year follow-up | 10-year all-cause mortality 58.9% vs 66.1%, p=0.02 — POSITIVE at 10 years | evidence reversal (neutral at 5y, positive at 10y) | incorporated (2021 ACC/AHA/SCAI, Class I for CABG in ischemic cardiomyopathy) | high |
+| **SHIFT** | 20801500 | 2010 | Ivabradine vs placebo, HFrEF in sinus rhythm with HR ≥70 | CV death or HF hosp 24 vs 29%, HR 0.82 | practice-changing benefit | incorporated (ACC/AHA/HFSA, ESC) | high |
+| **MADIT-II** | 11907286 | 2002 | Prophylactic ICD vs medical therapy, prior MI and EF ≤30% | Mortality 14.2 vs 19.8%, HR 0.69; stopped early | practice-changing benefit | incorporated (ACC/AHA/HRS device guidelines) | high |
+| **SCD-HeFT** | 15659722 | 2005 | Amiodarone vs ICD vs placebo, NYHA II-III HF with EF ≤35% | ICD ↓ mortality HR 0.77; amiodarone NO benefit (HR 1.06) | practice-changing benefit | incorporated (ACC/AHA/HFSA) | high |
+| **PIONEER AF-PCI** | 27959713 | 2016 | Rivaroxaban-based dual vs warfarin triple therapy after PCI in AF | Clinically significant bleeding 16.8 / 18.0 vs 26.7% | guideline-supporting | predates AUGUSTUS and current guidance; underpowered for ischemic efficacy | high |
+| **RE-DUAL PCI** | 28844193 | 2017 | Dabigatran dual vs warfarin triple therapy after PCI in AF | Bleeding 15.4 / 20.2 vs 26.9 / 25.7%; noninferior efficacy | guideline-supporting | predates AUGUSTUS and current guidance | high |
+| **FAME 2** | 22924638 | 2012 | FFR-guided PCI + medical therapy vs medical therapy alone, stable CAD | Composite 4.3 vs 12.7%, HR 0.32; stopped early — driven ENTIRELY by urgent revascularization, not death/MI | diagnostic strategy | incorporated (ACC/AHA, ESC) | high |
 
 > **DELIVER:** CORRECTED per Codex: originally claimed 'incorporated into 2022 guideline' — chronologically impossible.
 >
-> **CLEAR Outcomes:** CORRECTED per Codex: originally cited the 2022 pathway, which predates the result. Metadata also secondary-sourced (PubMed rate-limited).
+> **CLEAR Outcomes:** CORRECTED per Codex: guideline relationship fixed (2026 dyslipidemia guideline; the 2022 ACC pathway described the trial as ONGOING). Metadata RESOLVED 2026-07-17: NEJM 2023;388:1353-64, DOI 10.1056/NEJMoa2215024, double-blind RCT.
 >
-> **STICH:** DECISION REQUIRED: this record is the 2011 NEUTRAL primary endpoint. The positive 10-year result is STICHES, a SEPARATE publication (NEJM 2016). Recommend TWO linked records — do not teach the 10-year result off the 2011 PMID.
+> **STICH:** Paired with STICHES per Jenni's decision. THIS record is the 2011 NEUTRAL primary endpoint. Do not teach the positive 10-year result off this PMID.
 >
-> **AFFIRM-AHF:** Metadata secondary-sourced (PubMed rate-limited).
+> **AFFIRM-AHF:** Metadata RESOLVED 2026-07-17: Lancet 2020;396(10266):1895-1904, RCT; PubMed record confirmed directly.
 >
 > **FAME:** FAME 2 (PMID 22924638) is a DISTINCT trial: FFR-guided PCI vs medical therapy. Do not conflate.
 >
+> **STICHES:** LINKED to STICH (PMID 21463150). Per Jenni's decision: keep both, clearly separated.
+>
+> **FAME 2:** DISTINCT trial from FAME (PMID 19144937). Do not conflate.
+>
 
-## Pulmonary (11)
+## Pulmonary (13)
 
-| trial | PMID | yr | question | result | teaching role | guideline relationship | conf |
+| trial | PMID | yr | question | result | teaching role | guideline | conf |
 |---|---|---|---|---|---|---|---|
 | **NOTT** | 6776858 | 1980 | Continuous vs nocturnal O2, hypoxemic COPD | Nocturnal-only mortality 1.94x continuous | practice-changing benefit | incorporated (GOLD) | high |
 | **IMPACT** | 29668352 | 2018 | Single-inhaler triple vs dual, COPD | ↓ exac 15% vs ICS-LABA, 25% vs LAMA-LABA; ↑ pneumonia | practice-changing benefit | incorporated (GOLD) | high |
@@ -95,13 +102,17 @@ All counts in this document are COMPUTED from `rag/trial_review_records.json`, n
 | **FLAME** | 27181606 | 2016 | LABA/LAMA vs LABA/ICS, COPD | LABA/LAMA superior, RR 0.88; fewer pneumonias 3.2 vs 4.8% | practice-changing benefit | incorporated (GOLD) | high |
 | **LOTT** | 27783918 | 2016 | Long-term O2 for MODERATE desaturation (SpO2 89-93%) | No benefit (HR 0.94) | important negative trial | incorporated (thresholds stay anchored to NOTT/MRC) | high |
 | **HOT-HMV** | 28528348 | 2017 | Home NIV + O2 vs O2 alone after hypercapnic COPD exacerbation | Median time to readmission/death 4.3 vs 1.4 months, HR 0.49 | practice-changing benefit | incorporated (GOLD/ATS/ERS) | high |
+| **UPLIFT** | 18836213 | 2008 | Tiotropium vs placebo 4 years, COPD | Did NOT slow FEV1 decline (primary endpoint) but ↓ exacerbations, ↑ QoL | important negative trial | incorporated (GOLD, LAMA first-line maintenance) | high |
+| **NETT** | 12759479 | 2003 | Lung-volume-reduction surgery vs medical therapy, severe emphysema | No overall mortality benefit; benefit ONLY in upper-lobe-predominant + low exercise capacity. High-risk subgroup (FEV1 ≤20% + homogeneous emphysema or DLCO ≤20%) had 30-day mortality 16 vs 0% | safety/harm | incorporated (NETT criteria are a standing contraindication) | high |
 
 > **ACURASYS:** CORRECTED per Codex: was mislabeled 'important negative trial'. ACURASYS was POSITIVE; ROSE contradicted it.
+>
+> **NETT:** High-risk subgroup reported separately: Fishman NEJM 2001, PMID 11596586.
 >
 
 ## Heme (7)
 
-| trial | PMID | yr | question | result | teaching role | guideline relationship | conf |
+| trial | PMID | yr | question | result | teaching role | guideline | conf |
 |---|---|---|---|---|---|---|---|
 | **AMPLIFY** | 23808982 | 2013 | Apixaban monotherapy vs enox/warfarin, acute VTE | Noninferior; major bleed 0.6 vs 1.8% | practice-changing benefit | incorporated (ASH 2020, CHEST 2021) | high |
 | **CARAVAGGIO** | 32223112 | 2020 | Apixaban vs dalteparin, cancer VTE | Noninferior; NO excess GI bleeding | practice-changing benefit | incorporated (ASH/ISTH) | high |
@@ -111,9 +122,9 @@ All counts in this document are COMPUTED from `rag/trial_review_records.json`, n
 | **HOKUSAI-VTE Cancer** | 29231094 | 2018 | Edoxaban vs dalteparin, cancer VTE | Noninferior; ↑ major bleeding 6.9 vs 4.0%, GI-driven | practice-changing benefit | incorporated with caution (ASCO/ISTH) | high |
 | **SELECT-D** | 29746227 | 2018 | Rivaroxaban vs dalteparin, cancer VTE | ↓ recurrence 4 vs 11%; ↑ CRNM bleed 13 vs 4% | practice-changing benefit | incorporated with caution | high |
 
-## Neurology (10)
+## Neurology (14)
 
-| trial | PMID | yr | question | result | teaching role | guideline relationship | conf |
+| trial | PMID | yr | question | result | teaching role | guideline | conf |
 |---|---|---|---|---|---|---|---|
 | **WAKE-UP** | 29766770 | 2018 | Alteplase by DWI-FLAIR mismatch, unknown onset | mRS 0-1 53.3 vs 41.8%, OR 1.61 | practice-changing benefit | incorporated (AHA/ASA) | high |
 | **EXTEND** | 31067369 | 2019 | Alteplase 4.5-9h by perfusion imaging | mRS 0-1 35.4 vs 29.5%; sICH 6.2 vs 0.9% | practice-changing benefit | incorporated (AHA/ASA) | high |
@@ -125,15 +136,23 @@ All counts in this document are COMPUTED from `rag/trial_review_records.json`, n
 | **NASCET** | 1852179 | 1991 | CEA vs medical therapy, symptomatic ≥70% carotid stenosis | ARR 17 percentage points at 2 years; stopped early | practice-changing benefit | incorporated (AHA/ASA, vascular surgery) | high |
 | **SPS3 (antiplatelet)** | 22931315 | 2012 | Clopidogrel+ASA vs ASA, recent lacunar stroke | No stroke reduction; major hemorrhage nearly DOUBLED, ↑ mortality | safety/harm | incorporated (AHA/ASA recommends against) | high |
 | **NAVIGATE ESUS** | 30188630 | 2018 | Rivaroxaban vs aspirin after embolic stroke of undetermined source | No stroke reduction; major bleeding HR 2.72; stopped early | important negative trial | incorporated (AHA/ASA: no routine anticoagulation) | high |
+| **CREST** | 20505173 | 2010 | Carotid stenting vs endarterectomy | Composite 7.2 vs 6.8% at 4y, no difference; stenting ↑ periprocedural stroke, CEA ↑ periprocedural MI | guideline-supporting | incorporated (AHA/ASA, multisociety) | high |
+| **RE-SPECT ESUS** | 31091372 | 2019 | Dabigatran vs aspirin after embolic stroke of undetermined source | Not superior: 4.1 vs 4.8%/yr, HR 0.85 | important negative trial | guidelines retain antiplatelet therapy for ESUS | high |
+| **RESPECT (PFO)** | 23514286 | 2013 | PFO closure vs medical therapy after cryptogenic stroke | ITT neutral: HR 0.49, p=0.08. The 2017 long-term report (PMID 28902590) reached significance, HR 0.55, p=0.046 | evidence reversal (neutral at 2013, positive on long-term follow-up) | incorporated via totality with REDUCE/CLOSE (AHA/ASA 2021, AAN 2020) | high |
+| **CLOSE** | 28902593 | 2017 | PFO closure vs antiplatelet vs anticoagulation, cryptogenic stroke with HIGH-RISK PFO anatomy | Recurrent stroke 0% vs 6.0%, p<0.001; ↑ new AF 4.6 vs 0.9% | practice-changing benefit | incorporated (AHA/ASA 2021, AAN 2020) | high |
 
 > **AcT:** CORRECTED per Codex: previously cited a vague '2023 update'.
 >
 > **SPS3 (antiplatelet):** SPS3 had a SECOND randomization (BP target), reported separately: Lancet 2013, PMID 23726159. Keep distinct.
 >
+> **RE-SPECT ESUS:** DISTINCT from RESPECT (the PFO trial). Confusingly similar names.
+>
+> **RESPECT (PFO):** This record is the 2013 PRIMARY analysis. Long-term companion: PMID 28902590. DISTINCT from RE-SPECT ESUS.
+>
 
 ## GI/Hepatology (8)
 
-| trial | PMID | yr | question | result | teaching role | guideline relationship | conf |
+| trial | PMID | yr | question | result | teaching role | guideline | conf |
 |---|---|---|---|---|---|---|---|
 | **WATERFALL** | 36103415 | 2022 | Aggressive vs moderate fluids, acute pancreatitis | STOPPED EARLY FOR HARM: fluid overload 20.5 vs 6.3%, no efficacy gain | safety/harm | incorporated (2024 ACG/AGA) | high |
 | **SONIC** | 20393175 | 2010 | Infliximab +/- azathioprine, Crohn | Steroid-free remission 56.8 / 44.4 / 30.0% | practice-changing benefit | incorporated (AGA/ACG/ECCO) | high |
@@ -149,7 +168,7 @@ All counts in this document are COMPUTED from `rag/trial_review_records.json`, n
 
 ## ID (8)
 
-| trial | PMID | yr | question | result | teaching role | guideline relationship | conf |
+| trial | PMID | yr | question | result | teaching role | guideline | conf |
 |---|---|---|---|---|---|---|---|
 | **REPRIEVE** | 37486775 | 2023 | Pitavastatin in HIV below statin threshold | ↓ MACE HR 0.65; stopped early | practice-changing benefit | incorporated (NIH/IDSA) | high |
 | **Study 31 / A5349** | 33951360 | 2021 | 4-month rifapentine-moxi vs 6-month TB regimen | Noninferior; the non-moxifloxacin arm FAILED noninferiority | practice-changing benefit | incorporated (CDC/ATS/IDSA, WHO) | high |
@@ -167,9 +186,9 @@ All counts in this document are COMPUTED from `rag/trial_review_records.json`, n
 > **DOTS:** NAMING CAVEAT: DOTS tests IV dalbavancin, NOT 'partial oral therapy' as the queue described. Confirm this is the intended trial.
 >
 
-## Critical care (6)
+## Critical care (10)
 
-| trial | PMID | yr | question | result | teaching role | guideline relationship | conf |
+| trial | PMID | yr | question | result | teaching role | guideline | conf |
 |---|---|---|---|---|---|---|---|
 | **SAFE** | 15163774 | 2004 | Albumin vs saline, ICU resuscitation | No mortality difference (RR 0.99); later TBI subgroup harm signal | safety/harm | incorporated (Surviving Sepsis) | high |
 | **FACTT** | 16714767 | 2006 | Conservative vs liberal fluids in ARDS | No mortality difference; +2.5 ventilator-free days, +2.2 ICU-free days | practice-changing benefit | incorporated (ATS/ESICM/SCCM, conditional) | high |
@@ -177,23 +196,38 @@ All counts in this document are COMPUTED from `rag/trial_review_records.json`, n
 | **CLASSIC** | 35709019 | 2022 | Restricted vs standard IV fluid, established septic shock | 90-day mortality 42.3 vs 42.1% despite 1798 vs 3811 mL | important negative trial | not yet in a formal updated recommendation | high |
 | **TRISS** | 25270275 | 2014 | Transfusion threshold 7 vs 9 g/dL, septic shock | 90-day mortality 43 vs 45%; half the units | guideline-supporting | incorporated (SSC, with TRICC) | high |
 | **MIND-USA** | 30346242 | 2018 | Haloperidol/ziprasidone vs placebo, ICU delirium | NO difference in days alive without delirium/coma | important negative trial | incorporated (SCCM PADIS: recommends against routine use) | high |
+| **ProCESS** | 24635773 | 2014 | Protocol-based EGDT vs protocol-based standard vs usual care, early septic shock | 60-day mortality 21.0 / 18.2 / 18.9% — no difference | evidence reversal | incorporated (SSC dropped mandatory CVP/ScvO2 targets) | high |
+| **ARISE** | 25272316 | 2014 | EGDT vs usual care, early septic shock (Australasia) | 90-day mortality 18.6 vs 18.8% | evidence reversal | incorporated (SSC) | high |
+| **ProMISe** | 25776532 | 2015 | EGDT vs usual care, septic shock (UK NHS) | 90-day mortality 29.5 vs 29.2%; EGDT INCREASED organ support, LOS and cost | evidence reversal | incorporated (SSC) | high |
+| **SPICE III** | 31112380 | 2019 | Early dexmedetomidine vs usual sedation, ventilated adults | 90-day mortality 29.1 vs 29.1%; more bradycardia and hypotension | important negative trial | guidelines have not adopted a mortality-based change | med |
+
+> **ProMISe:** ProCESS + ARISE + ProMISe is a TEACHING TRIAD — keep together.
+>
+> **SPICE III:** Metadata cross-referenced via Crossref/Semantic Scholar; NCBI efetch returned empty for this ID.
+>
 
 ## Endocrinology (1)
 
-| trial | PMID | yr | question | result | teaching role | guideline relationship | conf |
+| trial | PMID | yr | question | result | teaching role | guideline | conf |
 |---|---|---|---|---|---|---|---|
 | **DPP** | 11832527 | 2002 | Lifestyle vs metformin vs placebo in impaired glucose tolerance | Diabetes incidence ↓58% lifestyle, ↓31% metformin | practice-changing benefit | incorporated (ADA Standards of Care) | high |
 
-## Prevention (2)
+## Prevention (5)
 
-| trial | PMID | yr | question | result | teaching role | guideline relationship | conf |
+| trial | PMID | yr | question | result | teaching role | guideline | conf |
 |---|---|---|---|---|---|---|---|
 | **WHI (E+P)** | 12117397 | 2002 | Estrogen+progestin vs placebo, healthy postmenopausal women | Stopped early: ↑ CHD (HR 1.29), ↑ invasive breast cancer, ↑ stroke/VTE | safety/harm | incorporated (USPSTF recommends against for chronic disease prevention) | high |
 | **HERS** | 9718051 | 1998 | Estrogen+progestin for SECONDARY prevention of CHD | No overall benefit (RH 0.99); early harm in year 1 | safety/harm | predates but is foundational to current guidance | high |
+| **Look AHEAD** | 23796131 | 2013 | Intensive lifestyle vs diabetes support/education, T2DM | STOPPED FOR FUTILITY: CV composite HR 0.95, p=0.51, despite more weight loss and better fitness | important negative trial | ADA recommends ILI for weight/glycemia, NOT for CV event reduction | high |
+| **ORIGIN** | 22686416 | 2012 | Insulin glargine vs standard care, dysglycemia + CV risk | Neutral: HR 1.02; no cancer excess; more hypoglycemia and weight gain | important negative trial | incorporated as safety reassurance (ADA/EASD, FDA CV-safety framework) | high |
+| **LIFE (geriatrics)** | 24866862 | 2014 | Structured physical activity vs health education, sedentary adults 70-89 | Major mobility disability 30.1 vs 35.5%, HR 0.82, p=0.03 | practice-changing benefit | incorporated (AGS/ACSM physical activity guidance) | high |
+
+> **LIFE (geriatrics):** DISAMBIGUATION: a different trial named LIFE tests losartan vs atenolol in hypertension with LVH (PMID 11937178). This is the geriatrics mobility trial.
+>
 
 ## Psychiatry (1)
 
-| trial | PMID | yr | question | result | teaching role | guideline relationship | conf |
+| trial | PMID | yr | question | result | teaching role | guideline | conf |
 |---|---|---|---|---|---|---|---|
 | **CATIE** | 16172203 | 2005 | Four SGAs vs perphenazine, chronic schizophrenia | 74% discontinued by 18 months; olanzapine longest but worst metabolic | guideline-supporting | incorporated (APA) | high |
 
