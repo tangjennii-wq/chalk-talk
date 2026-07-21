@@ -1,0 +1,1013 @@
+# do_not_teach extraction — REVIEW BEFORE APPLYING
+
+Generated 2026-07-21 · **66 of 183 entries** carry corrective prose · **125 statements** proposed forrelocation.
+
+## Why
+
+`keys` is injected verbatim as GUIDELINE REFERENCE CONTEXT at generation time. Every sentence below is currently being fed to the model as **teaching material** when it is actually a **constraint**. Moving it to `do_not_teach` / `supersedes` / `caveats` means it can be enforced ("never cite X") instead of taught.
+
+**Nothing is auto-applied.** `GUIDELINES` in index.html uses double-quoted JS strings; edits there are by hand.
+
+| bucket | meaning |
+|---|---|
+| `do_not_teach` | this document/year/society does not exist — never cite it |
+| `supersedes` | the correct current document to cite instead |
+| `caveats` | contested, living, or low-certainty — teach with hedging |
+
+---
+
+### [Nephrology] KDIGO 2021 Blood Pressure in CKD
+
+**do_not_teach**
+- this is KDIGO 2021 (Kidney Int 2021;99(3S):S1-S87).
+- There is NO KDIGO 2024 BP guideline.
+
+<details><summary>keys after removal (404/503 chars)</summary>
+
+Target SBP under 120 mmHg using STANDARDIZED OFFICE measurement (SPRINT-informed) when tolerated. Do NOT stop RASi for a modest eGFR decline (under 30 percent) or mild hyperkalemia - treat the potassium instead. The recommendation is primarily cardiovascular-driven, not kidney-outcome driven. Standardized BP technique is the whole point: rest 5 min, correct cuff, no talking, average multiple readings.
+
+</details>
+
+---
+
+### [Nephrology] KDIGO 2017 CKD-MBD Update
+
+**do_not_teach**
+- this is the KDIGO 2017 CKD-MBD Guideline Update (Kidney Int Suppl 2017;7:1-59).
+- There is NO 2024 CKD-MBD guideline - the 2024 document is a CONTROVERSIES CONFERENCE REPORT, not a guideline, and it concluded the 2017 recommendations remain largely consistent with the evidence.
+
+<details><summary>keys after removal (422/709 chars)</summary>
+
+Do not cite it as a guideline update. Content: treat toward the NORMAL range for calcium and phosphate; lower ELEVATED phosphate toward normal (do not treat prophylactically); restrict dietary phosphate, prefer non-calcium binders. PTH in CKD G5D: maintain roughly 2 to 9 times the upper normal assay limit - do not chase a single number. Bone biopsy is not routine. Avoid bisphosphonates in advanced CKD without a biopsy.
+
+</details>
+
+---
+
+### [Pulmonary] ATS 2025 CAP (IDSA did not endorse)
+
+**caveats**
+- CONTESTED - there is no longer a single consensus.
+- ATS published a 2025 CAP update; IDSA DECLINED TO ENDORSE it (IDSA accepted 8 of 10 recommendations but rejected the 2 concerning antibiotics in patients with positive viral assays).
+- (from title) IDSA did not endorse
+
+<details><summary>keys after removal (808/1042 chars)</summary>
+
+Teach the split. ATS 2025 changes vs IDSA/ATS 2019: (1) CORTICOSTEROIDS now suggested in SEVERE CAP (conditional, low-quality evidence) EXCEPT influenza pneumonia - a REVERSAL of 2019 which recommended against routine steroids; this is the highest-yield change. (2) SHORTER DURATION - 3 to 5 days conditionally recommended for outpatients with comorbidities and inpatients with non-severe CAP who reach clinical stability (minimum 3 days), down from at least 5 days. (3) Lung ultrasound addressed as a diagnostic modality. UNCHANGED from 2019: HCAP category eliminated, assess individual MRSA/Pseudomonas risk, CURB-65 and ATS minor criteria for site-of-care, outpatient amoxicillin or doxycycline (macrolide only if local resistance is low), inpatient beta-lactam + macrolide or respiratory fluoroquinolone.
+
+</details>
+
+---
+
+### [Pulmonary] ATS ARDS Management Update 2024 (ATS alone; the ATS/ESICM/SCCM doc is 2017)
+
+**do_not_teach**
+- there is no ATS/ESICM/SCCM 2023 ARDS guideline - the joint ATS/ESICM/SCCM document is 2017.
+
+**supersedes**
+- The current US guideline is ATS ALONE: An Update on Management of Adult Patients with ARDS, AJRCCM 2024;209:24 (Qadir). (ESICM separately published its own 2023 ARDS guideline - a different document.) LUNG-PROTECTIVE VENTILATION is the only intervention with a clear mortality benefit: TIDAL VOLUME 4-8 mL/kg PREDICTED body weight (use height, not actual weight) and PLATEAU PRESSURE under 30 cmH2O (ARMA).
+
+**caveats**
+- (from title) ATS alone; the ATS/ESICM/SCCM doc is 2017
+
+<details><summary>keys after removal (580/1099 chars)</summary>
+
+Permissive hypercapnia is acceptable. HIGHER PEEP in moderate-severe ARDS. PRONE POSITIONING for 16+ hours/day in moderate-severe ARDS (PaO2/FiO2 under 150) - a clear mortality benefit (PROSEVA) and it is UNDER-USED. Neuromuscular blockade: consider early in severe ARDS (evidence is mixed - ACURASYS vs ROSE). Conservative fluid strategy once shock has resolved (FACTT). CORTICOSTEROIDS: reasonable in moderate-severe ARDS (DEXA-ARDS). ECMO for refractory hypoxemia at an experienced center (EOLIA/CESAR). Berlin definition: mild/moderate/severe by PaO2/FiO2 with PEEP 5 or more.
+
+</details>
+
+---
+
+### [Pulmonary] AASM OSA - PAP 2019 / surgical 2019 / inpatient 2025 (no 2024 guideline)
+
+**do_not_teach**
+- there is NO AASM OSA guideline dated 2024.
+
+**supersedes**
+- The real documents are PAP treatment (2019), surgical treatment (2019), diagnostic testing (2017), and the NEW inpatient guideline - Evaluation and Management of OSA in Adults Hospitalized for Medical Care, J Clin Sleep Med 2025 - which the app was missing and which is directly relevant to hospitalist teaching (in-hospital screening pathway; PAP for untreated moderate-severe OSA).
+
+**caveats**
+- (from title) no 2024 guideline
+
+<details><summary>keys after removal (709/1146 chars)</summary>
+
+CPAP is first-line for moderate-severe OSA and for symptomatic mild OSA - it improves sleepiness, quality of life, and blood pressure. Adherence is the whole game: address mask fit, pressure intolerance, and claustrophobia early; auto-titrating PAP is an option. ALTERNATIVES when CPAP fails or is refused: oral appliance (mandibular advancement) for mild-moderate; positional therapy if supine-predominant; WEIGHT LOSS for everyone with obesity (and consider GLP-1s / bariatric surgery); hypoglossal nerve stimulation for selected CPAP-intolerant patients with moderate-severe OSA. Surgery (UPPP) has limited benefit - not first-line. Screen before elective surgery (STOP-BANG) and counsel on drowsy driving.
+
+</details>
+
+---
+
+### [Pulmonary] ERS Adult Bronchiectasis 2025 (ERS alone - no ATS/ERS bronchiectasis guideline)
+
+**do_not_teach**
+- there is no ATS/ERS bronchiectasis guideline (the ATS/ERS co-badge belongs to the NTM guideline).
+
+**supersedes**
+- Bronchiectasis is ERS ALONE, and the current document is the ERS Clinical Practice Guideline for the Management of Adult Bronchiectasis, ERJ 2025 (Chalmers/Aliberti, Dec 2025) - it SUPERSEDES ERS 2017.
+
+**caveats**
+- (from title) ERS alone - no ATS/ERS bronchiectasis guideline
+
+<details><summary>keys after removal (789/1109 chars)</summary>
+
+NEW STRONG RECOMMENDATIONS in 2025 that 2017 did not make: LONG-TERM INHALED ANTIBIOTICS for patients with Pseudomonas aeruginosa AND frequent exacerbations, and LONG-TERM MACROLIDES (azithromycin) to reduce exacerbations. Core: confirm with HRCT (bronchial dilatation, lack of tapering, signet-ring sign). Find the CAUSE - it changes management: immunodeficiency (immunoglobulins), ABPA, NTM, cystic fibrosis, primary ciliary dyskinesia, post-infectious, alpha-1. Airway clearance and pulmonary rehab for everyone. Sputum culture to define pathogens - Pseudomonas colonization predicts worse outcomes. Treat exacerbations for 14 days targeting the known pathogen. Vaccinate; treat comorbid GERD/rhinosinusitis. Do NOT use inhaled corticosteroids unless there is coexisting asthma or COPD.
+
+</details>
+
+---
+
+### [GI/Hepatology] AGA Living Guideline: Moderate-Severe Crohn Disease 2025
+
+**supersedes**
+- 2025 AGA Living Guideline REPLACES 2020 and REVERSES the algorithm: AGA now suggests UPFRONT ADVANCED THERAPY rather than step-up (steroid/immunomodulator-first) therapy in moderate-to-severe Crohn disease.
+
+<details><summary>keys after removal (379/586 chars)</summary>
+
+Teaching step-up in 2026 teaches against guideline. Current agent list: infliximab, adalimumab, ustekinumab, risankizumab, mirikizumab, guselkumab, upadacitinib. (ACG also published its own Crohn guideline for adults in June 2025.) Steroids remain for short-term induction only, never maintenance; assess for perianal/fistulizing disease; treat-to-target with endoscopic healing.
+
+</details>
+
+---
+
+### [GI/Hepatology] AASLD-IDSA HCV Guidance (living document at hcvguidelines.org)
+
+**do_not_teach**
+- this is a JOINT AASLD-IDSA product, not AASLD alone.
+- TREAT EVERYONE with active infection - there is no longer a fibrosis threshold, and treatment is now SIMPLIFIED.
+
+**caveats**
+- It is a LIVING document - cite hcvguidelines.org by access date rather than a fixed year.
+
+<details><summary>keys after removal (890/1159 chars)</summary>
+
+SCREEN ALL ADULTS 18 and over at least once, and all pregnant people each pregnancy (CDC/USPSTF); repeat testing for ongoing risk (injection drug use). Diagnose with HCV antibody, then HCV RNA to confirm active infection. Pangenotypic regimens: SOFOSBUVIR/VELPATASVIR 12 weeks, or GLECAPREVIR/PIBRENTASVIR 8 weeks in treatment-naive patients without cirrhosis. Genotyping is NOT required for the simplified pathway. Check for HBV COINFECTION before starting (risk of HBV reactivation - a boxed warning). Assess cirrhosis (FIB-4, elastography) - it changes regimen and mandates lifelong HCC surveillance every 6 months even after cure. Check drug-drug interactions (amiodarone plus sofosbuvir is contraindicated - bradycardia; also PPIs, statins, anticonvulsants). Confirm SVR12 (cure). Reinfection is possible - retest those with ongoing risk. Do NOT withhold treatment for active drug use.
+
+</details>
+
+---
+
+### [GI/Hepatology] AASLD Ascites, SBP and Hepatorenal Syndrome 2021 Practice Guidance
+
+**do_not_teach**
+- there is NO 2024 AASLD ascites guideline - the current document is the 2021 Practice Guidance (Biggins, Hepatology 2021;74:1014).
+
+<details><summary>keys after removal (804/944 chars)</summary>
+
+ASCITES: sodium restriction (2 g/day) plus diuretics - spironolactone and furosemide in a 100:40 ratio. Large-volume paracentesis with ALBUMIN (6-8 g per liter removed) when over 5 liters. SAAG 1.1 or more means portal hypertension. Refractory ascites: serial LVP or TIPS; consider transplant. AVOID NSAIDs (precipitate AKI) and be cautious with beta blockers in refractory ascites. SBP: diagnose with ascitic PMN 250 or more per mm3 - treat with cefotaxime plus ALBUMIN (1.5 g/kg day 1, 1 g/kg day 3) which reduces HRS and mortality. Secondary prophylaxis with norfloxacin/ciprofloxacin after an episode. HEPATORENAL SYNDROME (HRS-AKI): terlipressin plus albumin is first-line (approved 2022); midodrine plus octreotide plus albumin if terlipressin unavailable; stop diuretics; transplant is definitive.
+
+</details>
+
+---
+
+### [GI/Hepatology] AASLD/IDSA Chronic Hepatitis B 2025
+
+**supersedes**
+- 2025 GRADE-based guideline REPLACES AASLD 2018.
+
+<details><summary>keys after removal (833/881 chars)</summary>
+
+IMMUNE-TOLERANT PHASE: treat if age over 40, or grade 2 or higher inflammation / stage F2 or higher fibrosis (2018 largely deferred treatment here); shared decision-making under 40. DISCONTINUATION: in HBeAg-negative non-cirrhotic patients with sustained undetectable DNA, do NOT withdraw nucleos(t)ide analogue therapy until HBsAg loss - firmer than the 2018 finite-therapy option. PMTCT: strong recommendation for TDF or TAF at gestational week 28 when HBV DNA is over 200,000 IU/mL, regardless of HBeAg status. Tenofovir and entecavir remain first-line. Baseline treat thresholds: HBeAg-positive with DNA over 20,000 and ALT over 2x ULN; HBeAg-negative with DNA over 2,000 and elevated ALT. New guidance on the indeterminate or grey-zone phase and on HCC surveillance. Universal screening (HBsAg, anti-HBs, anti-HBc) per CDC 2023.
+
+</details>
+
+---
+
+### [Endocrinology] Endocrine Society Primary Aldosteronism 2025
+
+**do_not_teach**
+- SCREEN ALL PATIENTS WITH HYPERTENSION (aldosterone + renin + ARR) - no longer restricted to resistant HTN / hypokalemia / incidentaloma / OSA / family history.
+- CONFIRMATORY TESTING IS NO LONGER MANDATORY: diagnosis may rest on the biochemical triad of suppressed renin + elevated aldosterone + elevated ARR (saline infusion / oral salt loading no longer required in all cases).
+
+**supersedes**
+- 2025 guideline REPLACES 2016 and changes practice substantially.
+
+<details><summary>keys after removal (341/784 chars)</summary>
+
+Measured PA prevalence among hypertensives rises from about 9 percent under 2016 criteria to about 16 percent under 2025 criteria, capturing milder phenotypes. Adrenal vein sampling still used when surgery is considered; lateralized disease -> adrenalectomy, bilateral -> mineralocorticoid receptor antagonist (spironolactone or eplerenone).
+
+</details>
+
+---
+
+### [Endocrinology] ATA Thyroid Nodules 2015 (nodule guidance still ATA current) + ATA DTC 2025
+
+**do_not_teach**
+- THYROID CANCER - use ATA 2025 (Thyroid 2025;35:841), which is a major DE-ESCALATION: new COMPLETE REMISSION concept - low-risk DTC treated with total thyroidectomy plus RAI and a sustained excellent response for 10 to 15 years no longer needs routine biochemical surveillance (previously indefinite); further movement toward ACTIVE SURVEILLANCE over upfront surgery for papillary microcarcinoma; revised dynamic risk stratification plus new molecular and survivorship sections.
+
+<details><summary>keys after removal (474/952 chars)</summary>
+
+NODULES - this 2015 guidance is STILL ATA CURRENT: ATA split the document, and the 2025 guideline covers DIFFERENTIATED THYROID CANCER only and explicitly EXCLUDES nodules (a separate nodule guideline is planned but not yet published). Nodule workup: ultrasound risk stratification (TI-RADS-like): high suspicion -> FNA at 1cm or more; intermediate -> 1-1.5cm; low -> 1.5cm; very low -> 2cm. Bethesda categories for FNA cytology; molecular testing for indeterminate nodules.
+
+</details>
+
+---
+
+### [Endocrinology] ATA Hypothyroidism Treatment 2014 (ATA alone, not AACE/ATA)
+
+**do_not_teach**
+- there is NO 2024 hypothyroidism update, and this is an ATA guideline ALONE (Jonklaas/Bianco, Thyroid 2014;24:1670) - not AACE/ATA (the joint AACE/ATA document was the 2012 Garber guideline).
+
+**caveats**
+- (from title) ATA alone, not AACE/ATA
+
+<details><summary>keys after removal (845/1060 chars)</summary>
+
+ATA still lists 2014 as current. LEVOTHYROXINE MONOTHERAPY is the standard of care - do NOT routinely use combination T4/T3 or desiccated thyroid extract. Dose roughly 1.6 mcg/kg/day for full replacement; start low (25-50 mcg) in older adults or coronary disease. Take on an EMPTY STOMACH, 30-60 min before food; separate from calcium, iron, and PPIs by 4 hours. Recheck TSH at 6-8 weeks after any dose change. Target TSH in the normal reference range; do NOT chase T3. SUBCLINICAL hypothyroidism: treat if TSH over 10, or TSH 4.5-10 with symptoms, positive TPO antibodies, or pregnancy/pregnancy intent. PREGNANCY: levothyroxine requirement rises roughly 30 percent - increase the dose immediately on a positive test and check TSH every 4 weeks. Myxedema coma: IV levothyroxine plus stress-dose steroids until adrenal insufficiency is excluded.
+
+</details>
+
+---
+
+### [ID] Surviving Sepsis Campaign 2026
+
+**do_not_teach**
+- there was never a 2024 SSC update (a 2024 re-post of the 2021 PDF is the likely source of that error).
+- Core that stands: sepsis = life-threatening organ dysfunction from dysregulated host response; qSOFA is NOT a screening tool (use it to prompt concern, not to rule out).
+
+**supersedes**
+- SSC 2026 (SCCM/ESICM, Intensive Care Med) is now out and REPLACES 2021 - 129 statements, 46 new.
+
+**caveats**
+- NEW: a conditional recommendation for an initial MAP target of 60-65 mmHg in adults aged 65 and over, rather than a flat 65 for everyone.
+- Hour-1 bundle: measure LACTATE, draw BLOOD CULTURES BEFORE antibiotics, give BROAD-SPECTRUM ANTIBIOTICS within 1 hour for septic shock (within 3 h if sepsis without shock and diagnosis uncertain), start 30 mL/kg crystalloid for hypotension or lactate 4 or more, and start VASOPRESSORS to keep MAP at target if fluid-refractory.
+
+<details><summary>keys after removal (251/1105 chars)</summary>
+
+NOREPINEPHRINE is first-line vasopressor - add vasopressin second rather than escalating norepinephrine indefinitely. Balanced crystalloids over normal saline. Steroids (hydrocortisone) for shock refractory to fluids and pressors. Source control ASAP.
+
+</details>
+
+---
+
+### [ID] HHS/OARAC HIV Antiretroviral Guidelines (living - last updated 2026)
+
+**caveats**
+- this is a LIVING document (HHS Panel/OARAC), continuously updated - last updated May 2026.
+- Cite by ACCESS DATE, not a fixed year, and check the What is New page before teaching.
+
+<details><summary>keys after removal (900/1092 chars)</summary>
+
+START ART IMMEDIATELY in everyone with HIV, regardless of CD4 count - ideally the same day as diagnosis (rapid start). U=U: sustained viral suppression means HIV is UNTRANSMITTABLE sexually - tell every patient. FIRST-LINE regimens are INSTI-based: bictegravir/TAF/FTC (single tablet), or dolutegravir plus (TAF or TDF)/FTC, or dolutegravir/lamivudine (2-drug, if HBV-negative and VL under 500,000). Baseline: genotype resistance testing, HLA-B*5701 if considering abacavir, HBV serology (co-treat), pregnancy test, renal and hepatic function, lipids. Long-acting injectable cabotegravir/rilpivirine every 2 months for virologically suppressed patients who prefer it. PrEP: daily TDF/FTC or TAF/FTC, or injectable cabotegravir; now also lenacapavir (twice-yearly). Monitor VL at 4-8 weeks then q3 months until suppressed, then q6 months. Screen for OIs by CD4; start PJP prophylaxis if CD4 under 200.
+
+</details>
+
+---
+
+### [ID] ATS 2025 CAP (IDSA did not endorse)
+
+**caveats**
+- CONTESTED - there is no longer a single consensus.
+- ATS published a 2025 CAP update; IDSA DECLINED TO ENDORSE it (IDSA accepted 8 of 10 recommendations but rejected the 2 concerning antibiotics in patients with positive viral assays).
+- (from title) IDSA did not endorse
+
+<details><summary>keys after removal (808/1042 chars)</summary>
+
+Teach the split. ATS 2025 changes vs IDSA/ATS 2019: (1) CORTICOSTEROIDS now suggested in SEVERE CAP (conditional, low-quality evidence) EXCEPT influenza pneumonia - a REVERSAL of 2019 which recommended against routine steroids; this is the highest-yield change. (2) SHORTER DURATION - 3 to 5 days conditionally recommended for outpatients with comorbidities and inpatients with non-severe CAP who reach clinical stability (minimum 3 days), down from at least 5 days. (3) Lung ultrasound addressed as a diagnostic modality. UNCHANGED from 2019: HCAP category eliminated, assess individual MRSA/Pseudomonas risk, CURB-65 and ATS minor criteria for site-of-care, outpatient amoxicillin or doxycycline (macrolide only if local resistance is low), inpatient beta-lactam + macrolide or respiratory fluoroquinolone.
+
+</details>
+
+---
+
+### [ID] ESC 2023 Infective Endocarditis + 2023 Duke-ISCVID Criteria (there is no AHA 2023 IE update)
+
+**do_not_teach**
+- there is NO AHA 2023 IE update - the 2023 endocarditis GUIDELINE is ESC (Eur Heart J 2023).
+
+**caveats**
+- (from title) there is no AHA 2023 IE update
+
+<details><summary>keys after removal (1075/1181 chars)</summary>
+
+AHA IE documents are the 2015 scientific statement and the 2021 prevention statement. The Duke-ISCVID 2023 CRITERIA (Fowler, CID 2023;77:518) are a separate ISCVID document. DUKE-ISCVID 2023 UPDATES the modified Duke criteria: expands MICROBIOLOGY (adds organisms and accepts PCR/sequencing/serology), and expands IMAGING as a major criterion - cardiac CT and 18F-FDG PET/CT now count (especially for PROSTHETIC valves and intracardiac devices), not just echo. Adds intracardiac device leads as a predisposing condition. CORE: 3 sets of blood cultures from separate sites BEFORE antibiotics. Echo - TTE first, but TEE if prosthetic valve, high suspicion, or a negative/nondiagnostic TTE. Empiric therapy covers staph (including MRSA), strep, and enterococcus. SURGERY indications: heart failure from valve dysfunction, uncontrolled infection (abscess, persistent bacteremia), and prevention of embolism (large mobile vegetation over 10 mm with embolic event). Prophylaxis ONLY for the highest-risk cardiac lesions undergoing dental procedures involving gingival manipulation.
+
+</details>
+
+---
+
+### [ID] ATS/CDC/ERS/IDSA TB Treatment 2025 (ERS was omitted from the society list)
+
+**do_not_teach**
+- the society list omitted ERS - it is ATS/CDC/ERS/IDSA (AJRCCM 2025;211:15, online Dec 2024).
+
+**caveats**
+- (from title) ERS was omitted from the society list
+
+<details><summary>keys after removal (904/1010 chars)</summary>
+
+DRUG-SUSCEPTIBLE TB: a 4-MONTH REGIMEN is now an option for patients 12 and over - rifapentine, isoniazid, pyrazinamide, moxifloxacin (HPMZ, Study 31/A5349) - alongside the standard 6-month RIPE (rifampin, isoniazid, pyrazinamide, ethambutol x2 months, then rifampin plus isoniazid x4 months). DRUG-RESISTANT: BPaLM (bedaquiline, pretomanid, linezolid, moxifloxacin) for 6 MONTHS in rifampin-resistant / fluoroquinolone-susceptible TB - a transformative shortening from 18-20 months. Directly observed therapy (DOT) improves completion. Test EVERYONE for HIV. Get drug-susceptibility testing on the initial isolate. LATENT TB: 3HP (isoniazid plus rifapentine weekly x12), 4R (rifampin daily x4 months), or 3HR - all preferred over 9 months of isoniazid (better completion, less hepatotoxicity). Monitor for hepatotoxicity; pyridoxine with isoniazid. Airborne isolation until 3 negative smears on therapy.
+
+</details>
+
+---
+
+### [ID] IDSA/SHEA C. difficile 2021 Focused Update (+ ACG 2021)
+
+**do_not_teach**
+- there is NO ACG 2024 C. difficile guideline - ACG is 2021.
+- There is no consensus.
+
+<details><summary>keys after removal (977/1069 chars)</summary>
+
+The IDSA/SHEA 2021 Focused Update is real and current. TEACH THE SOCIETY DISAGREEMENT explicitly: IDSA/SHEA 2021 PREFERS FIDAXOMICIN over vancomycin for both initial and recurrent CDI; ACG 2021 still permits oral metronidazole as an option for initial non-severe disease. Diagnosis: only test patients with 3 or more unformed stools in 24 h and no laxatives - do NOT test asymptomatic patients and do NOT repeat a test of cure (PCR detects colonization). Stop the inciting antibiotic. Initial: fidaxomicin (preferred, IDSA) or oral vancomycin 125 mg QID x10 days. Recurrence: fidaxomicin, or vancomycin taper/pulse; BEZLOTOXUMAB to reduce recurrence in high-risk patients. Microbiota therapy for multiply-recurrent CDI is now standardized and FDA-approved: Rebyota (rectal, 2022) and Vowst (ORAL, 2023), plus conventional FMT (AGA 2024 guideline). FULMINANT: high-dose oral vancomycin (500 mg QID) plus IV metronidazole, add rectal vancomycin if ileus, urgent surgical consult.
+
+</details>
+
+---
+
+### [ID] IDSA Skin and Soft Tissue Infections 2014 (no update exists)
+
+**do_not_teach**
+- there is NO 2024 IDSA SSTI update and none is in development - the guideline is Stevens et al., CID 2014;59:e10-52.
+
+**caveats**
+- (from title) no update exists
+
+<details><summary>keys after removal (909/1035 chars)</summary>
+
+Practice has drifted (shorter courses, clindamycin de-emphasized) WITHOUT a formal IDSA update; do not attribute that drift to IDSA. PURULENT (abscess, furuncle): INCISION AND DRAINAGE is the primary therapy - antibiotics add little for a drained simple abscess. Add antibiotics if severe, systemic signs (SIRS), immunocompromised, or failed I and D - cover MRSA (TMP-SMX or doxycycline). NON-PURULENT cellulitis: cover STREPTOCOCCI (cephalexin, penicillin) - routine MRSA coverage is NOT indicated. Elevate the limb; mark the border and re-examine; treat tinea pedis as a portal of entry. 5 days is usually enough if improving. NECROTIZING FASCIITIS is a SURGICAL EMERGENCY: immediate debridement plus broad-spectrum antibiotics PLUS clindamycin (antitoxin/antiribosomal effect). Red flags: pain out of proportion to exam, crepitus, bullae, skin necrosis, systemic toxicity. Do NOT delay surgery for imaging.
+
+</details>
+
+---
+
+### [ID] IDSA Febrile Neutropenia 2010 + ASCO/IDSA 2018 (no 2024 update)
+
+**do_not_teach**
+- there is NO 2024 febrile neutropenia update.
+
+**caveats**
+- (from title) no 2024 update
+
+<details><summary>keys after removal (1140/1195 chars)</summary>
+
+IDSA is 2010 (Freifeld, CID 52:e56); the joint ASCO/IDSA documents are both 2018 (outpatient management of fever and neutropenia; antimicrobial prophylaxis). A 2024 label falsely implies the fluoroquinolone-prophylaxis and outpatient recommendations have been re-reviewed - they have not. DEFINITION: single temperature 38.3 C or more, or 38.0 C sustained over 1 h, WITH ANC under 500 (or expected to fall below 500). THIS IS AN EMERGENCY: draw blood cultures (peripheral AND each lumen of any central line) and give EMPIRIC BROAD-SPECTRUM ANTIBIOTICS WITHIN 1 HOUR - do not wait for the ANC or for imaging. Monotherapy with an ANTIPSEUDOMONAL BETA-LACTAM (cefepime, piperacillin-tazobactam, or a carbapenem). Add VANCOMYCIN only for specific indications - hemodynamic instability, suspected catheter infection, skin/soft tissue infection, known MRSA colonization, or severe mucositis - NOT routinely. Risk-stratify with MASCC or CISNE: low-risk patients may be managed as OUTPATIENTS on oral cipro plus amoxicillin-clavulanate. Add antifungal coverage if fever persists 4-7 days. G-CSF for prophylaxis, not for treatment of established FN.
+
+</details>
+
+---
+
+### [ID] CDC Yellow Book 2026 + WHO Malaria Guidelines (there is no IDSA travel medicine guideline)
+
+**do_not_teach**
+- there is NO joint WHO/IDSA travel medicine document - this was an invented pairing.
+
+**caveats**
+- The operative references are the CDC YELLOW BOOK 2026 for US travel chemoprophylaxis and vaccines, and the WHO Guidelines for Malaria (living document, WHO alone) for global treatment.
+- (from title) there is no IDSA travel medicine guideline
+
+<details><summary>keys after removal (804/1087 chars)</summary>
+
+IDSA does NOT publish a travel medicine guideline (that is ISTM/ASTMH). MALARIA: P. falciparum is the killer - suspect it in ANY febrile returning traveler and get thick and thin smears (or rapid antigen test) URGENTLY; a single negative smear does NOT exclude - repeat every 12-24 h x3. Severe malaria (impaired consciousness, acidosis, hypoglycemia, parasitemia over 5 percent, ARDS, AKI): IV ARTESUNATE is first-line worldwide. Uncomplicated falciparum: artemisinin-based combination therapy (ACT). P. vivax/ovale: add PRIMAQUINE or tafenoquine for hypnozoites - screen G6PD FIRST. Chemoprophylaxis by destination resistance: atovaquone-proguanil, doxycycline, or mefloquine. Pretravel: hepatitis A, typhoid, yellow fever (with certificate), rabies for high-risk; discuss traveler diarrhea and dengue.
+
+</details>
+
+---
+
+### [ID] IDSA Candidiasis 2016 (still IDSA current - no update pending)
+
+**do_not_teach**
+- NOTE: there is NO IDSA update pending - candidiasis is not on the IDSA guidelines-in-development register.
+
+**caveats**
+- (from title) still IDSA current - no update pending
+
+<details><summary>keys after removal (619/726 chars)</summary>
+
+A separate ECMM/ISHAM/ASM Global Guideline for Candidiasis (Lancet Infect Dis 2025) exists as a contemporary non-IDSA counterpoint but does NOT supersede IDSA 2016. Candidemia: echinocandin first-line (caspofungin 70→50 mg, micafungin 100 mg, anidulafungin 200→100 mg) — fungicidal, covers C. glabrata/krusei. Step-down to fluconazole 400 mg if susceptible + clinically stable + clearance. Remove central lines. Ophthalmology exam within 1 week (endophthalmitis). 14d from first negative blood culture. C. auris + echinocandin-resistance rising → speciation + AST mandatory. Rezafungin (once-weekly) emerging (ReSTORE).
+
+</details>
+
+---
+
+### [Heme/Onc] ASH VTE Treatment 2020 (adults; the 2024 update is PEDIATRIC only)
+
+**do_not_teach**
+- the ASH 2024 VTE document is the ASH/ISTH PEDIATRIC VTE guideline - it does NOT apply to adults.
+
+**supersedes**
+- For adults the current guideline is ASH 2020 (Ortel, Blood Adv 2020;4:4693); ASH reviewed it and elected to continue monitoring rather than revise, so 2020 stands.
+
+<details><summary>keys after removal (797/1068 chars)</summary>
+
+DOACs are PREFERRED over warfarin for most VTE (apixaban and rivaroxaban need no parenteral lead-in; dabigatran and edoxaban DO). Outpatient management for low-risk PE (sPESI 0 / HESTIA). Duration: 3 months for PROVOKED VTE with a transient major risk factor; INDEFINITE anticoagulation for UNPROVOKED VTE or ongoing risk (cancer, thrombophilia), balancing bleeding risk - reassess annually. CANCER-associated thrombosis: DOAC (apixaban, edoxaban, rivaroxaban) or LMWH - caution with edoxaban/rivaroxaban in luminal GI malignancy (higher GI bleeding). Do NOT routinely place an IVC filter - only if anticoagulation is absolutely contraindicated, and remove it when possible. Thrombolysis only for hemodynamically unstable PE. Do NOT routinely test for thrombophilia (it rarely changes management).
+
+</details>
+
+---
+
+### [Heme/Onc] ASH Sickle Cell Disease Guidelines 2019-2021 (no 2024 guideline)
+
+**do_not_teach**
+- there is NO 2024 ASH sickle cell guideline.
+
+**caveats**
+- (from title) no 2024 guideline
+
+<details><summary>keys after removal (1177/1231 chars)</summary>
+
+The five ASH SCD guidelines were published 2019-2021 (cardiopulmonary/kidney, cerebrovascular, transfusion, transplantation, acute and chronic pain). What happened in 2024 was an update of research PRIORITIES and board approval to BEGIN developing a hydroxyurea dosing guideline - neither is a guideline. HYDROXYUREA for all with recurrent vaso-occlusive crises, acute chest syndrome, or severe anemia - it reduces crises, ACS, transfusions, and mortality; titrate to maximum tolerated dose. Vaso-occlusive crisis: rapid, individualized ANALGESIA (opioids within 30-60 min; do NOT under-treat pain and do not label patients drug-seeking), plus hydration and oxygen only if hypoxic. ACUTE CHEST SYNDROME: new infiltrate plus fever/respiratory symptoms - antibiotics (cover atypicals), incentive spirometry, transfusion (simple or exchange). TRANSCRANIAL DOPPLER screening in children (age 2-16) - chronic transfusion if elevated velocity, to prevent stroke. Curative options: allogeneic transplant, and now gene therapies (exagamglogene autotemcel, lovotibeglogene autotemcel, FDA-approved Dec 2023). Vaccinate (encapsulated organisms); penicillin prophylaxis in young children.
+
+</details>
+
+---
+
+### [Heme/Onc] ISTH TTP 2020 + 2025 Focused Update (NOT an ASH guideline)
+
+**do_not_teach**
+- the TTP guideline is an ISTH guideline (Zheng et al.), NOT an ASH guideline.
+
+**caveats**
+- (from title) NOT an ASH guideline
+
+<details><summary>keys after removal (624/718 chars)</summary>
+
+2025 ISTH FOCUSED UPDATE changes congenital TTP: new STRONG recommendation for RECOMBINANT ADAMTS13 (Adzynma, FDA-approved Nov 2023) OVER fresh frozen plasma in cTTP remission - the cTTP paradigm changed entirely. IMMUNE TTP UNCHANGED: caplacizumab recommendation REAFFIRMED after review of new efficacy/survival/cost data, so HERCULES-based teaching still stands. iTTP triad: therapeutic plasma exchange + immunosuppression (steroids, rituximab) + caplacizumab. ADAMTS13 activity under 10 percent confirms; PLASMIC score risk-stratifies before the assay returns. Do NOT transfuse platelets unless life-threatening bleeding.
+
+</details>
+
+---
+
+### [Heme/Onc] AABB Transfusion Threshold 2023
+
+**caveats**
+- Liberal in ACS uncertain (REALITY).
+
+<details><summary>keys after removal (166/202 chars)</summary>
+
+Restrictive: Hgb 7 g/dL for stable hospitalized adults (TRICC). Cardiac surgery: 7.5 g/dL. Orthopedic: 8 g/dL. Hem/onc: consider <7. Reduces transfusion volumes ~40%.
+
+</details>
+
+---
+
+### [Oncology] NCCN Breast Cancer (modular, versioned continuously - cite the version you used)
+
+**do_not_teach**
+- VERSION CAUTION: NCCN versions churn monthly and NCCN has SPLIT breast into modules (Invasive Breast Cancer, Metastatic Breast Cancer, Screening and Diagnosis) - v3.2024 no longer exists as a single document.
+
+<details><summary>keys after removal (981/1190 chars)</summary>
+
+Cite the exact module and version you used. RECENT: 2026 permits SENTINEL LYMPH NODE BIOPSY OMISSION in selected postmenopausal patients over 50 with early-stage disease receiving whole-breast radiation plus endocrine therapy. CORE: subtype drives everything - ER/PR and HER2 on every tumor, plus Ki-67. HR-POSITIVE/HER2-NEGATIVE early stage: endocrine therapy for 5-10 years (tamoxifen premenopausal; aromatase inhibitor postmenopausal); use a genomic assay (Oncotype DX 21-gene) to decide on chemotherapy - most node-negative, RS under 26 can SKIP chemo (TAILORx); add abemaciclib or ribociclib for high-risk node-positive disease. HER2-POSITIVE: trastuzumab plus pertuzumab plus taxane; T-DM1 or T-DXd for residual disease/metastatic. TRIPLE-NEGATIVE: chemotherapy plus pembrolizumab (KEYNOTE-522); check BRCA (PARP inhibitor - olaparib) and sacituzumab govitecan for metastatic. Metastatic HR-positive: endocrine therapy plus a CDK4/6 INHIBITOR is first-line, not chemotherapy.
+
+</details>
+
+---
+
+### [Oncology] USPSTF cancer screening - per-topic statements (there is no single USPSTF 2024 document)
+
+**do_not_teach**
+- there is no single USPSTF Cancer Screening 2024 document - USPSTF issues SEPARATE per-cancer statements, each with its own grade and date.
+
+**caveats**
+- (from title) there is no single USPSTF 2024 document
+
+<details><summary>keys after removal (850/1003 chars)</summary>
+
+Cite the specific statement. CURRENT: BREAST - screening mammography every 2 years, ages 40-74 (Grade B, April 2024 - the start age was lowered from 50 to 40). LUNG - annual low-dose CT, ages 50-80, 20 pack-years, current smoker or quit within 15 years (Grade B, 2021). COLORECTAL - start at age 45 (Grade B for 45-49, Grade A for 50-75); age 76-85 individualize (Grade C) (2021). CERVICAL - ages 21-29 cytology every 3 years; ages 30-65 cytology every 3 years OR hrHPV every 5 years OR cotesting every 5 years (2018). IMPORTANT: the 2024 DRAFT adding SELF-COLLECTED HPV has NOT been finalized as of mid-2026 - do NOT teach self-collection as a USPSTF recommendation. PROSTATE - ages 55-69 individualized shared decision-making (Grade C); 70 and over recommend against (Grade D). Grades: A/B do it, C individualize, D do not, I insufficient evidence.
+
+</details>
+
+---
+
+### [Oncology] ASCO Immune-Related Adverse Events 2021 (no 2024 update; ASCO alone)
+
+**do_not_teach**
+- there is NO 2024 ASCO immunotherapy toxicity guideline - the document is the ASCO Guideline Update, JCO 2021;39:4073 (Schneider).
+
+**caveats**
+- (from title) no 2024 update; ASCO alone
+
+<details><summary>keys after removal (927/1067 chars)</summary>
+
+ASCO alone, not ASCO/SITC. GRADE-BASED MANAGEMENT: Grade 1 - continue the checkpoint inhibitor with close monitoring. Grade 2 - HOLD the drug, start prednisone 0.5-1 mg/kg. Grade 3 - hold, HIGH-DOSE steroids (methylprednisolone 1-2 mg/kg), hospitalize; if no improvement in 48-72 h add a second-line agent (INFLIXIMAB for colitis; do NOT use infliximab for hepatitis - use mycophenolate). Grade 4 - PERMANENTLY DISCONTINUE plus high-dose steroids. KEY EXCEPTION: controlled ENDOCRINOPATHIES (hypothyroidism, adrenal insufficiency, type 1 diabetes) do NOT require stopping immunotherapy - just replace the hormone. MYOCARDITIS is rare but often fatal - any troponin rise or new cardiac symptom means stop the drug and give high-dose steroids immediately. Colitis is the classic irAE - rule out C. difficile before blaming the drug. Taper steroids over 4-6 weeks; add PJP prophylaxis if prednisone 20 mg or more for over 4 weeks.
+
+</details>
+
+---
+
+### [Oncology] ASCO Metastatic Colorectal Cancer 2022
+
+**do_not_teach**
+- there is NO 2024 ASCO mCRC guideline - the document is Morris et al., JCO 2022 (evidence cutoff June 2022).
+
+<details><summary>keys after removal (730/848 chars)</summary>
+
+BIOMARKERS FIRST, before choosing therapy: RAS (KRAS/NRAS), BRAF V600E, HER2, and MISMATCH REPAIR / MSI status. MSI-HIGH or dMMR: PEMBROLIZUMAB (or nivolumab plus ipilimumab) FIRST-LINE - immunotherapy, not chemotherapy (KEYNOTE-177). RAS wild-type AND left-sided primary: chemotherapy plus an ANTI-EGFR (cetuximab or panitumumab). RAS MUTANT, or right-sided primary: chemotherapy plus BEVACIZUMAB - anti-EGFR does NOT work in RAS-mutant disease and is inferior in right-sided tumors. BRAF V600E: encorafenib plus cetuximab (BEACON). HER2-amplified: HER2-directed therapy. Backbone chemo: FOLFOX, FOLFIRI, or FOLFOXIRI. Consider resection of liver-limited metastases - potentially curative; involve a multidisciplinary team early.
+
+</details>
+
+---
+
+### [Oncology] ASCO Immune-Related Adverse Events 2021 (ASCO alone, not ASCO/SITC)
+
+**do_not_teach**
+- this is an ASCO guideline (Schneider/Brahmer, JCO 2021;39:4073) - NOT ASCO/SITC (SITC publishes its own separate irAE guidance) - and there is NO 2024 update.
+
+**caveats**
+- (from title) ASCO alone, not ASCO/SITC
+
+<details><summary>keys after removal (805/988 chars)</summary>
+
+GRADE-BASED FRAMEWORK: Grade 1 - continue the checkpoint inhibitor with close monitoring. Grade 2 - HOLD the ICI, start prednisone 0.5-1 mg/kg. Grade 3 - hold, HIGH-DOSE steroids (1-2 mg/kg methylprednisolone), hospitalize; if no improvement in 48-72 h add a second agent (infliximab for colitis; NOT infliximab for hepatitis - use mycophenolate). Grade 4 - PERMANENTLY DISCONTINUE, high-dose steroids. EXCEPTION: controlled ENDOCRINOPATHIES (hypothyroidism, adrenal insufficiency, type 1 diabetes) do NOT require stopping the ICI - just replace the hormone. Myocarditis is rare but has high mortality - any troponin rise or new cardiac symptom means stop the drug and give high-dose steroids immediately. Taper steroids over 4-6 weeks. Add PJP prophylaxis if on prednisone 20 mg or more for over 4 weeks.
+
+</details>
+
+---
+
+### [Oncology] ASCO Stage IV NSCLC Living Guidelines (with / without driver alterations; v2026)
+
+**do_not_teach**
+- these are LIVING guidelines updated continuously - the 2024 version is superseded (current v2026.3.0, Feb 2026, with SEVEN new regulatory approvals since 2024).
+
+<details><summary>keys after removal (955/1129 chars)</summary>
+
+Note there are TWO separate documents: Stage IV NSCLC WITH driver alterations, and WITHOUT driver alterations. Cite the version and date you used. BIOMARKER TESTING FIRST - do NOT start therapy in advanced non-squamous NSCLC before molecular results return: EGFR, ALK, ROS1, BRAF V600E, KRAS G12C, MET exon 14 skipping, RET, NTRK, HER2, plus PD-L1. WITH a driver: targeted therapy beats chemo-immunotherapy - osimertinib for EGFR (with intensification options now: osimertinib plus chemo, or amivantamab plus lazertinib); alectinib or lorlatinib for ALK; and there are approved agents for each of the others. WITHOUT a driver: PD-L1 50 percent or more - pembrolizumab monotherapy is an option; PD-L1 under 50 percent - chemotherapy plus immunotherapy. Do NOT give immunotherapy alone to an EGFR/ALK-driven tumor - it works poorly and increases toxicity when a TKI follows. Reassess at progression: repeat biopsy or liquid biopsy for resistance mechanisms.
+
+</details>
+
+---
+
+### [Rheumatology] ACR/SAA/SPARTAN Axial SpA 2026
+
+**supersedes**
+- 2026 update REPLACES 2019 (a first-ever juvenile axSpA companion guideline was released alongside it).
+
+<details><summary>keys after removal (830/933 chars)</summary>
+
+NSAIDs remain first-line. MAJOR CHANGE: TNF inhibitors and IL-17 inhibitors are now EQUALLY recommended as the initial biologic - the 2019 guideline preferred TNFi first. JAK INHIBITORS are now recommended, though NOT as first-line b/tsDMARD (they were not an option in 2019). A b/tsDMARD may be initial therapy in patients with risk of progression or inadequate NSAID response. On failure, SWITCH MECHANISM OF ACTION; after two or more class failures reassess for adherence and non-inflammatory pain. Extra-musculoskeletal manifestations drive selection: uveitis or IBD -> monoclonal anti-TNF; psoriasis -> IL-17i. Well-controlled disease: gradual dose reduction may be considered, but abrupt discontinuation is recommended AGAINST. Diagnosis in adults: SI joint radiographs first, then MRI. Treat-to-target with ASDAS or BASDAI.
+
+</details>
+
+---
+
+### [Rheumatology] GRAPPA PsA 2021 (published 2022) (+ bimekizumab 2024)
+
+**do_not_teach**
+- this is the GRAPPA 2021 recommendations (published in Nat Rev Rheumatol 2022) - the stored 2022 was the publication year, not the guideline year.
+
+<details><summary>keys after removal (641/797 chars)</summary>
+
+Still current; a GRAPPA update is underway. GAP: BIMEKIZUMAB (dual IL-17A/IL-17F) was FDA-approved for PsA in Sept 2024, after the evidence review. EULAR also published separate 2023 PsA recommendations worth contrasting. Core: treat by DOMAIN (peripheral arthritis, axial disease, enthesitis, dactylitis, skin, nails) - the domain drives drug choice. Peripheral arthritis: MTX or other csDMARD, then TNFi / IL-17i / IL-23i / JAKi. Axial disease: NSAIDs then TNFi or IL-17i (csDMARDs do NOT work for axial). Predominant skin: IL-17i or IL-23i. Enthesitis: TNFi, IL-17i, IL-23i, or JAKi (not csDMARDs). Screen every psoriasis patient for PsA.
+
+</details>
+
+---
+
+### [Rheumatology] EULAR Sjögren 2019 management (ACR/EULAR 2016 is CLASSIFICATION criteria only)
+
+**do_not_teach**
+- there is no ACR/EULAR 2023 Sjogren MANAGEMENT guideline.
+
+<details><summary>keys after removal (1177/1248 chars)</summary>
+
+ACR and EULAR jointly issued CLASSIFICATION CRITERIA (2016) - a research instrument, not management guidance. Management recommendations are EULAR ALONE (Ramos-Casals, Ann Rheum Dis 2020;79:3-18, published 2019). The newest US document is a Sjogrens Foundation/ACR guideline (2025) limited to PERIPHERAL NERVOUS SYSTEM manifestations. TOPICAL/LOCAL THERAPY FIRST for the sicca symptoms that define the disease: artificial tears and ocular lubricants, then topical cyclosporine or lifitegrast for dry eye; saliva substitutes, sugar-free gum, and MUSCARINIC AGONISTS (pilocarpine, cevimeline) for dry mouth. Meticulous dental care - caries risk is high. Hydroxychloroquine for arthralgia/fatigue (evidence is weak but it is widely used). Systemic immunosuppression (steroids, rituximab) only for SYSTEMIC involvement - vasculitis, interstitial lung disease, glomerulonephritis, severe cytopenias, neuropathy - NOT for sicca alone. Anti-Ro/SSA and anti-La/SSB; minor salivary gland biopsy (focus score) when serology is negative. MONITOR FOR LYMPHOMA - risk is 5-10 percent lifetime (MALT); red flags are persistent parotid enlargement, cryoglobulins, low C4, and lymphadenopathy.
+
+</details>
+
+---
+
+### [Rheumatology] EULAR 2023 Imaging in Large Vessel Vasculitis (there is no EULAR 2022 GCA guideline)
+
+**do_not_teach**
+- there is NO EULAR 2022 GCA management guideline.
+
+**caveats**
+- (from title) there is no EULAR 2022 GCA guideline
+
+<details><summary>keys after removal (743/809 chars)</summary>
+
+EULAR large-vessel-vasculitis MANAGEMENT recommendations are the 2018 update (Hellmich, Ann Rheum Dis 2020). What IS real and current is the 2023 EULAR update on IMAGING in large vessel vasculitis (Dejaco, Ann Rheum Dis 2024). IMAGING CHANGES vs 2018: ULTRASOUND IS NOW FIRST-LINE IN ALL PATIENTS with suspected GCA (not just selected ones), and the AXILLARY ARTERIES MUST be included in the standard exam. FDG-PET or MRI (cranial plus extracranial) are alternatives. For Takayasu, MRI is preferred. Imaging is NOT routine for follow-up but may assess suspected relapse when inflammatory markers are unreliable. Halo sign on ultrasound; compression sign. Start steroids immediately - imaging yield persists for days but do not delay treatment.
+
+</details>
+
+---
+
+### [Neurology] 2026 AHA/ASA Early Management of Acute Ischemic Stroke
+
+**do_not_teach**
+- SUPERSEDED: the 2026 AHA/ASA acute ischemic stroke guideline (published 26 Jan 2026) explicitly REPLACES the 2018 guideline and its 2019 update. (There was never a 2024 AIS guideline - the 2024 document was PRIMARY PREVENTION of stroke, a different scope.) MAJOR CHANGES: TENECTEPLASE is endorsed within 4.5 hours (simpler single bolus vs alteplase infusion).
+
+<details><summary>keys after removal (641/1001 chars)</summary>
+
+ENDOVASCULAR THROMBECTOMY eligibility BROADENED to include BASILAR ARTERY OCCLUSION and LARGE ISCHEMIC CORE - both previously excluded. Mobile stroke units endorsed; refined EMS triage; first-ever pediatric AIS recommendations. A talk on the 2019 text teaches an obsolete reperfusion algorithm. Core that stands: time is brain; NIHSS; noncontrast CT to exclude hemorrhage; thrombolysis within 4.5 h; EVT for large vessel occlusion (window extended to 24 h with perfusion imaging per DAWN/DEFUSE-3); permissive hypertension unless thrombolysis (then under 185/110); dysphagia screen before anything by mouth; start secondary prevention early.
+
+</details>
+
+---
+
+### [Neurology] AES Status Epilepticus 2016 (+ ESETT 2019) - not an AAN guideline
+
+**do_not_teach**
+- this is an AES (American Epilepsy Society) guideline - AAN is NOT a co-issuer - and there is NO 2024 update.
+
+<details><summary>keys after removal (732/865 chars)</summary>
+
+Glauser et al., Epilepsy Curr 2016;16:48-61. KEY UPDATE FROM TRIAL EVIDENCE: the 2016 guideline left second-phase therapy at Level U (insufficient evidence); ESETT (2019, NEJM) resolved this - fosphenytoin, valproate, and LEVETIRACETAM are EQUIVALENT (each terminates roughly half of benzodiazepine-refractory status). Timeline: 0-5 min stabilize; 5-20 min FIRST-LINE BENZODIAZEPINE - IM midazolam 10 mg, IV lorazepam 4 mg, or IV diazepam - and UNDERDOSING is the most common error; 20-40 min second-phase agent (any of the three per ESETT); 40-60 min repeat second-phase or go to anesthetic infusion (midazolam, propofol, pentobarbital) with continuous EEG. Treat the cause: glucose, thiamine, sodium, toxins, infection, eclampsia.
+
+</details>
+
+---
+
+### [Neurology] AHS 2024 Position Statement: CGRP therapies first-line for migraine PREVENTION (not a CPG; prevention only)
+
+**do_not_teach**
+- this is a POSITION STATEMENT (Charles, Headache 2024;64:333), not a clinical practice guideline, and it covers PREVENTION ONLY - do not cite it for acute migraine treatment.
+
+**caveats**
+- (from title) not a CPG; prevention only
+
+<details><summary>keys after removal (1006/1191 chars)</summary>
+
+KEY CHANGE: CGRP-targeting therapies are now FIRST-LINE for migraine prevention - the previous STEP-THERAPY requirement (fail 2 or more older preventive classes first) is ABOLISHED. Preventive CGRP options: monoclonal antibodies (erenumab, fremanezumab, galcanezumab, eptinezumab) and oral gepants (atogepant, rimegepant). Other preventives remain valid: topiramate, propranolol/metoprolol, amitriptyline, valproate, onabotulinumtoxinA (chronic migraine only, 15 or more headache days/month). Start prevention when attacks are frequent (4 or more per month), disabling, or acute treatment is failing or overused. ACUTE TREATMENT (from other AHS documents, not this one): triptans first-line for moderate-severe attacks; gepants (ubrogepant, rimegepant, zavegepant nasal) and lasmiditan for triptan non-responders or those with cardiovascular contraindications; NSAIDs for mild-moderate. Treat EARLY and at an adequate dose. MEDICATION-OVERUSE HEADACHE - limit acute treatment to under 10-15 days per month.
+
+</details>
+
+---
+
+### [Neurology] Anti-amyloid mAbs for Alzheimer disease - Appropriate Use Recommendations (NOT an AAN/AAOS guideline)
+
+**do_not_teach**
+- there is NO AAN/AAOS anti-amyloid guideline - AAOS is the ORTHOPAEDIC surgeons academy, and AAN has NO practice guideline on lecanemab or donanemab.
+- The governing documents are the Appropriate Use Recommendations (lecanemab AUR, JPAD 2023; donanemab AUR 2025) plus an AAN Emerging Issues review (Neurology 2023) that explicitly states it is NOT a practice guideline.
+- Do not cite a society guideline that does not exist.
+
+**caveats**
+- (from title) NOT an AAN/AAOS guideline
+
+<details><summary>keys after removal (565/999 chars)</summary>
+
+Content: lecanemab and donanemab are anti-amyloid monoclonals for EARLY symptomatic Alzheimer disease (MCI or mild dementia) with CONFIRMED amyloid (PET or CSF) - not for moderate/severe disease. ARIA (amyloid-related imaging abnormalities: ARIA-E edema, ARIA-H hemorrhage) is the defining toxicity - MRI surveillance is mandatory. APOE4 HOMOZYGOTES have the highest ARIA risk - genotype before treating and counsel accordingly. Avoid or use extreme caution with ANTICOAGULATION. Benefit is modest slowing of decline, not reversal - counsel expectations explicitly.
+
+</details>
+
+---
+
+### [Neurology] International Consensus MG - 2020 Update (Neurology 2021); armamentarium now outdated
+
+**do_not_teach**
+- this is the 2020 Update (Narayanaswami, Neurology 2021;96:114-122) - there is NO 2023 international consensus.
+
+<details><summary>keys after removal (858/979 chars)</summary>
+
+MAJOR DRUG GAP - the document predates FIVE approved drugs: EFGARTIGIMOD (FcRn blocker, 2021), RAVULIZUMAB (long-acting C5, 2022), ROZANOLIXIZUMAB (FcRn, June 2023), ZILUCOPLAN (C5 peptide, Oct 2023), and NIPACALIMAB (Imaavy, FcRn, April 2025). Teaching only pyridostigmine, steroids, azathioprine, and eculizumab is a badly obsolete armamentarium. Batoclimab remains investigational. Core: pyridostigmine symptomatic; corticosteroids plus a steroid-sparing agent (azathioprine, mycophenolate) for maintenance; THYMECTOMY for thymoma (any), and for non-thymomatous generalized AChR-positive MG in adults under 65 (MGTX trial). Crisis: IVIG or plasma exchange - NOT steroids alone (can worsen acutely); watch for respiratory failure with NIF and FVC, not oxygen saturation. AVOID aggravating drugs: aminoglycosides, fluoroquinolones, magnesium, beta blockers.
+
+</details>
+
+---
+
+### [Neurology] AAN Dopaminergic Therapy for Early Parkinson Disease 2021 (reaffirmed 2025)
+
+**do_not_teach**
+- there is no AAN 2018 Parkinson guideline - the document is the 2021 AAN practice guideline (Pringsheim, Neurology 2021), REAFFIRMED 8 Feb 2025.
+
+<details><summary>keys after removal (837/991 chars)</summary>
+
+It is a standalone guideline, not an update to a 2018 one. LEVODOPA is the preferred INITIAL therapy for motor symptoms in early PD (Level B) - it is more effective than dopamine agonists or MAO-B inhibitors. Use the LOWEST EFFECTIVE DOSE. Counsel on dyskinesia: risk in the first 5 years is real but severe/disabling dyskinesia is uncommon - fear of dyskinesia should NOT drive levodopa avoidance in older patients. Dopamine agonists (pramipexole, ropinirole) cause more impulse control disorders (gambling, hypersexuality, shopping - ASK about these directly), somnolence, and hallucinations, especially in older adults. MAO-B inhibitors are modestly effective. Physical therapy and exercise for all. Do NOT use anticholinergics in older adults. Tavapadon (D1/D5 partial agonist) is NOT yet FDA-approved - do not teach it as available.
+
+</details>
+
+---
+
+### [Neurology] AAO-HNSF Benign Paroxysmal Positional Vertigo 2017
+
+**do_not_teach**
+- there is NO AAN BPPV guideline dated 2023, and AAN formally RETIRED its only BPPV parameter (Fife 2008) in Feb 2018 - AAN states retired recommendations are no longer valid.
+
+**supersedes**
+- The current guideline is AAO-HNSF (Otolaryngol Head Neck Surg 2017;156(3_suppl):S1-S47); no update since.
+
+<details><summary>keys after removal (611/905 chars)</summary>
+
+DIAGNOSE with the DIX-HALLPIKE maneuver (posterior canal, the great majority) - upbeating torsional nystagmus with latency, fatigability. Supine roll test for horizontal canal. TREAT with a repositioning maneuver - EPLEY (canalith repositioning) for posterior canal; it is curative in most patients. Do NOT routinely use vestibular suppressants (meclizine, benzodiazepines) - they impair central compensation and are not treatment. Do NOT routinely image - reserve imaging for atypical nystagmus, focal neurologic signs, or red flags. Reassess after treatment; consider vestibular rehab for persistent symptoms.
+
+</details>
+
+---
+
+### [Critical Care] ESICM ARDS 2023 (ESICM alone) - note it DISAGREES with ATS 2024
+
+**do_not_teach**
+- there is no joint ATS/ESICM 2023 ARDS guideline.
+
+**caveats**
+- (from title) ESICM alone
+
+<details><summary>keys after removal (1067/1129 chars)</summary>
+
+There are TWO separate, independently developed guidelines that PARTLY DISAGREE: ESICM 2023 (Grasselli, Intensive Care Med 2023;49:727) and ATS 2024 (Qadir, AJRCCM 2024;209:24). TEACH THE DISAGREEMENT rather than a fake consensus: they diverge on HIGH PEEP (ATS recommends it in moderate-severe ARDS; ESICM makes NO recommendation), and on the strength of the neuromuscular blockade and ECMO recommendations. AGREED CORE: lung-protective ventilation is the only intervention with clear mortality benefit - TIDAL VOLUME 4-8 mL/kg PREDICTED body weight (use height), PLATEAU PRESSURE under 30 cmH2O, permissive hypercapnia acceptable. PRONE POSITIONING 16 or more hours/day in moderate-severe ARDS (PaO2/FiO2 under 150) - clear mortality benefit (PROSEVA) and badly under-used. Conservative fluids once shock resolves. Corticosteroids reasonable in moderate-severe ARDS. ECMO at an experienced center for refractory hypoxemia. ESICM 2023 also introduced a new ARDS definition including high-flow nasal oxygen and ultrasound-based criteria for resource-limited settings.
+
+</details>
+
+---
+
+### [Critical Care] SCCM PADIS 2018 + 2025 Focused Update (ICU Liberation)
+
+**do_not_teach**
+- there is no 2024 PADIS update.
+
+<details><summary>keys after removal (864/913 chars)</summary>
+
+The base is SCCM PADIS 2018 (Devlin, Crit Care Med 2018;46:e825), and the real update is the SCCM FOCUSED UPDATE of March 2025. NEW IN 2025: ANXIETY added as a distinct domain, plus five new statements - notably a suggestion for DEXMEDETOMIDINE OVER PROPOFOL for sedation in mechanically ventilated adults when light sedation and/or delirium reduction are priorities. That is a drug-level change. Core (ABCDEF / ICU Liberation bundle): Assess and treat PAIN first (pain drives agitation - do not sedate an untreated pain). Both spontaneous awakening AND breathing trials daily. Choice of sedation - target LIGHT sedation (RASS 0 to -1), avoid benzodiazepines (they increase delirium); prefer propofol or dexmedetomidine. Delirium - assess with CAM-ICU or ICDSC; antipsychotics do NOT prevent or shorten delirium; treat the cause. Early mobility. Family engagement.
+
+</details>
+
+---
+
+### [Allergy/Immuno] JTFPP Anaphylaxis 2023 (+ intranasal epinephrine 2024)
+
+**do_not_teach**
+- Core: EPINEPHRINE IM to the LATERAL THIGH is first-line - 0.3-0.5 mg adult, and there is NO absolute contraindication.
+
+<details><summary>keys after removal (835/954 chars)</summary>
+
+Document is CURRENT and correctly cited (Golden, Ann Allergy Asthma Immunol 2024;132:124-176). DRUG GAP: NEFFY (EPINEPHRINE NASAL SPRAY) was FDA-approved Aug 2024 (pediatric 1 mg dose March 2025; a March 2026 label update REMOVED the minimum age, making it purely weight-based at 15 kg or more). The parameter is framed IM-only. Anaphylm sublingual film is NOT approved (FDA Complete Response Letter Jan 2026) - do not teach it as available. Antihistamines and corticosteroids are ADJUNCTS ONLY and do not treat anaphylaxis - giving them instead of epinephrine is the classic fatal error. Biphasic reactions occur in 5-20 percent within 24 h - observe 4-8 h (longer if severe or on beta blockers). Prescribe TWO auto-injectors and an action plan; refer to allergy. Beta blockers blunt the epinephrine response - glucagon is the rescue.
+
+</details>
+
+---
+
+### [Allergy/Immuno] WAO Hereditary Angioedema 2025
+
+**do_not_teach**
+- THREE NEW FDA-APPROVED DRUGS the 2021 guideline cannot contain: sebetralstat (Ekterly) - the first ORAL on-demand plasma kallikrein inhibitor (KONFIDENT), approved July 2025, so on-demand therapy is no longer injectable-only; garadacimab (Andembry) - anti-activated-FXII monoclonal, monthly prophylaxis, June 2025; donidalorsen (Dawnzera) - prekallikrein antisense oligonucleotide, first RNA-targeted HAE drug, Aug 2025. 2025 first-line LONG-TERM PROPHYLAXIS: subcutaneous plasma-derived C1-INH, lanadelumab, garadacimab, donidalorsen, berotralstat.
+
+**supersedes**
+- 2025 WAO guideline REPLACES the WAO/EAACI 2021 revision; introduces endotype-based classification (HAE-C1-INH vs HAE-nC1-INH).
+
+<details><summary>keys after removal (284/961 chars)</summary>
+
+ON-DEMAND: icatibant, ecallantide, C1-INH, and now oral sebetralstat - treat every attack early. HAE is bradykinin-mediated: antihistamines, steroids, and epinephrine DO NOT work. Short-term prophylaxis before procedures. C4 low; C1-INH level and function; C1q distinguishes acquired.
+
+</details>
+
+---
+
+### [Allergy/Immuno] Food allergy - JTFPP peanut PP 2020 / food allergy PP 2014 (no 2024 parameter exists)
+
+**do_not_teach**
+- there is NO AAAAI/ACAAI food allergy or OIT practice parameter dated 2024.
+
+**supersedes**
+- The real documents are the peanut allergy diagnosis PP (2020), the food allergy PP (2014), and the AAAAI/ACAAI/CSACI early-introduction prevention consensus (2021).
+
+**caveats**
+- (from title) no 2024 parameter exists
+
+<details><summary>keys after removal (627/881 chars)</summary>
+
+MAJOR GAPS: OMALIZUMAB was FDA-approved Feb 2024 for IgE-mediated FOOD ALLERGY (multi-food; OUtMATCH) - it is not in any of those documents. PALFORZIA (peanut OIT) is being DISCONTINUED with wind-down through July 2026 - do NOT present it as a going concern. Core: introduce peanut EARLY (4-6 months) in high-risk infants (LEAP) - delayed introduction increases risk. Diagnose on history plus sIgE or skin test; oral food challenge is the gold standard. Do not screen-test broad food panels - it generates false positives and unnecessary avoidance. Epinephrine is first-line for anaphylaxis; antihistamines are adjunctive only.
+
+</details>
+
+---
+
+### [Allergy/Immuno] JTFPP Rhinitis 2020 Practice Parameter Update
+
+**do_not_teach**
+- there is NO 2023 allergic rhinitis parameter.
+
+<details><summary>keys after removal (704/760 chars)</summary>
+
+The current comprehensive document is Rhinitis 2020: A Practice Parameter Update (Dykewicz, JACI 2020;146:721-767); the 2017 seasonal-AR focused update is real but narrower. INCS (intranasal corticosteroid) is first-line monotherapy for moderate-severe or persistent AR. INCS plus intranasal ANTIHISTAMINE combination is more effective than either alone for inadequate responders. Oral second-generation antihistamines are safer than first-generation (avoid sedating agents). Allergen immunotherapy (SCIT or SLIT) for IgE-mediated disease refractory to pharmacotherapy, or to modify disease course. AVOID depot/systemic corticosteroids. Identify and avoid triggers; saline irrigation is a useful adjunct.
+
+</details>
+
+---
+
+### [Dermatology] IDSA Skin and Soft Tissue Infections 2014
+
+**do_not_teach**
+- there is NO 2014/2024 IDSA SSTI update - the guideline is Stevens et al., CID 2014;59:e10-52, and no update is on IDSA in-development register.
+
+<details><summary>keys after removal (626/780 chars)</summary>
+
+Practice has drifted (shorter courses, clindamycin de-emphasized) WITHOUT a formal IDSA update - do not attribute that drift to IDSA. Purulent (abscess): incision and drainage is the primary therapy; antibiotics only if severe, systemic signs, or immunocompromised - cover MRSA (TMP-SMX, doxycycline). NON-purulent cellulitis: cover STREPTOCOCCI (cephalexin, penicillin) - MRSA coverage is NOT routine. Elevate the limb. Mark the border. Necrotizing fasciitis: surgical emergency - immediate debridement plus broad-spectrum antibiotics plus clindamycin (antitoxin); pain out of proportion, crepitus, bullae, systemic toxicity.
+
+</details>
+
+---
+
+### [Dermatology] US/Canadian HS Foundations Hidradenitis Suppurativa 2019 (NOT an AAD guideline)
+
+**do_not_teach**
+- this is a US and Canadian HS FOUNDATIONS guideline (2019), NOT an AAD guideline - AAD has never published one (its first is expected Q4 2026).
+- There is NO 2024 update.
+
+**caveats**
+- (from title) NOT an AAD guideline
+
+<details><summary>keys after removal (573/765 chars)</summary>
+
+DRUG GAP: the 2019 document knows only ADALIMUMAB. Since then: SECUKINUMAB (IL-17A, FDA-approved Oct 2023) and BIMEKIZUMAB (IL-17A/F, Nov 2024) are approved for HS. Povorcitinib is NOT yet approved - do not teach it as available. Content: Hurley staging I-III. Lifestyle - smoking cessation, weight loss. Topical clindamycin for mild; oral tetracyclines; clindamycin plus rifampin for moderate. Biologics for moderate-severe. Surgery (wide local excision, deroofing) for tunnels and scarring; intralesional steroids for flares. Screen for metabolic syndrome and depression.
+
+</details>
+
+---
+
+### [Psychiatry] ACP Major Depressive Disorder 2023 (APA MDD is 2010 legacy - not current)
+
+**do_not_teach**
+- there is NO APA 2024 depression guideline.
+- APA MDD guideline is the 2010 THIRD EDITION and is NOT on APA current-guidelines list - it is LEGACY.
+
+**supersedes**
+- For an internal medicine audience the operative document is the ACP 2023 LIVING CLINICAL GUIDELINE (Qaseem, Ann Intern Med 2023).
+
+**caveats**
+- Combination CBT plus antidepressant is a conditional recommendation, low certainty - not automatically better.
+- (from title) APA MDD is 2010 legacy - not current
+
+<details><summary>keys after removal (642/1042 chars)</summary>
+
+ACP 2023: for moderate-to-severe MDD in the acute phase, use CBT or a second-generation antidepressant (SSRI/SNRI/bupropion/mirtazapine) as MONOTHERAPY (strong recommendation, moderate certainty). Choose based on patient preference, cost, and side-effect profile - the SGAs are comparably effective. Screen with PHQ-9; assess SUICIDE RISK explicitly. Allow 4-8 weeks at an adequate dose before declaring failure. If inadequate response: switch agent, augment, or add psychotherapy. Continue for 4-9 months after remission (longer if recurrent). Do not abruptly stop - taper (discontinuation syndrome). VA/DoD 2022 is a useful cross-reference.
+
+</details>
+
+---
+
+### [Psychiatry] PTSD - VA/DoD 2023 + American PSYCHOLOGICAL Assn 2017/2025 (psychiatric APA has NO PTSD guideline)
+
+**caveats**
+- (from title) psychiatric APA has NO PTSD guideline
+
+<details><summary>keys after removal (1183/1183 chars)</summary>
+
+CITATION FIX - CLASSIC SOCIETY BLEND: the American PSYCHIATRIC Association (psychiatry.org) has NO PTSD guideline on its current list. The PTSD clinical practice guideline belongs to the American PSYCHOLOGICAL Association (a DIFFERENT organization; 2017, updated 2025), and the psychiatric APA instead cross-lists the VA/DoD PTSD CPG. Do not attribute psychological-association recommendations to psychiatry. TRAUMA-FOCUSED PSYCHOTHERAPY IS FIRST-LINE - it outperforms medication: prolonged exposure (PE), cognitive processing therapy (CPT), and EMDR have the strongest evidence. Offer psychotherapy BEFORE or alongside medication when available. PHARMACOTHERAPY when psychotherapy is unavailable, declined, or insufficient: SSRIs (sertraline, paroxetine - both FDA-approved) or venlafaxine. Prazosin for trauma-related nightmares. Do NOT use benzodiazepines - they are ineffective for core PTSD symptoms, worsen outcomes, and interfere with exposure therapy. Screen with the PC-PTSD-5; diagnose by DSM-5 criteria (intrusion, avoidance, negative cognitions/mood, hyperarousal, over 1 month, functional impairment). Screen for comorbid depression, substance use, TBI, and suicidality.
+
+</details>
+
+---
+
+### [Psychiatry] APA Schizophrenia 2020
+
+**do_not_teach**
+- there is NO 2024 APA schizophrenia update - the guideline is APA 2020 (Am J Psychiatry 2020), and it is on APA current-guidelines list with no successor.
+
+<details><summary>keys after removal (784/948 chars)</summary>
+
+Antipsychotic for all patients with schizophrenia; continue the same agent that produced response. CLOZAPINE for TREATMENT-RESISTANT schizophrenia (failure of 2 adequate antipsychotic trials) - it is the ONLY agent with proven superiority here, and it is under-used. Clozapine also for persistent suicidality or aggression. Monitor ANC for agranulocytosis, plus myocarditis, seizures, constipation/ileus, and metabolic effects. LONG-ACTING INJECTABLES for nonadherence or preference. Monitor METABOLIC parameters (weight, glucose, lipids) and movement disorders (AIMS) on every antipsychotic. Psychosocial: coordinated specialty care for FIRST-EPISODE psychosis (RAISE), CBT for psychosis, supported employment, family psychoeducation. Do NOT use antipsychotic polypharmacy routinely.
+
+</details>
+
+---
+
+### [Psychiatry] AASM Insomnia - pharmacologic 2017 / behavioral 2021 / combination 2025
+
+**do_not_teach**
+- there is no 2024 AASM insomnia guideline.
+
+<details><summary>keys after removal (963/1023 chars)</summary>
+
+The pharmacologic guideline is 2017 (Sateia, J Clin Sleep Med 2017;13:307) - secondary sources sometimes misrender its Feb 15 2017 date as 2024. Behavioral guideline is 2021 (Edinger). NEW AND MISSING FROM THE APP: the AASM COMBINATION TREATMENT guideline (2025) - it SUGGESTS CBT-I PLUS MEDICATION OVER MEDICATION ALONE, and SUGGESTS AGAINST CBT-I plus medication over CBT-I ALONE. Translation: CBT-I monotherapy is not improved by adding a drug. CBT-I IS FIRST-LINE for chronic insomnia - not a hypnotic. Components: sleep restriction, stimulus control, cognitive restructuring, sleep hygiene (hygiene alone is NOT effective). If pharmacotherapy: use the lowest effective dose for the shortest time; eszopiclone, zolpidem, or doxepin have the best evidence; AVOID diphenhydramine, valerian, and trazodone (insufficient evidence); melatonin is NOT recommended for sleep-onset insomnia in adults. Deprescribe chronic hypnotics, especially in older adults (Beers).
+
+</details>
+
+---
+
+### [Geriatrics] AGS Beers Criteria 2023 + Beers Alternatives List 2025
+
+**do_not_teach**
+- The 2023 Beers Criteria (JAGS 2023;71:2052) remain current - there is no 2026 update.
+
+<details><summary>keys after removal (1156/1242 chars)</summary>
+
+MISSING FROM THE APP: AGS released a companion BEERS CRITERIA ALTERNATIVES LIST (July 2025) covering over 20 conditions (insomnia, anxiety, delirium, chronic pain) - it is the actionable what-to-prescribe-INSTEAD companion, which is what learners actually need. Beers lists potentially inappropriate medications in adults 65 and over. AVOID: benzodiazepines and Z-drugs (falls, fractures, delirium - and they are still massively over-prescribed); first-generation antihistamines and other strong ANTICHOLINERGICS (diphenhydramine, oxybutynin, amitriptyline, cyclobenzaprine); ANTIPSYCHOTICS for behavioral symptoms of dementia (increased mortality) unless nonpharmacologic measures fail and the patient is a danger; NSAIDs (GI bleeding, AKI, heart failure); sliding-scale insulin; muscle relaxants; PPIs beyond 8 weeks without indication. Use with caution: aspirin for primary prevention over 70; SSRIs/SNRIs (hyponatremia, falls). DRUG-DISEASE interactions matter: anticholinergics in dementia, NSAIDs in heart failure or CKD. Beers is a PROMPT for review and deprescribing, NOT an absolute prohibition - document the rationale when you use a listed drug.
+
+</details>
+
+---
+
+### [Geriatrics] NPIAP/EPUAP/PPPIA Pressure Injury 2025 (4th ed, living guideline)
+
+**supersedes**
+- 4th edition (2025) SUPERSEDES the 2019 static document and is a LIVING guideline with staged chapter release (prevention chapters live from Feb 2025).
+
+<details><summary>keys after removal (544/695 chars)</summary>
+
+Framework unchanged: stages 1-4 plus unstageable and deep tissue injury; risk assessment (Braden, Norton); repositioning, support surfaces, nutritional support; staging guides treatment - stage 1 protect, stage 2 hydrocolloid or foam, stages 3-4 debridement, negative-pressure wound therapy, consider surgery. CAUTION: specific numeric recommendations from 2019 (repositioning interval, support-surface selection, nutrition targets) are being revised chapter by chapter - verify against the current chapter before teaching a specific threshold.
+
+</details>
+
+---
+
+### [Geriatrics] NCP Clinical Practice Guidelines for Quality Palliative Care, 4th ed (2018)
+
+**do_not_teach**
+- there is no AAHPM end-of-life guideline - AAHPM publishes no clinical practice guidelines.
+
+**supersedes**
+- The real document is the National Coalition for Hospice and Palliative Care (NCP) Clinical Practice Guidelines for Quality Palliative Care, 4th edition (2018); AAHPM is a member organization of the coalition.
+
+<details><summary>keys after removal (907/1221 chars)</summary>
+
+EIGHT DOMAINS: structure and processes; physical; psychological/psychiatric; social; spiritual/religious/existential; cultural; care of the patient nearing the end of life; ethical and legal. Palliative care is for ANY serious illness at ANY stage, ALONGSIDE disease-directed therapy - it is NOT hospice and NOT only for the dying. Hospice eligibility: prognosis of 6 months or less if the disease runs its usual course, and the patient forgoes curative intent. ACTIVE DYING: anticipate and treat pain (opioids, no ceiling), dyspnea (opioids first-line, NOT oxygen unless hypoxic), secretions (glycopyrrolate/scopolamine - reposition, do not suction), agitation/terminal delirium (haloperidol), and nausea. Stop non-essential medications and monitoring. Artificial nutrition and hydration do NOT prolong life or improve comfort at the end of life. Communicate: ask-tell-ask, name the emotion, allow silence.
+
+</details>
+
+---
+
+### [Women's Health] USPSTF Cervical Cancer Screening 2018 (update still in DRAFT - self-collection NOT yet endorsed)
+
+**do_not_teach**
+- the current FINAL USPSTF cervical cancer recommendation is 2018 (JAMA 2018;320:674) - there is no 2023 version.
+
+**caveats**
+- (from title) update still in DRAFT - self-collection NOT yet endorsed
+
+<details><summary>keys after removal (846/968 chars)</summary>
+
+USPSTF flags the topic as being updated; the Dec 2024 DRAFT proposes self-collected hrHPV but is NOT FINAL as of mid-2026. Do NOT teach self-collection as a USPSTF recommendation (it IS in the ACS 2025/2026 update - attribute it correctly). CURRENT USPSTF (2018): ages 21-29 - cytology alone every 3 years. Ages 30-65 - cytology every 3 years, OR high-risk HPV testing alone every 5 years, OR cotesting every 5 years. UNDER 21 - do NOT screen (Grade D) regardless of sexual history. OVER 65 - stop screening if adequate prior negative screening and not high-risk (Grade D). After HYSTERECTOMY with cervix removed for benign disease - do not screen. HPV VACCINATION does not change screening intervals. Screen regardless of vaccination status. Immunocompromised or DES-exposed or prior CIN2+ patients need more intensive, individualized screening.
+
+</details>
+
+---
+
+### [Women's Health] ACOG Hypertension in Pregnancy - PB 222 (2020) + Clinical Practice Update (2022)
+
+**do_not_teach**
+- there is no 2024 ACOG hypertension-in-pregnancy guideline.
+
+<details><summary>keys after removal (1371/1440 chars)</summary>
+
+The documents are Practice Bulletin 222 - Gestational Hypertension and Preeclampsia (2020, interim update), Practice Bulletin 203 - Chronic Hypertension in Pregnancy (2019), and the post-CHAP ACOG Clinical Practice Update (2022) that set the treatment threshold. CHRONIC HYPERTENSION: after CHAP, TREAT to a threshold of 140/90 (previously treatment was withheld until 160/110) - this REDUCED adverse pregnancy outcomes without harming fetal growth. Preferred agents: LABETALOL, NIFEDIPINE, methyldopa. ACE inhibitors, ARBs, and direct renin inhibitors are CONTRAINDICATED. PREECLAMPSIA: new-onset hypertension after 20 weeks plus proteinuria OR severe features (platelets under 100k, creatinine over 1.1 or doubled, transaminases 2x normal, pulmonary edema, new cerebral or visual symptoms) - proteinuria is NOT required if severe features are present. SEVERE-RANGE hypertension (160/110 or more) is an EMERGENCY - treat within 30-60 minutes with IV labetalol, IV hydralazine, or oral immediate-release nifedipine. MAGNESIUM SULFATE for seizure prophylaxis in preeclampsia with severe features, and for eclampsia treatment (it is NOT an antihypertensive). Delivery is the only cure - at 37 weeks for preeclampsia without severe features, 34 weeks with severe features. PREVENTION: LOW-DOSE ASPIRIN 81 mg daily from 12-28 weeks (ideally before 16) for high-risk patients.
+
+</details>
+
+---
+
+### [Women's Health] ACOG Clinical Practice Update: Screening for Diabetes in Pregnancy 2024
+
+**do_not_teach**
+- ACOG Clinical Practice Guideline No. 2 is POSTMENOPAUSAL OSTEOPOROSIS, not gestational diabetes.
+
+<details><summary>keys after removal (1160/1271 chars)</summary>
+
+The correct document is the ACOG Clinical Practice UPDATE: Screening for Gestational and Pregestational Diabetes in Pregnancy and Postpartum (Obstet Gynecol 2024;144:e20), which updates Practice Bulletins 190 and 201. SCREEN ALL pregnant patients at 24-28 weeks; screen EARLY (first prenatal visit) if risk factors (obesity, prior GDM, family history, PCOS, high-risk ethnicity) to catch pregestational diabetes. US practice is the TWO-STEP approach: 50 g non-fasting glucose challenge, then a 100 g 3-hour OGTT if abnormal (Carpenter-Coustan thresholds - 2 or more abnormal values diagnoses GDM). MANAGEMENT: nutrition therapy and exercise first - the majority are controlled without medication. INSULIN is the PREFERRED pharmacotherapy when medication is needed (metformin and glyburide cross the placenta; metformin is a reasonable alternative if insulin is declined or unaffordable). Targets: fasting under 95, 1-h postprandial under 140, 2-h under 120. Fetal growth surveillance; consider delivery by 39-40 weeks. POSTPARTUM: 75 g 2-h OGTT at 4-12 weeks - GDM confers a roughly 50 percent lifetime risk of type 2 diabetes; screen every 1-3 years for life.
+
+</details>
+
+---
+
+### [Women's Health] PCOS - 2023 International Evidence-Based Guideline (ACOG PB 194 is 2018, reaffirmed 2025)
+
+**do_not_teach**
+- there is NO ACOG PCOS Practice Bulletin dated 2022.
+- DIAGNOSTIC CHANGE: serum AMH can now SUBSTITUTE for pelvic ultrasound in establishing polycystic ovarian morphology in ADULTS (other etiologies excluded) - ultrasound is no longer required.
+
+<details><summary>keys after removal (706/962 chars)</summary>
+
+ACOG Practice Bulletin 194 is dated 2018 (reaffirmed 2025). The current international standard is the 2023 International Evidence-Based Guideline for the Assessment and Management of PCOS (Monash/ESHRE/ASRM, Aug 2023; endorsed by 39 organizations). Rotterdam 2-of-3 otherwise retained (oligo/anovulation, clinical or biochemical hyperandrogenism, polycystic morphology); exclude thyroid disease, hyperprolactinemia, and nonclassic CAH. Management: lifestyle first-line; combined OCP for menstrual irregularity and hyperandrogenism; metformin for metabolic features; letrozole first-line for ovulation induction (over clomiphene). Screen for metabolic syndrome, OSA, depression, and endometrial hyperplasia.
+
+</details>
+
+---
+
+### [Ophthalmology] GCA vision loss (teaching lens on ACR/VF 2021 - not a separate guideline)
+
+**do_not_teach**
+- there is NO joint ACR/EULAR GCA 2021 management guideline.
+
+**caveats**
+- (from title) teaching lens on ACR/VF 2021 - not a separate guideline
+
+<details><summary>keys after removal (1000/1076 chars)</summary>
+
+ACR and EULAR jointly published 2022 ACR/EULAR CLASSIFICATION CRITERIA for GCA (a classification instrument, not a management guideline). This entry is a vision-loss teaching lens on the ACR/VF 2021 guideline - do not cite it as a separate society document. OPHTHALMIC EMERGENCY: GCA is the leading cause of preventable sudden bilateral blindness in older adults. Start HIGH-DOSE GLUCOCORTICOIDS IMMEDIATELY on clinical suspicion - do NOT wait for biopsy or for ESR/CRP. IV pulse methylprednisolone 1 g daily for 3 days if any visual symptoms (amaurosis fugax, diplopia, vision loss); once vision is lost it rarely recovers, and the fellow eye is at high risk within days. Arteritic anterior ischemic optic neuropathy: pallid disc swelling. Check ESR AND CRP (either may be normal); platelets often elevated. Temporal artery biopsy within 2 weeks of starting steroids (yield persists); ultrasound halo sign is an alternative. Tocilizumab steroid-sparing; upadacitinib FDA-approved for GCA April 2025.
+
+</details>
+
+---
+
+### [Palliative] CDC Opioid Prescribing 2022 (AAHPM publishes no clinical practice guidelines)
+
+**do_not_teach**
+- AAHPM does NOT publish clinical practice guidelines (it publishes position statements, CME, and fellowship EPAs) - there is no AAHPM pain management guideline.
+- CDC 2022 SOFTENED the rigid 2016 framing: there are NO hard dose thresholds or duration limits, and abrupt tapering or discontinuation of opioids in patients on long-term therapy is HARMFUL - do not force-taper.
+
+**supersedes**
+- The operative document is the CDC Clinical Practice Guideline for Prescribing Opioids for Pain (MMWR 2022;71(3)).
+
+**caveats**
+- (from title) AAHPM publishes no clinical practice guidelines
+
+<details><summary>keys after removal (576/1076 chars)</summary>
+
+Individualize. Start with non-opioid and non-pharmacologic therapy for chronic pain; opioids only when benefits outweigh risks, at the lowest effective dose, with explicit goals. Prescribe naloxone for patients at risk. Check the PDMP. Do NOT dismiss or abandon patients on long-term opioids. IMPORTANT SCOPE NOTE: the CDC guideline explicitly EXCLUDES cancer pain, palliative care, sickle cell crisis, and end-of-life care - do not apply its cautions to a dying patient. In palliative and end-of-life pain, opioids are titrated to effect with no ceiling; the goal is comfort.
+
+</details>
+
+---
+
+### [Palliative] ASCO Palliative Care for Patients With Cancer 2024
+
+**supersedes**
+- 2024 update REPLACES 2017.
+
+<details><summary>keys after removal (669/696 chars)</summary>
+
+Core recommendation unchanged: refer to interdisciplinary palliative care EARLY and CONCURRENTLY with cancer therapy from diagnosis of advanced disease (TEMEL: improved QoL, mood, possibly survival). NEW IN 2024: early integration explicitly EXTENDED to patients with HEMATOLOGIC MALIGNANCIES and to patients enrolled on EARLY-PHASE CLINICAL TRIALS - both under-addressed in 2017. Explicit endorsement of TELEHEALTH-delivered palliative care, and of needs-based prioritization plus primary palliative care by the oncology team to manage capacity constraints. Hospice eligibility: prognosis of 6 months or less. Hospital-based palliative care reduces ICU days and costs.
+
+</details>
+
+---
+
