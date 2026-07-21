@@ -1,9 +1,9 @@
 {
   "generated": "2026-07-21",
-  "manifest_size": 124,
+  "manifest_size": 214,
   "guideline_trials_listed": 219,
-  "already_present": 65,
-  "unique_candidates": 148,
+  "already_present": 98,
+  "unique_candidates": 116,
   "note": "READ-ONLY audit. A candidate is NOT approved for ingestion until a canonical primary-results PMID is verified. PubMed relevance search is not proof.",
   "candidates": [
     {
@@ -39,118 +39,6 @@
       ]
     },
     {
-      "guideline_spelling": "AFFIRM-AHF",
-      "normalized": "AFFIRM-AHF",
-      "specialty": "Cardiovascular",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Cardiovascular"
-      ],
-      "spellings": [
-        "AFFIRM-AHF"
-      ]
-    },
-    {
-      "guideline_spelling": "CASTLE-AF",
-      "normalized": "CASTLE-AF",
-      "specialty": "Cardiovascular",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Cardiovascular"
-      ],
-      "spellings": [
-        "CASTLE-AF"
-      ]
-    },
-    {
-      "guideline_spelling": "CLEAR Outcomes",
-      "normalized": "CLEAR OUTCOMES",
-      "specialty": "Cardiovascular",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Cardiovascular"
-      ],
-      "spellings": [
-        "CLEAR Outcomes"
-      ]
-    },
-    {
-      "guideline_spelling": "COAPT",
-      "normalized": "COAPT",
-      "specialty": "Cardiovascular",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Cardiovascular"
-      ],
-      "spellings": [
-        "COAPT"
-      ]
-    },
-    {
-      "guideline_spelling": "COLCOT",
-      "normalized": "COLCOT",
-      "specialty": "Cardiovascular",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Cardiovascular"
-      ],
-      "spellings": [
-        "COLCOT"
-      ]
-    },
-    {
-      "guideline_spelling": "DELIVER",
-      "normalized": "DELIVER",
-      "specialty": "Cardiovascular",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Cardiovascular"
-      ],
-      "spellings": [
-        "DELIVER"
-      ]
-    },
-    {
-      "guideline_spelling": "EAST-AFNET 4",
-      "normalized": "EAST-AFNET 4",
-      "specialty": "Cardiovascular",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Cardiovascular"
-      ],
-      "spellings": [
-        "EAST-AFNET 4"
-      ]
-    },
-    {
       "guideline_spelling": "EXPLORER-HCM",
       "normalized": "EXPLORER-HCM",
       "specialty": "Cardiovascular",
@@ -180,22 +68,6 @@
       ],
       "spellings": [
         "LIPID"
-      ]
-    },
-    {
-      "guideline_spelling": "LoDoCo2",
-      "normalized": "LODOCO2",
-      "specialty": "Cardiovascular",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Cardiovascular"
-      ],
-      "spellings": [
-        "LoDoCo2"
       ]
     },
     {
@@ -311,22 +183,6 @@
       ]
     },
     {
-      "guideline_spelling": "STICH",
-      "normalized": "STICH",
-      "specialty": "Cardiovascular",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Cardiovascular"
-      ],
-      "spellings": [
-        "STICH"
-      ]
-    },
-    {
       "guideline_spelling": "TRITON-TIMI 38",
       "normalized": "TRITON-TIMI 38",
       "specialty": "Cardiovascular",
@@ -439,38 +295,6 @@
       ]
     },
     {
-      "guideline_spelling": "CALM",
-      "normalized": "CALM",
-      "specialty": "GI/Hepatology",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "GI/Hepatology"
-      ],
-      "spellings": [
-        "CALM"
-      ]
-    },
-    {
-      "guideline_spelling": "CONFIRM",
-      "normalized": "CONFIRM",
-      "specialty": "GI/Hepatology",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "ambiguous-name",
-      "triage_note": "",
-      "specialties": [
-        "GI/Hepatology"
-      ],
-      "spellings": [
-        "CONFIRM"
-      ]
-    },
-    {
       "guideline_spelling": "GEMINI",
       "normalized": "GEMINI",
       "specialty": "GI/Hepatology",
@@ -548,22 +372,6 @@
       ],
       "spellings": [
         "OCTAVE"
-      ]
-    },
-    {
-      "guideline_spelling": "SONIC",
-      "normalized": "SONIC",
-      "specialty": "GI/Hepatology",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "GI/Hepatology"
-      ],
-      "spellings": [
-        "SONIC"
       ]
     },
     {
@@ -663,54 +471,6 @@
       ]
     },
     {
-      "guideline_spelling": "WATERFALL",
-      "normalized": "WATERFALL",
-      "specialty": "GI/Hepatology",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "GI/Hepatology"
-      ],
-      "spellings": [
-        "WATERFALL"
-      ]
-    },
-    {
-      "guideline_spelling": "AMPLIFY",
-      "normalized": "AMPLIFY",
-      "specialty": "Heme/Onc",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Heme/Onc"
-      ],
-      "spellings": [
-        "AMPLIFY"
-      ]
-    },
-    {
-      "guideline_spelling": "CARAVAGGIO",
-      "normalized": "CARAVAGGIO",
-      "specialty": "Heme/Onc",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Heme/Onc"
-      ],
-      "spellings": [
-        "CARAVAGGIO"
-      ]
-    },
-    {
       "guideline_spelling": "EINSTEIN",
       "normalized": "EINSTEIN",
       "specialty": "Heme/Onc",
@@ -791,22 +551,6 @@
       ]
     },
     {
-      "guideline_spelling": "REALITY",
-      "normalized": "REALITY",
-      "specialty": "Heme/Onc",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Heme/Onc"
-      ],
-      "spellings": [
-        "REALITY"
-      ]
-    },
-    {
       "guideline_spelling": "STAND",
       "normalized": "STAND",
       "specialty": "Heme/Onc",
@@ -836,54 +580,6 @@
       ],
       "spellings": [
         "STOP"
-      ]
-    },
-    {
-      "guideline_spelling": "TRAPS",
-      "normalized": "TRAPS",
-      "specialty": "Heme/Onc",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Heme/Onc"
-      ],
-      "spellings": [
-        "TRAPS"
-      ]
-    },
-    {
-      "guideline_spelling": "TRICC",
-      "normalized": "TRICC",
-      "specialty": "Heme/Onc",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Heme/Onc"
-      ],
-      "spellings": [
-        "TRICC"
-      ]
-    },
-    {
-      "guideline_spelling": "REPRIEVE",
-      "normalized": "REPRIEVE",
-      "specialty": "ID",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "ID"
-      ],
-      "spellings": [
-        "REPRIEVE"
       ]
     },
     {
@@ -937,22 +633,6 @@
       ]
     },
     {
-      "guideline_spelling": "AcT",
-      "normalized": "ACT",
-      "specialty": "Neurology",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Neurology"
-      ],
-      "spellings": [
-        "AcT"
-      ]
-    },
-    {
       "guideline_spelling": "ADAPT",
       "normalized": "ADAPT",
       "specialty": "Neurology",
@@ -982,22 +662,6 @@
       ],
       "spellings": [
         "ATACH-2"
-      ]
-    },
-    {
-      "guideline_spelling": "CHANCE",
-      "normalized": "CHANCE",
-      "specialty": "Neurology",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Neurology"
-      ],
-      "spellings": [
-        "CHANCE"
       ]
     },
     {
@@ -1081,22 +745,6 @@
       ]
     },
     {
-      "guideline_spelling": "EXTEND",
-      "normalized": "EXTEND",
-      "specialty": "Neurology",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Neurology"
-      ],
-      "spellings": [
-        "EXTEND"
-      ]
-    },
-    {
       "guideline_spelling": "INTERACT2",
       "normalized": "INTERACT2",
       "specialty": "Neurology",
@@ -1161,38 +809,6 @@
       ]
     },
     {
-      "guideline_spelling": "POINT",
-      "normalized": "POINT",
-      "specialty": "Neurology",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Neurology"
-      ],
-      "spellings": [
-        "POINT"
-      ]
-    },
-    {
-      "guideline_spelling": "THALES",
-      "normalized": "THALES",
-      "specialty": "Neurology",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Neurology"
-      ],
-      "spellings": [
-        "THALES"
-      ]
-    },
-    {
       "guideline_spelling": "TRAILBLAZER-ALZ-2",
       "normalized": "TRAILBLAZER-ALZ-2",
       "specialty": "Neurology",
@@ -1222,22 +838,6 @@
       ],
       "spellings": [
         "TREAT-MS"
-      ]
-    },
-    {
-      "guideline_spelling": "WAKE-UP",
-      "normalized": "WAKE-UP",
-      "specialty": "Neurology",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Neurology"
-      ],
-      "spellings": [
-        "WAKE-UP"
       ]
     },
     {
@@ -1945,22 +1545,6 @@
       ]
     },
     {
-      "guideline_spelling": "ACURASYS",
-      "normalized": "ACURASYS",
-      "specialty": "Pulmonary",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Pulmonary"
-      ],
-      "spellings": [
-        "ACURASYS"
-      ]
-    },
-    {
       "guideline_spelling": "AMBITION",
       "normalized": "AMBITION",
       "specialty": "Pulmonary",
@@ -2026,54 +1610,6 @@
       ]
     },
     {
-      "guideline_spelling": "DEXA-ARDS",
-      "normalized": "DEXA-ARDS",
-      "specialty": "Pulmonary",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Pulmonary"
-      ],
-      "spellings": [
-        "DEXA-ARDS"
-      ]
-    },
-    {
-      "guideline_spelling": "ETHOS",
-      "normalized": "ETHOS",
-      "specialty": "Pulmonary",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Pulmonary"
-      ],
-      "spellings": [
-        "ETHOS"
-      ]
-    },
-    {
-      "guideline_spelling": "IMPACT",
-      "normalized": "IMPACT",
-      "specialty": "Pulmonary",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Pulmonary"
-      ],
-      "spellings": [
-        "IMPACT"
-      ]
-    },
-    {
       "guideline_spelling": "INPULSIS-1",
       "normalized": "INPULSIS-1",
       "specialty": "Pulmonary",
@@ -2106,22 +1642,6 @@
       ]
     },
     {
-      "guideline_spelling": "MIST2",
-      "normalized": "MIST2",
-      "specialty": "Pulmonary",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Pulmonary"
-      ],
-      "spellings": [
-        "MIST2"
-      ]
-    },
-    {
       "guideline_spelling": "MRC",
       "normalized": "MRC",
       "specialty": "Pulmonary",
@@ -2135,39 +1655,6 @@
       ],
       "spellings": [
         "MRC"
-      ]
-    },
-    {
-      "guideline_spelling": "NOTT",
-      "normalized": "NOTT",
-      "specialty": "Pulmonary",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Pulmonary"
-      ],
-      "spellings": [
-        "NOTT"
-      ]
-    },
-    {
-      "guideline_spelling": "PEITHO",
-      "normalized": "PEITHO",
-      "specialty": "Pulmonary",
-      "in_manifest": false,
-      "matched_via": null,
-      "manifest_name": null,
-      "review_status": "priority",
-      "triage_note": "general-IM relevant — needs canonical primary-results PMID",
-      "specialties": [
-        "Pulmonary",
-        "Heme/Onc"
-      ],
-      "spellings": [
-        "PEITHO"
       ]
     },
     {

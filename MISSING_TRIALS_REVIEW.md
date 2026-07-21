@@ -5,9 +5,9 @@ Generated 2026-07-21 · **read-only audit, nothing ingested**
 | | |
 |---|---|
 | trials named across `GUIDELINES[].trials` | 219 |
-| already in the verified manifest | 65 |
-| **unique candidates missing** | **148** |
-| manifest size | 124 |
+| already in the verified manifest | 98 |
+| **unique candidates missing** | **116** |
+| manifest size | 214 |
 
 ## Rules before anything here gets ingested
 
@@ -28,20 +28,12 @@ Normalization is deliberately conservative — `AKIKI` vs `AKIKI-2`, `UKPDS 33` 
 | HELP | `HELP` | — | **ambiguous-name** |  |
 | POSEIDON | `POSEIDON` | — | **ambiguous-name** |  |
 
-## Cardiovascular (19)
+## Cardiovascular (10)
 
 | trial (as written in guideline) | normalized | also listed under | triage | note |
 |---|---|---|---|---|
-| AFFIRM-AHF | `AFFIRM-AHF` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| CASTLE-AF | `CASTLE-AF` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| CLEAR Outcomes | `CLEAR OUTCOMES` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| COAPT | `COAPT` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| COLCOT | `COLCOT` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| DELIVER | `DELIVER` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| EAST-AFNET 4 | `EAST-AFNET 4` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | EXPLORER-HCM | `EXPLORER-HCM` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | LIPID | `LIPID` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| LoDoCo2 | `LODOCO2` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | MATRIX | `MATRIX` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | PARTNER 1 | `PARTNER 1` | — | **trial-family-split** | PARTNER 1A/1B/2/3 are distinct trials |
 | PARTNER 2 | `PARTNER 2` | — | **trial-family-split** | PARTNER 1A/1B/2/3 are distinct trials |
@@ -49,7 +41,6 @@ Normalization is deliberately conservative — `AKIKI` vs `AKIKI-2`, `UKPDS 33` 
 | PLATO | `PLATO` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | RIVAL | `RIVAL` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | ROCKET-AF | `ROCKET-AF` | — | **alias-already-present** | ROCKET AF |
-| STICH | `STICH` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | TRITON-TIMI 38 | `TRITON-TIMI 38` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 
 ## Dermatology (4)
@@ -68,48 +59,33 @@ Normalization is deliberately conservative — `AKIKI` vs `AKIKI-2`, `UKPDS 33` 
 | CANVAS | `CANVAS` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | SURMOUNT | `SURMOUNT` | — | **trial-family-split** | umbrella; SURMOUNT-1 already present |
 
-## GI/Hepatology (15)
+## GI/Hepatology (11)
 
 | trial (as written in guideline) | normalized | also listed under | triage | note |
 |---|---|---|---|---|
-| CALM | `CALM` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| CONFIRM | `CONFIRM` | — | **ambiguous-name** |  |
 | GEMINI | `GEMINI` | — | **trial-family-split** | GEMINI 1/2 distinct |
 | LIBERTY-EoE | `LIBERTY-EOE` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | MAESTRO-NASH | `MAESTRO-NASH` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | MOTIVATE | `MOTIVATE` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | OCTAVE | `OCTAVE` | — | **trial-family-split** | OCTAVE Induction/Sustain distinct |
-| SONIC | `SONIC` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | STRIDE-II | `STRIDE-II` | — | **non-rct-reclassify** | consensus treat-to-target document, not an RCT — store as guidance |
 | U-ACHIEVE | `U-ACHIEVE` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | U-EXCEED | `U-EXCEED` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | U-EXCEL | `U-EXCEL` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | UNIFI | `UNIFI` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | UNITI | `UNITI` | — | **trial-family-split** | UNITI-1/2 distinct |
-| WATERFALL | `WATERFALL` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 
-## Heme/Onc (12)
+## Heme/Onc (7)
 
 | trial (as written in guideline) | normalized | also listed under | triage | note |
 |---|---|---|---|---|
-| AMPLIFY | `AMPLIFY` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| CARAVAGGIO | `CARAVAGGIO` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | EINSTEIN | `EINSTEIN` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | HERCULES | `HERCULES` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | HOKUSAI-CANCER | `HOKUSAI-CANCER` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | HOKUSAI-VTE | `HOKUSAI-VTE` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | RE-COVER | `RE-COVER` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| REALITY | `REALITY` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | STAND | `STAND` | — | **ambiguous-name** |  |
 | STOP | `STOP` | — | **ambiguous-name** |  |
-| TRAPS | `TRAPS` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| TRICC | `TRICC` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-
-## ID (1)
-
-| trial (as written in guideline) | normalized | also listed under | triage | note |
-|---|---|---|---|---|
-| REPRIEVE | `REPRIEVE` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 
 ## Nephrology (3)
 
@@ -119,29 +95,23 @@ Normalization is deliberately conservative — `AKIKI` vs `AKIKI-2`, `UKPDS 33` 
 | PATHWAY-2 | `PATHWAY-2` | Cardiovascular | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | TEMPO 3:4 | `TEMPO 34` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 
-## Neurology (19)
+## Neurology (13)
 
 | trial (as written in guideline) | normalized | also listed under | triage | note |
 |---|---|---|---|---|
-| AcT | `ACT` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | ADAPT | `ADAPT` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | ATACH-2 | `ATACH-2` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| CHANCE | `CHANCE` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | CLARITY-AD | `CLARITY-AD` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | DELIVER-MS | `DELIVER-MS` | — | **awaiting-results** | confirm definitive primary results are published |
 | EARLYSTIM | `EARLYSTIM` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | ECASS III | `ECASS III` | — | **alias-already-present** | ECASS-III |
 | ESETT | `ESETT` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| EXTEND | `EXTEND` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | INTERACT2 | `INTERACT2` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | LEAP | `LEAP` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | MGTX | `MGTX` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | ORATORIO | `ORATORIO` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| POINT | `POINT` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| THALES | `THALES` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | TRAILBLAZER-ALZ-2 | `TRAILBLAZER-ALZ-2` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | TREAT-MS | `TREAT-MS` | — | **awaiting-results** | confirm definitive primary results are published |
-| WAKE-UP | `WAKE-UP` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 
 ## Oncology (32)
 
@@ -207,24 +177,17 @@ Normalization is deliberately conservative — `AKIKI` vs `AKIKI-2`, `UKPDS 33` 
 | STAR*D | `STARD` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | TRD-IV | `TRD-IV` | — | **ambiguous-name** |  |
 
-## Pulmonary (17)
+## Pulmonary (10)
 
 | trial (as written in guideline) | normalized | also listed under | triage | note |
 |---|---|---|---|---|
-| ACURASYS | `ACURASYS` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | AMBITION | `AMBITION` | Rheumatology | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | ARMA | `ARMA` | — | **alias-already-present** | ARDS Network (identical paper, PMID 10793162) |
 | BPaLM | `BPALM` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | CAPACITY | `CAPACITY` | — | **trial-family-split** | CAPACITY-1/2 reported together |
-| DEXA-ARDS | `DEXA-ARDS` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| ETHOS | `ETHOS` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| IMPACT | `IMPACT` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | INPULSIS-1 | `INPULSIS-1` | — | **trial-family-split** | INPULSIS-1/2 reported together — one record naming both |
 | INPULSIS-2 | `INPULSIS-2` | — | **trial-family-split** | INPULSIS-1/2 reported together — one record naming both |
-| MIST2 | `MIST2` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | MRC | `MRC` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| NOTT | `NOTT` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
-| PEITHO | `PEITHO` | Heme/Onc | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | REDUCE | `REDUCE` | — | **ambiguous-name** |  |
 | STELLAR | `STELLAR` | — | **priority** | general-IM relevant — needs canonical primary-results PMID |
 | Study 31 | `STUDY 31` | ID | **priority** | general-IM relevant — needs canonical primary-results PMID |
