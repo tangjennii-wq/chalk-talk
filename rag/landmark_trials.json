@@ -2392,5 +2392,175 @@
     "pmid_verified": "pubmed_2026-07",
     "teaching_role": "evidence reversal",
     "source_batch": 4
+  },
+  {
+    "name": "PIONEER I / II",
+    "full": "PIONEER I / II",
+    "year": 2016,
+    "specialty": "Dermatology",
+    "expected_pmid": "27518661",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "SUNSHINE / SUNRISE",
+    "full": "SUNSHINE / SUNRISE",
+    "year": 2023,
+    "specialty": "Dermatology",
+    "expected_pmid": "36746171",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "AREDS",
+    "full": "AREDS",
+    "year": 2001,
+    "specialty": "Ophthalmology",
+    "expected_pmid": "11594942",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "AREDS2",
+    "full": "AREDS2",
+    "year": 2013,
+    "specialty": "Ophthalmology",
+    "expected_pmid": "23644932",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 5
+  },
+  {
+    "name": "ONTT",
+    "full": "ONTT",
+    "year": 1992,
+    "specialty": "Ophthalmology",
+    "expected_pmid": "1734247",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 5
+  },
+  {
+    "name": "LiGHT",
+    "full": "LiGHT",
+    "year": 2019,
+    "specialty": "Ophthalmology",
+    "expected_pmid": "30862377",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "UKGTS",
+    "full": "UKGTS",
+    "year": 2015,
+    "specialty": "Ophthalmology",
+    "expected_pmid": "25533656",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "PACIFIC",
+    "full": "PACIFIC",
+    "year": 2017,
+    "specialty": "Oncology",
+    "expected_pmid": "28885881",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "FLAURA",
+    "full": "FLAURA",
+    "year": 2018,
+    "specialty": "Oncology",
+    "expected_pmid": "29151359",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "ADAURA",
+    "full": "ADAURA",
+    "year": 2020,
+    "specialty": "Oncology",
+    "expected_pmid": "32955177",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "KEYNOTE-189",
+    "full": "KEYNOTE-189",
+    "year": 2018,
+    "specialty": "Oncology",
+    "expected_pmid": "29658856",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "KEYNOTE-522",
+    "full": "KEYNOTE-522",
+    "year": 2020,
+    "specialty": "Oncology",
+    "expected_pmid": "32101663",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "CLEOPATRA",
+    "full": "CLEOPATRA",
+    "year": 2012,
+    "specialty": "Oncology",
+    "expected_pmid": "22149875",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "CHAARTED",
+    "full": "CHAARTED",
+    "year": 2015,
+    "specialty": "Oncology",
+    "expected_pmid": "26244877",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "LATITUDE",
+    "full": "LATITUDE",
+    "year": 2017,
+    "specialty": "Oncology",
+    "expected_pmid": "28578607",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
+  },
+  {
+    "name": "DESTINY-Breast03",
+    "full": "DESTINY-Breast03",
+    "year": 2022,
+    "specialty": "Oncology",
+    "expected_pmid": "35320644",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "safety/harm",
+    "source_batch": 5
+  },
+  {
+    "name": "VISION",
+    "full": "VISION",
+    "year": 2021,
+    "specialty": "Oncology",
+    "expected_pmid": "34161051",
+    "pmid_verified": "pubmed_2026-07",
+    "teaching_role": "practice-changing benefit",
+    "source_batch": 5
   }
 ]
