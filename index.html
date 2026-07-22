@@ -1523,7 +1523,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-21-03";
+var BUILD_ID = "2026-07-21-04";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -8735,6 +8735,28 @@ function safeResetAll(){
   resetAll();
 }
 
+// Rebuild = a COMPLETE fresh regeneration of the CURRENT talk from the same prompt/topic (Jenni 2026-07-21).
+// Fixes the bug where Rebuild on a LOADED talk diverged from generating a brand-new one:
+//   (a) if the saved row had no stored topic, generate() hit its `if(!S.topic.trim())return` guard and
+//       silently did nothing (looked like "rebuild didn't change anything / no new citations");
+//   (b) a stale depthVariantsCache from the loaded talk could shadow the fresh draft;
+//   (c) "verify with current literature" (web search) wasn't re-armed, so fresh citations didn't return.
+// It re-arms fresh-talk conditions but KEEPS loadedTalkId so the rebuild updates the same library entry.
+function rebuildLesson(){
+  S.editSettings=false; S.overflowOpen=false; S.modelPickerOpen=false;
+  // Topic fallback so an older saved talk with no stored topic still rebuilds (from its title/subtitle).
+  if(!S.topic || !S.topic.trim()){
+    var _t = S.talk && (S.talk.title || S.talk.subtitle);
+    if(_t) S.topic = String(_t);
+  }
+  if(!S.topic || !S.topic.trim()){ S.error = "This talk has no saved topic to rebuild from — type a topic and generate."; if(typeof render==="function") render(); return; }
+  // Full rebuild, NOT a cache swap: drop the loaded talk's cached depth variants + re-arm web verify so
+  // the new draft is retrieved and cited exactly like a fresh generation.
+  S.depthVariantsCache=null; S._pendingDepthMerge=false; S.ragChunks=[];
+  S.wantWebSearch=true;
+  generate();
+}
+
 function resetAll(){
   // Reset per-talk state + transient UI flags. Auth/profile/cloud/library survives — session-scoped.
   S.talk=null; S.topic=""; S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview";
@@ -11499,8 +11521,8 @@ function bindMain(){
   var esb=document.getElementById("editSettingsBtn");if(esb)esb.onclick=function(){S.editSettings=true;S.overflowOpen=false;render()};
   // === EXPAND ALL TOGGLE handler (June 2026 per Jenni) ===
   var eab=document.getElementById("expandAllBtn");if(eab)eab.onclick=function(){S.allExpanded=!S.allExpanded;render()};
-  var rb1=document.getElementById("rebuildBtn");if(rb1)rb1.onclick=function(){S.editSettings=false;S.overflowOpen=false;generate()};
-  var rb2=document.getElementById("rebuildBtn2");if(rb2)rb2.onclick=function(){S.editSettings=false;generate()};
+  var rb1=document.getElementById("rebuildBtn");if(rb1)rb1.onclick=function(){rebuildLesson()};
+  var rb2=document.getElementById("rebuildBtn2");if(rb2)rb2.onclick=function(){rebuildLesson()};
   var ofb=document.getElementById("overflowBtn");if(ofb)ofb.onclick=function(e){e.stopPropagation();S.overflowOpen=!S.overflowOpen;render()};
   if(S.overflowOpen){document.body.onclick=function(e){if(!e.target.closest(".overflow-menu")&&!e.target.closest("#overflowBtn")){S.overflowOpen=false;render()}}}else{document.body.onclick=null}
   var nbt=document.getElementById("newTalkBtn");if(nbt)nbt.onclick=function(){S.overflowOpen=false;safeResetAll()};
