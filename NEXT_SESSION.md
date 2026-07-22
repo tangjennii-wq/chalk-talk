@@ -44,6 +44,8 @@ git push origin main
 ---
 
 ## BACKLOG (not launch-blocking)
+- **UX polish (Jenni 2026-07-21):** the floating kebab menu (Copy link / Share / Make private / Export PDF / Save as image / Print / Delete) is fiddly — make it easier to hit; **make Share a first-class, more prominent action** rather than buried in the kebab.
+- **Boards difficulty system (Jenni 2026-07-21):** calibrated 5-star difficulty selector in Boards mode — see report + spec; recon done (functions mapped). Critique lives in the Worker, not index.html → difficulty self-critique baked into BOARDS_PROMPT.
 - **Deferred trials:** Oncology (29), Ophthalmology (5), Dermatology (4) — own curated pass so oncology doesn't swamp general IM. Same pipeline.
 - **Batch 3 clinical audit** — Codex hasn't reviewed the 19 newest trials' teaching notes trial-by-trial (PMIDs already verified).
 - **Guideline layer:** populate the empty `do_not_teach`/`supersedes`/`caveats` from `DO_NOT_TEACH_REVIEW.md`; merge the two ANCA vasculitis entries; soften KDIGO GD "base being retired" wording.
