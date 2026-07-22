@@ -16,7 +16,17 @@ function extractFn(name){
   for(; j < html.length; j++){ if(html[j] === "{") d++; else if(html[j] === "}"){ d--; if(d === 0) break; } }
   return html.slice(i, j + 1);
 }
-const fns = ["_filterRefsToPaste", "_stripChipIds", "_normalizeInlinePmids", "pruneFakeReferences", "_esummaryBatch"].map(extractFn).join("\n\n");
+// _refTypeFor is called by _normalizeInlinePmids/pruneFakeReferences (added with the citation-confidence
+// work) — it must be in the vm context or those calls throw ReferenceError. (Jenni 2026-07-21)
+// Module-scope consts the confidence helpers read (not functions, so extract by line).
+function extractConst(name){
+  const re = new RegExp("var\\s+" + name + "\\s*=.*?;", "s");
+  const m = html.match(re);
+  if(!m) throw new Error("const not found in index.html: " + name);
+  return m[0];
+}
+const consts = ["_CONF_RANK"].map(extractConst).join("\n");
+const fns = consts + "\n\n" + ["_safeUrl", "_refTypeFor", "_confidenceOf", "_assignConfidence", "_filterRefsToPaste", "_stripChipIds", "_normalizeInlinePmids", "pruneFakeReferences", "_esummaryBatch"].map(extractFn).join("\n\n");
 
 // mock environment
 const PASTE = `Reviewer feedback:
