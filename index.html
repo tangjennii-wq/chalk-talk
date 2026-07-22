@@ -1455,7 +1455,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-17-07";
+var BUILD_ID = "2026-07-18-01";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5321,7 +5321,14 @@ function renderCite(text, refs, seen) {
       var first = display[0];
       var allIds = display.map(function(r){ return r.id; }).join(",");
       var extraCount = display.length - 1;
-      html += '<span class="' + _citeClass(first.ref) + '" data-ref="' + esc(first.id) + '" data-refs="' + esc(allIds) + '" title="' + esc(first.ref.source || _citeLabel(first.ref)) + '" tabindex="0" role="button">';
+      // Dev-only confidence tint (CITATION_CONFIDENCE_SPEC.md §7). When window.__citeDebug is on, paint
+      // the chip by its persisted confidence so the high/medium mix is visible at a glance. Off for users.
+      var _dbgTint = (typeof window !== "undefined" && window.__citeDebug)
+        ? (first.ref.confidence === "high" ? 'box-shadow:inset 0 0 0 2px #16a34a;'
+           : first.ref.confidence === "medium" ? 'box-shadow:inset 0 0 0 2px #d97706;'
+           : 'box-shadow:inset 0 0 0 2px #9ca3af;')
+        : '';
+      html += '<span class="' + _citeClass(first.ref) + '" data-ref="' + esc(first.id) + '" data-refs="' + esc(allIds) + '" title="' + esc((first.ref.source || _citeLabel(first.ref)) + (window.__citeDebug ? "  ·  confidence: " + (first.ref.confidence||"?") + " (" + (first.ref.provenance||"?") + ")" : "")) + '" tabindex="0" role="button"' + (_dbgTint ? ' style="' + _dbgTint + '"' : '') + '>';
       html += esc(_citeLabel(first.ref));
       if(extraCount > 0) html += '<span class="cite-plus">+' + extraCount + '</span>';
       html += '</span>';
@@ -5331,6 +5338,44 @@ function renderCite(text, refs, seen) {
   html += esc(s.slice(lastIdx));
   return html;
 }
+
+// ══════════ DEV-ONLY CONFIDENCE TINT (CITATION_CONFIDENCE_SPEC.md §7) ══════════
+// Hidden from users. Toggle with Cmd/Ctrl+Shift+K, or load with ?citedebug=1. Paints each citation
+// chip by its persisted confidence (green=high / amber=medium / grey=low) and shows a running tally,
+// so the high/medium/uncited mix of a talk is visible at a glance while QA'ing. (Jenni 2026-07-18)
+(function(){
+  if (typeof window === "undefined") return;
+  try { if (/[?&]citedebug=1/.test(location.search) || localStorage.getItem("citeDebug") === "1") window.__citeDebug = true; } catch(_){}
+
+  function tally(){
+    var el = document.getElementById("_citeDebugBadge");
+    if (!window.__citeDebug){ if (el) el.remove(); return; }
+    var refs = (window.S && S.talk && S.talk.references) || [];
+    var h=0,m=0,l=0;
+    refs.forEach(function(r){ if(!r) return; var c=r.confidence; if(c==="high")h++; else if(c==="medium")m++; else l++; });
+    if (!el){
+      el = document.createElement("div"); el.id="_citeDebugBadge";
+      el.style.cssText="position:fixed;left:12px;bottom:12px;z-index:99999;background:#111;color:#fff;font:600 12px/1.4 -apple-system,system-ui,sans-serif;padding:8px 12px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.3);cursor:pointer";
+      el.title="Citation confidence (dev). Click or Cmd/Ctrl+Shift+K to hide.";
+      el.onclick=function(){ toggle(); };
+      document.body.appendChild(el);
+    }
+    el.innerHTML = 'cite&nbsp; <span style="color:#22c55e">●'+h+'</span>&nbsp; <span style="color:#f59e0b">●'+m+'</span>&nbsp; <span style="color:#9ca3af">●'+l+' uncited</span>';
+  }
+  function toggle(){
+    window.__citeDebug = !window.__citeDebug;
+    try { localStorage.setItem("citeDebug", window.__citeDebug ? "1" : "0"); } catch(_){}
+    if (typeof render === "function") render();
+    tally();
+  }
+  window.__toggleCiteDebug = toggle;
+  document.addEventListener("keydown", function(e){
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "K" || e.key === "k")) { e.preventDefault(); toggle(); }
+  });
+  // keep the tally fresh across re-renders without hooking render()
+  setInterval(function(){ if (window.__citeDebug) tally(); }, 700);
+  if (window.__citeDebug) setTimeout(tally, 400);
+})();
 
 // ── Section-level citation dedup ──────────────────────────────────────────────
 // A section's DEFAULT source is shown once as a small muted chip in the section title. Items that cite
