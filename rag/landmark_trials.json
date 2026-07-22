@@ -2562,5 +2562,702 @@
     "pmid_verified": "pubmed_2026-07",
     "teaching_role": "practice-changing benefit",
     "source_batch": 5
+  },
+  {
+    "name": "CLOSURE-AF",
+    "full": "Left Atrial Appendage Closure or Medical Therapy in Atrial Fibrillation",
+    "year": 2026,
+    "specialty": "cards",
+    "expected_pmid": "41849741",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "FINEARTS-HF",
+    "full": "Finerenone in Heart Failure with Mildly Reduced or Preserved Ejection Fraction",
+    "year": 2024,
+    "specialty": "cards",
+    "expected_pmid": "39225278",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "SUMMIT-HFpEF",
+    "full": "Tirzepatide for Heart Failure with Preserved Ejection Fraction and Obesity",
+    "year": 2024,
+    "specialty": "cards",
+    "expected_pmid": "39555826",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "STEP-HFpEF",
+    "full": "Semaglutide in Patients with Heart Failure with Preserved Ejection Fraction and Obesity",
+    "year": 2023,
+    "specialty": "cards",
+    "expected_pmid": "37622681",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "EARLY TAVR",
+    "full": "Transcatheter Aortic-Valve Replacement for Asymptomatic Severe Aortic Stenosis",
+    "year": 2024,
+    "specialty": "cards",
+    "expected_pmid": "39466903",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "REDUCE-AMI",
+    "full": "Beta-Blockers after Myocardial Infarction and Preserved Ejection Fraction",
+    "year": 2024,
+    "specialty": "cards",
+    "expected_pmid": "38587241",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "DanGer Shock",
+    "full": "Microaxial Flow Pump or Standard Care in Infarct-Related Cardiogenic Shock",
+    "year": 2024,
+    "specialty": "cards",
+    "expected_pmid": "38587239",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "OCEANIC-AF",
+    "full": "Asundexian versus Apixaban in Patients with Atrial Fibrillation",
+    "year": 2024,
+    "specialty": "cards",
+    "expected_pmid": "39225267",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "AZALEA-TIMI 71",
+    "full": "Abelacimab versus Rivaroxaban in Patients with Atrial Fibrillation",
+    "year": 2025,
+    "specialty": "cards",
+    "expected_pmid": "39842011",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ARTESIA",
+    "full": "Apixaban for Stroke Prevention in Subclinical Atrial Fibrillation",
+    "year": 2024,
+    "specialty": "cards",
+    "expected_pmid": "37952132",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "BaxHTN",
+    "full": "Efficacy and Safety of Baxdrostat in Uncontrolled and Resistant Hypertension",
+    "year": 2025,
+    "specialty": "cards",
+    "expected_pmid": "40888730",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "TRILUMINATE Pivotal",
+    "full": "Transcatheter Edge-to-Edge Repair for Severe Tricuspid Regurgitation",
+    "year": 2023,
+    "specialty": "cards",
+    "expected_pmid": "36876753",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "CLEAR SYNERGY",
+    "full": "Colchicine after Myocardial Infarction (CLEAR SYNERGY/OASIS-9)",
+    "year": 2024,
+    "specialty": "cards",
+    "expected_pmid": "39555814",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "EMPACT-MI",
+    "full": "Empagliflozin after Acute Myocardial Infarction",
+    "year": 2024,
+    "specialty": "cards",
+    "expected_pmid": "38587237",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "SOUL",
+    "full": "Oral Semaglutide and Cardiovascular Outcomes in High-Risk Type 2 Diabetes",
+    "year": 2025,
+    "specialty": "cards",
+    "expected_pmid": "40162642",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "SURMOUNT-2",
+    "full": "Tirzepatide once weekly for obesity in people with type 2 diabetes (SURMOUNT-2)",
+    "year": 2023,
+    "specialty": "endo",
+    "expected_pmid": "37385275",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "Retatrutide-P2",
+    "full": "Triple-Hormone-Receptor Agonist Retatrutide for Obesity (Phase 2)",
+    "year": 2023,
+    "specialty": "endo",
+    "expected_pmid": "37366315",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07",
+    "pmid_note": "phase 2 — emerging, not yet guideline standard"
+  },
+  {
+    "name": "SURMOUNT-OSA",
+    "full": "Tirzepatide for the Treatment of Obstructive Sleep Apnea and Obesity",
+    "year": 2024,
+    "specialty": "endo",
+    "expected_pmid": "38912654",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "STEP-9",
+    "full": "Once-Weekly Semaglutide in Persons with Obesity and Knee Osteoarthritis",
+    "year": 2024,
+    "specialty": "endo",
+    "expected_pmid": "39476339",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "STRIDE",
+    "full": "Semaglutide and Walking Capacity in Peripheral Artery Disease and Type 2 Diabetes",
+    "year": 2025,
+    "specialty": "endo",
+    "expected_pmid": "40169145",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "SURMOUNT-5",
+    "full": "Tirzepatide as Compared with Semaglutide for the Treatment of Obesity",
+    "year": 2025,
+    "specialty": "endo",
+    "expected_pmid": "40353578",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "REDEFINE-1",
+    "full": "Coadministered Cagrilintide and Semaglutide (CagriSema) in Overweight or Obesity (REDEFINE 1)",
+    "year": 2025,
+    "specialty": "endo",
+    "expected_pmid": "40544433",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ACHIEVE-1",
+    "full": "Orforglipron, an Oral Small-Molecule GLP-1 Receptor Agonist, in Early Type 2 Diabetes",
+    "year": 2025,
+    "specialty": "endo",
+    "expected_pmid": "40544435",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ATTAIN-1",
+    "full": "Orforglipron, an Oral Small-Molecule GLP-1 Receptor Agonist, for Obesity Treatment",
+    "year": 2025,
+    "specialty": "endo",
+    "expected_pmid": "40960239",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ALIGN",
+    "full": "Atrasentan in Patients with IgA Nephropathy (ALIGN)",
+    "year": 2024,
+    "specialty": "nephrology",
+    "expected_pmid": "39460694",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "CONFIDENCE",
+    "full": "Finerenone with Empagliflozin in Chronic Kidney Disease and Type 2 Diabetes",
+    "year": 2025,
+    "specialty": "nephrology",
+    "expected_pmid": "40470996",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "APPEAR-C3G",
+    "full": "Oral Iptacopan in Patients with C3 Glomerulopathy (APPEAR-C3G)",
+    "year": 2025,
+    "specialty": "nephrology",
+    "expected_pmid": "41016405",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ORIGIN-3",
+    "full": "A Phase 3 Trial of Atacicept in Patients with IgA Nephropathy (ORIGIN 3)",
+    "year": 2025,
+    "specialty": "nephrology",
+    "expected_pmid": "41196369",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ESSENCE",
+    "full": "Semaglutide in Metabolic Dysfunction-Associated Steatohepatitis (ESSENCE)",
+    "year": 2025,
+    "specialty": "gi-hep",
+    "expected_pmid": "40305708",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "CAPE COD",
+    "full": "Hydrocortisone in Severe Community-Acquired Pneumonia (CAPE COD)",
+    "year": 2023,
+    "specialty": "pulm-cc",
+    "expected_pmid": "36942789",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "BOREAS",
+    "full": "Dupilumab for COPD with Type 2 Inflammation (BOREAS)",
+    "year": 2023,
+    "specialty": "pulm-cc",
+    "expected_pmid": "37272521",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "NOTUS",
+    "full": "Dupilumab for COPD with Blood Eosinophil Evidence of Type 2 Inflammation (NOTUS)",
+    "year": 2024,
+    "specialty": "pulm-cc",
+    "expected_pmid": "38767614",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ASPEN",
+    "full": "Phase 3 Trial of the DPP-1 Inhibitor Brensocatib in Bronchiectasis (ASPEN)",
+    "year": 2025,
+    "specialty": "pulm-cc",
+    "expected_pmid": "40267423",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "FIBRONEER-IPF",
+    "full": "Nerandomilast in Patients with Idiopathic Pulmonary Fibrosis",
+    "year": 2025,
+    "specialty": "pulm-cc",
+    "expected_pmid": "40387033",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ZENITH-PAH",
+    "full": "Sotatercept in Patients with Pulmonary Arterial Hypertension at High Risk for Death",
+    "year": 2025,
+    "specialty": "pulm-cc",
+    "expected_pmid": "40167274",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "PREOXI",
+    "full": "Noninvasive Ventilation for Preoxygenation during Emergency Intubation (PREOXI)",
+    "year": 2024,
+    "specialty": "pulm-cc",
+    "expected_pmid": "38869091",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "BLING III",
+    "full": "Continuous vs Intermittent Beta-Lactam Antibiotic Infusions in Sepsis (BLING III)",
+    "year": 2024,
+    "specialty": "pulm-cc",
+    "expected_pmid": "38864155",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "REVISE",
+    "full": "Pantoprazole in Patients at Risk for Gastrointestinal Bleeding in the ICU (REVISE)",
+    "year": 2024,
+    "specialty": "pulm-cc",
+    "expected_pmid": "38875111",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ARISE FLUIDS",
+    "full": "Vasopressors or Fluids for Resuscitation in Early Septic Shock (ARISE FLUIDS)",
+    "year": 2025,
+    "specialty": "pulm-cc",
+    "expected_pmid": "42274006",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "PURPOSE 1",
+    "full": "Twice-Yearly Lenacapavir or Daily F/TAF for HIV Prevention in Cisgender Women",
+    "year": 2024,
+    "specialty": "id",
+    "expected_pmid": "39046157",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "PURPOSE 2",
+    "full": "Twice-Yearly Lenacapavir for HIV Prevention in Men and Gender-Diverse Persons",
+    "year": 2024,
+    "specialty": "id",
+    "expected_pmid": "39602624",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "endTB",
+    "full": "Oral Regimens for Rifampin-Resistant, Fluoroquinolone-Susceptible Tuberculosis (endTB)",
+    "year": 2024,
+    "specialty": "id",
+    "expected_pmid": "39879593",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "DoxyPEP",
+    "full": "Postexposure Doxycycline to Prevent Bacterial Sexually Transmitted Infections",
+    "year": 2023,
+    "specialty": "id",
+    "expected_pmid": "37018493",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "VIVID-1",
+    "full": "Mirikizumab in Moderately-to-Severely Active Crohn's Disease (VIVID-1)",
+    "year": 2024,
+    "specialty": "gi-hep",
+    "expected_pmid": "39581202",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "QUASAR",
+    "full": "Guselkumab Induction and Maintenance in Moderately-to-Severely Active Ulcerative Colitis",
+    "year": 2024,
+    "specialty": "gi-hep",
+    "expected_pmid": "39706209",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "GRAVITI",
+    "full": "Subcutaneous Guselkumab Induction and Maintenance in Crohn's Disease (GRAVITI)",
+    "year": 2025,
+    "specialty": "gi-hep",
+    "expected_pmid": "40118220",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ELATIVE",
+    "full": "Elafibranor in Primary Biliary Cholangitis (ELATIVE)",
+    "year": 2024,
+    "specialty": "gi-hep",
+    "expected_pmid": "37962077",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "RESPONSE-PBC",
+    "full": "Seladelpar in Primary Biliary Cholangitis (RESPONSE)",
+    "year": 2024,
+    "specialty": "gi-hep",
+    "expected_pmid": "38381664",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "SYNERGY-NASH",
+    "full": "Tirzepatide for MASH with Liver Fibrosis (SYNERGY-NASH)",
+    "year": 2024,
+    "specialty": "gi-hep",
+    "expected_pmid": "38856224",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07",
+    "pmid_note": "phase 2 — emerging, not yet guideline standard"
+  },
+  {
+    "name": "survodutide-MASH",
+    "full": "Survodutide in MASH and Fibrosis (Phase 2)",
+    "year": 2024,
+    "specialty": "gi-hep",
+    "expected_pmid": "38847460",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07",
+    "pmid_note": "phase 2 — emerging, not yet guideline standard"
+  },
+  {
+    "name": "HARMONY-MASH",
+    "full": "Efruxifermin versus Placebo in MASH with Fibrosis (HARMONY)",
+    "year": 2025,
+    "specialty": "gi-hep",
+    "expected_pmid": "40818852",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07",
+    "pmid_note": "phase 2b — emerging, not yet guideline standard"
+  },
+  {
+    "name": "ELEVATE-UC",
+    "full": "Etrasimod as Induction and Maintenance for Ulcerative Colitis (ELEVATE UC 52/12)",
+    "year": 2023,
+    "specialty": "gi-hep",
+    "expected_pmid": "36871574",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "EMERALD-1",
+    "full": "Durvalumab with or without Bevacizumab plus TACE in Unresectable HCC (EMERALD-1)",
+    "year": 2025,
+    "specialty": "gi-hep",
+    "expected_pmid": "39798579",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "SELECT-GCA",
+    "full": "Upadacitinib for Giant-Cell Arteritis (SELECT-GCA)",
+    "year": 2025,
+    "specialty": "rheum",
+    "expected_pmid": "40174237",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "REGENCY",
+    "full": "Obinutuzumab in Active Lupus Nephritis (REGENCY)",
+    "year": 2025,
+    "specialty": "rheum",
+    "expected_pmid": "39927615",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "MITIGATE",
+    "full": "Inebilizumab for Treatment of IgG4-Related Disease (MITIGATE)",
+    "year": 2025,
+    "specialty": "rheum",
+    "expected_pmid": "39541094",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "BE-MOBILE",
+    "full": "Bimekizumab in Axial Spondyloarthritis (BE MOBILE 1 and 2)",
+    "year": 2023,
+    "specialty": "rheum",
+    "expected_pmid": "36649967",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ProDERM",
+    "full": "Intravenous Immunoglobulin in Dermatomyositis (ProDERM)",
+    "year": 2022,
+    "specialty": "rheum",
+    "expected_pmid": "36198179",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "APPLY-PNH",
+    "full": "Oral Iptacopan Monotherapy in Paroxysmal Nocturnal Hemoglobinuria (APPLY-PNH)",
+    "year": 2024,
+    "specialty": "heme-onc",
+    "expected_pmid": "38477987",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "IMROZ",
+    "full": "Isatuximab, Bortezomib, Lenalidomide, and Dexamethasone for Multiple Myeloma (IMROZ)",
+    "year": 2024,
+    "specialty": "heme-onc",
+    "expected_pmid": "38832972",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "AQUILA",
+    "full": "Daratumumab or Active Monitoring for High-Risk Smoldering Multiple Myeloma (AQUILA)",
+    "year": 2025,
+    "specialty": "heme-onc",
+    "expected_pmid": "39652675",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "NADINA",
+    "full": "Neoadjuvant Nivolumab and Ipilimumab in Resectable Stage III Melanoma (NADINA)",
+    "year": 2024,
+    "specialty": "heme-onc",
+    "expected_pmid": "38828984",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "EV-302",
+    "full": "Enfortumab Vedotin and Pembrolizumab in Untreated Advanced Urothelial Cancer (EV-302)",
+    "year": 2024,
+    "specialty": "heme-onc",
+    "expected_pmid": "38446675",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "LAURA",
+    "full": "Osimertinib after Chemoradiotherapy in Stage III EGFR-Mutated NSCLC (LAURA)",
+    "year": 2024,
+    "specialty": "heme-onc",
+    "expected_pmid": "38828946",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "NATALEE",
+    "full": "Adjuvant Ribociclib plus Nonsteroidal Aromatase Inhibitor in HR+/HER2- Breast Cancer",
+    "year": 2024,
+    "specialty": "heme-onc",
+    "expected_pmid": "38507751",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "DESTINY-Breast06",
+    "full": "Trastuzumab Deruxtecan after Endocrine Therapy in Metastatic HR+ Breast Cancer",
+    "year": 2024,
+    "specialty": "heme-onc",
+    "expected_pmid": "39282896",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "API-CAT",
+    "full": "Reduced-Dose vs Full-Dose Apixaban for Extended Cancer-Associated VTE Treatment (API-CAT)",
+    "year": 2025,
+    "specialty": "heme-onc",
+    "expected_pmid": "40162636",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "CARTITUDE-4",
+    "full": "Ciltacabtagene Autoleucel in Relapsed/Refractory Multiple Myeloma (CARTITUDE-4)",
+    "year": 2023,
+    "specialty": "heme-onc",
+    "expected_pmid": "37272512",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ANNEXA-I",
+    "full": "Andexanet for Factor Xa Inhibitor-Associated Acute Intracerebral Hemorrhage (ANNEXA-I)",
+    "year": 2024,
+    "specialty": "neuro",
+    "expected_pmid": "38749032",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ELAN",
+    "full": "Early versus Later Anticoagulation for Stroke with Atrial Fibrillation (ELAN)",
+    "year": 2023,
+    "specialty": "neuro",
+    "expected_pmid": "37222476",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "OPTIMAS",
+    "full": "Optimal Timing of Anticoagulation after Acute Ischaemic Stroke with Atrial Fibrillation",
+    "year": 2024,
+    "specialty": "neuro",
+    "expected_pmid": "39491870",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "SELECT2",
+    "full": "Trial of Endovascular Thrombectomy for Large Ischemic Strokes (SELECT2)",
+    "year": 2023,
+    "specialty": "neuro",
+    "expected_pmid": "36762865",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "ANGEL-ASPECT",
+    "full": "Endovascular Therapy in Acute Stroke with a Large Infarct (ANGEL-ASPECT)",
+    "year": 2023,
+    "specialty": "neuro",
+    "expected_pmid": "36762852",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "TIMELESS",
+    "full": "Tenecteplase for Ischemic Stroke at 4.5 to 24 Hours (TIMELESS)",
+    "year": 2024,
+    "specialty": "neuro",
+    "expected_pmid": "38884324",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "HERCULES-MS",
+    "full": "Tolebrutinib in Nonrelapsing Secondary Progressive Multiple Sclerosis (HERCULES)",
+    "year": 2025,
+    "specialty": "neuro",
+    "expected_pmid": "40202696",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "MycarinG",
+    "full": "Rozanolixizumab in Generalised Myasthenia Gravis (MycarinG)",
+    "year": 2023,
+    "specialty": "neuro",
+    "expected_pmid": "37059507",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "STEM",
+    "full": "Embolization of the Middle Meningeal Artery for Chronic Subdural Hematoma (STEM)",
+    "year": 2025,
+    "specialty": "neuro",
+    "expected_pmid": "39565980",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "batch6_recent_2026-07"
   }
 ]
