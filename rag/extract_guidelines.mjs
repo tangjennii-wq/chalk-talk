@@ -1,30 +1,18 @@
 #!/usr/bin/env node
 /**
- * Pull the GUIDELINES object out of index.html into rag/guidelines_extracted.json.
- * index.html is the single source of truth for guideline summaries; this keeps the vector store
- * in sync with it. Run this, then rag/ingest_guidelines.mjs.
+ * Flatten the guideline source (guidelines.json) into rag/guidelines_extracted.json.
  *
- * Usage: node rag/extract_guidelines.mjs
+ * As of the JSON-source migration (2026-07), guidelines.json (repo root) is the SINGLE SOURCE OF
+ * TRUTH for guideline data — the app fetches it at runtime and this pipeline derives the canonical
+ * manifest from it. (Previously the source was the embedded GUIDELINES object in index.html.)
+ *
+ * Usage: node rag/extract_guidelines.mjs   (then build_manifest.mjs, audit_manifest.mjs)
  */
 import { readFileSync, writeFileSync } from "fs";
 
-const h = readFileSync("index.html", "utf8");
-
-const start = h.indexOf("var GUIDELINES");
-if (start < 0) { console.error("GUIDELINES not found in index.html"); process.exit(1); }
-const eq = h.indexOf("=", start);
-
-// Walk braces to find the end of the object literal.
-let i = h.indexOf("{", eq), depth = 0, end = -1;
-for (let j = i; j < h.length; j++) {
-  const c = h[j];
-  if (c === "{") depth++;
-  else if (c === "}") { depth--; if (depth === 0) { end = j; break; } }
-}
-if (end < 0) { console.error("Could not find end of GUIDELINES object"); process.exit(1); }
-
-// eslint-disable-next-line no-eval
-const G = eval("(" + h.slice(i, end + 1) + ")");
+const src = JSON.parse(readFileSync("guidelines.json", "utf8"));
+const G = src.specialties || src;   // envelope { schema_version, specialties:{...} } or a bare map
+if (!G || typeof G !== "object") { console.error("guidelines.json: no specialties map found"); process.exit(1); }
 
 const entries = [];
 for (const specialty of Object.keys(G)) {

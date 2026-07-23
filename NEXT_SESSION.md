@@ -56,6 +56,39 @@ node rag/reconcile_landmarks.mjs --apply
 ```
 Watch the 4 phase-2 entries (Retatrutide-P2, SYNERGY-NASH, survodutide-MASH, HARMONY-MASH) — flagged via `pmid_note`; validator may want `manual_2026-07`. They're emerging, not guideline-standard.
 
+## GUIDELINE JSON SOURCE-OF-TRUTH — IMPLEMENTED on branch `guidelines-json-source` (Jenni 2026-07-21)
+Status: built + all offline gates green. Source of truth is now `guidelines.json` (repo root); the embedded
+GUIDELINES object was removed from index.html (349 lines out). Equivalence gate PASSED (guidelines.json
+byte-identical to the pre-migration embed; getGuidelinesForTopic context identical across 7 topics incl.
+cross-specialty). `extract_guidelines.mjs` repointed to guidelines.json; manifest audit hard:0.
+
+BEFORE MERGING TO MAIN — run the BROWSER gates Codex required (can't be done offline):
+1. Serve over http (`python3 -m http.server`), hard-refresh: talk generation works, guideline chips present.
+2. Direct-link / reload into a shared talk: still loads.
+3. Failure mode: temporarily rename guidelines.json → generation is blocked with the visible error + Retry (never a silent talk).
+4. Mobile Safari: one generation succeeds.
+5. Deploy check: confirm guidelines.json is actually published next to index.html (GitHub Pages serves repo root; fetch is `guidelines.json?v=BUILD_ID`).
+Then merge + push. INTERIM edit rule below still applies (edit guidelines.json, re-run the 3 scripts).
+
+--- original decision (kept for context) ---
+Decision: DO IT, but as a controlled migration AFTER launch UX + smoke testing — not a pre-launch cleanup.
+
+Current (duplicate representations, derivative can go stale):
+  index.html GUIDELINES  →  guidelines_extracted.json  →  guidelines_manifest.json
+Target (edit once, no stale copy):
+  guidelines_manifest.json  →  app retrieval/generation, validators, ingestion
+
+Why later: the migration rewrites the hot path (`getGuidelinesForTopic` keyword→specialty matcher + prompt-context assembly in generate()). Destabilizing that right before launch is the wrong risk. The stale-derivative problem is mitigated for now (derivatives resynced 2026-07-21; `audit_manifest.mjs` is the guard).
+
+When implementing:
+1. PRESERVE the existing topic→specialty keyword matching exactly.
+2. Add EQUIVALENCE TESTS proving `getGuidelinesForTopic(topic).context` is byte-identical before vs after the migration across a topic corpus (HFrEF, hyponatremia, COPD, AKI, cirrhosis, ANCA, etc.).
+3. Then delete the GUIDELINES object from index.html and load the manifest instead.
+
+INTERIM RULE until then: after editing GUIDELINES in index.html, ALWAYS re-run
+`node rag/extract_guidelines.mjs && node rag/build_manifest.mjs && node rag/audit_manifest.mjs`
+(audit must report hard: 0) so the derivative never drifts again.
+
 ## BACKLOG (not launch-blocking)
 - **UX polish (Jenni 2026-07-21):** the floating kebab menu (Copy link / Share / Make private / Export PDF / Save as image / Print / Delete) is fiddly — make it easier to hit; **make Share a first-class, more prominent action** rather than buried in the kebab.
 - **Boards difficulty system (Jenni 2026-07-21):** calibrated 5-star difficulty selector in Boards mode — see report + spec; recon done (functions mapped). Critique lives in the Worker, not index.html → difficulty self-critique baked into BOARDS_PROMPT.
