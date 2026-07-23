@@ -56,6 +56,22 @@ node rag/reconcile_landmarks.mjs --apply
 ```
 Watch the 4 phase-2 entries (Retatrutide-P2, SYNERGY-NASH, survodutide-MASH, HARMONY-MASH) — flagged via `pmid_note`; validator may want `manual_2026-07`. They're emerging, not guideline-standard.
 
+## FREE GEMINI TIER + REVIEW SAFETY GATE — branch `free-gemini-tier` (build 2026-07-21-09)
+Built, offline-green, in-browser smoke-tested. NOT merged. Commit 3573be1 (GitHub Desktop first committed it
+as "s"; I amended the message → **local branch diverged from origin, so the next push is a FORCE-push** —
+GitHub Desktop will offer "Force push origin"; safe, it's your unmerged feature branch).
+
+After Claude free credits run out, a "Continue free with Gemini" CTA uses the user's own free Google AI Studio
+key (gemini-3.6-flash, stable). Evidence (guidelines/RAG/trials/PMIDs) is model-independent. Medical-safety
+gate: if the AI critique can't finish, the draft is WITHHELD (private, persisted across refresh, not
+shown/shareable/charged) with Retry / Switch-provider / Discard. Honest provenance chips (no "searched current
+sources" for Gemini; RAG claimed only when it returned results; citations-verified ≠ reviewed). Google data-use
++ no-PHI disclosures. Friendly 429/key/region/retired-model errors. CI added (.github/workflows/tests.yml).
+
+**GATE before merge / public exposure:** 10-topic Claude-vs-Gemini quality eval on BOTH Lecture and Boards
+(HFrEF, hyponatremia/SIADH, COPD, PE, AKI, cirrhosis/HRS, CAP, DKA, iron-deficiency anemia, HIT) — check
+citations, drug-name spelling, guideline accuracy. Then merge + expose the CTA. (Do this together.)
+
 ## GUIDELINE JSON SOURCE-OF-TRUTH — IMPLEMENTED on branch `guidelines-json-source` (Jenni 2026-07-21)
 Status: built + all offline gates green. Source of truth is now `guidelines.json` (repo root); the embedded
 GUIDELINES object was removed from index.html (349 lines out). Equivalence gate PASSED (guidelines.json
