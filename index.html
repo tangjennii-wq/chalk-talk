@@ -616,11 +616,16 @@ var MODEL = MODEL_CRITIC; // legacy fallback for non-critical calls (diagrams, p
 // prefer ChatGPT or Gemini bring their OWN key — those never touch the free tier / owner's budget.
 // Model strings are easy to bump here as providers release new versions.
 var GEN_OPENAI_MODEL = "gpt-5";        // ChatGPT (BYOK) — user's OpenAI key
-// Gemini (BYOK) — user's Google AI Studio key. NOTE: "gemini-3-pro" was never a valid API id and
-// "gemini-3-pro-preview" is now SHUT DOWN — either 404s. Current Pro reasoning model is
-// "gemini-3.1-pro-preview" (per ai.google.dev/gemini-api/docs/models, 2026-06). If Gemini starts
-// failing again, a model deprecation is the first thing to check — bump this string. (Jenni 2026-07)
-var GEN_GEMINI_MODEL = "gemini-3.1-pro-preview";
+// Gemini (user's Google AI Studio key). Two DECOUPLED model constants (Jenni 2026-07): the FREE
+// continuation and explicit BYOK can diverge without surprising each other. Both point at the current
+// STABLE Flash — "gemini-3.6-flash" (per ai.google.dev/gemini-api/docs/models, 2026-07). We deliberately
+// use a STABLE model, not a preview: "gemini-3-pro-preview" was SHUT DOWN and 404'd, and preview models
+// carry that retirement risk. If Gemini starts failing again, a model deprecation is the first thing to
+// check — bump these. Evidence (guidelines.json + RAG + trials + PMIDs) is retrieved by Chalk Talk and
+// passed to whichever model writes, so Gemini is fully grounded; it just lacks Claude's web-search tool.
+var GEN_GEMINI_FREE_MODEL = "gemini-3.6-flash";   // "Continue free with Gemini" after Claude credits expire
+var GEN_GEMINI_BYOK_MODEL = "gemini-3.6-flash";   // user explicitly picks Gemini as their provider
+function activeGeminiModel(){ return (typeof S !== "undefined" && S.geminiFreeFlow) ? GEN_GEMINI_FREE_MODEL : GEN_GEMINI_BYOK_MODEL; }
 
 // Segmented-control button helper. Used by Style/Depth on the compose form AND in the
 // edit-settings drawer. Keeps the look consistent and lets us tune the segmented style
@@ -1222,7 +1227,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-21-08";
+var BUILD_ID = "2026-07-21-09";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3118,6 +3123,10 @@ var S = {
   streamingSubtitle:"", streamingSections:[], streamingStem:"",
   // Free tier (Jenni 2026) — {signed_in,talks_remaining,images_remaining,talks_total,images_total,cap_hit,cap_pct_used}
   freeTier:null, showOutOfFreeModal:false, freePausedMsg:"",
+  geminiFreeFlow:false,   // true after "Continue free with Gemini" — selects the free Gemini model + funnel state
+  // MEDICAL-SAFETY withhold (Jenni 2026-07): when the AI review pass can't finish, the draft is held here
+  // and NOT shown as a normal talk. {draft, critiqueSystem, critiquePrefix, critMaxTok, criticModels, topic, style, depth, err}
+  reviewPending:null, reviewRetrying:false,
   // #4 — true while the slow claim-level citation audit runs in background after talk is shown
   citationAuditPending:false,
   // Collapsed share-info chip — toggles details on tap (Jenni 2026-06-08)
@@ -6027,13 +6036,16 @@ async function _callGeminiText(sys, content, maxTok, opts){
   };
   var fo = {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)};
   if(opts.signal) fo.signal = opts.signal;
-  var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+GEN_GEMINI_MODEL+":generateContent?key="+encodeURIComponent(key), fo);
+  var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+activeGeminiModel()+":generateContent?key="+encodeURIComponent(key), fo);
   if(!r.ok){
     var ed2={}; try{ ed2=await r.json(); }catch(_){}
     var m2=(ed2.error&&ed2.error.message)||("Gemini API error "+r.status);
-    if(r.status===400 && /API key|API_KEY/i.test(m2)) throw new Error("Your Gemini key was rejected. Update it, or switch the model to Claude.");
-    if(r.status===429) throw new Error("Gemini rate limit. Wait a moment, or switch to Claude.");
-    throw new Error(m2);
+    var e3;
+    if(r.status===429){ e3=new Error("Gemini's free quota is used up for now. Wait a few minutes and retry, or switch to your Claude/OpenAI key."); e3.code="gemini_quota"; throw e3; }
+    if(r.status===400 && /API key|API_KEY|invalid/i.test(m2)){ e3=new Error("Your Gemini key was rejected. Re-add a valid Google AI Studio key, or switch providers."); e3.code="gemini_bad_key"; throw e3; }
+    if(r.status===403){ e3=new Error("Gemini declined this request — often a region or access restriction on the free tier. Try your Claude or OpenAI key instead."); e3.code="gemini_forbidden"; throw e3; }
+    if(r.status===404 && /model|not found|not supported/i.test(m2)){ e3=new Error("The Gemini model is unavailable (it may have been retired). This needs a model-string update — switch to Claude for now."); e3.code="gemini_model_gone"; throw e3; }
+    e3=new Error(m2); e3.code="gemini_error"; throw e3;
   }
   var d2 = await r.json();
   var parts = (d2.candidates && d2.candidates[0] && d2.candidates[0].content && d2.candidates[0].content.parts) || [];
@@ -6205,7 +6217,7 @@ async function callAPIWithFallback(sys, content, maxTok, models, opts) {
   var _prov = S.genProvider || "claude";
   if(_prov !== "claude"){
     var t = await callAPI(sys, content, maxTok, opts);
-    return { txt: t, modelUsed: (_prov==="openai"?GEN_OPENAI_MODEL:GEN_GEMINI_MODEL), fellBack: false };
+    return { txt: t, modelUsed: (_prov==="openai"?GEN_OPENAI_MODEL:activeGeminiModel()), fellBack: false };
   }
   var lastError;
   for (var i = 0; i < models.length; i++) {
@@ -6514,7 +6526,9 @@ async function generate(){
         guidelineContext += "\n\n=== RETRIEVED SOCIETY GUIDELINE SUMMARIES (condensed factual summaries, NOT full guideline text) ===\nCite these by SOCIETY AND YEAR (references array, type \"guideline\"). You are seeing a SUMMARY, not the guideline document - do not attribute a recommendation to a guideline unless the summary states it.\n\n" + _glLines.join("\n\n") + "\n=== END GUIDELINE SUMMARIES ===";
       }
     }
-    var searchHint = S.wantWebSearch
+    // Web search is a Claude-only tool. For Gemini/OpenAI it never runs, so DON'T tell the model to search
+    // (that would invite it to fake having searched) — have it rely on Chalk Talk's retrieved evidence. (Jenni 2026-07)
+    var searchHint = (S.wantWebSearch && (S.genProvider || "claude") === "claude")
       ? '\nUse web_search to check the most current society guidance from high-quality sources only (society guideline pages, NEJM, JAMA, Lancet, PubMed) before writing. FORMATTING: JSON values must be plain text with NO XML/HTML tags (no <cite> tags, no web_search result markup, no footnote superscripts). The numeric [N] / [1,2] inline markers are NOT markup — keep them, but only where a source in the "references" array genuinely supports that specific claim (see CITATIONS above). Only XML/HTML tags are forbidden.'
       : '\nRely on your training and the GUIDELINE REFERENCE CONTEXT above. Do not search the web. Use [N] inline markers only where a listed source genuinely supports the claim (see CITATIONS above) — leave a claim uncited rather than mis-attributing it.';
     // depthHint is STYLE-AWARE (Jenni 2026-07-21). Boards is a single question — the Lecture depth
@@ -6671,34 +6685,47 @@ async function generate(){
 
     var critiqueInput = critiquePrefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
-    var finalTalk = draftTalk;
-    // ALWAYS run critique — accuracy > a few seconds saved. Concise uses Sonnet draft + Haiku review,
-    // so total still ~25-30s. Detailed: Opus draft + Haiku review. Boards: Opus draft + Opus review fallback chain.
-    try {
-      // Async path already ran the critique server-side (reuse it). Sync path calls it now.
-      // criticModels / critMaxTok were set up above alongside the draft spec.
-      var critTxt;
-      if (_useAsync) {
-        critTxt = _asyncCritTxt || "";
-      } else {
-        var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels);
-        critTxt = critResult.txt;
-        if (critResult.fellBack) console.info("Critique done by " + critResult.modelUsed + " (Opus was overloaded)");
-      }
-      if (critTxt && critTxt.trim()) {
-        var parsed = JSON.parse(fixJSON(critTxt));
-        parsed = deepCleanCitations(parsed);
-        // If verdict is "clean", keep draft. Otherwise the parsed object IS the corrected talk.
-        if (parsed.verdict === "clean") {
-          finalTalk = draftTalk;
-        } else if (parsed.title || parsed.question) {
-          // Looks like a corrected talk (has expected schema fields)
-          finalTalk = parsed;
+    var finalTalk = null;
+    // ALWAYS run the AI review (critique). MEDICAL-SAFETY (Jenni 2026-07): retry ONCE with backoff; if the
+    // review still can't finish (e.g. a free-Gemini quota block between draft and review), WITHHOLD the
+    // draft below rather than presenting an unreviewed talk as verified.
+    var critiqueOK = false, lastCritErr = null;
+    for (var _cAtt = 0; _cAtt < 2 && !critiqueOK; _cAtt++){
+      if (_cAtt > 0) { await new Promise(function(_r){ setTimeout(_r, 1200); }); }   // backoff before the single retry
+      if (S.genCancelled || _myGenId !== S.genId) return;
+      try {
+        var critTxt;
+        if (_useAsync && _cAtt === 0) { critTxt = _asyncCritTxt || ""; }   // server-side critique reusable only on attempt 0
+        else {
+          var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels);
+          critTxt = critResult.txt;
+          if (critResult.fellBack) console.info("Critique via " + critResult.modelUsed);
         }
+        if (!critTxt || !critTxt.trim()) throw new Error("empty review response");
+        var parsed = deepCleanCitations(JSON.parse(fixJSON(critTxt)));
+        // "clean" verdict keeps the draft; otherwise the parsed object IS the corrected talk.
+        if (parsed.verdict === "clean") { finalTalk = draftTalk; critiqueOK = true; }
+        else if (parsed.title || parsed.question) { finalTalk = parsed; critiqueOK = true; }
+        else throw new Error("unrecognized review output");
+      } catch(critErr) {
+        lastCritErr = critErr;
+        console.warn("Review attempt " + (_cAtt+1) + " failed:", critErr && critErr.message);
       }
-    } catch(critErr) {
-      // If critique fails, fall back to original draft silently
-      console.warn("Critique failed, using draft:", critErr.message);
+    }
+    if (S.genCancelled) { S.genCancelled = false; return; }
+    if (_myGenId !== S.genId) return;
+    if (!critiqueOK) {
+      // MEDICAL-SAFETY WITHHOLD (Jenni 2026-07 user spec): the review pass could not finish. Preserve the
+      // draft privately and show the "review couldn't finish" card — do NOT render it as a normal talk,
+      // do NOT charge a credit, do NOT permit share/publish, do NOT count it complete.
+      S.reviewPending = { draft: draftTalk, critiqueSystem: critiqueSystem, critiquePrefix: critiquePrefix,
+        critMaxTok: critMaxTok, criticModels: criticModels, topic: S.topic, style: S.style, depth: S.depth,
+        provider: (S.genProvider || "claude"), charged: !!_useAsync, ragCount: (S.ragChunks || []).length,
+        err: (lastCritErr && lastCritErr.message) || "" };
+      _saveReviewPending();
+      S.citationAuditPending = false; S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
+      render();
+      return;   // NO charge, NO S.talk
     }
 
     // Step 3a: Presence prune (cheap, synchronous) — strip citations to PMIDs we don't even have
@@ -6709,6 +6736,14 @@ async function generate(){
     // Structural gate for the CRITIC's output: repair + flag hard-invalid so a malformed question
     // shows a visible "needs review" banner instead of rendering silently (Jenni 2026-07-21).
     finalTalk = _finalizeBoardQuestion(finalTalk);
+    // Provenance for honest labeling (Jenni 2026-07): the review DID finish (we're past the withhold gate);
+    // record who wrote it and whether a live web search actually ran (Claude-only tool). Gemini/OpenAI are
+    // grounded in Chalk Talk's retrieved evidence but do NOT perform live web search.
+    finalTalk._reviewStatus = "reviewed";
+    finalTalk._writtenBy = (S.genProvider || "claude");
+    finalTalk._webSearched = ((S.genProvider || "claude") === "claude" && !!S.wantWebSearch);
+    finalTalk._ragCount = (S.ragChunks || []).length;   // 0 = retrieval returned nothing; don't claim RAG grounding
+    finalTalk._citationsVerified = false;                // set true ONLY after the background citation audit succeeds
 
     // If the user cancelled mid-flight, discard the result so they don't suddenly
   // see a talk appear after they tapped Cancel (Jenni 2026-06-08).
@@ -6824,6 +6859,9 @@ async function generate(){
         var _ca = S.citeAudit || null;
         var _checked = _ca ? (_ca.checked || 0) : 0;
         var _dropped = _ca ? (_ca.dropped || 0) : 0;
+        // Honest provenance: citations are "verified" only if the audit actually checked some against
+        // abstracts. review-complete != citations-verified (Jenni 2026-07 — Codex).
+        if(S.talk) S.talk._citationsVerified = (_checked > 0);
         if(_checked > 0){
           S.savedFlash = "✓ Checked " + _checked + " PubMed citation" + (_checked===1?"":"s") + " against their abstracts"
                        + (_dropped > 0 ? " · " + _dropped + " dropped as unsupported" : "");
@@ -8465,6 +8503,61 @@ function rebuildLesson(){
   generate();
 }
 
+// ── Withheld-draft recovery (Jenni 2026-07 medical-safety) ───────────────────
+// When the AI review pass couldn't finish, the draft is held in S.reviewPending and NOT shown as a talk.
+// retryReview re-runs ONLY the review (no re-draft, no extra credit) on the same draft; on success it
+// finalizes + charges once + shows the talk. Switching provider retries the review via the new model.
+async function retryReview(){
+  var rp = S.reviewPending;
+  if(!rp || S.reviewRetrying) return;
+  S.reviewRetrying = true; S.error = ""; render();
+  var critiqueInput = rp.critiquePrefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(rp.draft);
+  var ok = false, finalTalk = null, err = null;
+  for (var a = 0; a < 2 && !ok; a++){
+    if (a > 0) await new Promise(function(r){ setTimeout(r, 1200); });
+    try {
+      var res = await callAPIWithFallback(rp.critiqueSystem, critiqueInput, rp.critMaxTok, rp.criticModels);
+      var txt = res.txt;
+      if (!txt || !txt.trim()) throw new Error("empty review response");
+      var parsed = deepCleanCitations(JSON.parse(fixJSON(txt)));
+      if (parsed.verdict === "clean") { finalTalk = rp.draft; ok = true; }
+      else if (parsed.title || parsed.question) { finalTalk = parsed; ok = true; }
+      else throw new Error("unrecognized review output");
+    } catch(e){ err = e; console.warn("retryReview attempt " + (a+1) + " failed:", e && e.message); }
+  }
+  S.reviewRetrying = false;
+  if (!ok){ S.reviewPending = Object.assign({}, rp, { err: (err && err.message) || "" }); _saveReviewPending(); render(); return; }
+  // Review succeeded → finalize, charge ONCE (only if not already charged), show.
+  finalTalk = pruneFakeReferences(finalTalk);
+  finalTalk = _normalizeInlinePmids(finalTalk);
+  finalTalk = _finalizeBoardQuestion(finalTalk);
+  finalTalk._reviewStatus = "reviewed";
+  finalTalk._writtenBy = (S.genProvider || "claude");
+  finalTalk._webSearched = ((S.genProvider || "claude") === "claude" && !!S.wantWebSearch);
+  finalTalk._ragCount = (rp.ragCount != null ? rp.ragCount : (S.ragChunks || []).length);
+  finalTalk._citationsVerified = false;
+  if (genUsesFreeTier() && !rp.charged){ try{ await consumeFreeTier("talk"); }catch(_){} }
+  S.reviewPending = null; _saveReviewPending();
+  S.topic = rp.topic; S.style = rp.style || S.style; if(rp.depth) S.depth = rp.depth;
+  S.citationAuditPending = true; S.talk = finalTalk; S.sec = 0; S.dg = null; S.dgErr = ""; S.podScript = "";
+  S.glRef = getGuidelinesForTopic(S.topic) || null;
+  render();
+  var ts = document.getElementById("talkStart"); if(ts) ts.scrollIntoView({behavior:"smooth", block:"start"});
+  var _agid = S.genId;
+  (async function(){ try{ var au = await verifyCitations(finalTalk); if(_agid === S.genId && au){ S.talk = au; S.citationAuditPending = false; render(); } }catch(_){ if(_agid === S.genId){ S.citationAuditPending = false; render(); } } })();
+}
+// Persist the withheld draft across refresh/reopen (Jenni 2026-07 — Codex) so a review that couldn't
+// finish isn't silently lost. Cleared on discard or on successful review.
+function _saveReviewPending(){ try{ if(S.reviewPending) localStorage.setItem("ct_review_pending", JSON.stringify(S.reviewPending)); else localStorage.removeItem("ct_review_pending"); }catch(_){} }
+function discardReviewDraft(){ S.reviewPending = null; _saveReviewPending(); S.error = ""; render(); }
+async function switchProviderAndRetryReview(prov){
+  if(prov === "gemini" && !getGeminiKeyRaw()){ S.keyModalProvider = "gemini"; if(typeof openKeyModal === "function") openKeyModal("gemini"); return; }
+  if(prov === "openai" && !getOpenAIKeyRaw()){ S.keyModalProvider = "openai"; if(typeof openKeyModal === "function") openKeyModal("openai"); return; }
+  S.genProvider = prov; try{ localStorage.setItem("ct_gen_provider", prov); }catch(_){}
+  if(prov === "gemini") S.geminiFreeFlow = true;
+  await retryReview();
+}
+
 function resetAll(){
   // Reset per-talk state + transient UI flags. Auth/profile/cloud/library survives — session-scoped.
   S.talk=null; S.topic=""; S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview";
@@ -8837,12 +8930,17 @@ function renderGlobalModals(){
     h+='<div class="drawer-head" style="padding:20px 22px 8px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>✨</span> '+(_paused?"Free tier paused":"You've used your free talks")+'</div><button class="drawer-close" id="freeModalCloseBtn">×</button></div>';
     h+='<div class="drawer-body" style="padding:0 22px 22px">';
     if(_paused){
-      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">'+esc(S.freePausedMsg)+' Bring your own key (Claude, ChatGPT, or Gemini) to keep generating right now — it goes straight to the provider and isn\'t rate-limited.</p>';
+      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">'+esc(S.freePausedMsg)+' Keep generating <b style="color:var(--ink)">free with Gemini</b> using your own Google AI Studio key — or bring a Claude/ChatGPT key.</p>';
     } else {
-      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">Thanks for trying Chalk Talk! To keep generating, bring your own key — <b style="color:var(--ink)">Claude</b> (~$5 covers ~30 talks), <b style="color:var(--ink)">ChatGPT</b>, or <b style="color:var(--ink)">Gemini</b> (free keys at Google AI Studio). Your key is stored only in this browser and sent only to that provider.</p>';
+      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">Thanks for trying Chalk Talk! You\'ve used your free talks. Keep going <b style="color:var(--ink)">free with Gemini</b> (your own Google AI Studio key), or bring a <b style="color:var(--ink)">Claude</b> (~$5 ≈ 30 talks) or <b style="color:var(--ink)">ChatGPT</b> key. Keys stay in this browser and go straight to the provider.</p>';
     }
-    h+='<button id="freeAddKeyBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-bottom:10px">Add your own key →</button>';
-    h+='<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:12px;color:var(--plum);text-decoration:underline;text-underline-offset:2px;margin-bottom:14px">Get a key (free signup, ~2 min)</a>';
+    // PRIMARY: continue free with Gemini (BYO free AI Studio key). Jenni 2026-07.
+    h+='<button id="freeGeminiBtn" style="width:100%;background:linear-gradient(135deg,#1a73e8,#4285f4);border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-bottom:6px">✨ Continue free with Gemini →</button>';
+    h+='<div style="font-size:11px;color:var(--ink-muted);line-height:1.45;margin:0 0 12px;text-align:center">Free Google AI Studio key · <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--plum)">get one in ~2 min</a></div>';
+    // SECONDARY: premium keys
+    h+='<button id="freeAddKeyBtn" style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px;font-size:13px;font-weight:600;color:var(--plum);cursor:pointer;margin-bottom:12px">Use a Claude or ChatGPT key instead</button>';
+    // DISCLOSURES (Google data-use + no PHI) — required for the free Gemini path.
+    h+='<div style="background:#fbf8f2;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--ink-muted);line-height:1.5">⚠️ <b style="color:var(--ink)">Never enter identifiable patient information.</b> On Gemini\'s free tier, prompts may be used by Google to improve their products (per Google\'s API terms). Teaching content only — verify against primary sources before use.</div>';
     h+='<button id="freeMaybeLaterBtn" style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px;font-size:13px;font-weight:600;color:var(--ink-muted);cursor:pointer">Maybe later</button>';
     h+='</div></div>';
   }
@@ -8854,6 +8952,18 @@ function renderGlobalModals(){
   var fmb=document.getElementById("freeModalBackdrop");if(fmb)fmb.onclick=function(){S.showOutOfFreeModal=false;S.freePausedMsg="";render()};
   var fml=document.getElementById("freeMaybeLaterBtn");if(fml)fml.onclick=function(){S.showOutOfFreeModal=false;S.freePausedMsg="";render()};
   var fak=document.getElementById("freeAddKeyBtn");if(fak)fak.onclick=function(){ openKeyModal(); };
+  var fgb=document.getElementById("freeGeminiBtn");if(fgb)fgb.onclick=function(){
+    S.geminiFreeFlow = true;
+    if(getGeminiKeyRaw()){
+      // Already have a Gemini key — switch provider and close the modal; they can generate immediately.
+      S.genProvider="gemini"; try{ localStorage.setItem("ct_gen_provider","gemini"); }catch(_){}
+      S.showOutOfFreeModal=false; S.freePausedMsg="";
+      S.savedFlash="✓ Continuing free with Gemini"; render();
+      setTimeout(function(){ S.savedFlash=""; render(); }, 2200);
+    } else {
+      openKeyModal("gemini");   // prompts for a free AI Studio key; save handler switches provider
+    }
+  };
   // ── API key modal handlers (Jenni 2026-07-03) ──
   var kmc=document.getElementById("keyModalCloseBtn");if(kmc)kmc.onclick=function(){S.keyModalOpen=false;S.keyModalErr="";render()};
   var kmbd=document.getElementById("keyModalBackdrop");if(kmbd)kmbd.onclick=function(){S.keyModalOpen=false;S.keyModalErr="";render()};
@@ -9775,6 +9885,25 @@ function renderMain(){
 
   // === COMPOSE STATE: only when no talk loaded ===
   if(!S.talk){
+  if(S.reviewPending){
+    // MEDICAL-SAFETY withheld-draft card (Jenni 2026-07): the review pass couldn't finish, so the draft
+    // is NOT shown as a talk. Offer retry / switch provider / discard. No verified badge, no share.
+    var _rpProv = S.reviewPending.provider;
+    h+='<div style="max-width:520px;margin:0 auto;background:var(--cream);border:1px solid #f0c489;border-left:4px solid #d97706;border-radius:16px;padding:20px 22px;box-shadow:var(--shadow-soft)">';
+    h+='<div style="font-size:12px;font-weight:800;color:#b45309;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">⏳ Medical review couldn’t finish</div>';
+    h+='<div style="font-size:14px;color:var(--ink);line-height:1.55;margin-bottom:8px">Your draft was created, but the AI safety-review pass could not complete'+(_rpProv==="gemini"?" — Gemini’s free quota may be exhausted for now":"")+'. <b>Nothing has been lost.</b></div>';
+    h+='<div style="font-size:12.5px;color:var(--ink-muted);line-height:1.5;margin-bottom:16px">To protect teaching quality, an unreviewed draft is not shown, shareable, or counted against your credits. Retry the review later, switch providers, or discard it.</div>';
+    h+='<div style="display:flex;flex-direction:column;gap:8px">';
+    h+='<button id="reviewRetryBtn" '+(S.reviewRetrying?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:13px;color:#fff;font-size:14px;font-weight:600;cursor:'+(S.reviewRetrying?"default":"pointer")+';opacity:'+(S.reviewRetrying?"0.6":"1")+'">'+(S.reviewRetrying?"Reviewing…":"↻ Retry review")+'</button>';
+    h+='<div style="display:flex;gap:8px">';
+    if(_rpProv!=="claude") h+='<button id="reviewSwitchClaudeBtn" '+(S.reviewRetrying?"disabled":"")+' style="flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">Review with Claude</button>';
+    if(_rpProv!=="gemini") h+='<button id="reviewSwitchGeminiBtn" '+(S.reviewRetrying?"disabled":"")+' style="flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">Review with Gemini</button>';
+    h+='</div>';
+    h+='<button id="reviewDiscardBtn" '+(S.reviewRetrying?"disabled":"")+' style="width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--ink-muted);font-size:12.5px;font-weight:600;cursor:pointer">Discard draft</button>';
+    h+='</div>';
+    if(S.reviewPending.err) h+='<div style="font-size:11px;color:var(--ink-soft);margin-top:12px;word-break:break-word">Detail: '+esc(S.reviewPending.err)+'</div>';
+    h+='</div>';
+  } else {
   // Topic — single-line input
   h+='<div data-mtopic style="margin-bottom:14px">';
   // Label row with Browse ABIM topics as a secondary action, separated from the input so it's not mistaken for part of the search box.
@@ -9962,6 +10091,7 @@ function renderMain(){
   h+='<p class="compose-cta-note"><span style="opacity:.7">🔒</span> Your content is private and never shared.</p>';
   h+='</div></div>';
 
+  } // end else (no reviewPending)
   } // end if(!S.talk)
 
   // ═══ GENERATED STATE — capsule + 2x2 mode grid + accordion + composer ═══
@@ -9983,6 +10113,22 @@ function renderMain(){
     var totalMin=0;
     if(t.sections){for(var smi=0;smi<t.sections.length;smi++){var mm=String(t.sections[smi].minutes||"").match(/(\d+(?:\.\d+)?)/);if(mm)totalMin+=parseFloat(mm[1])}}
     if(!totalMin)totalMin=isBQ?5:(S.depth==="detailed"?10:5);
+    // Honest provenance chips (Jenni 2026-07 — Codex): surface ONLY what actually happened. Rendered only
+    // for talks generated by the new pipeline (t._reviewStatus set) so legacy saved talks are untouched.
+    // A withheld (unreviewed) draft never reaches the talk view, so a shown talk is always AI-reviewed.
+    if(t._reviewStatus){
+      var _wb = t._writtenBy==="gemini" ? "Gemini" : (t._writtenBy==="openai" ? "ChatGPT" : "Claude");
+      var _pv = [];
+      _pv.push("✍️ Written by " + _wb);
+      _pv.push("🔎 AI-reviewed");
+      var _grd = "📚 Grounded in guidelines" + ((t._ragCount||0) > 0 ? " + " + t._ragCount + " retrieved source" + (t._ragCount===1?"":"s") : "");
+      _pv.push(_grd);
+      if(t._webSearched) _pv.push("🌐 Searched current sources");
+      if(t._citationsVerified) _pv.push("✓ Citations checked"); else if(S.citationAuditPending) _pv.push("… Checking citations");
+      h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px">';
+      for(var _pi=0;_pi<_pv.length;_pi++) h+='<span style="font-size:10px;color:var(--ink-muted);background:var(--cream);border:1px solid var(--line);border-radius:999px;padding:2px 9px;line-height:1.6">'+esc(_pv[_pi])+'</span>';
+      h+='</div>';
+    }
 
     // Public viewer affordance — collapsed chip with Save copy CTA inline.
     // Coworker landing on a shared talk gets a one-tap save action, not buried in the capsule.
@@ -11155,6 +11301,11 @@ function bindMain(){
   var cot=document.getElementById("composeOptionsToggle");if(cot)cot.onclick=function(){ S.composeOptionsOpen=!S.composeOptionsOpen; try{ localStorage.setItem("ct_compose_options", S.composeOptionsOpen?"1":"0"); }catch(_){} render(); };
   var gb=document.getElementById("genBtn");if(gb)gb.onclick=generate;
   var rgb=document.getElementById("reloadGuidelinesBtn");if(rgb)rgb.onclick=function(){loadGuidelines()};
+  // Withheld-draft (review-incomplete) card handlers (Jenni 2026-07)
+  var rvRetry=document.getElementById("reviewRetryBtn");if(rvRetry)rvRetry.onclick=function(){ retryReview(); };
+  var rvClaude=document.getElementById("reviewSwitchClaudeBtn");if(rvClaude)rvClaude.onclick=function(){ switchProviderAndRetryReview("claude"); };
+  var rvGemini=document.getElementById("reviewSwitchGeminiBtn");if(rvGemini)rvGemini.onclick=function(){ switchProviderAndRetryReview("gemini"); };
+  var rvDiscard=document.getElementById("reviewDiscardBtn");if(rvDiscard)rvDiscard.onclick=function(){ discardReviewDraft(); };
   var cgb=document.getElementById("cancelGenBtn");if(cgb)cgb.onclick=cancelGen;
   // Live depth + verify controls inside the loading panel — changing restarts generation cleanly.
   // Audio toggle just sets a flag (no restart) — fires after the current generation completes.
@@ -11952,6 +12103,8 @@ try{ if(localStorage.getItem("ct_compose_options")==="1") S.composeOptionsOpen =
 try{ var _pendTopic = localStorage.getItem("ct_pending_topic"); if(_pendTopic){ S.topic = _pendTopic; localStorage.removeItem("ct_pending_topic"); } }catch(_){}
 // Restore the Boards difficulty preference (Jenni 2026-07-21). Default stays 4 (Board-level).
 try{ var _bdStored = parseInt(localStorage.getItem("ct_boards_difficulty"),10); if(_bdStored>=1 && _bdStored<=5) S.boardsDifficulty = _bdStored; }catch(_){}
+// Restore a withheld draft whose medical review couldn't finish (Jenni 2026-07) — so a refresh doesn't lose it.
+try{ var _rpStored = localStorage.getItem("ct_review_pending"); if(_rpStored){ var _rpObj = JSON.parse(_rpStored); if(_rpObj && _rpObj.draft) S.reviewPending = _rpObj; } }catch(_){}
 loadFromShareHash();
 loadFromPublicShareHash();
 loadFromUserProfileHash();
