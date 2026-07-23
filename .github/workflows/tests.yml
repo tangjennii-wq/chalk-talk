@@ -45,3 +45,6 @@ jobs:
 
       - name: Guideline source (JSON single-source-of-truth) suite
         run: node test_guidelines_source.mjs
+
+      - name: Gemini funnel + withheld-review safety/provenance suite
+        run: node test_gemini_safety.mjs

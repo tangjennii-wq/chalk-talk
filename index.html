@@ -1227,7 +1227,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-21-09";
+var BUILD_ID = "2026-07-21-10";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6189,6 +6189,11 @@ async function callAPI(sys, content, maxTok, opts) {
               fullText += t;
               try { opts.onStreamChunk(t, fullText); } catch (e2) { /* never let UI errors kill the stream */ }
             }
+          } else if (evt.type === "content_block_start" && evt.content_block) {
+            // Web-search HONESTY (Jenni 2026-07 — Codex): flag ONLY when Claude actually ran a search,
+            // not merely because the toggle was on. A web_search block appears in the response only if it searched.
+            var _cbt = evt.content_block.type;
+            if (_cbt === "web_search_tool_result" || (_cbt === "server_tool_use" && evt.content_block.name === "web_search")) opts.__webSearched = true;
           } else if (evt.type === "message_stop") {
             sawMessageStop = true;
           }
@@ -6205,7 +6210,7 @@ async function callAPI(sys, content, maxTok, opts) {
     }
     return fullText;
   }
-  var d=await r.json();var txt="";for(var i=0;i<(d.content||[]).length;i++){if(d.content[i].type==="text")txt+=d.content[i].text}return txt;
+  var d=await r.json();var txt="";for(var i=0;i<(d.content||[]).length;i++){var _b=d.content[i];if(_b.type==="text")txt+=_b.text;else if(_b.type==="web_search_tool_result"||(_b.type==="server_tool_use"&&_b.name==="web_search"))opts.__webSearched=true;}return txt;
 }
 
 // Try a list of models in order; fall through to the next on overload/server errors only.
@@ -6217,14 +6222,14 @@ async function callAPIWithFallback(sys, content, maxTok, models, opts) {
   var _prov = S.genProvider || "claude";
   if(_prov !== "claude"){
     var t = await callAPI(sys, content, maxTok, opts);
-    return { txt: t, modelUsed: (_prov==="openai"?GEN_OPENAI_MODEL:activeGeminiModel()), fellBack: false };
+    return { txt: t, modelUsed: (_prov==="openai"?GEN_OPENAI_MODEL:activeGeminiModel()), fellBack: false, webSearched: false };
   }
   var lastError;
   for (var i = 0; i < models.length; i++) {
     try {
       var modelOpts = Object.assign({}, opts, {model: models[i]});
       var txt = await callAPI(sys, content, maxTok, modelOpts);
-      return {txt: txt, modelUsed: models[i], fellBack: i > 0};
+      return {txt: txt, modelUsed: models[i], fellBack: i > 0, webSearched: !!modelOpts.__webSearched};
     } catch (e) {
       lastError = e;
       // Only fall back on transient overload / server errors. Don't fall back on auth/key/rate-limit.
@@ -6668,11 +6673,13 @@ async function generate(){
         if (_res && _res.modelUsed) console.info("Background draft via " + _res.modelUsed);
       }
     }
+    var _draftWebSearched = false;   // true only if Claude ACTUALLY ran a web_search during the draft (sync path)
     if (!_useAsync) {
       var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
       // Clear streaming progress now that the main draft is in hand; critique/audit run after.
       S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
       txt = mainResult.txt;
+      _draftWebSearched = !!mainResult.webSearched;
       if (mainResult.fellBack) console.info("Draft generated with " + mainResult.modelUsed + " (Opus was overloaded)");
     }
     if (!txt || !txt.trim()) throw new Error("Empty response");
@@ -6721,6 +6728,7 @@ async function generate(){
       S.reviewPending = { draft: draftTalk, critiqueSystem: critiqueSystem, critiquePrefix: critiquePrefix,
         critMaxTok: critMaxTok, criticModels: criticModels, topic: S.topic, style: S.style, depth: S.depth,
         provider: (S.genProvider || "claude"), charged: !!_useAsync, ragCount: (S.ragChunks || []).length,
+        guidelinesLoaded: !!glRef, webSearched: ((S.genProvider || "claude") === "claude" && _draftWebSearched),
         err: (lastCritErr && lastCritErr.message) || "" };
       _saveReviewPending();
       S.citationAuditPending = false; S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
@@ -6741,8 +6749,9 @@ async function generate(){
     // grounded in Chalk Talk's retrieved evidence but do NOT perform live web search.
     finalTalk._reviewStatus = "reviewed";
     finalTalk._writtenBy = (S.genProvider || "claude");
-    finalTalk._webSearched = ((S.genProvider || "claude") === "claude" && !!S.wantWebSearch);
+    finalTalk._webSearched = ((S.genProvider || "claude") === "claude" && _draftWebSearched);   // ACTUAL search, not the toggle
     finalTalk._ragCount = (S.ragChunks || []).length;   // 0 = retrieval returned nothing; don't claim RAG grounding
+    finalTalk._guidelinesLoaded = !!glRef;              // a guideline actually matched this topic
     finalTalk._citationsVerified = false;                // set true ONLY after the background citation audit succeeds
 
     // If the user cancelled mid-flight, discard the result so they don't suddenly
@@ -8533,8 +8542,9 @@ async function retryReview(){
   finalTalk = _finalizeBoardQuestion(finalTalk);
   finalTalk._reviewStatus = "reviewed";
   finalTalk._writtenBy = (S.genProvider || "claude");
-  finalTalk._webSearched = ((S.genProvider || "claude") === "claude" && !!S.wantWebSearch);
+  finalTalk._webSearched = !!rp.webSearched;   // the DRAFT's actual search; a review retry never re-searches
   finalTalk._ragCount = (rp.ragCount != null ? rp.ragCount : (S.ragChunks || []).length);
+  finalTalk._guidelinesLoaded = (rp.guidelinesLoaded != null ? rp.guidelinesLoaded : !!getGuidelinesForTopic(rp.topic));
   finalTalk._citationsVerified = false;
   if (genUsesFreeTier() && !rp.charged){ try{ await consumeFreeTier("talk"); }catch(_){} }
   S.reviewPending = null; _saveReviewPending();
@@ -8550,6 +8560,26 @@ async function retryReview(){
 // finish isn't silently lost. Cleared on discard or on successful review.
 function _saveReviewPending(){ try{ if(S.reviewPending) localStorage.setItem("ct_review_pending", JSON.stringify(S.reviewPending)); else localStorage.removeItem("ct_review_pending"); }catch(_){} }
 function discardReviewDraft(){ S.reviewPending = null; _saveReviewPending(); S.error = ""; render(); }
+
+// Honest provenance chips (Jenni 2026-07 — Codex). Pure + testable. Claims ONLY what actually happened:
+// writer; AI-reviewed (a shown talk is always reviewed); grounding ONLY if a guideline matched and/or RAG
+// returned sources; web search ONLY if one actually ran; citations-checked is separate from reviewed.
+function _provenanceChips(t, auditPending){
+  if(!t || !t._reviewStatus) return [];
+  var wb = t._writtenBy === "gemini" ? "Gemini" : (t._writtenBy === "openai" ? "ChatGPT" : "Claude");
+  var chips = [];
+  chips.push("✍️ Written by " + wb);
+  chips.push("🔎 AI-reviewed");
+  var gl = !!t._guidelinesLoaded, rc = (t._ragCount || 0);
+  if (gl && rc > 0) chips.push("📚 Grounded in guidelines + " + rc + " retrieved source" + (rc === 1 ? "" : "s"));
+  else if (gl) chips.push("📚 Grounded in society guidelines");
+  else if (rc > 0) chips.push("📚 Grounded in " + rc + " retrieved source" + (rc === 1 ? "" : "s"));
+  // neither → NO grounding claim
+  if (t._webSearched) chips.push("🌐 Searched current sources");
+  if (t._citationsVerified) chips.push("✓ Citations checked");
+  else if (auditPending) chips.push("… Checking citations");
+  return chips;
+}
 async function switchProviderAndRetryReview(prov){
   if(prov === "gemini" && !getGeminiKeyRaw()){ S.keyModalProvider = "gemini"; if(typeof openKeyModal === "function") openKeyModal("gemini"); return; }
   if(prov === "openai" && !getOpenAIKeyRaw()){ S.keyModalProvider = "openai"; if(typeof openKeyModal === "function") openKeyModal("openai"); return; }
@@ -9892,7 +9922,10 @@ function renderMain(){
     h+='<div style="max-width:520px;margin:0 auto;background:var(--cream);border:1px solid #f0c489;border-left:4px solid #d97706;border-radius:16px;padding:20px 22px;box-shadow:var(--shadow-soft)">';
     h+='<div style="font-size:12px;font-weight:800;color:#b45309;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">⏳ Medical review couldn’t finish</div>';
     h+='<div style="font-size:14px;color:var(--ink);line-height:1.55;margin-bottom:8px">Your draft was created, but the AI safety-review pass could not complete'+(_rpProv==="gemini"?" — Gemini’s free quota may be exhausted for now":"")+'. <b>Nothing has been lost.</b></div>';
-    h+='<div style="font-size:12.5px;color:var(--ink-muted);line-height:1.5;margin-bottom:16px">To protect teaching quality, an unreviewed draft is not shown, shareable, or counted against your credits. Retry the review later, switch providers, or discard it.</div>';
+    var _rpCredit = S.reviewPending.charged
+      ? "This draft already used one credit (the draft itself succeeded); retrying the review won’t cost another."
+      : "It isn’t counted against your credits.";
+    h+='<div style="font-size:12.5px;color:var(--ink-muted);line-height:1.5;margin-bottom:16px">To protect teaching quality, an unreviewed draft isn’t shown or shareable. '+_rpCredit+' Retry the review, switch providers, or discard.</div>';
     h+='<div style="display:flex;flex-direction:column;gap:8px">';
     h+='<button id="reviewRetryBtn" '+(S.reviewRetrying?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:13px;color:#fff;font-size:14px;font-weight:600;cursor:'+(S.reviewRetrying?"default":"pointer")+';opacity:'+(S.reviewRetrying?"0.6":"1")+'">'+(S.reviewRetrying?"Reviewing…":"↻ Retry review")+'</button>';
     h+='<div style="display:flex;gap:8px">';
@@ -10116,15 +10149,8 @@ function renderMain(){
     // Honest provenance chips (Jenni 2026-07 — Codex): surface ONLY what actually happened. Rendered only
     // for talks generated by the new pipeline (t._reviewStatus set) so legacy saved talks are untouched.
     // A withheld (unreviewed) draft never reaches the talk view, so a shown talk is always AI-reviewed.
-    if(t._reviewStatus){
-      var _wb = t._writtenBy==="gemini" ? "Gemini" : (t._writtenBy==="openai" ? "ChatGPT" : "Claude");
-      var _pv = [];
-      _pv.push("✍️ Written by " + _wb);
-      _pv.push("🔎 AI-reviewed");
-      var _grd = "📚 Grounded in guidelines" + ((t._ragCount||0) > 0 ? " + " + t._ragCount + " retrieved source" + (t._ragCount===1?"":"s") : "");
-      _pv.push(_grd);
-      if(t._webSearched) _pv.push("🌐 Searched current sources");
-      if(t._citationsVerified) _pv.push("✓ Citations checked"); else if(S.citationAuditPending) _pv.push("… Checking citations");
+    var _pv = _provenanceChips(t, S.citationAuditPending);
+    if(_pv.length){
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px">';
       for(var _pi=0;_pi<_pv.length;_pi++) h+='<span style="font-size:10px;color:var(--ink-muted);background:var(--cream);border:1px solid var(--line);border-radius:999px;padding:2px 9px;line-height:1.6">'+esc(_pv[_pi])+'</span>';
       h+='</div>';
