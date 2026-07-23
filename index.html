@@ -1035,7 +1035,10 @@ async function loadGuidelines(){
 
 // ═══════════ GUIDELINE LOOKUP ═══════════
 function getGuidelinesForTopic(topic) {
-  if (!topic) return null;
+  // Null-safe against the JSON loader: if called before guidelines.json has loaded (e.g. a reload that
+  // resumes a mid-flight generation), return null cleanly rather than throwing on GUIDELINES[...]. The
+  // main generate() path is already gated on guidelinesReady(); this guards the rarer resume path. (Jenni 2026-07)
+  if (!topic || !GUIDELINES) return null;
   var t = topic.toLowerCase();
   var matched = [];
   // map topic keywords to specialties
@@ -1219,7 +1222,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-21-07";
+var BUILD_ID = "2026-07-21-08";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
