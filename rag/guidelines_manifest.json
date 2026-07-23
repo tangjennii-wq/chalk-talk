@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated": "2026-07-13",
   "runtime_source": "index.html (var GUIDELINES) — authoritative; this manifest is a generated derivative for Phase A",
-  "count": 181,
+  "count": 174,
   "cards": [
     {
       "id": "2017-acc-aha-hrs-syncope",
@@ -357,35 +357,6 @@
       "review_due": "2027-07-13"
     },
     {
-      "id": "2025-aha-acc-hypertension-renal-lens",
-      "title": "2025 AHA/ACC Hypertension (Renal Lens)",
-      "societies": [
-        "AHA",
-        "ACC"
-      ],
-      "year": 2025,
-      "status": "current",
-      "evidence_type": "guideline",
-      "specialties": [
-        "Nephrology"
-      ],
-      "topics": [],
-      "source_url": "https://pubmed.ncbi.nlm.nih.gov/40811516/",
-      "pmid": "40811516",
-      "doi": null,
-      "access": "open",
-      "access_raw": "Open",
-      "summary": "Target <130/80 for most adults; resistant HTN -> spironolactone (PATHWAY-2 demonstrated mineralocorticoid excess physiology). Expanded primary aldosteronism screening for stage 2 / resistant HTN. PREVENT calculator replaces pooled cohort equations.",
-      "key_recommendations": [],
-      "practice_changers": [],
-      "do_not_teach": [],
-      "landmark_trials": [],
-      "supersedes": [],
-      "caveats": [],
-      "last_verified": "2026-07-13",
-      "review_due": "2027-07-13"
-    },
-    {
       "id": "2025-aha-acc-hypertension-guideline",
       "title": "2025 AHA/ACC Hypertension Guideline",
       "societies": [
@@ -396,6 +367,7 @@
       "status": "current",
       "evidence_type": "guideline",
       "specialties": [
+        "Nephrology",
         "Cardiovascular"
       ],
       "topics": [],
@@ -404,7 +376,7 @@
       "doi": null,
       "access": "open",
       "access_raw": "Open",
-      "summary": "Target BP <130/80 for most adults. PREVENT replaces pooled cohort equations. Expanded aldosteronism screening for stage 2 and resistant HTN. Renal denervation as adjunct for resistant HTN. SPRINT-era data drove targets down for stroke and HF prevention.",
+      "summary": "Target BP <130/80 for most adults. PREVENT calculator replaces pooled cohort equations. Resistant HTN -> spironolactone (PATHWAY-2 mineralocorticoid-excess physiology); renal denervation as an adjunct. Expanded primary aldosteronism screening for stage 2 and resistant HTN. SPRINT-era data drove targets down for stroke and HF prevention.",
       "key_recommendations": [],
       "practice_changers": [],
       "do_not_teach": [],
@@ -1469,34 +1441,7 @@
       "status": "current",
       "evidence_type": "guideline",
       "specialties": [
-        "ID"
-      ],
-      "topics": [],
-      "source_url": "https://www.cdc.gov/mmwr/volumes/74/wr/mm7402a3.htm",
-      "pmid": null,
-      "doi": null,
-      "access": "open",
-      "access_raw": "Open",
-      "summary": "RZV (recombinant zoster) for all adults >=50. RSV vaccine universally for >=75; risk-based for 60-74. Pneumococcal: PCV21/PCV20/PCV15 for all >=50 (lowered from 65). Annual influenza, COVID-19, Tdap once + Td q10y.",
-      "key_recommendations": [],
-      "practice_changers": [],
-      "do_not_teach": [],
-      "landmark_trials": [],
-      "supersedes": [],
-      "caveats": [],
-      "last_verified": "2026-07-13",
-      "review_due": "2027-07-13"
-    },
-    {
-      "id": "acip-adult-immunizations-2025-2",
-      "title": "ACIP Adult Immunizations 2025",
-      "societies": [
-        "ACIP"
-      ],
-      "year": 2025,
-      "status": "current",
-      "evidence_type": "guideline",
-      "specialties": [
+        "ID",
         "Prevention"
       ],
       "topics": [],
@@ -1827,8 +1772,8 @@
       "review_due": "2027-07-13"
     },
     {
-      "id": "acr-vf-anca-vasculitis-2021-kdigo-2024-avacopan",
-      "title": "ACR/VF ANCA Vasculitis 2021 + KDIGO 2024 (avacopan)",
+      "id": "acr-vf-2021-eular-2022-kdigo-2024-anca-associated-vasculitis",
+      "title": "ACR/VF 2021 + EULAR 2022 + KDIGO 2024 ANCA-Associated Vasculitis",
       "societies": [
         "ACR",
         "VF"
@@ -1845,7 +1790,7 @@
       "doi": null,
       "access": "open",
       "access_raw": "Open",
-      "summary": "ACR/VF 2021 predates AVACOPAN (C5aR antagonist, FDA-approved Oct 2021) and therefore does not position it - the induction algorithm it teaches is now an incomplete armamentarium. KDIGO 2024 ANCA-Associated Vasculitis guideline incorporates avacopan as a GLUCOCORTICOID-SPARING option in severe AAV induction, and adopts the reduced-dose glucocorticoid taper (PEXIVAS). Induction: rituximab OR cyclophosphamide plus glucocorticoids (reduced-dose taper), with avacopan to spare steroids. Plasma exchange NOT routine (PEXIVAS) - consider in severe kidney disease or alveolar hemorrhage. Maintenance: rituximab preferred over azathioprine. Check ANCA type (PR3 vs MPO) - PR3 relapses more. Pneumocystis prophylaxis.",
+      "summary": "ACR/VF 2021, EULAR 2022, and KDIGO 2024 all inform ANCA-associated vasculitis; ACR/VF 2021 predates and does not position avacopan. Induction (GPA/MPA, severe): rituximab (RAVE, RITUXVAS) preferred over cyclophosphamide, each with glucocorticoids on the PEXIVAS reduced-dose taper (about 40 percent less cumulative steroid, non-inferior). Avacopan (oral C5a receptor antagonist, FDA-approved Oct 2021) added per ADVOCATE as a glucocorticoid-sparing option (week-52 superiority, cumulative prednisone about -2.3 g); KDIGO 2024 incorporates it. Plasma exchange NOT routine (PEXIVAS) - consider in severe kidney disease or alveolar hemorrhage. Maintenance: rituximab preferred over azathioprine (MAINRITSAN). Check ANCA type - PR3 relapses more than MPO. EGPA severe: mepolizumab (MIRRA) or rituximab; cyclophosphamide if cardiac involvement. Pneumocystis prophylaxis.",
       "key_recommendations": [],
       "practice_changers": [],
       "do_not_teach": [],
@@ -1959,34 +1904,6 @@
       "access": "open",
       "access_raw": "Open",
       "summary": "Early advanced therapy over step-up. Higher-efficacy options for biologic-naive: infliximab, vedolizumab, upadacitinib, risankizumab, guselkumab, ozanimod (S1P modulator). Anti-TNF (infliximab + thiopurine combo per UC-SUCCESS), anti-integrin vedolizumab (GEMINI), anti-IL12/23 ustekinumab (UNIFI), JAKi tofacitinib/upadacitinib (OCTAVE, U-ACHIEVE). Steroid-sparing essential; confirm active inflammation by biomarkers/endoscopy before escalation. Mild-moderate: oral + topical 5-ASA (mesalamine).",
-      "key_recommendations": [],
-      "practice_changers": [],
-      "do_not_teach": [],
-      "landmark_trials": [],
-      "supersedes": [],
-      "caveats": [],
-      "last_verified": "2026-07-13",
-      "review_due": "2027-07-13"
-    },
-    {
-      "id": "aga-2025-moderate-severe-crohn-s-disease",
-      "title": "AGA 2025 Moderate-Severe Crohn's Disease",
-      "societies": [
-        "AGA"
-      ],
-      "year": 2025,
-      "status": "current",
-      "evidence_type": "guideline",
-      "specialties": [
-        "GI/Hepatology"
-      ],
-      "topics": [],
-      "source_url": "https://pubmed.ncbi.nlm.nih.gov/41274746/",
-      "pmid": "41274746",
-      "doi": null,
-      "access": "open",
-      "access_raw": "Open",
-      "summary": "Biologic-naive: higher-efficacy first — infliximab + immunomodulator combo (SONIC), adalimumab, ustekinumab (UNITI), risankizumab (ADVANCE/MOTIVATE), guselkumab, mirikizumab; vedolizumab gut-selective option. Previously exposed: adalimumab, risankizumab, guselkumab, or upadacitinib (U-EXCEL/U-EXCEED) preferred; ustekinumab/mirikizumab intermediate. Treat-to-target with mucosal/endoscopic healing (STRIDE-II, CALM). Avoid prolonged steroids. Certolizumab pegol and vedolizumab lower efficacy in pretreated.",
       "key_recommendations": [],
       "practice_changers": [],
       "do_not_teach": [],
@@ -2364,8 +2281,8 @@
       "review_due": "2027-07-13"
     },
     {
-      "id": "asas-eular-2022-acr-2019-axial-spondyloarthritis",
-      "title": "ASAS-EULAR 2022 / ACR 2019 Axial Spondyloarthritis",
+      "id": "asas-eular-2022-acr-2019-axial-spondyloarthritis-acr-update-announced-",
+      "title": "ASAS-EULAR 2022 / ACR 2019 Axial Spondyloarthritis (ACR update announced Jun 2026)",
       "societies": [
         "ASAS"
       ],
@@ -2381,7 +2298,7 @@
       "doi": null,
       "access": "open",
       "access_raw": "Open",
-      "summary": "NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria).",
+      "summary": "CURRENCY: the ACR/SAA/SPARTAN guideline was UPDATED - approved by the ACR Board 31 May 2026 and announced 24 Jun 2026, replacing the 2019 adult recommendations and adding a first-ever JUVENILE axSpA guideline. Headline change: JAKi UPGRADED to strongly recommended, which reverses the 2019/ASAS-EULAR positioning below. Full manuscript was not yet peer-reviewed and journal-published at announcement, so cite the 2026 update as announced-not-yet-published and prefer it over the 2019 ACR positions. ASAS-EULAR 2022 remains current. Legacy 2019/2022 content follows: NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria).",
       "key_recommendations": [],
       "practice_changers": [],
       "do_not_teach": [],
@@ -2494,34 +2411,6 @@
       "access": "open",
       "access_raw": "Open",
       "summary": "HR+/HER2- node-positive high-risk: adjuvant abemaciclib 150mg BID x2y + ET >=5y (monarchE: 5y IDFS absolute benefit 7.6%; Ki-67 requirement dropped 2023). Ribociclib emerging per NATALEE (stage II-III, broader population). HER2+: trastuzumab + pertuzumab + taxane (APHINITY); T-DM1 post-neoadjuvant residual (KATHERINE). Metastatic HR+: CDK4/6i + AI first-line (PALOMA-2, MONALEESA-2/7); TNBC PD-L1+ pembrolizumab (KEYNOTE-355); sacituzumab govitecan (ASCENT).",
-      "key_recommendations": [],
-      "practice_changers": [],
-      "do_not_teach": [],
-      "landmark_trials": [],
-      "supersedes": [],
-      "caveats": [],
-      "last_verified": "2026-07-13",
-      "review_due": "2027-07-13"
-    },
-    {
-      "id": "asco-immune-related-adverse-events-2021-asco-alone-not-asco-sitc",
-      "title": "ASCO Immune-Related Adverse Events 2021 (ASCO alone, not ASCO/SITC)",
-      "societies": [
-        "ASCO"
-      ],
-      "year": 2021,
-      "status": "current",
-      "evidence_type": "guideline",
-      "specialties": [
-        "Oncology"
-      ],
-      "topics": [],
-      "source_url": "https://ascopubs.org/doi/10.1200/JCO.21.01440",
-      "pmid": null,
-      "doi": "10.1200/JCO.21.01440",
-      "access": "open",
-      "access_raw": "Open",
-      "summary": "YEAR + ATTRIBUTION FIX: this is an ASCO guideline (Schneider/Brahmer, JCO 2021;39:4073) - NOT ASCO/SITC (SITC publishes its own separate irAE guidance) - and there is NO 2024 update. GRADE-BASED FRAMEWORK: Grade 1 - continue the checkpoint inhibitor with close monitoring. Grade 2 - HOLD the ICI, start prednisone 0.5-1 mg/kg. Grade 3 - hold, HIGH-DOSE steroids (1-2 mg/kg methylprednisolone), hospitalize; if no improvement in 48-72 h add a second agent (infliximab for colitis; NOT infliximab for hepatitis - use mycophenolate). Grade 4 - PERMANENTLY DISCONTINUE, high-dose steroids. EXCEPTION: controlled ENDOCRINOPATHIES (hypothyroidism, adrenal insufficiency, type 1 diabetes) do NOT require stopping the ICI - just replace the hormone. Myocarditis is rare but has high mortality - any troponin rise or new cardiac symptom means stop the drug and give high-dose steroids immediately. Taper steroids over 4-6 weeks. Add PJP prophylaxis if on prednisone 20 mg or more for over 4 weeks.",
       "key_recommendations": [],
       "practice_changers": [],
       "do_not_teach": [],
@@ -2802,34 +2691,6 @@
       "access": "open",
       "access_raw": "Open",
       "summary": "Graves dx: suppressed TSH + elevated FT4/T3 + TRAb or diffuse RAIU. Three definitive options: methimazole 12-18mo (preferred initial; PTU only 1st-trimester pregnancy or storm due to hepatotoxicity), RAI ablation, or thyroidectomy. Beta-blocker for symptoms (propranolol, atenolol). Storm: PTU + iodine (Lugol/SSKI 1h after PTU) + hydrocortisone + beta-blocker + cooling. Moderate-severe orbitopathy: IV methylprednisolone pulse; teprotumumab (IGF-1R mAb) reduces proptosis per OPTIC (83% vs 10%).",
-      "key_recommendations": [],
-      "practice_changers": [],
-      "do_not_teach": [],
-      "landmark_trials": [],
-      "supersedes": [],
-      "caveats": [],
-      "last_verified": "2026-07-13",
-      "review_due": "2027-07-13"
-    },
-    {
-      "id": "ata-hypothyroidism-treatment-2014",
-      "title": "ATA Hypothyroidism Treatment 2014",
-      "societies": [
-        "ATA"
-      ],
-      "year": 2014,
-      "status": "current",
-      "evidence_type": "guideline",
-      "specialties": [
-        "Endocrinology"
-      ],
-      "topics": [],
-      "source_url": "https://www.liebertpub.com/doi/10.1089/thy.2014.0028",
-      "pmid": null,
-      "doi": "10.1089/thy.2014.0028",
-      "access": "open",
-      "access_raw": "Open",
-      "summary": "Levothyroxine monotherapy standard: 1.6 mcg/kg/day overt; 25-75 mcg start subclinical. Take fasting, separate from calcium/iron/PPI by 4h. Recheck TSH q6-8wk after dose change; target mid-reference range (0.4-4.0). Treat subclinical if TSH >10, or 4.5-10 with symptoms, positive TPO, pregnancy, or CV risk. Pregnancy: increase dose ~30% at confirmation, target TSH <2.5. LT4/LT3 combination not routinely recommended (insufficient evidence); consider in persistently symptomatic euthyroid on LT4 alone.",
       "key_recommendations": [],
       "practice_changers": [],
       "do_not_teach": [],
@@ -3371,34 +3232,6 @@
       "caveats": [],
       "last_verified": "2026-07-13",
       "review_due": "2027-01-09"
-    },
-    {
-      "id": "eular-2022-kdigo-2024-anca-associated-vasculitis",
-      "title": "EULAR 2022 / KDIGO 2024 ANCA-Associated Vasculitis",
-      "societies": [
-        "EULAR"
-      ],
-      "year": 2024,
-      "status": "current",
-      "evidence_type": "guideline",
-      "specialties": [
-        "Rheumatology"
-      ],
-      "topics": [],
-      "source_url": "https://kdigo.org/wp-content/uploads/2024/02/KDIGO-2024-ANCA-Vasculitis-Guideline.pdf",
-      "pmid": null,
-      "doi": null,
-      "access": "open",
-      "access_raw": "Open",
-      "summary": "GPA/MPA induction: rituximab (RAVE, RITUXVAS) preferred over cyclophosphamide for severe disease; both paired with PEXIVAS reduced-dose glucocorticoid taper (40% less cumulative steroid, non-inferior outcomes). Avacopan (oral C5a receptor inhibitor) added per ADVOCATE for steroid-sparing remission (week-52 superiority, cumulative prednisone -2.3g). Maintenance: rituximab 500mg q6mo > azathioprine (MAINRITSAN). EGPA severe: mepolizumab (MIRRA) or rituximab; cyclophosphamide if cardiac involvement.",
-      "key_recommendations": [],
-      "practice_changers": [],
-      "do_not_teach": [],
-      "landmark_trials": [],
-      "supersedes": [],
-      "caveats": [],
-      "last_verified": "2026-07-13",
-      "review_due": "2027-07-13"
     },
     {
       "id": "eular-2023-imaging-in-large-vessel-vasculitis-there-is-no-eular-2022-g",
@@ -4330,34 +4163,7 @@
       "status": "current",
       "evidence_type": "guideline",
       "specialties": [
-        "Nephrology"
-      ],
-      "topics": [],
-      "source_url": "https://kdigo.org/guidelines/diabetes-ckd/",
-      "pmid": null,
-      "doi": null,
-      "access": "open",
-      "access_raw": "Open",
-      "summary": "SGLT2i first-line for T2DM + CKD regardless of A1c (eGFR >=20). Metformin if eGFR >=30. GLP-1 RA layered for additional glycemic / weight control. Decouple glycemic control from kidney protection.",
-      "key_recommendations": [],
-      "practice_changers": [],
-      "do_not_teach": [],
-      "landmark_trials": [],
-      "supersedes": [],
-      "caveats": [],
-      "last_verified": "2026-07-13",
-      "review_due": "2027-07-13"
-    },
-    {
-      "id": "kdigo-2022-diabetes-in-ckd-2",
-      "title": "KDIGO 2022 Diabetes in CKD",
-      "societies": [
-        "KDIGO"
-      ],
-      "year": 2022,
-      "status": "current",
-      "evidence_type": "guideline",
-      "specialties": [
+        "Nephrology",
         "Endocrinology"
       ],
       "topics": [],
@@ -4366,7 +4172,7 @@
       "doi": null,
       "access": "open",
       "access_raw": "Open",
-      "summary": "SGLT2i for T2DM + CKD regardless A1c (eGFR >=20). Metformin if eGFR >=30. GLP-1 RA semaglutide for kidney protection (FLOW). Finerenone if eGFR >25, K normal, ACR >30 (FIDELIO/FIGARO).",
+      "summary": "SGLT2i first-line for T2DM + CKD regardless of A1c (eGFR >=20). Metformin if eGFR >=30. GLP-1 RA (semaglutide) layered for glycemic/weight control and kidney protection (FLOW). Finerenone if eGFR >25, K normal, ACR >30 (FIDELIO/FIGARO). Decouple glycemic control from kidney protection.",
       "key_recommendations": [],
       "practice_changers": [],
       "do_not_teach": [],
@@ -4489,8 +4295,8 @@
       "review_due": "2027-01-09"
     },
     {
-      "id": "nams-menopause-society-hormone-therapy-2022-fda-boxed-warning-removed-",
-      "title": "NAMS/Menopause Society Hormone Therapy 2022 (FDA boxed warning REMOVED 2025)",
+      "id": "nams-menopause-society-hormone-therapy-2022-fda-boxed-warning-removal-",
+      "title": "NAMS/Menopause Society Hormone Therapy 2022 (FDA boxed warning removal APPROVED Feb 2026, phased)",
       "societies": [
         "NAMS"
       ],
@@ -4506,7 +4312,7 @@
       "doi": null,
       "access": "open",
       "access_raw": "Open",
-      "summary": "MAJOR CHANGE OUTSIDE THE GUIDELINE: on 10 Nov 2025 the FDA REMOVED THE BOXED WARNING from menopausal hormone therapy products - the cardiovascular disease, breast cancer, and probable dementia boxed language is gone (the endometrial cancer boxed warning is RETAINED for systemic estrogen-only products), including removal from LOW-DOSE VAGINAL ESTROGEN. Labels are being rewritten with age-specific guidance emphasizing benefit when initiated within 10 years of menopause onset. The WHI black-box slide most IM teachers use is now inaccurate, and the counseling/consent script has changed. The Menopause Society supported the action. Guideline content that stands: HT is most favorable when started under age 60 or within 10 years of menopause; systemic HT for vasomotor symptoms; LOW-DOSE VAGINAL ESTROGEN for genitourinary syndrome alone (minimal systemic absorption); add progestogen if uterus present; individualize by risk.",
+      "summary": "MAJOR CHANGE OUTSIDE THE GUIDELINE: the FDA ANNOUNCED it was initiating removal of the boxed warning on 10 Nov 2025, and APPROVED the first labeling changes on 12 Feb 2026 - for the approved products the cardiovascular disease, breast cancer, and probable dementia boxed language is removed (the endometrial cancer boxed warning is RETAINED for systemic estrogen-only products), including removal from LOW-DOSE VAGINAL ESTROGEN. DO NOT TEACH THIS AS A BLANKET REMOVAL: it is a PHASED, product-by-product rollout - only 6 of 29 submitted products had been cleared as of Feb 2026, so any individual product may still carry the old label. Verify the specific product before stating its labeling. Labels are being rewritten with age-specific guidance emphasizing benefit when initiated within 10 years of menopause onset. The WHI black-box slide most IM teachers use is now inaccurate, and the counseling/consent script has changed. The Menopause Society supported the action. Guideline content that stands: HT is most favorable when started under age 60 or within 10 years of menopause; systemic HT for vasomotor symptoms; LOW-DOSE VAGINAL ESTROGEN for genitourinary syndrome alone (minimal systemic absorption); add progestogen if uterus present; individualize by risk.",
       "key_recommendations": [],
       "practice_changers": [],
       "do_not_teach": [],
