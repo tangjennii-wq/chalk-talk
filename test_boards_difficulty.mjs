@@ -135,6 +135,9 @@ ok(!/Mirror UWorld\/MKSAP exactly/.test(BP), "prompt no longer says 'Mirror UWor
 ok(/ORIGINAL/.test(BP) && /structurally inspired/i.test(BP), "prompt frames questions as ORIGINAL / structurally inspired");
 ok(/ORDER THEM ALPHABETICALLY/.test(BP) && /NEVER default the answer to B/.test(BP), "alphabetical order + position-bias guards retained");
 ok(/DIFFICULTY SELF-CRITIQUE/.test(BP) && /Stem MUST be 120-170 words/.test(BP), "self-critique + stem cap retained");
+// hard-invalid board questions are genuinely non-renderable (banner + rebuild CTA replace the item)
+ok(/Question withheld/.test(html) && /boardRegenBtn/.test(html), "hard-invalid board question is withheld with a rebuild CTA");
+ok(/end else \(valid board question\)/.test(html), "board question body is gated behind the valid-question else branch");
 
 console.log("\n" + (failures === 0 ? "✔ ALL BOARDS-DIFFICULTY TESTS PASSED" : "✗ " + failures + " ASSERTION(S) FAILED"));
 process.exit(failures === 0 ? 0 : 1);

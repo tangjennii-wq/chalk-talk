@@ -1949,9 +1949,10 @@
     "year": 2023,
     "specialty": "Neurology",
     "expected_pmid": "37459141",
-    "pmid_verified": "pubmed_2026-07",
+    "pmid_verified": "manual_2026-07",
     "teaching_role": "practice-changing benefit",
-    "source_batch": 4
+    "source_batch": 4,
+    "pmid_note": "canonical primary RCT; PubMed pubtype tag incomplete — manually verified 2026-07-21"
   },
   {
     "name": "ORATORIO",
@@ -2912,8 +2913,9 @@
     "year": 2025,
     "specialty": "pulm-cc",
     "expected_pmid": "42274006",
-    "pmid_verified": "websearch_2026-07",
-    "source_batch": "batch6_recent_2026-07"
+    "pmid_verified": "manual_2026-07",
+    "source_batch": "batch6_recent_2026-07",
+    "pmid_note": "canonical primary RCT; PubMed pubtype tag incomplete — manually verified 2026-07-21"
   },
   {
     "name": "PURPOSE 1",
@@ -2974,9 +2976,10 @@
     "full": "Subcutaneous Guselkumab Induction and Maintenance in Crohn's Disease (GRAVITI)",
     "year": 2025,
     "specialty": "gi-hep",
-    "expected_pmid": "40118220",
+    "expected_pmid": "40113101",
     "pmid_verified": "websearch_2026-07",
-    "source_batch": "batch6_recent_2026-07"
+    "source_batch": "batch6_recent_2026-07",
+    "pmid_note": "corrected 2026-07-21 — 40118220 was an unrelated Gastroenterology review; primary GRAVITI RCT is 40113101"
   },
   {
     "name": "ELATIVE",
@@ -3077,8 +3080,9 @@
     "year": 2023,
     "specialty": "rheum",
     "expected_pmid": "36649967",
-    "pmid_verified": "websearch_2026-07",
-    "source_batch": "batch6_recent_2026-07"
+    "pmid_verified": "manual_2026-07",
+    "source_batch": "batch6_recent_2026-07",
+    "pmid_note": "canonical primary RCT; PubMed pubtype tag incomplete — manually verified 2026-07-21"
   },
   {
     "name": "ProDERM",
@@ -3095,8 +3099,9 @@
     "year": 2024,
     "specialty": "heme-onc",
     "expected_pmid": "38477987",
-    "pmid_verified": "websearch_2026-07",
-    "source_batch": "batch6_recent_2026-07"
+    "pmid_verified": "manual_2026-07",
+    "source_batch": "batch6_recent_2026-07",
+    "pmid_note": "canonical primary RCT; PubMed pubtype tag incomplete — manually verified 2026-07-21"
   },
   {
     "name": "IMROZ",
@@ -3203,8 +3208,9 @@
     "year": 2024,
     "specialty": "neuro",
     "expected_pmid": "39491870",
-    "pmid_verified": "websearch_2026-07",
-    "source_batch": "batch6_recent_2026-07"
+    "pmid_verified": "manual_2026-07",
+    "source_batch": "batch6_recent_2026-07",
+    "pmid_note": "canonical primary RCT; PubMed pubtype tag incomplete — manually verified 2026-07-21"
   },
   {
     "name": "SELECT2",
