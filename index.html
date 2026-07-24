@@ -1227,7 +1227,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-21-10";
+var BUILD_ID = "2026-07-21-11";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6648,7 +6648,9 @@ async function generate(){
     var critMaxTok = (S.style === "boards") ? 6144 : 16384;
 
     // ── Draft acquisition: background (async) path first, synchronous streaming as fallback ──
-    var txt, _asyncCritTxt = null, _useAsync = false;
+    // _draftWebSearched: whether Claude ACTUALLY ran a web_search (async path reads it from the Worker
+    // result; sync path from callAPIWithFallback). Declared here so the async assignment isn't reset.
+    var txt, _asyncCritTxt = null, _useAsync = false, _draftWebSearched = false;
     if (asyncGenApplicable()) {
       var _job = await submitAsyncGeneration({
         draft:    { sys: sys, content: uc, maxTok: maxTok, models: mainModels, tools: (mainOpts.tools || null) },
@@ -6669,11 +6671,11 @@ async function generate(){
         try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){}
         txt = (_res && _res.draftText) || "";
         _asyncCritTxt = (_res && _res.critText) || "";
+        _draftWebSearched = !!(_res && _res.webSearched);   // Worker reports actual web-search usage (Jenni 2026-07 — Codex)
         S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
         if (_res && _res.modelUsed) console.info("Background draft via " + _res.modelUsed);
       }
     }
-    var _draftWebSearched = false;   // true only if Claude ACTUALLY ran a web_search during the draft (sync path)
     if (!_useAsync) {
       var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
       // Clear streaming progress now that the main draft is in hand; critique/audit run after.

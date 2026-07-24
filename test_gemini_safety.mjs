@@ -63,5 +63,24 @@ ok(/charged:\s*!!_useAsync/.test(html), "async (Worker-reserved credit) is track
 ok(/if\s*\(\s*genUsesFreeTier\(\)\s*&&\s*!rp\.charged\s*\)/.test(html), "retry does NOT re-charge a credit");
 ok(/_guidelinesLoaded\s*=\s*!!glRef/.test(html), "_guidelinesLoaded is derived from an actual guideline match");
 
+// ---- Worker → browser web-search propagation (Codex 2026-07) ----------------
+const worker = readFileSync(new URL("./worker.js", import.meta.url), "utf8");
+ok(/web_search_tool_result/.test(worker) && /webSearched\s*=\s*true/.test(worker), "worker.js detects an ACTUAL web_search event (stream + non-stream)");
+ok(/return \{ text, modelUsed: models\[i\], usage, webSearched \}/.test(worker), "worker streaming path returns webSearched");
+ok(/usage: d\.usage \|\| \{\}, webSearched \}/.test(worker), "worker non-streaming path returns webSearched");
+ok(/webSearched:\s*!!draft\.webSearched/.test(worker), "worker runGeneration includes webSearched in the job result");
+ok(/_draftWebSearched\s*=\s*!!\(_res\s*&&\s*_res\.webSearched\)/.test(html), "client sets _draftWebSearched from the async Worker result");
+// _draftWebSearched must be DECLARED before the async read, or a later `var` would reset it to false.
+const _declIdx = html.indexOf("_useAsync = false, _draftWebSearched = false");
+const _asyncReadIdx = html.indexOf("_draftWebSearched = !!(_res");
+ok(_declIdx > 0 && _asyncReadIdx > _declIdx, "_draftWebSearched declared before the async read (not reset by a later var)");
+ok(!/var _draftWebSearched = false;\s*\n\s*if \(!_useAsync\)/.test(html), "no stray `var _draftWebSearched=false` reset before the sync branch");
+// end-to-end propagation logic: Worker result → client flag → provenance chip
+function clientWebSearchedFromResult(res, provider){ return (provider === "claude") && !!(res && res.webSearched); }
+ok(clientWebSearchedFromResult({ draftText:"x", webSearched:true }, "claude") === true, "propagation: Worker webSearched:true → client flag true (Claude)");
+ok(clientWebSearchedFromResult({ draftText:"x", webSearched:false }, "claude") === false, "propagation: Worker webSearched:false → client flag false");
+const asyncChip = { _reviewStatus:"reviewed", _writtenBy:"claude", _webSearched: clientWebSearchedFromResult({ webSearched:true }, "claude"), _guidelinesLoaded:true, _ragCount:1 };
+ok(chips(asyncChip, false).some(c => /Searched current sources/.test(c)), "propagation: async web search surfaces the 'Searched current sources' chip");
+
 console.log("\n" + (failures === 0 ? "✔ GEMINI/SAFETY TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

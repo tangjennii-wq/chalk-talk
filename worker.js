@@ -742,7 +742,7 @@ async function callAnthropicText(env, sys, content, maxTok, models, tools, onPro
     if (r.ok) {
       if (onProgress && r.body) {
         // Parse the SSE stream: accumulate text_delta content, report throttled progress, capture usage.
-        let text = "", usage = {};
+        let text = "", usage = {}, webSearched = false;
         const reader = r.body.getReader();
         const dec = new TextDecoder();
         let buf = "", lastEmit = 0;
@@ -760,19 +760,28 @@ async function callAnthropicText(env, sys, content, maxTok, models, tools, onPro
             if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") { text += ev.delta.text || ""; }
             else if (ev.type === "message_start" && ev.message && ev.message.usage) { usage = Object.assign({}, ev.message.usage); }
             else if (ev.type === "message_delta" && ev.usage) { usage = Object.assign(usage, ev.usage); }
+            // Web-search HONESTY (Jenni 2026-07): flag ONLY when Claude actually ran a search, so the client
+            // can show the "Searched current sources" chip on the async/free-Claude path too.
+            else if (ev.type === "content_block_start" && ev.content_block) {
+              const cbt = ev.content_block.type;
+              if (cbt === "web_search_tool_result" || (cbt === "server_tool_use" && ev.content_block.name === "web_search")) webSearched = true;
+            }
           }
           const now = Date.now();
           if (now - lastEmit > 1200) { lastEmit = now; try { await onProgress(text); } catch (_) {} }
         }
         try { await onProgress(text); } catch (_) {}
-        return { text, modelUsed: models[i], usage };
+        return { text, modelUsed: models[i], usage, webSearched };
       }
       const d = await r.json();
       // Concatenate ALL text blocks — with web_search the response also carries tool_use / tool_result
       // blocks, and the talk JSON can be split across multiple text blocks. (index.html does the same.)
-      let text = "";
-      for (const b of (d.content || [])) { if (b && b.type === "text" && b.text) text += b.text; }
-      return { text, modelUsed: models[i], usage: d.usage || {} };
+      let text = "", webSearched = false;
+      for (const b of (d.content || [])) {
+        if (b && b.type === "text" && b.text) text += b.text;
+        else if (b && (b.type === "web_search_tool_result" || (b.type === "server_tool_use" && b.name === "web_search"))) webSearched = true;
+      }
+      return { text, modelUsed: models[i], usage: d.usage || {}, webSearched };
     }
     if ((r.status === 529 || r.status >= 500) && i < models.length - 1) { lastErr = new Error("overloaded " + r.status); continue; }
     let em = ""; try { em = (await r.json()).error?.message || ""; } catch (_) {}
@@ -836,7 +845,7 @@ async function runGeneration(jobId, body, env) {
     } catch (_) {}
     // updateJob returns false if a cancel landed between the final check and this write — in that race
     // the result is discarded, so refund the reservation too.
-    const wrote = await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
+    const wrote = await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed, webSearched: !!draft.webSearched }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
     if (!wrote) await refundOnce();
   } catch (err) {
     await refundOnce();   // job failed — don't burn the reserved talk (no-op if already refunded)
