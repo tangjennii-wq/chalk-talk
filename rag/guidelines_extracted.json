@@ -72,6 +72,14 @@
     "keys": "Target BP <130/80 for most adults. PREVENT calculator replaces pooled cohort equations. Resistant HTN -> spironolactone (PATHWAY-2 mineralocorticoid-excess physiology); renal denervation as an adjunct. Expanded primary aldosteronism screening for stage 2 and resistant HTN. SPRINT-era data drove targets down for stroke and HF prevention."
   },
   {
+    "specialty": "Nephrology",
+    "name": "KDIGO Care of Kidney Transplant Recipients 2009 (immunosuppression)",
+    "year": 2009,
+    "access": "Open",
+    "url": "https://kdigo.org/guidelines/transplant-recipient/",
+    "keys": "Still the CURRENT KDIGO transplant guideline (2009; no 2024/25 replacement). INDUCTION: IL-2 receptor antagonist (basiliximab) first-line for standard/low immunologic risk; a lymphocyte-depleting agent (rabbit antithymocyte globulin) for HIGH risk (repeat transplant, high PRA/DSA, delayed graft function risk). MAINTENANCE = CNI + antiproliferative +/- corticosteroids. TACROLIMUS is first-line CNI (less acute rejection, better lipids and graft survival than cyclosporine - ELITE-Symphony) but causes MORE new-onset diabetes after transplant (NODAT) plus neuro/nephrotoxicity; dose to trough levels. MYCOPHENOLATE is first-line antiproliferative (over azathioprine). BELATACEPT (CD80/86 costimulation blocker, IV) is a CNI-sparing alternative with better GFR, metabolic profile, and long-term survival (BENEFIT/BENEFIT-EXT) BUT ONLY in EBV-seropositive recipients (PTLD risk if EBV-naive) and more early/severe acute rejection. mTOR inhibitors (sirolimus, everolimus) are second-line - impaired wound healing, proteinuria, mouth ulcers. Steroid withdrawal reasonable in low-risk patients. MONITORING/PROPHYLAXIS: CNI troughs; screen BK polyomavirus (viremia -> REDUCE immunosuppression to prevent BK nephropathy); CMV prophylaxis (valganciclovir) by donor/recipient serostatus; PJP prophylaxis (TMP-SMX) 3-6 months; annual skin-cancer surveillance; treat cardiovascular risk. WHEN TO HOLD/REDUCE: serious infection, BK viremia, malignancy - lower the antiproliferative/CNI first. ACUTE REJECTION: pulse steroids for T-cell-mediated; ATG for steroid-resistant/severe; plasmapheresis + IVIG (+/- rituximab) for antibody-mediated."
+  },
+  {
     "specialty": "Cardiovascular",
     "name": "2025 AHA/ACC Hypertension Guideline",
     "year": 2025,
