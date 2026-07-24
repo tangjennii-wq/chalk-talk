@@ -178,7 +178,9 @@ async function ingestTrial(trial) {
     // unverified_from_production PMID may still be ingested for retrieval, but it does not get to
     // claim "landmark trial" — that label drives the trial chip users see. (Codex review 2026-07-17)
     is_landmark_trial:
-      (["pubmed_2026-07", "manual_2026-07"].includes(trial.pmid_verified) &&
+      // europepmc_2026-07 = verified via the Europe PMC + Crossref fallback when PubMed was
+      // unreachable; it is a VERIFIED provenance and earns the landmark label. (Jenni + Codex 2026-07-24)
+      (["pubmed_2026-07", "manual_2026-07", "europepmc_2026-07"].includes(trial.pmid_verified) &&
        trial.expected_pmid && String(r.pmid) === String(trial.expected_pmid))
       || (!trial.expected_pmid && isPrimaryTrialRecord(r)),
     raw_metadata: {
