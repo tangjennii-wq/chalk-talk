@@ -3265,5 +3265,239 @@
     "expected_pmid": "39565980",
     "pmid_verified": "pubmed_2026-07",
     "source_batch": "batch6_recent_2026-07"
+  },
+  {
+    "name": "Felzartamab AMR",
+    "full": "A Randomized Phase 2 Trial of Felzartamab in Antibody-Mediated Rejection",
+    "year": 2024,
+    "specialty": "nephrology",
+    "expected_pmid": "38804514",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "SSaSS",
+    "full": "Effect of Salt Substitution on Cardiovascular Events and Death",
+    "year": 2021,
+    "specialty": "nephrology",
+    "expected_pmid": "34936748",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "OPAL-HK",
+    "full": "Patiromer in Patients with Kidney Disease and Hyperkalemia Receiving RAAS Inhibitors",
+    "year": 2015,
+    "specialty": "nephrology",
+    "expected_pmid": "25415805",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "ZS-9 (Packham)",
+    "full": "Sodium Zirconium Cyclosilicate in Hyperkalemia",
+    "year": 2015,
+    "specialty": "nephrology",
+    "expected_pmid": "25415807",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "SALSA",
+    "full": "Rapid Intermittent Bolus vs Slow Continuous Infusion of Hypertonic Saline for Symptomatic Hyponatremia",
+    "year": 2021,
+    "specialty": "nephrology",
+    "expected_pmid": "33104189",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "REPRISE",
+    "full": "Tolvaptan in Later-Stage Autosomal Dominant Polycystic Kidney Disease",
+    "year": 2017,
+    "specialty": "nephrology",
+    "expected_pmid": "29105553",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "STARMEN",
+    "full": "Sequential Tacrolimus-Rituximab vs Cyclical Corticosteroids-Cyclophosphamide in Primary Membranous Nephropathy",
+    "year": 2021,
+    "specialty": "nephrology",
+    "expected_pmid": "33166580",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "CHAP",
+    "full": "Treatment for Mild Chronic Hypertension during Pregnancy",
+    "year": 2022,
+    "specialty": "nephrology",
+    "expected_pmid": "35363951",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "STOP-ACEi",
+    "full": "Renin-Angiotensin System Inhibition in Advanced Chronic Kidney Disease",
+    "year": 2022,
+    "specialty": "nephrology",
+    "expected_pmid": "36326117",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "CLICK",
+    "full": "Chlorthalidone for Hypertension in Advanced Chronic Kidney Disease",
+    "year": 2021,
+    "specialty": "nephrology",
+    "expected_pmid": "34739197",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "KALM-1",
+    "full": "Difelikefalin in Patients Undergoing Hemodialysis with Pruritus",
+    "year": 2020,
+    "specialty": "nephrology",
+    "expected_pmid": "31702883",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "ADVOR",
+    "full": "Acetazolamide in Acute Decompensated Heart Failure with Volume Overload",
+    "year": 2022,
+    "specialty": "nephrology",
+    "expected_pmid": "36027559",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "PERL",
+    "full": "Allopurinol and Progression of CKD and Cardiac Events in Type 1 Diabetes",
+    "year": 2020,
+    "specialty": "nephrology",
+    "expected_pmid": "32579810",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "CKD-FIX",
+    "full": "Effects of Allopurinol on the Progression of Chronic Kidney Disease",
+    "year": 2020,
+    "specialty": "nephrology",
+    "expected_pmid": "32579811",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "ASCEND-D",
+    "full": "Daprodustat for Anemia in CKD Patients Undergoing Dialysis",
+    "year": 2021,
+    "specialty": "nephrology",
+    "expected_pmid": "34739194",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "Imlifidase (IdeS)",
+    "full": "IgG Endopeptidase in Highly Sensitized Patients Undergoing Transplantation",
+    "year": 2017,
+    "specialty": "nephrology",
+    "expected_pmid": "28767349",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "DUPLEX",
+    "full": "Sparsentan versus Irbesartan in Focal Segmental Glomerulosclerosis",
+    "year": 2023,
+    "specialty": "nephrology",
+    "expected_pmid": "37921461",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "CONVINCE",
+    "full": "Effect of Hemodiafiltration or Hemodialysis on Mortality in Kidney Failure",
+    "year": 2023,
+    "specialty": "nephrology",
+    "expected_pmid": "37326323",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "BEST-Fluids",
+    "full": "Plasmalyte-148 versus Saline in Deceased-Donor Kidney Transplantation",
+    "year": 2023,
+    "specialty": "nephrology",
+    "expected_pmid": "37343576",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "DIAMOND",
+    "full": "Patiromer for the Management of Hyperkalemia in Heart Failure with Reduced Ejection Fraction",
+    "year": 2022,
+    "specialty": "nephrology",
+    "expected_pmid": "35900838",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "Veverimer (TRCA-301)",
+    "full": "Veverimer versus Placebo in Patients with Metabolic Acidosis in CKD",
+    "year": 2019,
+    "specialty": "nephrology",
+    "expected_pmid": "30857647",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "SPYRAL HTN-ON MED",
+    "full": "Renal Denervation in the Presence of Antihypertensive Drugs (SPYRAL HTN-ON MED)",
+    "year": 2018,
+    "specialty": "nephrology",
+    "expected_pmid": "29803589",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "RADIANCE-HTN SOLO",
+    "full": "Endovascular Ultrasound Renal Denervation to Treat Hypertension (RADIANCE-HTN SOLO)",
+    "year": 2018,
+    "specialty": "nephrology",
+    "expected_pmid": "29803590",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "RenalRIP",
+    "full": "Remote Ischemic Preconditioning and Kidney Injury among High-Risk Patients Undergoing Cardiac Surgery",
+    "year": 2015,
+    "specialty": "nephrology",
+    "expected_pmid": "26024502",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "PrevAKI",
+    "full": "Prevention of Cardiac Surgery-Associated AKI via KDIGO Bundle in Biomarker-Identified High-Risk Patients",
+    "year": 2017,
+    "specialty": "nephrology",
+    "expected_pmid": "28110412",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
+  },
+  {
+    "name": "Sibeprenlimab ENVISION Ph2",
+    "full": "A Phase 2 Trial of Sibeprenlimab in Patients with IgA Nephropathy",
+    "year": 2024,
+    "specialty": "nephrology",
+    "expected_pmid": "37916620",
+    "pmid_verified": "websearch_2026-07",
+    "source_batch": "nephjc_2026-07"
   }
 ]
