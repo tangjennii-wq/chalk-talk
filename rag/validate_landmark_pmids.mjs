@@ -4,73 +4,65 @@
  *
  * WHY THIS EXISTS
  * Landmark trials were originally resolved by PubMed *relevance search*, which silently picked the
- * wrong paper again and again. A July 2026 audit found the stored paper was wrong for a large share
- * of trials, in every flavour:
- *   - a DIFFERENT trial       (ALCYONE -> GRIFFIN; ASTRAL-1 -> POLARIS; KEYNOTE-024 -> KEYNOTE-189;
- *                              MR CLEAN -> ASTER; SPRINT -> a Mayo isometric-exercise review)
- *   - a pooled analysis       (FIGARO-DKD -> the FIDELITY pooled analysis)
- *   - a design/rationale paper(RE-LY, ARISTOTLE, ACCORD, SOLVD)
- *   - a superseded phase      (TESTING -> the 2017 halted-early report, not the 2022 definitive one)
- *   - an editorial            (HOPE)
- *   - a statistical analysis plan (LOVIT)
- *   - another trial's PMID    (ADVANCE held ACCORD's PMID)
- * Relevance ranking does not know which paper IS the trial. Only an explicit, verified PMID does.
+ * wrong paper again and again (ALCYONE->GRIFFIN, SPRINT->a Mayo isometric-exercise review, HOPE->an
+ * editorial, ADVANCE held ACCORD's PMID, ...). Relevance ranking does not know which paper IS the
+ * trial. Only an explicit, verified PMID does.
  *
  * WHAT IT CHECKS, per entry in rag/landmark_trials.json:
- *   1. expected_pmid present               -> else SUSPECT
- *   2. PMID resolves on PubMed             -> else SUSPECT
- *   3. publication year within +/-2 of the recorded trial year
- *   4. pubtypes are trial-ish, OR the entry is explicitly marked manual_2026-07
- *   5. title is not a design/protocol/statistical-analysis-plan paper
+ *   1. expected_pmid present + resolves                                   -> else SUSPECT
+ *   2. publication year within +/-2 of the recorded trial year           -> else MISMATCH
+ *   3. pubtypes trial-ish (or entry marked manual_2026-07)                -> else MISMATCH
+ *   4. not a design/protocol/statistical-analysis-plan paper             -> else MISMATCH
+ *   5. the returned TITLE actually confirms this trial (Codex 2026-07-24) -> else weak/wrong (below)
  *
- * Rate-limit safe: throttled to NCBI's documented limit and retries 429/5xx, because a transport
- * failure must never be reported as a bad citation (the same mistake validate_guidelines.mjs made).
+ * TITLE CONFIRMATION & PROMOTION (Codex follow-up 2026-07-24)
+ * Objective checks (2-4) do not prove the PMID is THIS trial — a different RCT from the same year can
+ * pass. So titleMatch() also compares the returned article title to the recorded trial. Because a
+ * strict title gate false-flagged ~139 hand-audited legacy entries (whose `full` is the trial's
+ * expanded NAME, not the article title), title severity is applied by verification state:
+ *   - NOT-yet-verified entry (websearch/none): title must be STRONG to auto-verify. A weak/wrong title
+ *     -> SUSPECT and the PMID is NOT promoted until a human confirms it.
+ *   - ALREADY-verified entry (pubmed/manual/europepmc): never downgraded. A weak/wrong title is only
+ *     surfaced as a non-blocking ADVISORY for optional review.
  *
- * FALLBACK when PubMed can't answer (Jenni + Codex 2026-07-24)
- * PubMed's site/E-utilities is sometimes blocked or rate-limited (captcha-walled for sandboxed
- * agents; 429 storms locally). A PMID that PubMed could not reach used to land in UNREACHABLE and
- * verify nothing. We now fall back — but only where PubMed gave NO authoritative answer (UNREACHABLE,
- * or PMID-not-found) — to two independent, non-NCBI, non-captcha mirrors:
- *   - Europe PMC (EMBL-EBI full MEDLINE mirror, JSON REST) — looks the PMID up by EXT_ID and returns
- *     that record's title / journal / year / DOI / pubtypes.
- *   - Crossref (DOI registry) — confirms that DOI's journal + year independently, guarding against a
- *     wrong-but-similar record.
- * Trust order is strict (Codex 2026-07-24):
- *   1. PubMed direct                         -> pmid_verified:"pubmed_2026-07"
- *   2. Europe PMC + Crossref AGREE            -> pmid_verified:"europepmc_2026-07"  (distinct + auditable)
- *   3. Unresolved                            -> SUSPECT / UNREACHABLE -> manual review
- * A reachable PubMed MISMATCH is NEVER overridden by the mirrors — PubMed stays the authority; the
- * mirrors only fill gaps. Level-2 REQUIRES genuine agreement: Europe PMC must resolve the exact PMID
- * AND the returned title must confirm the trial (not merely a same-year RCT) AND Crossref must
- * independently corroborate the DOI. Europe PMC alone, a missing DOI, or an unreachable Crossref is
- * NOT verified — it stays for manual review. (Both the PubMed and fallback paths now title-check.)
+ * FALLBACK when PubMed can't answer — trust order (Codex 2026-07-24):
+ *   1. PubMed direct                              -> pmid_verified:"pubmed_2026-07"
+ *   2. Europe PMC + Crossref FULL agreement       -> pmid_verified:"europepmc_2026-07"
+ *   3. Unresolved                                 -> SUSPECT / UNREACHABLE -> manual review
+ * Level-2 requires genuine agreement: Europe PMC resolves the exact PMID, its year/pubtype/title
+ * confirm the trial, AND Crossref independently supplies title+journal+year that ALL agree with the
+ * Europe PMC record. Europe PMC alone, a missing DOI, a missing Crossref field, or an unreachable
+ * Crossref is NOT verified. A reachable PubMed MISMATCH is never overridden by the mirrors.
+ *
+ * WRITE SAFETY (Codex 2026-07-24)
+ * The validator computes every status BEFORE touching the manifest and never partial-writes. With
+ * --write: if ANY blocking problem exists (MISMATCH/SUSPECT/UNREACHABLE), the manifest is left
+ * untouched; promotions are applied only on a fully-clean run. A durable JSON report of every problem
+ * + advisory is ALWAYS written to rag/landmark_validation_report.json, regardless of --write.
  *
  * USAGE
- *   node rag/validate_landmark_pmids.mjs            # report
- *   node rag/validate_landmark_pmids.mjs --write    # also write verified status back to the JSON
+ *   node rag/validate_landmark_pmids.mjs            # report only (writes the JSON report)
+ *   node rag/validate_landmark_pmids.mjs --write    # + promote verified status IF the run is clean
  *   node rag/validate_landmark_pmids.mjs --no-fallback   # PubMed only (skip Europe PMC/Crossref)
  *   NCBI_API_KEY=... node rag/validate_landmark_pmids.mjs   # ~3x faster
  *
- * Exit 1 on any SUSPECT or MISMATCH, so it can gate a release.
+ * EXIT: 0 = all verified · 1 = blocking problems (SUSPECT/MISMATCH) · 2 = inconclusive (UNREACHABLE)
  */
 import { readFileSync, writeFileSync } from "fs";
+import { titleSeverity, objectiveProblems, crossrefAgrees } from "./validator_lib.mjs";
 
 const WRITE = process.argv.includes("--write");
 const NO_FALLBACK = process.argv.includes("--no-fallback");
 const NCBI_KEY = process.env.NCBI_API_KEY || "";
-const CONTACT = process.env.CROSSREF_MAILTO || "tangjennii@gmail.com"; // polite-pool contact for Crossref/Europe PMC
-const raw = JSON.parse(readFileSync("rag/landmark_trials.json", "utf8"));
-const trials = Array.isArray(raw) ? raw : Object.values(raw)[0];
-
-// MUST stay identical to the list in validate_review_records.mjs — a trial that passes review
-// validation must also pass manifest validation. Divergence flagged BALANCE (Equivalence Trial) as a
-// mismatch after it had passed review 90/90. "Equivalence Trial" and "Phase IV" are legitimate
-// randomized-trial pubtypes; "Multicenter Study" is deliberately excluded (logistics, not design).
-// (validator run 2026-07-17)
-const TRIAL_PUBTYPES = ["Randomized Controlled Trial","Clinical Trial","Controlled Clinical Trial","Pragmatic Clinical Trial","Clinical Trial, Phase II","Clinical Trial, Phase III","Clinical Trial, Phase IV","Equivalence Trial"];
-const NOT_PRIMARY_RE = /\b(rationale and design|study design|design and methods|study protocol|trial protocol|:\s*protocol\b|statistical analysis plan)\b/i;
+const CONTACT = process.env.CROSSREF_MAILTO || "tangjennii@gmail.com"; // polite-pool contact
+const REPORT_PATH = "rag/landmark_validation_report.json";
+const MANIFEST_PATH = "rag/landmark_trials.json";
 const VERIFIED_OK = ["pubmed_2026-07", "manual_2026-07", "europepmc_2026-07"];
 
+const raw = JSON.parse(readFileSync(MANIFEST_PATH, "utf8"));
+const trials = Array.isArray(raw) ? raw : Object.values(raw)[0];
+
+// ── PubMed E-utilities ────────────────────────────────────────────────────────
 const GAP = NCBI_KEY ? 110 : 350;
 let next = 0;
 async function throttle() {
@@ -78,7 +70,6 @@ async function throttle() {
   next = Math.max(now, next) + GAP;
   if (wait) await new Promise((r) => setTimeout(r, wait));
 }
-
 async function esummary(pmid, attempt = 0) {
   await throttle();
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${pmid}&retmode=json`
@@ -103,48 +94,14 @@ async function esummary(pmid, attempt = 0) {
   } catch (e) { return { transient: true, error: e.message }; }
 }
 
-// ── TITLE CONFIRMATION (Codex 2026-07-24) ─────────────────────────────────────
-// Year + pubtype + "not-a-protocol" do NOT prove the PMID is THIS trial — a different RCT from the
-// same year could pass. So we also compare the returned article title against the expected trial.
-// Two independent signals, tuned to avoid false-flagging legacy entries whose `full` is only the
-// trial's expanded name (e.g., DCCT) rather than the article title:
-//   - acronym-in-title: modern trials almost always carry "(ACRONYM)" or ": the ACRONYM trial"
-//   - distinctive-token overlap between `full`(+name) and the returned title
-// STRONG (confirmed) = high overlap, or the acronym appears AND there is at least some content overlap.
-// WRONG (likely a different paper) = acronym absent AND overlap very low. Middle band = soft (not a
-// hard fail, surfaced as an advisory).
-const TITLE_STOP = new Set(("a an the of in for and or with without versus vs on to after at as by from into is are be its their among between during over per one two three study studies trial trials "
-  + "randomized randomised controlled control placebo double blind phase patients patient group groups arm open label multicenter multicentre pilot report reports results result analysis effect effects "
-  + "treatment therapy efficacy safety outcome outcomes clinical versus comparison compared").split(/\s+/));
-function titleWords(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, " ").split(/\s+/).filter(Boolean); }
-function titleMatch(full, name, returnedTitle) {
-  const rt = titleWords(returnedTitle);
-  const rtSet = new Set(rt);
-  const rtJoined = rt.join("");
-  const core = String(name || "").split("(")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
-  const nameTokens = titleWords(String(name || "").split("(")[0]);
-  const acronymHit = (core.length >= 3 && rtJoined.includes(core))
-    || nameTokens.some((tok) => tok.length >= 4 && rtSet.has(tok));
-  const exp = new Set(titleWords(`${full} ${String(name || "").split("(")[0]}`).filter((w) => w.length > 2 && !TITLE_STOP.has(w)));
-  let hit = 0; for (const w of exp) if (rtSet.has(w)) hit++;
-  const score = exp.size ? hit / exp.size : 0;
-  const strong = score >= 0.5 || (acronymHit && score >= 0.3);
-  const wrong = !acronymHit && score < 0.2;
-  return { acronymHit, score, strong, wrong };
-}
-
-// ── FALLBACK MIRRORS (Europe PMC + Crossref) ──────────────────────────────────
-// Only consulted when PubMed gave no authoritative answer. Both are throttled and fail OPEN: a
-// transport error here leaves the entry exactly where PubMed put it (never invents a pass).
+// ── FALLBACK MIRRORS (Europe PMC + Crossref) — only when PubMed gave no authoritative answer ──
 let epmcNext = 0;
 async function epmcThrottle() {
   const now = Date.now(), wait = Math.max(0, epmcNext - now);
   epmcNext = Math.max(now, epmcNext) + 250;
   if (wait) await new Promise((r) => setTimeout(r, wait));
 }
-
-// Look the STORED PMID up by exact id in Europe PMC's MEDLINE mirror (not a title search — so it
-// cannot substitute a similarly-titled paper). Returns that record's canonical metadata + DOI.
+// Look the STORED PMID up by exact id (not a title search) in Europe PMC's MEDLINE mirror.
 async function epmcByPmid(pmid, attempt = 0) {
   await epmcThrottle();
   const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=`
@@ -159,19 +116,16 @@ async function epmcByPmid(pmid, attempt = 0) {
     const j = await r.json();
     const rec = j?.resultList?.result?.find((x) => String(x.pmid) === String(pmid)) || j?.resultList?.result?.[0];
     if (!rec || String(rec.pmid) !== String(pmid)) return { ok: false, error: "PMID not found in Europe PMC" };
-    const pubtypes = (rec.pubTypeList?.pubType || []).map(String);
     return {
       ok: true,
       year: parseInt(String(rec.pubYear || "").slice(0, 4), 10) || null,
       title: String(rec.title || "").replace(/\.\s*$/, ""),
       journal: rec.journalInfo?.journal?.title || rec.journalTitle || "",
       doi: rec.doi || null,
-      pubtypes,
+      pubtypes: (rec.pubTypeList?.pubType || []).map(String),
     };
   } catch (e) { return { transient: true, error: e.message }; }
 }
-
-// Independent DOI check: confirm the DOI's journal + year in Crossref's registry.
 async function crossrefByDoi(doi, attempt = 0) {
   if (!doi) return { ok: false, error: "no DOI to cross-check" };
   await epmcThrottle();
@@ -192,188 +146,180 @@ async function crossrefByDoi(doi, attempt = 0) {
   } catch (e) { return { transient: true, error: e.message }; }
 }
 
-// Trust level 2 (Codex 2026-07-24): resolve ONLY on genuine Europe PMC + Crossref AGREEMENT.
-// Europe PMC must find the stored PMID, its year/pubtype/title must confirm the trial, AND the DOI
-// must independently check out in Crossref. Europe PMC alone is NOT enough; a missing DOI or an
-// unreachable Crossref means UNRESOLVED, not verified. Two failure kinds are kept distinct:
-//   contradicted -> a real problem (MISMATCH): wrong year, wrong title, non-trial, DOI absent/not in
-//                   Crossref, or Crossref year disagrees.
-//   inconclusive -> could not confirm (transport error at either mirror) -> keep PubMed's verdict.
-// The caller only invokes this when PubMed itself gave no authoritative answer.
+// Trust level 2: resolve ONLY on genuine Europe PMC + Crossref agreement (title+journal+year).
+//   contradicted -> real problem (MISMATCH)   inconclusive -> transport, keep PubMed's verdict
 async function fallbackVerify(t) {
   const e = await epmcByPmid(String(t.expected_pmid));
   if (e.transient) return { category: "inconclusive", note: `Europe PMC ${e.error} (transport)` };
-  if (!e.ok)       return { category: "contradicted", problems: [e.error], note: e.error };
+  if (!e.ok)       return { category: "contradicted", reasons: [e.error], note: e.error };
 
   const contra = [];   // active disagreements -> MISMATCH
   const block  = [];   // could-not-confirm (transport) -> inconclusive
-  if (e.year && t.year && Math.abs(e.year - t.year) > 2) contra.push(`EuropePMC year ${e.year} vs recorded ${t.year}`);
-  if (NOT_PRIMARY_RE.test(e.title)) contra.push("EuropePMC title looks like a design/protocol paper");
-  const trialish = (e.pubtypes || []).some((p) => TRIAL_PUBTYPES.includes(p));
-  if (!trialish && t.pmid_verified !== "manual_2026-07")
-    contra.push(`EuropePMC pubtypes not trial-ish [${(e.pubtypes || []).join(", ")}]`);
-  const tm = titleMatch(t.full, t.name, e.title);
-  if (!tm.strong)
-    contra.push(`EuropePMC title does not confirm the trial (overlap ${tm.score.toFixed(2)}, acronym ${tm.acronymHit ? "found" : "absent"})`);
+  for (const p of objectiveProblems(t, e)) contra.push(`EuropePMC: ${p}`);
+  const ts = titleSeverity(t, e);
+  if (ts.sev !== "strong")
+    contra.push(`EuropePMC title does not confirm the trial (overlap ${ts.score.toFixed(2)}, acronym ${ts.acronymHit ? "found" : "absent"})`);
 
-  // Crossref corroboration is REQUIRED — no DOI, or Crossref can't confirm it, means unverified.
   let crNote = "";
   if (!e.doi) {
     contra.push("Europe PMC record carries no DOI — Crossref cannot corroborate");
   } else {
     const cr = await crossrefByDoi(e.doi);
-    if (cr.transient)      block.push(`Crossref ${cr.error} (could not corroborate)`);
-    else if (!cr.ok)       contra.push(`DOI ${e.doi} not confirmed in Crossref (${cr.error})`);
+    if (cr.transient) block.push(`Crossref ${cr.error} (could not corroborate)`);
     else {
-      const yref = e.year || t.year;
-      if (cr.year && yref && Math.abs(cr.year - yref) > 1) contra.push(`Crossref year ${cr.year} disagrees with ${yref}`);
-      else crNote = `DOI ${e.doi} confirmed in Crossref (${cr.journal || "?"}, ${cr.year || "?"})`;
+      const ag = crossrefAgrees(e, cr);
+      if (!ag.agree) for (const rn of ag.reasons) contra.push(`Crossref: ${rn}`);
+      else crNote = `Crossref confirms DOI ${e.doi} (${cr.journal}, ${cr.year})`;
     }
   }
 
   const category = contra.length ? "contradicted" : (block.length ? "inconclusive" : "resolved");
   return {
-    category,
-    problems: contra, blockers: block,
+    category, reasons: contra, blockers: block,
     title: e.title, journal: e.journal, year: e.year, doi: e.doi,
-    note: category === "resolved" ? `verified via Europe PMC + Crossref agreement — ${crNote}`
-        : category === "contradicted" ? contra.join(" | ")
-        : block.join(" | "),
+    note: category === "resolved" ? `Europe PMC + Crossref agreement — ${crNote}`
+        : category === "contradicted" ? contra.join(" | ") : block.join(" | "),
   };
 }
 
+// ── COMPUTE PASS (no mutation of the manifest happens here) ────────────────────
 let fallbackResolved = 0;
+const promotions = [];   // { trial, status } — applied only on a clean --write run
 const results = [];
 for (const t of trials) {
-  const r = { name: t.name, expected_pmid: t.expected_pmid, status: null, detail: "" };
+  const r = { name: t.name, expected_pmid: t.expected_pmid, recorded_year: t.year, specialty: t.specialty,
+              current: t.pmid_verified || null, status: null, reasons: [], title: null, journal: null, pubyear: null };
+  const alreadyVerified = VERIFIED_OK.includes(t.pmid_verified);
 
-  if (!t.expected_pmid) { r.status = "SUSPECT"; r.detail = "no expected_pmid recorded"; results.push(r); continue; }
+  if (!t.expected_pmid) { r.status = "SUSPECT"; r.reasons = ["no expected_pmid recorded"]; results.push(r); results.length && process.stdout.write(`\r  checked ${results.length}/${trials.length}`); continue; }
 
   const pm = await esummary(String(t.expected_pmid));
 
-  // PubMed could not give an authoritative answer (transport error, or PMID not found). Trust order:
-  // fall back to Europe PMC + Crossref. A reachable MISMATCH below is handled by PubMed alone.
   if (pm.transient || !pm.ok) {
-    const pubmedNote = pm.transient ? pm.error + " (transport, NOT a bad PMID)" : pm.error;
+    const pubmedNote = pm.transient ? `${pm.error} (transport, NOT a bad PMID)` : pm.error;
     if (!NO_FALLBACK) {
       const fb = await fallbackVerify(t);
-      if (fb.category === "resolved") {          // genuine Europe PMC + Crossref agreement
-        fallbackResolved++;
-        r.status = "OK"; r.via = "europepmc"; r.detail = fb.note;
-        r.title = fb.title; r.journal = fb.journal; r.pubyear = fb.year;
-        if (WRITE && !VERIFIED_OK.includes(t.pmid_verified)) t.pmid_verified = "europepmc_2026-07";
-        results.push(r); continue;
+      r.title = fb.title || null; r.journal = fb.journal || null; r.pubyear = fb.year || null;
+      if (fb.category === "resolved") {
+        fallbackResolved++; r.status = "OK"; r.via = "europepmc"; r.note = fb.note;
+        if (!alreadyVerified) promotions.push({ trial: t, status: "europepmc_2026-07" });
+        results.push(r); process.stdout.write(`\r  checked ${results.length}/${trials.length}`); continue;
       }
-      if (fb.category === "contradicted") {      // a mirror actively disagrees -> real problem
-        r.status = "MISMATCH";
-        r.detail = `PubMed: ${pubmedNote}; Europe PMC fallback: ${fb.note}`;
-        r.title = fb.title; r.journal = fb.journal; r.pubyear = fb.year;
-        results.push(r); continue;
+      if (fb.category === "contradicted") {
+        r.status = "MISMATCH"; r.reasons = [`PubMed: ${pubmedNote}`, ...(fb.reasons || [fb.note])];
+        results.push(r); process.stdout.write(`\r  checked ${results.length}/${trials.length}`); continue;
       }
-      // inconclusive: could not confirm via either mirror -> keep PubMed's verdict, do NOT verify
       r.status = pm.transient ? "UNREACHABLE" : "SUSPECT";
-      r.detail = `${pubmedNote} — fallback could not confirm: ${fb.note}`;
-      results.push(r); continue;
+      r.reasons = [`${pubmedNote} — fallback could not confirm: ${fb.note}`];
+      results.push(r); process.stdout.write(`\r  checked ${results.length}/${trials.length}`); continue;
     }
-    r.status = pm.transient ? "UNREACHABLE" : "SUSPECT"; r.detail = pubmedNote;
-    results.push(r); continue;
+    r.status = pm.transient ? "UNREACHABLE" : "SUSPECT"; r.reasons = [pubmedNote];
+    results.push(r); process.stdout.write(`\r  checked ${results.length}/${trials.length}`); continue;
   }
 
-  const problems = [];
-  if (pm.year && t.year && Math.abs(pm.year - t.year) > 2)
-    problems.push(`year ${pm.year} vs recorded ${t.year}`);
-  if (NOT_PRIMARY_RE.test(pm.title))
-    problems.push("looks like a design/protocol paper, not primary results");
-  const trialish = (pm.pubtypes || []).some((p) => TRIAL_PUBTYPES.includes(p));
-  if (!trialish && t.pmid_verified !== "manual_2026-07")
-    problems.push(`pubtypes not trial-ish [${(pm.pubtypes || []).join(", ")}] — set pmid_verified:"manual_2026-07" if canonical anyway`);
-  // Confirm the returned paper IS this trial, not just a same-year RCT (Codex 2026-07-24).
-  const tm = titleMatch(t.full, t.name, pm.title);
-  let softNote = "";
-  if (tm.wrong)
-    problems.push(`title does not match the trial (overlap ${tm.score.toFixed(2)}, acronym absent) — stored paper is likely a DIFFERENT study`);
-  else if (!tm.strong)
-    softNote = ` [title only weakly matches: overlap ${tm.score.toFixed(2)}, acronym ${tm.acronymHit ? "found" : "absent"} — eyeball]`;
+  // PubMed direct
+  r.title = pm.title; r.journal = pm.journal; r.pubyear = pm.year;
+  const obj = objectiveProblems(t, pm);
+  const ts = titleSeverity(t, pm);
+  r.titleScore = +ts.score.toFixed(2); r.titleSev = ts.sev; r.acronymHit = ts.acronymHit;
 
-  r.status = problems.length ? "MISMATCH" : "OK";
-  r.detail = problems.join(" | ");
-  if (r.status === "OK" && softNote) r.soft = softNote.trim();
-  r.title = pm.title;
-  r.journal = pm.journal;
-  r.pubyear = pm.year;
-  if (r.status === "OK" && WRITE && !VERIFIED_OK.includes(t.pmid_verified)) t.pmid_verified = "pubmed_2026-07";
+  if (obj.length) {
+    r.status = "MISMATCH"; r.reasons = obj;
+  } else if (!alreadyVerified && ts.sev !== "strong") {
+    // objective checks pass, but the title does not confirm THIS trial and the entry isn't yet
+    // verified -> hold it as SUSPECT; do not promote until a human confirms the PMID.
+    r.status = "SUSPECT";
+    r.reasons = [`title ${ts.sev} match (overlap ${ts.score.toFixed(2)}, acronym ${ts.acronymHit ? "found" : "absent"}) — PMID not confirmed as this trial; NOT auto-verified`];
+  } else {
+    r.status = "OK";
+    if (!alreadyVerified) promotions.push({ trial: t, status: "pubmed_2026-07" });
+    if (alreadyVerified && ts.sev !== "strong")
+      r.advisory = `already ${t.pmid_verified}, but title ${ts.sev} match (overlap ${ts.score.toFixed(2)}, acronym ${ts.acronymHit ? "found" : "absent"}) — optional review; not downgraded`;
+  }
   results.push(r);
   process.stdout.write(`\r  checked ${results.length}/${trials.length}`);
 }
 console.log("\n");
 
+// ── REPORT ────────────────────────────────────────────────────────────────────
 const by = (s) => results.filter((r) => r.status === s);
+const advisories = results.filter((r) => r.status === "OK" && r.advisory);
 
-// Soft title-review — resolved to a real trial paper of the right year/type, but the returned title
-// only weakly matched the recorded trial. Non-blocking; surfaced so a human can eyeball the PMID.
-const softRows = results.filter((r) => r.status === "OK" && r.soft);
-if (softRows.length) {
-  console.log(`═══ TITLE REVIEW — soft, non-blocking (${softRows.length}) ═══`);
-  for (const r of softRows) {
-    console.log(`  ${r.name}  [pmid ${r.expected_pmid}]  ${r.soft}`);
-    if (r.title) console.log(`      stored paper: "${r.title.slice(0, 90)}" (${r.journal}, ${r.pubyear})`);
-  }
-  console.log("");
-}
-
-for (const s of ["SUSPECT", "MISMATCH", "UNREACHABLE"]) {
+for (const s of ["MISMATCH", "SUSPECT", "UNREACHABLE"]) {
   const rows = by(s);
   if (!rows.length) continue;
   console.log(`═══ ${s} (${rows.length}) ═══`);
   for (const r of rows) {
     console.log(`  ${r.name}  [pmid ${r.expected_pmid || "—"}]`);
-    console.log(`      ${r.detail}`);
+    for (const reason of r.reasons) console.log(`      ${reason}`);
     if (r.title) console.log(`      stored paper: "${r.title.slice(0, 90)}" (${r.journal}, ${r.pubyear})`);
   }
   console.log("");
 }
+if (advisories.length) {
+  console.log(`═══ TITLE ADVISORY — already verified, weak title, non-blocking (${advisories.length}) ═══`);
+  for (const r of advisories) {
+    console.log(`  ${r.name}  [pmid ${r.expected_pmid}]  ${r.advisory}`);
+    if (r.title) console.log(`      stored paper: "${r.title.slice(0, 90)}" (${r.journal}, ${r.pubyear})`);
+  }
+  console.log("");
+}
+
+const blocking  = by("SUSPECT").length + by("MISMATCH").length;
+const unreached = by("UNREACHABLE").length;
+
+// durable JSON report — ALWAYS written, regardless of --write
+const report = {
+  generated_at: new Date().toISOString(),
+  manifest: MANIFEST_PATH,
+  totals: {
+    total: results.length, ok: by("OK").length, mismatch: by("MISMATCH").length,
+    suspect: by("SUSPECT").length, unreachable: unreached,
+    fallback_verified: fallbackResolved, advisories: advisories.length, promotable: promotions.length,
+  },
+  problems: results.filter((r) => r.status !== "OK").map((r) => ({
+    name: r.name, pmid: r.expected_pmid, status: r.status, recorded_year: r.recorded_year,
+    specialty: r.specialty, current: r.current, reasons: r.reasons,
+    stored_paper: r.title ? { title: r.title, journal: r.journal, year: r.pubyear } : null,
+  })),
+  advisories: advisories.map((r) => ({
+    name: r.name, pmid: r.expected_pmid, current: r.current, note: r.advisory,
+    stored_paper: { title: r.title, journal: r.journal, year: r.pubyear },
+  })),
+};
+writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2) + "\n");
 
 const okDirect = by("OK").filter((r) => r.via !== "europepmc").length;
 console.log("═══ SUMMARY ═══");
 console.log(`  OK:          ${by("OK").length}  (${okDirect} PubMed direct${fallbackResolved ? `, ${fallbackResolved} via Europe PMC + Crossref` : ""})`);
 console.log(`  MISMATCH:    ${by("MISMATCH").length}`);
 console.log(`  SUSPECT:     ${by("SUSPECT").length}`);
-console.log(`  UNREACHABLE: ${by("UNREACHABLE").length}  (transport, not citation problems)`);
-if (fallbackResolved) {
-  console.log(`\n  ↳ ${fallbackResolved} entr${fallbackResolved === 1 ? "y" : "ies"} PubMed could not reach were verified via the Europe PMC + Crossref`);
-  console.log(`    fallback and marked pmid_verified:"europepmc_2026-07" (distinct from pubmed_2026-07 for audit).`);
-}
+console.log(`  UNREACHABLE: ${unreached}  (transport, not citation problems)`);
+console.log(`  advisory:    ${advisories.length}  (already-verified, weak title — non-blocking)`);
+console.log(`  promotable:  ${promotions.length}  (unverified entries that passed cleanly)`);
+console.log(`\n-> durable report written: ${REPORT_PATH}`);
 
+// ── WRITE SAFETY: promote only on a fully-clean run; never partial-write ────────
 if (WRITE) {
-  writeFileSync("rag/landmark_trials.json", JSON.stringify(raw, null, 2));
-  console.log("\n-> wrote verified status back to rag/landmark_trials.json");
+  if (blocking || unreached) {
+    console.log(`\n✖ ${blocking + unreached} blocking problem(s) — manifest NOT modified (no partial writes).`);
+    console.log(`  Resolve the entries in ${REPORT_PATH}, then re-run with --write.`);
+  } else {
+    for (const p of promotions) p.trial.pmid_verified = p.status;
+    writeFileSync(MANIFEST_PATH, JSON.stringify(raw, null, 2) + "\n");
+    console.log(`\n-> clean run: promoted ${promotions.length} entr${promotions.length === 1 ? "y" : "ies"}; wrote ${MANIFEST_PATH}`);
+  }
 }
 
-// ── EXIT SEMANTICS ────────────────────────────────────────────────────────────
-// A run that could not REACH PubMed has verified NOTHING. The first version of this script
-// counted only SUSPECT+MISMATCH, so a fully-offline run printed "Every landmark trial resolves"
-// and exited 0 — a false green, and precisely the bug class this file exists to catch: a transport
-// failure masquerading as a result. Three distinct outcomes now:
-//   0 = verified      (OK === total)
-//   1 = real problems (SUSPECT / MISMATCH)
-//   2 = inconclusive  (anything UNREACHABLE — verified nothing, claim nothing)
-// (Codex review 2026-07-17)
-const problems  = by("SUSPECT").length + by("MISMATCH").length;
-const unreached = by("UNREACHABLE").length;
-
-if (problems) {
-  console.log(`\n✖ ${problems} problem(s). Every trial chip must point at the canonical primary trial paper.`);
+// ── EXIT SEMANTICS: 0 verified · 1 blocking problems · 2 inconclusive ──────────
+if (blocking) {
+  console.log(`\n✖ ${blocking} problem(s). Every trial chip must point at the canonical primary trial paper.`);
   if (unreached) console.log(`  (also ${unreached} unreachable — this run is ALSO incomplete)`);
   process.exit(1);
 }
 if (unreached) {
-  console.log(`\n⚠ INCONCLUSIVE — ${unreached}/${results.length} entries could not be reached.`);
-  console.log("  This run verified NOTHING about those entries. It is not a pass.");
+  console.log(`\n⚠ INCONCLUSIVE — ${unreached}/${results.length} entries could not be reached. Verified NOTHING about those.`);
   console.log("  Re-run with network access; set NCBI_API_KEY to reduce rate-limiting.");
-  process.exit(2);
-}
-if (by("OK").length !== results.length) {
-  console.log(`\n⚠ INCONCLUSIVE — only ${by("OK").length}/${results.length} entries reached OK.`);
   process.exit(2);
 }
 console.log(`\n✔ All ${results.length} landmark trials resolve to a verified primary-results paper.`);

@@ -24,6 +24,9 @@ dist/
 tmp/
 *.log
 
+# Validator artifact — regenerated on every run (read it, don't commit it)
+rag/landmark_validation_report.json
+
 # Cloudflare Workers (Step 2) — auto-generated
 .wrangler/
 .dev.vars
