@@ -3277,10 +3277,10 @@
   },
   {
     "name": "SSaSS",
-    "full": "Effect of Salt Substitution on Cardiovascular Events and Death",
+    "full": "Effect of Salt Substitution on Cardiovascular Events and Death (SSaSS)",
     "year": 2021,
     "specialty": "nephrology",
-    "expected_pmid": "34936748",
+    "expected_pmid": "34459569",
     "pmid_verified": "websearch_2026-07",
     "source_batch": "nephjc_2026-07"
   },
@@ -3313,10 +3313,10 @@
   },
   {
     "name": "REPRISE",
-    "full": "Tolvaptan in Later-Stage Autosomal Dominant Polycystic Kidney Disease",
+    "full": "Tolvaptan in Later-Stage Autosomal Dominant Polycystic Kidney Disease (REPRISE)",
     "year": 2017,
     "specialty": "nephrology",
-    "expected_pmid": "29105553",
+    "expected_pmid": "29105594",
     "pmid_verified": "websearch_2026-07",
     "source_batch": "nephjc_2026-07"
   },
@@ -4190,7 +4190,7 @@
     "year": 2019,
     "specialty": "heme-onc",
     "expected_pmid": "30730782",
-    "pmid_verified": "websearch_2026-07",
+    "pmid_verified": "manual_2026-07",
     "source_batch": "specialties_2026-07"
   },
   {
@@ -4496,7 +4496,7 @@
     "year": 2019,
     "specialty": "id",
     "expected_pmid": "31056293",
-    "pmid_verified": "websearch_2026-07",
+    "pmid_verified": "manual_2026-07",
     "source_batch": "specialties_2026-07"
   },
   {
@@ -4793,7 +4793,7 @@
     "year": 2021,
     "specialty": "allergy-immunology",
     "expected_pmid": "33872587",
-    "pmid_verified": "websearch_2026-07",
+    "pmid_verified": "manual_2026-07",
     "source_batch": "specialties_2026-07"
   },
   {
@@ -5036,7 +5036,7 @@
     "year": 2018,
     "specialty": "primary-care",
     "expected_pmid": "29897866",
-    "pmid_verified": "websearch_2026-07",
+    "pmid_verified": "manual_2026-07",
     "source_batch": "specialties_2026-07"
   },
   {
@@ -5081,7 +5081,7 @@
     "year": 2016,
     "specialty": "id",
     "expected_pmid": "27404185",
-    "pmid_verified": "websearch_2026-07",
+    "pmid_verified": "manual_2026-07",
     "source_batch": "specialties_2026-07"
   }
 ]
