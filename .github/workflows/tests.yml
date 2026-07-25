@@ -1,0 +1,63 @@
+name: Chalk Talk safety tests
+
+# NOTE: a sibling copy of this workflow lives on the `free-gemini-tier` branch with a different
+# test-suite list. Reconcile the two into one workflow when the branches are consolidated
+# (citation-coverage adds: rag validator syntax check, PubMed-verify suite, landmark-validator suite).
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: JS syntax check (all inline script blocks)
+        run: |
+          node --input-type=module -e '
+          import fs from "fs";
+          const html = fs.readFileSync("index.html","utf8");
+          const re = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+          let m, i = 0, bad = 0;
+          while((m = re.exec(html))){
+            const a = m[1] || "";
+            if(/type\s*=\s*["\x27]?module/i.test(a) || /\bsrc\s*=/.test(a)) continue;
+            i++;
+            try { new Function(m[2]); } catch(e){ bad++; console.log("BLOCK #"+i+": "+e.message); }
+          }
+          console.log("checked "+i+" blocks, "+bad+" errors");
+          if(bad) process.exit(1);
+          '
+
+      - name: rag ESM syntax check (validator + lib)
+        run: |
+          for f in rag/validator_lib.mjs rag/validate_landmark_pmids.mjs rag/ingest_landmarks.mjs rag/reconcile_landmarks.mjs; do
+            node --check "$f" && echo "ok: $f"
+          done
+
+      - name: Guideline manifest audit (must be hard:0)
+        run: |
+          node rag/extract_guidelines.mjs
+          node rag/build_manifest.mjs
+          node rag/audit_manifest.mjs | tee /tmp/audit.txt
+          grep -q "(hard: 0)" /tmp/audit.txt
+
+      - name: Boards difficulty suite
+        run: node test_boards_difficulty.mjs
+
+      - name: Citation / refine guard suite
+        run: node test_refine_guard.mjs
+
+      - name: Guideline source (JSON single-source-of-truth) suite
+        run: node test_guidelines_source.mjs
+
+      - name: PubMed trust-but-verify suite
+        run: node test_pubmed_verify.mjs
+
+      - name: Landmark validator suite (title thresholds + Europe PMC/Crossref agreement)
+        run: node test_landmark_validator.mjs
