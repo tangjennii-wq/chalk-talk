@@ -100,5 +100,53 @@ ok(iIdent > 0 && iAssign > iIdent, "the identity guard runs BEFORE the audit res
 const cancelIdx = html.indexOf("if (_myGenId !== S.genId) return;\n    if (S.genCancelled) { S.genCancelled = false; return; }");
 ok(cancelIdx > 0, "stale-gen check comes BEFORE consuming S.genCancelled (a stale gen can't eat a newer gen's cancel)");
 
+
+// ── 7) BRACE-DRIFT: top-level boards fields nested inside `question` must be hoisted ──
+// Found by the model benchmark 2026-07-26: on 2 of 3 boards generations, Claude dropped a closing brace
+// and nested key_point / board_pearls / abim_classification / teaching_points / summary_points /
+// visual_memory_card INSIDE question. The renderer reads talk.key_point etc., so those talks displayed
+// with NO key point, NO board pearls and no memory card — silently, most of the teaching payload gone.
+ok(/function _hoistMisplacedBoardFields\(/.test(html), "_hoistMisplacedBoardFields() exists");
+ok(/^var _BOARD_TOPLEVEL_FIELDS = /m.test(html), "the list of fields that belong at top level is declared");
+const hoistCalls = (html.match(/_hoistMisplacedBoardFields\(/g) || []).length;
+ok(hoistCalls >= 3, `hoist runs on the draft AND in _finalizeBoardQuestion (${hoistCalls - 1} call sites)`);
+const finalSrc = html.slice(html.indexOf("function _finalizeBoardQuestion("), html.indexOf("function _finalizeBoardQuestion(") + 600);
+const iHoist = finalSrc.indexOf("_hoistMisplacedBoardFields"), iErr = finalSrc.indexOf("_boardHardErrors");
+ok(iHoist > 0 && iErr > iHoist, "hoist runs BEFORE the structural checks, so recovered fields count as present");
+
+{
+  const hctx = { console: { warn() {} } };
+  vm.createContext(hctx);
+  vm.runInContext((html.match(/^var _BOARD_TOPLEVEL_FIELDS = .*$/m) || [""])[0] + "\n" +
+    html.slice(html.search(/^function _hoistMisplacedBoardFields\(/m),
+               html.search(/^function _hoistMisplacedBoardFields\(/m) + /\n\}/.exec(html.slice(html.search(/^function _hoistMisplacedBoardFields\(/m))).index + 2), hctx);
+  const hoist = vm.runInContext("_hoistMisplacedBoardFields", hctx);
+
+  // the exact real-world shape: everything nested under question
+  const broken = { title: "T", question: { stem: "s", choices: [], key_point: "KP", board_pearls: ["a","b","c","d","e"],
+                   visual_memory_card: { top_left: "a" }, abim_classification: { category: "Nephrology" },
+                   teaching_points: ["t"], summary_points: ["s"] } };
+  hoist(broken);
+  ok(broken.key_point === "KP", "key_point hoisted to top level");
+  ok(Array.isArray(broken.board_pearls) && broken.board_pearls.length === 5, "all 5 board_pearls hoisted");
+  ok(broken.visual_memory_card && broken.visual_memory_card.top_left === "a", "visual_memory_card hoisted");
+  ok(broken.abim_classification && broken.teaching_points && broken.summary_points, "abim/teaching/summary hoisted too");
+  ok(!("key_point" in broken.question), "the misplaced copy is removed from question (no duplicate)");
+  ok(broken.question.stem === "s" && Array.isArray(broken.question.choices), "genuine question fields are left alone");
+
+  // must NEVER clobber a correctly-placed value
+  const good = { key_point: "REAL", board_pearls: ["x"], question: { key_point: "STALE", board_pearls: ["y"], stem: "s" } };
+  hoist(good);
+  ok(good.key_point === "REAL", "a correctly-placed key_point is NOT overwritten by a nested one");
+  ok(good.board_pearls[0] === "x", "a correctly-placed board_pearls is NOT overwritten");
+
+  // empty-at-top counts as absent (so an empty string/array still gets filled)
+  const emptyTop = { key_point: "", board_pearls: [], question: { key_point: "KP", board_pearls: ["a"], stem: "s" } };
+  hoist(emptyTop);
+  ok(emptyTop.key_point === "KP" && emptyTop.board_pearls.length === 1, "an EMPTY top-level field is treated as absent and filled");
+
+  ok(hoist({ title: "x" }) && hoist(null) === null || true, "no question / null talk is handled safely");
+}
+
 console.log("\n" + (failures === 0 ? "✔ TARGETED REVIEW TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

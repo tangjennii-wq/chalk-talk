@@ -122,7 +122,9 @@ const BOARDS_DIFFICULTY_SRC = extractBlock(/var BOARDS_DIFFICULTY = /, "BOARDS_D
 const GET_GL_SRC = extractBlock(/^function getGuidelinesForTopic\(/m, "getGuidelinesForTopic");
 const TOPICS_SRC = extractBlock(/var TOPICS = /, "TOPICS");
 const VALIDATE_SRC = extractBlock(/^function validateBoardQuestion\(/m, "validateBoardQuestion")
-                   + "\n" + extractBlock(/^function _boardHardErrors\(/m, "_boardHardErrors");
+                   + "\n" + extractBlock(/^function _boardHardErrors\(/m, "_boardHardErrors")
+                   + "\n" + (html.match(/^var _BOARD_TOPLEVEL_FIELDS = .*$/m) || [""])[0]   // single-line ARRAY decl, so extractBlock's "};" terminator doesn't apply
+                   + "\n" + extractBlock(/^function _hoistMisplacedBoardFields\(/m, "_hoistMisplacedBoardFields");
 // The app repairs slightly-off model JSON with fixJSON() before parsing (models routinely emit a
 // preamble, a trailing postscript, or ``` fences). Grading with a bare JSON.parse measured something
 // production never sees and scored valid talks as "invalid JSON". Use the REAL repair. (2026-07-26)
@@ -139,6 +141,9 @@ vm.createContext(sandbox);
 vm.runInContext(`${TOPICS_SRC}\n${BOARDS_DIFFICULTY_SRC}\n${GET_GL_SRC}\n${VALIDATE_SRC}\n${FIXJSON_SRC}`, sandbox);
 const getGuidelinesForTopic = (t) => vm.runInContext("getGuidelinesForTopic", sandbox)(t);
 const validateBoardQuestion = (q) => vm.runInContext("validateBoardQuestion", sandbox)(q);
+// Apply the app's own brace-drift repair before grading, so the benchmark measures what a user would
+// actually SEE rather than penalising a model for something production silently fixes. (2026-07-26)
+const hoistMisplacedBoardFields = (t) => vm.runInContext("_hoistMisplacedBoardFields", sandbox)(t);
 const fixJSON = (s) => vm.runInContext("fixJSON", sandbox)(s);
 const BOARDS_DIFF = vm.runInContext("BOARDS_DIFFICULTY", sandbox);
 
@@ -406,6 +411,7 @@ async function grade(style, raw) {
     catch (e2) { hard.push(`invalid JSON even after the app's fixJSON(): ${e1.message}`); return { hard, soft, talk: null }; }
   }
 
+  if (style === "boards") { try { hoistMisplacedBoardFields(talk); } catch(_){} }
   for (const f of (style === "boards" ? REQUIRED_BOARDS : REQUIRED_LECTURE))
     if (talk[f] == null) hard.push(`missing required field: ${f}`);
 

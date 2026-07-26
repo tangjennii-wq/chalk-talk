@@ -1219,8 +1219,34 @@ function _repairBoardQuestionInPlace(q, selLevel){
   if(BOARDS_DIFFICULTY[lvl]&&q.difficulty_label!==BOARDS_DIFFICULTY[lvl].label) q.difficulty_label=BOARDS_DIFFICULTY[lvl].label;
 }
 // Finalize gate: repair, then flag hard-invalid so the Boards view can visibly fail. Returns the talk.
+// HOIST MISPLACED TOP-LEVEL FIELDS (Jenni 2026-07-26 — found by the model benchmark).
+// Models intermittently drop a closing brace and nest the TOP-LEVEL boards fields inside `question`.
+// Observed on 2 of 3 boards generations from Claude Opus, and it is silent: the renderer reads
+// talk.key_point / talk.board_pearls / talk.visual_memory_card, so an affected talk displayed with NO
+// key point, NO board pearls, no ABIM classification and no memory card — most of the teaching payload
+// missing, with no error. Deterministic fix: if a known top-level field is absent at the top but present
+// inside question, move it out. Never overwrites a field that IS correctly at the top.
+var _BOARD_TOPLEVEL_FIELDS = ["key_point","board_pearls","abim_classification","teaching_points","summary_points","visual_memory_card","guideline_sources","references","title","subtitle"];
+function _hoistMisplacedBoardFields(talk){
+  if(!talk || !talk.question || typeof talk.question !== "object") return talk;
+  var moved = [];
+  for(var i=0;i<_BOARD_TOPLEVEL_FIELDS.length;i++){
+    var f = _BOARD_TOPLEVEL_FIELDS[i];
+    var atTop = talk[f];
+    var topEmpty = (atTop == null) || (Array.isArray(atTop) && !atTop.length) || (typeof atTop === "string" && !atTop.trim());
+    if(topEmpty && Object.prototype.hasOwnProperty.call(talk.question, f)){
+      talk[f] = talk.question[f];
+      try{ delete talk.question[f]; }catch(_){}
+      moved.push(f);
+    }
+  }
+  if(moved.length) console.warn("Board talk: hoisted misplaced field(s) out of question — " + moved.join(", "));
+  return talk;
+}
+
 function _finalizeBoardQuestion(talk){
   if(!talk||!talk.question) return talk;
+  _hoistMisplacedBoardFields(talk);   // BEFORE the structural checks, so hoisted fields count as present
   _repairBoardQuestionInPlace(talk.question, boardsDifficulty());
   var hard=_boardHardErrors(talk.question);
   if(hard.length){ talk._boardInvalid=hard; console.warn("Board question failed structural checks:", hard.join("; ")); }
@@ -1248,7 +1274,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-06";
+var BUILD_ID = "2026-07-26-07";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6932,7 +6958,10 @@ async function generate(){
     draftTalk = pruneFakeReferences(draftTalk);
     // Repair the DRAFT board question before the critic sees it (Jenni 2026-07-21) — clean structure in,
     // so the critic reviews content rather than tripping on a mislabeled choice or a missing difficulty field.
-    if(S.style === "boards" && draftTalk && draftTalk.question) _repairBoardQuestionInPlace(draftTalk.question, boardsDifficulty());
+    if(S.style === "boards" && draftTalk && draftTalk.question){
+      _hoistMisplacedBoardFields(draftTalk);   // fix brace-drift BEFORE the critic and before the completeness check
+      _repairBoardQuestionInPlace(draftTalk.question, boardsDifficulty());
+    }
 
     // TARGETED SAFETY REVIEW swap — now that draftTalk actually EXISTS, decide whether this Concise
     // lecture qualifies for the scoped review. Sync path only: the async path already submitted the full
