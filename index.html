@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-10";
+var BUILD_ID = "2026-07-26-11";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5989,8 +5989,17 @@ async function verifyCitations(talk) {
   var sys = "You are a strict evidence auditor. For each item you are given a CLAIM from a medical teaching talk and the ABSTRACT of the source cited for that claim. Decide whether the abstract DIRECTLY SUPPORTS that specific claim - meaning a careful reader would agree the abstract substantiates that exact statement (same drug, same threshold, same population, same direction of effect). General topical relatedness is NOT support. If the abstract concerns the same disease but does not establish the specific claim, mark it unsupported. You are seeing ONLY the abstract, so a detail the abstract never states is NOT supported. Output ONLY a JSON array, one object per item: {\"i\":<index>,\"supported\":true|false}. No other text.";
   var verdicts = {};
   try {
-    // Sonnet judges (Haiku fallback) - the old auditor was Haiku-only, which is thin for this job.
-    var res = await callAPIWithFallback(sys, JSON.stringify(items), 2048, [MODEL_SONNET_FALLBACK, MODEL_CRITIC]);
+    // OPUS judges, Sonnet then Haiku as fallback (upgraded 2026-07-26). This is the single best
+    // latency-for-quality trade in the app: the audit runs in the BACKGROUND after the talk has already
+    // rendered, so a slower model costs the user nothing, while the decision it makes — "does this
+    // abstract actually substantiate this specific claim?" — is exactly the judgement that determines
+    // whether a citation chip is honest. It was previously the app's WEAKEST models making that call.
+    // Cost is small despite Opus pricing: ~30 abstracts in (~15k tokens ≈ $0.08) and a tiny JSON array
+    // out (2048 cap, usually far less).
+    // NOTE: deliberately NOT routed through writeAllowedModels() — this judges, it never writes prose,
+    // and a failed audit leaves citations UNVERIFIED, which is worse than a weaker judge. So real
+    // fallbacks are the right call here even though unbenchmarked models are barred from writing.
+    var res = await callAPIWithFallback(sys, JSON.stringify(items), 2048, [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]);
     var arr = JSON.parse(fixJSON(res.txt));
     if (Array.isArray(arr)) arr.forEach(function(v){ if (v && typeof v.i === "number") verdicts[v.i] = !!v.supported; });
   } catch (e) {

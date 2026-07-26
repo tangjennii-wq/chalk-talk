@@ -71,5 +71,22 @@ ok(!/not a list\. End it with an inline citation marker like \[1\]\./.test(html)
 ok((html.match(/verifyCitations\(await verifyModelDois\(await verifyModelPmids\(/g)||[]).length >= 3,
    "verifyModelPmids AND verifyModelDois both run before verifyCitations in all 3 audit paths");
 
+
+// ── the citation AUDIT judge must be the strongest model (upgraded 2026-07-26) ──
+// The audit runs in the BACKGROUND after render, so latency is free — yet it was using the app's
+// weakest models to decide "does this abstract substantiate this claim?", the call that determines
+// whether a citation chip is honest. Opus now judges, with real fallbacks (a failed audit leaves
+// citations unverified, which is worse than a weaker judge).
+ok(/callAPIWithFallback\(sys, JSON\.stringify\(items\), 2048, \[MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC\]\)/.test(html),
+   "citation audit judges with [MODEL_MAIN, Sonnet, Haiku] — Opus first");
+ok(!/2048, \[MODEL_SONNET_FALLBACK, MODEL_CRITIC\]/.test(html),
+   "the old Sonnet-first audit chain is gone");
+// it must NOT be filtered by the writer gate — it judges, it does not write. Assert on the CALL
+// itself, not a window of surrounding text (the explanatory comment mentions writeAllowedModels).
+const auditCall = (html.match(/callAPIWithFallback\(sys, JSON\.stringify\(items\), 2048, [^)]*\)/) || [""])[0];
+ok(!!auditCall, "found the audit call");
+ok(!/writeAllowedModels/.test(auditCall), "the audit CALL is not wrapped in writeAllowedModels (it judges, never writes)");
+ok(/MODEL_CRITIC\]/.test(auditCall), "the audit keeps a real fallback chain (a failed audit is worse than a weaker judge)");
+
 console.log("\n" + (failures === 0 ? "✔ PUBMED-VERIFY TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);
