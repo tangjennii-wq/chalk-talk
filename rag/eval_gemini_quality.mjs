@@ -30,6 +30,9 @@
  *   node rag/eval_gemini_quality.mjs --topics 3         # quick smoke: first 3 topics
  *   node rag/eval_gemini_quality.mjs --style lecture    # one style only
  *   node rag/eval_gemini_quality.mjs --no-judge         # skip the LLM judge even if Claude key set
+ *   node rag/eval_gemini_quality.mjs --gemini-model gemini-3.1-pro     # is a PAID Pro model good enough?
+ *   node rag/eval_gemini_quality.mjs --provider openai --openai-model gpt-5.6
+ *      (ChatGPT BYOK is LIVE in the app and unbenchmarked — same bar applies.)
  *   node rag/eval_gemini_quality.mjs --provider openrouter --model deepseek/deepseek-r1
  *   node rag/eval_gemini_quality.mjs --provider openrouter --model qwen/qwen3-235b-a22b
  *   node rag/eval_gemini_quality.mjs --provider openrouter --model meta-llama/llama-3.3-70b-instruct
@@ -54,8 +57,14 @@ const NO_JUDGE = ARGV.includes("--no-judge");
 const DRY = ARGV.includes("--dry");
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
 const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || "";
-const _needOR = ARGV.includes("--provider") && argVal("--provider","gemini") === "openrouter";
-if (!DRY && !_needOR && !GEMINI_KEY) {
+const _prov0 = argVal("--provider", "gemini");
+const _needOR = _prov0 === "openrouter";
+const _needOAI = _prov0 === "openai";
+if (!DRY && _needOAI && !process.env.OPENAI_API_KEY) {
+  console.error("✖ OPENAI_API_KEY not set. Add it with: node rag/setkey.mjs OPENAI_API_KEY");
+  process.exit(1);
+}
+if (!DRY && !_needOR && !_needOAI && !GEMINI_KEY) {
   console.error("✖ GEMINI_API_KEY not set. Add it with: node rag/setkey.mjs GEMINI_API_KEY");
   console.error("  Get one at https://aistudio.google.com/apikey  ·  never paste keys into chat.");
   process.exit(1);
@@ -257,7 +266,10 @@ async function pmidExists(pmid) {
 }
 
 // ── model calls ───────────────────────────────────────────────────────────────
-const GEMINI_MODEL = (html.match(/GEN_GEMINI_BYOK_MODEL\s*=\s*"([^"]+)"/) || [])[1] || "gemini-3.6-flash";
+// --gemini-model lets a DIFFERENT Gemini (e.g. a Pro model) be judged on the same frozen benchmark.
+// Defaults to whatever the app is actually configured to use, so the default run tests production.
+const GEMINI_MODEL = argVal("--gemini-model",
+  (html.match(/GEN_GEMINI_BYOK_MODEL\s*=\s*"([^"]+)"/) || [])[1] || "gemini-3.6-flash");
 const CLAUDE_MODEL = "claude-opus-5";
 // A big lecture/boards JSON can take 60-120s, so these calls MUST have a visible heartbeat and a hard
 // timeout — otherwise a hung socket looks identical to "slow but working" and the run appears frozen.
@@ -306,11 +318,46 @@ async function callOpenRouter(system, user, maxTok = 16384) {
   if (!txt) throw new Error(`openrouter returned no text (finish_reason: ${c?.finish_reason || "?"})`);
   return txt;
 }
+// ── OpenAI arm ────────────────────────────────────────────────────────────────
+// ChatGPT BYOK is LIVE in the app (GEN_OPENAI_MODEL) and has never been benchmarked, so the same bar
+// that closed the Gemini tier has to be applied here too.
+//   node rag/eval_gemini_quality.mjs --provider openai --openai-model gpt-5.6
+const OPENAI_KEY = process.env.OPENAI_API_KEY || "";
+const OPENAI_MODEL = argVal("--openai-model",
+  (html.match(/GEN_OPENAI_MODEL\s*=\s*"([^"]+)"/) || [])[1] || "gpt-5");
+async function callOpenAI(system, user, maxTok = 16384) {
+  // Newer OpenAI models reject `max_tokens` and require `max_completion_tokens`, and some reject a
+  // non-default temperature. Try the modern shape, then fall back once on a 400.
+  async function attempt(useCompletionTokens, withTemp) {
+    const body = { model: OPENAI_MODEL,
+      messages: [{ role: "system", content: system }, { role: "user", content: user }] };
+    if (useCompletionTokens) body.max_completion_tokens = maxTok; else body.max_tokens = maxTok;
+    if (withTemp) body.temperature = 1;
+    const r = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${OPENAI_KEY}` },
+      body: JSON.stringify(body),
+    }, OPENAI_MODEL.slice(0, 14));
+    return { ok: r.ok, status: r.status, text: await r.text() };
+  }
+  let res = await attempt(true, true);
+  if (!res.ok && res.status === 400) res = await attempt(false, true);      // older param name
+  if (!res.ok && res.status === 400) res = await attempt(true, false);      // fixed-temperature model
+  if (!res.ok) throw new Error(`openai ${res.status}: ${res.text.slice(0, 300)}`);
+  const j = JSON.parse(res.text);
+  const c = j?.choices?.[0];
+  const txt = c?.message?.content || "";
+  if (!txt) throw new Error(`openai returned no text (finish_reason: ${c?.finish_reason || "?"})`);
+  return txt;
+}
+
 // The "candidate" arm — whichever model is on trial. Claude remains the reference arm.
 async function callCandidate(system, user, maxTok = 16384) {
-  return PROVIDER === "openrouter" ? callOpenRouter(system, user, maxTok) : callGemini(system, user, maxTok);
+  if (PROVIDER === "openrouter") return callOpenRouter(system, user, maxTok);
+  if (PROVIDER === "openai") return callOpenAI(system, user, maxTok);
+  return callGemini(system, user, maxTok);
 }
-const CANDIDATE_LABEL = PROVIDER === "openrouter" ? OR_MODEL : GEMINI_MODEL;
+const CANDIDATE_LABEL = PROVIDER === "openrouter" ? OR_MODEL
+                      : PROVIDER === "openai" ? OPENAI_MODEL : GEMINI_MODEL;
 
 async function callGemini(system, user, maxTok = 16384) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;

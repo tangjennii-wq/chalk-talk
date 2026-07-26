@@ -149,6 +149,51 @@ function writeKey(name, value) {
     console.log("   Saving below rewrites the key to a SINGLE line and clears the duplicates.\n");
   }
 
+  // --models: ask each provider what THIS key can actually reach. Model marketing names ("GPT-5.6 Sol",
+  // "Gemini 3 Pro") are not API strings, and guessing one makes a benchmark run fail 20 rows in. Ask.
+  if (ARGV.includes("--models")) {
+    const oai = valuesFor("OPENAI_API_KEY")[0], gem = valuesFor("GEMINI_API_KEY")[0];
+    if (oai) {
+      process.stdout.write("OpenAI models your key can reach:\n");
+      try {
+        const r = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: `Bearer ${oai.value}` } });
+        if (!r.ok) console.log(`  ✖ HTTP ${r.status}`);
+        else {
+          const ids = ((await r.json()).data || []).map((m) => m.id)
+            .filter((id) => /^(gpt|o\d|chatgpt)/i.test(id) && !/audio|realtime|transcribe|tts|image|embedding|moderation/i.test(id))
+            .sort();
+          // newest-looking first: highest version number wins
+          const ver = (s) => { const m = s.match(/(\d+(?:\.\d+)?)/); return m ? parseFloat(m[1]) : 0; };
+          ids.sort((a, b) => ver(b) - ver(a) || a.localeCompare(b));
+          ids.slice(0, 25).forEach((id) => console.log("   " + id));
+          if (ids.length > 25) console.log(`   … and ${ids.length - 25} more`);
+          console.log(`  → likely newest chat model: ${ids[0] || "(none found)"}`);
+        }
+      } catch (e) { console.log("  ✖ " + e.message); }
+    } else console.log("OPENAI_API_KEY not in .env");
+    if (gem) {
+      process.stdout.write("\nGemini models your key can reach (generateContent):\n");
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(gem.value)}`);
+        if (!r.ok) console.log(`  ✖ HTTP ${r.status}`);
+        else {
+          const ms = ((await r.json()).models || [])
+            .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+            .map((m) => String(m.name).replace("models/", ""));
+          const pro = ms.filter((n) => /pro/i.test(n)).sort();
+          const flash = ms.filter((n) => /flash/i.test(n)).sort();
+          if (pro.length) { console.log("   PRO (paid, stronger — the ones worth benchmarking):"); pro.forEach((n) => console.log("     " + n)); }
+          if (flash.length) { console.log("   FLASH (free tier — this class FAILED the benchmark):"); flash.slice(0, 8).forEach((n) => console.log("     " + n)); }
+          console.log(`  → ${ms.length} models total`);
+        }
+      } catch (e) { console.log("  ✖ " + e.message); }
+    } else console.log("\nGEMINI_API_KEY not in .env");
+    console.log("\nThen benchmark one:");
+    console.log("  node rag/eval_gemini_quality.mjs --provider openai --openai-model <id> --topics 3");
+    console.log("  node rag/eval_gemini_quality.mjs --gemini-model <id> --topics 3");
+    process.exit(0);
+  }
+
   if (CHECK_ONLY) {
     const names = NAME ? [NAME] : ["GEMINI_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY"];
     for (const n of names) {
