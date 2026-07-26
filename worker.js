@@ -19,6 +19,15 @@ const ALLOWED_MODELS = [
   "claude-sonnet-4-20250514",
   "claude-haiku-4-5-20251001",
 ];
+// WRITERS CLEARED BY THE FROZEN BENCHMARK (must mirror WRITER_BENCHMARK_CLEARED in index.html).
+// ALLOWED_MODELS above is the proxy's general allowlist — it legitimately includes older models for
+// non-writing utility calls (podcast scripts, diagram prompts, chat). This list is stricter: it is the
+// ONLY set permitted to write user-facing medical teaching content, and generation FAILS CLOSED against
+// it. Add an id here only after a full 20-row pass in rag/MODEL_BENCHMARK.md. (Codex 2026-07-26)
+const WRITER_CLEARED = [
+  "claude-opus-5",
+  // "claude-sonnet-5",  // pilot only: 6/6 on 3 topics. Needs the full 20 rows before it may write.
+];
 const ALLOWED_TOOL_TYPES = ["web_search_20250305"];
 const DEFAULT_DAILY_LIMIT = 10;
 // Raised from 6144 → 32768: the app legitimately requests up to 16384 (detailed talks)
@@ -728,8 +737,25 @@ async function handleOpenAIChat(request, env, origin) {
 async function callAnthropicText(env, sys, content, maxTok, models, tools, onProgress) {
   // Enforce the same allowlist + token cap as the synchronous /v1/messages path — a tampered client
   // can't push us onto an off-list or oversized model via the async route.
-  models = (Array.isArray(models) ? models : []).filter(function(m){ return ALLOWED_MODELS.indexOf(m) >= 0; });
-  if (!models.length) models = ["claude-opus-4-8", "claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"];
+  // FAIL CLOSED (Codex 2026-07-26). This function is the generation runner — it writes both the draft and
+  // the critique, and a critique that returns a corrected talk has rewritten what the reader sees. So it
+  // accepts ONLY benchmark-cleared writer ids.
+  // The previous version filtered against the broad ALLOWED_MODELS and then, if nothing survived,
+  // SUBSTITUTED a hardcoded chain of ["claude-opus-4-8", "claude-sonnet-4-20250514",
+  // "claude-haiku-4-5-20251001"] — all unverified, one of them retired on the first-party API. That
+  // silently defeated the client-side writer restriction: refuse-to-write became write-with-anything.
+  // Now an empty list is an ERROR the client surfaces honestly.
+  const requested = (Array.isArray(models) ? models : []).slice();
+  models = requested.filter(function(m){ return WRITER_CLEARED.indexOf(m) >= 0; });
+  if (!models.length) {
+    const err = new Error("no_cleared_writer");
+    err.userMessage = "The verified writing model is temporarily unavailable. Chalk Talk only writes talks "
+      + "with a model that has passed its medical-accuracy benchmark, so rather than hand you an "
+      + "unverified draft it's better to wait — please try again in a few minutes.";
+    console.warn("Generation refused: none of [" + requested.join(", ") + "] is a benchmark-cleared writer. "
+      + "Cleared: [" + WRITER_CLEARED.join(", ") + "]");
+    throw err;
+  }
   maxTok = Math.min(Math.max(parseInt(maxTok) || 16384, 256), MAX_TOKENS_CAP);
   // Only allowlisted tool types survive (currently just web_search). Anything else is dropped.
   let safeTools = null;

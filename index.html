@@ -8941,14 +8941,21 @@ function discardReviewDraft(){ S.reviewPending = null; _saveReviewPending(); S.e
 // three models that were never tested. A model earns `true` ONLY after it passes the frozen 20-row
 // benchmark in rag/MODEL_BENCHMARK.md. Anything absent from this map is treated as NOT cleared.
 var WRITER_BENCHMARK_CLEARED = {
-  "claude-opus-5": true,               // benchmarked 2026-07-26: 4.67/5, won 18/18 and 6/6. Now MODEL_MAIN.
+  // CLEARED, but ON NOTICE (Codex 2026-07-26). 24 rows of evidence (18/18 then 6/6) and it wins the
+  // judge comparisons — BUT in the Sonnet pilot it failed the ABSOLUTE criteria: it returned invalid JSON
+  // on one row (bar 3) and cited a non-existent "2026 AHA/ACC/ESC/WHF Universal Definition of Heart
+  // Failure" (the consensus is 2021 — bar 1, a fabricated source), plus a COPERNICUS metadata mismatch
+  // and an uncited TRED-HF claim. The reference model does NOT get an automatic pass for being the
+  // reference. It stays cleared only because it has the most evidence and something must be able to
+  // write; if those failures recur on the next full 20-row run, Opus itself needs a decision.
+  "claude-opus-5": true,
   "claude-opus-4-8": false,            // previous MODEL_MAIN — never benchmarked
-  "claude-sonnet-5": true,             // benchmarked 2026-07-26: 6/6 clean, 0 fabricated, 0 hard-fails,
-                                       // 1.8x faster than Opus (59s vs 104s median). Judge preferred Opus
-                                       // 6-0 (4.83 vs 4.00), but bars 5/6 are RELATIVE to the reference and
-                                       // so cannot fail it; on the ABSOLUTE bars Sonnet 5 beat Opus this run
-                                       // (Opus produced 1 invalid JSON and cited a non-existent "2026
-                                       // Universal Definition of Heart Failure" — it is 2021).
+  // PILOT ONLY — NOT CLEARED (Codex 2026-07-26). Sonnet 5 passed 6/6 rows on a 3-topic pilot with 0
+  // fabricated citations, 0 drug errors, 0 hard fails, at 1.8x Opus's speed. That is promising and
+  // nothing more: the frozen benchmark is TWENTY rows, and clearing a model on six is exactly the
+  // moved-goalpost this file exists to prevent. Flip to true only after a full 20-row pass judged on the
+  // ABSOLUTE criteria. Until then it cannot write, and the filtered chains fall back to Opus by themselves.
+  "claude-sonnet-5": false,
   "claude-opus-4-6": false,
   "claude-sonnet-4-6": false,
   "claude-sonnet-4-20250514": false,   // overload fallback
