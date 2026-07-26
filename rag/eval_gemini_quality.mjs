@@ -151,7 +151,7 @@ function editDistance(a, b, maxDiff = 2) {
 // Ordinary English/medical words that sit within 2 edits of a drug name and must NEVER be reported as
 // misspellings. Without this, "renal insult" was flagged as a misspelling of "insulin" — a false
 // positive that would wrongly fail a perfectly good talk. (Caught in the live eval, 2026-07-26.)
-const NOT_DRUGS = new Set(("insult insults result results consult consulted insulted assault statin statins station stations relation "
+const NOT_DRUGS = new Set(("hepatic hepatitis heparinized insult insults result results consult consulted insulted assault statin statins station stations relation "
  + "dilation dilated isolation elevation elevated deviation duration titration filtration hydration inhalation infusion effusion "
  + "infarct infection injection ingestion digestion congestion suggestion indication induction reduction retention resection "
  + "excretion secretion depletion deletion repletion completion delusion collusion illusion perfusion diffusion occlusion "
@@ -187,10 +187,44 @@ function findDrugMisspellings(text) {
     }
     if (hit && hit !== "morphology") { out.push(hit); continue; }
     if (hit === "morphology") continue;
-    // (b) drug-shaped but unknown → treat as a fabricated name
-    if (DRUG_SUFFIX.test(tok)) out.push({ found: tok, closest: "(no real drug matches this name)", distance: null });
+    // (b) drug-shaped but not in our list → CANDIDATE ONLY. It must be confirmed unknown by RxNorm
+    // before being reported; the hand-maintained list can never be complete, and treating "not in my
+    // list" as "fabricated" flagged real drugs (atenolol, vericiguat, cisplatin). See verifyDrugFlags.
+    if (DRUG_SUFFIX.test(tok)) out.push({ found: tok, closest: "(not in local list — needs RxNorm check)", distance: null, needsCheck: true });
   }
   return out;
+}
+
+// ── AUTHORITATIVE drug-name check via RxNorm (NLM, free, no key) ───────────────
+// The local list is a fast pre-filter, not the authority. Any candidate is confirmed against RxNorm
+// before it counts as a hard fail. FAILS OPEN: if RxNorm can't be reached we drop the flag rather than
+// accuse a real drug of being fabricated.
+const rxCache = new Map();
+let rxNext = 0;
+async function rxnormKnows(name) {
+  if (rxCache.has(name)) return rxCache.get(name);
+  const now = Date.now(), w = Math.max(0, rxNext - now); rxNext = Math.max(now, rxNext) + 120;
+  if (w) await new Promise(r => setTimeout(r, w));
+  try {
+    const r = await fetch(`https://rxnav.nlm.nih.gov/REST/rxcui.json?name=${encodeURIComponent(name)}&search=2`);
+    if (!r.ok) { rxCache.set(name, null); return null; }              // null = could not check
+    const j = await r.json();
+    const ids = j?.idGroup?.rxnormId || [];
+    const known = Array.isArray(ids) && ids.length > 0;
+    rxCache.set(name, known); return known;
+  } catch { rxCache.set(name, null); return null; }
+}
+
+// Returns only the flags that RxNorm confirms are NOT real drug names.
+async function verifyDrugFlags(cands) {
+  const confirmed = [];
+  for (const c of cands) {
+    const known = await rxnormKnows(c.found);
+    if (known === true) continue;                                     // real drug → not a misspelling
+    if (known === null) { if (!c.needsCheck) confirmed.push({ ...c, note: "RxNorm unreachable; flagged on local near-miss only" }); continue; }
+    confirmed.push({ ...c, closest: c.needsCheck ? "(unknown to RxNorm — not a real drug name)" : c.closest });
+  }
+  return confirmed;
 }
 
 // ── citation verification via Europe PMC (no captcha, no NCBI key needed) ──────
@@ -238,7 +272,7 @@ async function fetchWithTimeout(url, opts, label) {
     throw e;
   } finally { clearTimeout(to); stop(); process.stdout.write("\r" + " ".repeat(60) + "\r"); }
 }
-async function callGemini(system, user, maxTok = 8000) {
+async function callGemini(system, user, maxTok = 16384) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
   const body = { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }] }],
                  generationConfig: { maxOutputTokens: maxTok, temperature: 1 } };
@@ -252,7 +286,7 @@ async function callGemini(system, user, maxTok = 8000) {
   if (!txt && cand?.finishReason) throw new Error(`gemini returned no text (finishReason: ${cand.finishReason})`);
   return txt;
 }
-async function callClaude(system, user, maxTok = 8000, model = CLAUDE_MODEL) {
+async function callClaude(system, user, maxTok = 16384, model = CLAUDE_MODEL) {
   const r = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": CLAUDE_KEY, "anthropic-version": "2023-06-01" },
@@ -324,9 +358,12 @@ async function grade(style, raw) {
   soft.fabricated_pmids = fabricated;
   if (uncheckable) soft.uncheckable_pmids = uncheckable;
 
-  const bad = findDrugMisspellings(bodyText);
-  if (bad.length) for (const b of bad.slice(0, 5)) hard.push(`possible misspelled drug: "${b.found}" (closest: ${b.closest}, distance ${b.distance})`);
+  const cands = findDrugMisspellings(bodyText);
+  if (cands.length) process.stdout.write(`(RxNorm-checking ${cands.length} drug name${cands.length === 1 ? "" : "s"}) `);
+  const bad = await verifyDrugFlags(cands);
+  if (bad.length) for (const b of bad.slice(0, 6)) hard.push(`misspelled/fabricated drug: "${b.found}" → ${b.closest}${b.note ? " [" + b.note + "]" : ""}`);
   soft.drug_flags = bad.length;
+  soft.drug_candidates_prefiltered = cands.length;
 
   // guideline anchoring: did it name a society + year?
   soft.guideline_mentions = (bodyText.match(/\b(KDIGO|AHA\/ACC|ACC\/AHA|ADA|IDSA|ATS|ERS|AASLD|ACG|ASH|ASCO|ACR|AAN|SCCM|USPSTF|GOLD|ESC|EULAR|NCCN|AAAAI)\b/g) || []).length;
@@ -372,7 +409,7 @@ if (DRY) {
   const g = await grade("lecture", badTalk);
   console.log("\n  grading self-test on a deliberately bad talk:");
   for (const h of g.hard) console.log("    ✖ " + h);
-  const hasDrug = g.hard.some(h => /misspelled drug/.test(h));
+  const hasDrug = g.hard.some(h => /misspelled\/fabricated drug|misspelled drug/.test(h));
   const hasOrphan = g.hard.some(h => /inline marker \[7\]/.test(h));
   const hasFab = g.hard.some(h => /FABRICATED/.test(h)) || (g.soft.uncheckable_pmids > 0);
   console.log(`\n  detectors: drug-misspelling ${hasDrug ? "OK" : "FAILED"} · orphan-marker ${hasOrphan ? "OK" : "FAILED"} · fabricated-PMID ${hasFab ? "OK (or unchecked offline)" : "FAILED"}`);
