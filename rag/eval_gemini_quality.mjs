@@ -178,10 +178,17 @@ const CLAUDE_MODEL = "claude-opus-5";
 // A big lecture/boards JSON can take 60-120s, so these calls MUST have a visible heartbeat and a hard
 // timeout — otherwise a hung socket looks identical to "slow but working" and the run appears frozen.
 const CALL_TIMEOUT_MS = parseInt(argVal("--timeout", "240000"), 10);
+// Heartbeat prints on its OWN line (a \r-based one overwrote the row label and made progress
+// unreadable — which is what made a working run look frozen).
+let HB_ACTIVE = new Map();
 function heartbeat(label) {
   const t0 = Date.now();
-  const iv = setInterval(() => process.stdout.write(`\r    ${label} … ${Math.round((Date.now() - t0) / 1000)}s`), 5000);
-  return () => { clearInterval(iv); return Date.now() - t0; };
+  HB_ACTIVE.set(label, t0);
+  const iv = setInterval(() => {
+    const parts = [...HB_ACTIVE.entries()].map(([k, t]) => `${k} ${Math.round((Date.now() - t) / 1000)}s`);
+    process.stdout.write(`\r        waiting: ${parts.join(" · ")}      `);
+  }, 5000);
+  return () => { clearInterval(iv); HB_ACTIVE.delete(label); return Date.now() - t0; };
 }
 async function fetchWithTimeout(url, opts, label) {
   const ac = new AbortController();
@@ -335,29 +342,40 @@ const results = [];
 console.log(`Gemini quality eval — ${TOPICS_GOLD.length} topic(s) × ${STYLES.length} style(s)`);
 console.log(`  gemini: ${GEMINI_MODEL}   claude arm: ${RUN_CLAUDE ? CLAUDE_MODEL : "SKIPPED (no ANTHROPIC_API_KEY)"}   judge: ${RUN_JUDGE ? "on" : "off"}\n`);
 
+const TOTAL_ROWS = TOPICS_GOLD.length * STYLES.length;
+let rowNum = 0;
+const runStart = Date.now();
 for (const topic of TOPICS_GOLD) {
   for (const style of STYLES) {
     const system = style === "boards" ? BOARDS_PROMPT : LECTURE_PROMPT;
     const user = buildUser(topic, style);
     const row = { topic, style, gemini: null, claude: null };
-    process.stdout.write(`  ${topic} [${style}] … `);
+    rowNum++;
+    const eta = rowNum > 1 ? `  (elapsed ${Math.round((Date.now() - runStart) / 60000)}m, ~${Math.round(((Date.now() - runStart) / (rowNum - 1)) * (TOTAL_ROWS - rowNum + 1) / 60000)}m left)` : "";
+    console.log(`\n[${rowNum}/${TOTAL_ROWS}] ${topic} [${style}]${eta}`);
 
-    try {
+    // Both arms in PARALLEL — they're independent, so serializing them doubled wall-clock for nothing.
+    const geminiP = (async () => {
       const t0 = Date.now();
-      const raw = await callGemini(system, user);
-      const g = await grade(style, raw);
-      row.gemini = { ms: Date.now() - t0, hard: g.hard, soft: g.soft, raw_len: raw.length, raw };
-      process.stdout.write(`gemini ${g.hard.length ? "✖" + g.hard.length : "✓"} `);
-    } catch (e) { row.gemini = { error: e.message, hard: [`call failed: ${e.message}`], soft: {} }; process.stdout.write(`gemini ERR `); }
+      try { const raw = await callGemini(system, user); const g = await grade(style, raw);
+            return { ms: Date.now() - t0, hard: g.hard, soft: g.soft, raw_len: raw.length, raw, talk: g.talk }; }
+      catch (e) { return { ms: Date.now() - t0, error: e.message, hard: [`call failed: ${e.message}`], soft: {} }; }
+    })();
+    const claudeP = RUN_CLAUDE ? (async () => {
+      const t0 = Date.now();
+      try { const raw = await callClaude(system, user); const g = await grade(style, raw);
+            return { ms: Date.now() - t0, hard: g.hard, soft: g.soft, raw_len: raw.length, raw, talk: g.talk }; }
+      catch (e) { return { ms: Date.now() - t0, error: e.message, hard: [`call failed: ${e.message}`], soft: {} }; }
+    })() : Promise.resolve(null);
 
+    [row.gemini, row.claude] = await Promise.all([geminiP, claudeP]);
+    const fmt = (r) => !r ? "" : r.error ? `ERR (${String(r.error).slice(0, 60)})`
+      : `${r.hard.length ? "✖ " + r.hard.length + " hard-fail" + (r.hard.length > 1 ? "s" : "") : "✓ clean"} in ${Math.round(r.ms / 1000)}s`;
+    console.log(`        gemini: ${fmt(row.gemini)}`);
+    if (row.gemini?.hard?.length) for (const h of row.gemini.hard) console.log(`           ✖ ${h}`);
     if (RUN_CLAUDE) {
-      try {
-        const t0 = Date.now();
-        const raw = await callClaude(system, user);
-        const g = await grade(style, raw);
-        row.claude = { ms: Date.now() - t0, hard: g.hard, soft: g.soft, raw_len: raw.length, raw };
-        process.stdout.write(`claude ${g.hard.length ? "✖" + g.hard.length : "✓"}`);
-      } catch (e) { row.claude = { error: e.message, hard: [`call failed: ${e.message}`], soft: {} }; process.stdout.write(`claude ERR`); }
+      console.log(`        claude: ${fmt(row.claude)}`);
+      if (row.claude?.hard?.length) for (const h of row.claude.hard) console.log(`           ✖ ${h}`);
     }
 
     if (RUN_JUDGE && row.gemini?.talk !== null && row.claude && !row.claude.error && !row.gemini.error) {
@@ -376,11 +394,13 @@ for (const topic of TOPICS_GOLD) {
         row.judge = { winner: map(j.winner), gemini_accuracy: flip ? j.accuracy_B : j.accuracy_A,
                       claude_accuracy: flip ? j.accuracy_A : j.accuracy_B,
                       gemini_errors: flip ? j.errors_B : j.errors_A, claude_errors: flip ? j.errors_A : j.errors_B, why: j.why };
-        process.stdout.write(`  judge:${row.judge.winner}`);
-      } catch (e) { row.judge = { error: e.message }; }
+        console.log(`        judge: ${row.judge.winner} wins · accuracy gemini ${row.judge.gemini_accuracy}/5 vs claude ${row.judge.claude_accuracy}/5`);
+        for (const e of (row.judge.gemini_errors || []).filter(Boolean)) console.log(`           gemini medical error: ${e}`);
+      } catch (e) { row.judge = { error: e.message }; console.log(`        judge: ERR (${String(e.message).slice(0, 60)})`); }
     }
-    console.log("");
     results.push(row);
+    // Incremental save — a Ctrl-C (or a crash 18 rows in) must never throw away completed work.
+    try { writeFileSync("rag/eval_gemini_report.json", JSON.stringify({ partial: rowNum < TOTAL_ROWS, rows_done: rowNum, of: TOTAL_ROWS, results }, null, 2) + "\n"); } catch {}
   }
 }
 
