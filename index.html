@@ -5584,6 +5584,30 @@ async function verifyModelPmids(talk){
 // Excluding ")" from the match truncated them, and a truncated DOI 404s on Crossref, which would have
 // made verifyModelDois DELETE real Lancet references as fabricated. So: allow parens in the body, then
 // trim trailing punctuation, then drop a single unbalanced trailing ")" (the "(see doi.org/10.x/y)" case).
+// Do two article titles / journal names denote the same thing? Used ONLY to confirm a cited DOI really
+// is the paper the model claimed (identity), never to judge whether it supports a claim. (2026-07-26)
+var _TSTOP = {"a":1,"an":1,"the":1,"of":1,"in":1,"for":1,"and":1,"or":1,"with":1,"without":1,"versus":1,"vs":1,"on":1,"to":1,"after":1,"at":1,"as":1,"by":1,"from":1,"is":1,"are":1,"be":1,"study":1,"trial":1,"randomized":1,"randomised":1,"controlled":1,"placebo":1,"double":1,"blind":1,"phase":1,"patients":1,"results":1,"effect":1,"effects":1,"treatment":1,"therapy":1,"efficacy":1,"safety":1,"outcomes":1,"clinical":1};
+function _tWords(s){ return String(s==null?"":s).toLowerCase().replace(/[^a-z0-9]+/g," ").split(/\s+/).filter(function(w){ return w && w.length>2 && !_TSTOP[w]; }); }
+function _titleSimilar(a,b){
+  var A=_tWords(a), B=_tWords(b);
+  if(!A.length || !B.length) return 1;                       // nothing to compare → don't accuse
+  var setB={}; B.forEach(function(w){ setB[w]=1; });
+  var inter=0; A.forEach(function(w){ if(setB[w]) inter++; });
+  return inter / Math.min(A.length, B.length);
+}
+function _journalAgree(a,b){
+  var na=String(a||"").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").trim();
+  var nb=String(b||"").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").trim();
+  if(!na || !nb) return true;                                // unknown → don't accuse
+  if(na===nb || na.indexOf(nb)>=0 || nb.indexOf(na)>=0) return true;
+  var stop={"the":1,"of":1,"and":1,"for":1,"a":1,"an":1};
+  var key=function(s){ return s.split(/\s+/).filter(function(w){ return w && !stop[w]; }).map(function(w){ return w[0]; }).join(""); };
+  var ka=key(na), kb=key(nb);
+  if(ka.length>=2 && ka===kb) return true;                   // "N Engl J Med" vs "New England Journal of Medicine"
+  var ta=na.split(/\s+/), tb=nb.split(/\s+/), sb={}; tb.forEach(function(w){ sb[w]=1; });
+  var i2=0; ta.forEach(function(w){ if(sb[w]) i2++; });
+  return i2 / Math.min(ta.length, tb.length) >= 0.6;
+}
 function _extractDoi(r){
   if(!r) return "";
   var hay = [r.doi, r.url, r.source].map(function(x){ return String(x == null ? "" : x); }).join(" ");
@@ -5629,8 +5653,28 @@ async function verifyModelDois(talk){
   toCheck.forEach(function(x){
     var v = map[x.doi];
     if(v && v.ok){
+      // IDENTITY CHECK (Codex 2026-07-26): "this DOI resolves" is NOT "this DOI is the paper the model
+      // said it was". A model can cite a REAL DOI belonging to an unrelated article; overwriting our
+      // metadata with Crossref's would have silently relabelled the reference and handed it a trusted
+      // chip. So COMPARE what the model claimed against Crossref FIRST, and only promote on agreement.
+      var claimedTitle = String(x.ref.source || ""), claimedYear = parseInt(x.ref.year, 10) || null;
+      var claimedJournal = String(x.ref.society || "");
+      var mismatch = [];
+      if(claimedTitle && v.title && _titleSimilar(claimedTitle, v.title) < 0.5) mismatch.push("title");
+      if(claimedYear && v.year && Math.abs(claimedYear - v.year) > 1) mismatch.push("year");
+      if(claimedJournal && v.journal && !_journalAgree(claimedJournal, v.journal)) mismatch.push("journal");
+      if(mismatch.length >= 1 && x.ref.id != null){
+        // The DOI is real but points at something else than claimed → the citation is wrong.
+        dropIds.push(String(x.ref.id));
+        console.warn("Dropped ref " + x.ref.id + ": DOI " + x.doi + " is a real paper but its " +
+          mismatch.join("/") + " disagrees with the cited claim (\"" + claimedTitle.slice(0,60) + "\" vs \"" + String(v.title).slice(0,60) + "\")");
+        return;
+      }
+      // Agreement → this is DOI IDENTITY verified: the reference really is the paper it says it is.
+      // It is NOT a check that the paper supports the specific claim — verifyCitations does that
+      // separately against abstracts. Do not conflate the two in the label.
       x.ref.src_verified = "crossref";
-      if(v.title) x.ref.source = v.title;
+      if(v.title) x.ref.source = v.title;                    // adopt canonical metadata AFTER agreeing
       if(v.year) x.ref.year = v.year;
       if(v.journal) x.ref.society = v.journal;
       x.ref.url = "https://doi.org/" + x.doi;
@@ -5799,7 +5843,7 @@ function _confidenceOf(r, retrieved){
   var _srcKey = String(r.source || "").trim().toLowerCase();
   if(_srcKey && retrieved.titles[_srcKey]) return ["high", "retrieved"];
   if(r.src_verified === "pubmed") return ["high", "pubmed_verified"];             // PMID resolved on NCBI eutils
-  if(r.src_verified === "crossref") return ["high", "doi_verified"];               // DOI resolved on Crossref (2026-07-26)
+  if(r.src_verified === "crossref") return ["high", "doi_identity_verified"];      // DOI resolves AND its title/journal/year match the citation. NOT a claim check (2026-07-26)
   if(r.src_verified === "paste") return ["medium", "paste_asserted"];             // identifier verbatim in paste, PubMed unreachable — don't punish a blip
   if(r.pmid || _u) return ["medium", "identifier_only"];                          // has a link the reader can verify, but no session grounding
   return ["low", "model_knowledge"];                                             // nothing backs it -> no chip
@@ -6799,7 +6843,7 @@ async function generate(){
     // unless one of those is violated. No stylistic rewriting, no completeness expansion. The medical
     // gate is UNCHANGED: the review still always runs, still retries once, and still WITHHOLDS the draft
     // if it cannot finish. PubMed citation verification continues in the background after render.
-    var SAFETY_CRITIQUE_PROMPT = "You are a senior IM attending doing a FOCUSED MEDICAL-SAFETY review of a chalk talk. You are NOT editing for style, completeness, depth, or polish — ignore all of that. Check ONLY these five things, in order:\n\n(1) NUMBERS AND DOSES (highest priority): every numeric threshold, dose, rate, target and cutoff (correction rates, drug doses, BP targets, eGFR/potassium cutoffs). Re-derive each from the GUIDELINE / SOURCE CONTEXT if provided, otherwise from first principles. A wrong number here can hurt a patient.\n(2) DRUG NAMES: verify every drug name against canonical INN spelling. Fix e.g. rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any name that is not a real drug MUST be corrected; if unsure of the generic, use the brand name.\n(3) GUIDELINE ATTRIBUTION: where the talk names a society/year recommendation, confirm it matches the GUIDELINE / SOURCE CONTEXT in substance, and that a conditional or low-certainty recommendation is not presented in the same confident voice as a strong one.\n(4) CITATION VALIDITY: an inline marker like [1] must appear ONLY where a source in the references array GENUINELY SUPPORTS that specific claim. Remove or re-point MIS-ATTRIBUTED markers. Do NOT add citations, and do NOT flag a bullet merely for lacking one — an uncited bullet is fine.\n(5) INTERNAL CONTRADICTIONS: two statements that disagree about the same drug, mechanism, indication, or number. Reconcile to the correct one.\n\nDo NOT rewrite prose you merely dislike. Do NOT add sections, lengthen bullets, or fill in fields that are simply thin or empty — that is out of scope for this review.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF none of the five checks above found a problem (thin or unpolished content is NOT a problem here):\n{\"verdict\":\"clean\"}\n\nIF any of the five found a real problem, return the FULL corrected chalk talk in the EXACT same JSON schema as the draft with those fixes applied, changing nothing else. Do NOT include a verdict field in that case.";
+    var SAFETY_CRITIQUE_PROMPT = "You are a senior IM attending doing a FOCUSED MEDICAL-SAFETY review of a chalk talk. You are NOT editing for style, completeness, depth, or polish — ignore all of that. Check ONLY these eight things, in order:\n\n(1) NUMBERS AND DOSES (highest priority): every numeric threshold, dose, rate, target and cutoff (correction rates, drug doses, BP targets, eGFR/potassium cutoffs). Re-derive each from the GUIDELINE / SOURCE CONTEXT if provided, otherwise from first principles. A wrong number here can hurt a patient.\n(2) DRUG NAMES: verify every drug name against canonical INN spelling. Fix e.g. rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any name that is not a real drug MUST be corrected; if unsure of the generic, use the brand name.\n(3) GUIDELINE ATTRIBUTION: where the talk names a society/year recommendation, confirm it matches the GUIDELINE / SOURCE CONTEXT in substance, and that a conditional or low-certainty recommendation is not presented in the same confident voice as a strong one.\n(4) CITATION VALIDITY: an inline marker like [1] must appear ONLY where a source in the references array GENUINELY SUPPORTS that specific claim. Remove or re-point MIS-ATTRIBUTED markers. Do NOT add citations, and do NOT flag a bullet merely for lacking one — an uncited bullet is fine.\n(5) INTERNAL CONTRADICTIONS: two statements that disagree about the same drug, mechanism, indication, or number. Reconcile to the correct one.\n(6) PHYSIOLOGY AND PHARMACOLOGY ERRORS: any mechanism stated wrongly — wrong receptor, transporter, or site of action, an effect stated in the wrong direction, a mechanism attributed to the wrong drug class, or a pathophysiologic step that does not follow. A wrong mechanism gets taught and repeated, so this is safety, not style.\n(7) OUTDATED TREATMENT RECOMMENDATIONS: a regimen, target, or first-line agent that current major society guidance has since superseded. If the talk teaches an old standard as current, correct it and name the guideline.\n(8) WRONG LANDMARK-TRIAL ATTRIBUTION: a trial named as showing something it did not show, a finding attributed to the wrong trial, or a misstated trial population, endpoint, or effect size. If you cannot confirm an attribution, REMOVE the trial name rather than leave it wrong.\n\nDo NOT rewrite prose you merely dislike. Do NOT add sections, lengthen bullets, or fill in fields that are simply thin or empty — that is out of scope. Every check above is a MEDICAL-SAFETY check, not a style check: fix what is wrong and change nothing else.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF none of the eight checks above found a problem (thin or unpolished content is NOT a problem here):\n{\"verdict\":\"clean\"}\n\nIF any of the eight found a real problem, return the FULL corrected chalk talk in the EXACT same JSON schema as the draft with those fixes applied, changing nothing else. Do NOT include a verdict field in that case.";
 
     // Local completeness gate: the targeted review deliberately won't WRITE missing content, so if the
     // draft is actually missing required fields we must use the full critique (which does). Keeps the

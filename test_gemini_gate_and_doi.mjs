@@ -67,5 +67,31 @@ ok(extractDoi({ url: "see https://doi.org/10.1016/S2213-2600(21)00097-7)" }) ===
 ok(extractDoi({ url: "https://www.kidney.org/guidelines" }) === "", "a society landing page yields no DOI (nothing to verify)");
 ok(extractDoi({}) === "" && extractDoi(null) === "", "missing/!null input is safe");
 
+
+// ── B3. DOI IDENTITY: a real DOI for the WRONG paper must be dropped, not relabelled ──
+// Crossref confirming "this DOI exists" is not "this DOI is the paper the model cited". Overwriting our
+// metadata with Crossref's would silently relabel an unrelated article and award it a trusted chip.
+ok(/IDENTITY CHECK \(Codex 2026-07-26\)/.test(html), "the identity check is present and documented");
+ok(/_titleSimilar\(claimedTitle, v\.title\) < 0\.5/.test(vmdSrc), "compares the model's claimed TITLE against Crossref's");
+ok(/Math\.abs\(claimedYear - v\.year\) > 1/.test(vmdSrc), "compares the claimed YEAR against Crossref's");
+ok(/!_journalAgree\(claimedJournal, v\.journal\)/.test(vmdSrc), "compares the claimed JOURNAL against Crossref's");
+const idxMismatch = vmdSrc.indexOf("mismatch.length >= 1"), idxAdopt = vmdSrc.indexOf('x.ref.src_verified = "crossref"');
+ok(idxMismatch > 0 && idxAdopt > idxMismatch, "the comparison happens BEFORE adopting Crossref metadata (no silent relabelling)");
+ok(/if\(r\.src_verified === "crossref"\) return \["high", "doi_identity_verified"\]/.test(html),
+   'the label is "doi_identity_verified" — it does NOT claim the source supports the claim');
+ok(!/"doi_verified"/.test(html), "the misleading 'doi_verified' label is gone");
+
+// the comparison helpers must not accuse when data is missing (fail safe, not fail loud)
+const hctx = {}; vm.createContext(hctx);
+vm.runInContext(html.slice(html.indexOf("var _TSTOP ="), html.indexOf("function _extractDoi(")), hctx);
+const tSim = vm.runInContext("_titleSimilar", hctx), jAgree = vm.runInContext("_journalAgree", hctx);
+ok(tSim("", "Anything") === 1 && tSim("Anything", "") === 1, "missing title → similarity 1 (never accuse on absent data)");
+ok(jAgree("", "NEJM") === true && jAgree("NEJM", "") === true, "missing journal → agrees (never accuse on absent data)");
+ok(tSim("Dapagliflozin in Patients with Heart Failure and Reduced Ejection Fraction",
+        "Dapagliflozin in patients with heart failure and reduced ejection fraction") >= 0.5, "same paper → similar");
+ok(tSim("Tolvaptan for Hyponatremia", "Colchicine for Acute Pericarditis") < 0.5, "unrelated papers → NOT similar (would be dropped)");
+ok(jAgree("N Engl J Med", "New England Journal of Medicine") === true, "journal abbreviation matches full name");
+ok(jAgree("Blood", "BMJ") === false, "different journals disagree");
+
 console.log("\n" + (failures === 0 ? "✔ GEMINI GATE + DOI TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

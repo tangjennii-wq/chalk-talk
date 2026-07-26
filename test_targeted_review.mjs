@@ -14,6 +14,9 @@ ok(i > 0, "SAFETY_CRITIQUE_PROMPT exists");
 const promptSrc = html.slice(i, html.indexOf("\n", i));
 for (const [needle, label] of [
   ["NUMBERS AND DOSES", "numbers/doses check present"],
+  ["PHYSIOLOGY AND PHARMACOLOGY", "physiology/pharmacology check present (Codex 2026-07-26)"],
+  ["OUTDATED TREATMENT RECOMMENDATIONS", "outdated-treatment check present (Codex 2026-07-26)"],
+  ["WRONG LANDMARK-TRIAL ATTRIBUTION", "landmark-trial attribution check present (Codex 2026-07-26)"],
   ["DRUG NAMES", "drug-name check present"],
   ["GUIDELINE ATTRIBUTION", "guideline-attribution check present"],
   ["CITATION VALIDITY", "citation-validity check present"],
@@ -22,6 +25,8 @@ for (const [needle, label] of [
 ok(/verdict\\":\\"clean|verdict\\\":\\\"clean|verdict\W{1,4}clean/.test(promptSrc), "targeted review can return the cheap {verdict:clean} fast path");
 ok(/do NOT rewrite prose|Do NOT rewrite prose/i.test(promptSrc), "targeted review is told NOT to do stylistic rewriting (the slow part)");
 ok(/do NOT add sections|not add sections/i.test(promptSrc), "targeted review is told NOT to expand completeness");
+ok(/MEDICAL-SAFETY check, not a style check/.test(promptSrc), "the broadened checks are framed as safety, not style");
+ok(/eight things/.test(promptSrc) && /eight checks/.test(promptSrc), "the count is consistent after broadening (eight checks)");
 
 // ── 2) prompt SELECTION: only concise+lecture+complete gets the targeted review ─
 const selSrc = html.match(/var _useTargetedReview[\s\S]{0,300}?_draftIsComplete\(draftTalk\);/);
