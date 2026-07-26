@@ -1,8 +1,9 @@
 name: Chalk Talk safety tests
 
-# NOTE: a sibling copy of this workflow lives on the `free-gemini-tier` branch with a different
-# test-suite list. Reconcile the two into one workflow when the branches are consolidated
-# (citation-coverage adds: rag validator syntax check, PubMed-verify suite, landmark-validator suite).
+# Reconciled workflow (branch consolidation 2026-07-26): the union of the citation-coverage and
+# free-gemini-tier copies. citation-coverage contributed the rag ESM syntax check, the PubMed
+# trust-but-verify suite and the landmark-validator suite; free-gemini-tier contributed the Gemini
+# funnel / withheld-review safety suite. All of them run here — this is now the single copy.
 
 on:
   push:
@@ -34,7 +35,7 @@ jobs:
           if(bad) process.exit(1);
           '
 
-      - name: rag ESM syntax check (validator + lib)
+      - name: rag ESM syntax check (validator + lib + ingest/reconcile)
         run: |
           for f in rag/validator_lib.mjs rag/validate_landmark_pmids.mjs rag/ingest_landmarks.mjs rag/reconcile_landmarks.mjs; do
             node --check "$f" && echo "ok: $f"
@@ -61,3 +62,6 @@ jobs:
 
       - name: Landmark validator suite (title thresholds + Europe PMC/Crossref agreement)
         run: node test_landmark_validator.mjs
+
+      - name: Gemini funnel + withheld-review safety/provenance suite
+        run: node test_gemini_safety.mjs
