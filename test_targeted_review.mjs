@@ -24,12 +24,28 @@ ok(/do NOT rewrite prose|Do NOT rewrite prose/i.test(promptSrc), "targeted revie
 ok(/do NOT add sections|not add sections/i.test(promptSrc), "targeted review is told NOT to expand completeness");
 
 // ── 2) prompt SELECTION: only concise+lecture+complete gets the targeted review ─
-const selSrc = html.match(/var _useTargetedReview[\s\S]{0,400}?LECTURE_CRITIQUE_PROMPT\);/);
+const selSrc = html.match(/var _useTargetedReview[\s\S]{0,300}?_draftIsComplete\(draftTalk\);/);
 ok(!!selSrc, "prompt-selection block found");
-const sel = selSrc[0];
+const sel = selSrc ? selSrc[0] : "";
 ok(/S\.style !== "boards"/.test(sel), "boards NEVER uses the targeted review (keeps full board verification)");
 ok(/S\.depth === "concise"/.test(sel), "only Concise uses the targeted review (Detailed keeps the full review)");
 ok(/_draftIsComplete\(draftTalk\)/.test(sel), "an INCOMPLETE draft falls back to the full critique (which writes missing content)");
+ok(/!_useAsync/.test(sel), "async path is excluded (its full critique spec was already submitted server-side)");
+ok(/critiqueSystem = SAFETY_CRITIQUE_PROMPT/.test(html), "the targeted prompt is actually assigned to critiqueSystem");
+
+// ── 2b) REGRESSION: the var-hoisting bug that made this whole feature dead code ──
+// _useTargetedReview called _draftIsComplete(draftTalk) ~60 lines BEFORE `var draftTalk` was declared.
+// Hoisting made it undefined, _draftIsComplete(undefined) returned false, and the targeted review never
+// ran once. Assert the declaration precedes the use. (Same bug class as the _draftWebSearched hoist.)
+const iDraftDecl = html.indexOf("var draftTalk = JSON.parse(fixJSON(txt));");
+const iUse = html.indexOf("var _useTargetedReview");
+ok(iDraftDecl > 0 && iUse > 0, "found both the draftTalk declaration and the _useTargetedReview use");
+ok(iDraftDecl < iUse, "draftTalk is DECLARED BEFORE _useTargetedReview reads it (no var-hoisting undefined)");
+// critiqueSystem must still hold a valid prompt at the async submit, which happens before the draft
+const iCritDecl = html.indexOf("var critiqueSystem =");
+const iAsyncSubmit = html.indexOf("critique: { sys: critiqueSystem");
+ok(iCritDecl > 0 && iAsyncSubmit > iCritDecl, "critiqueSystem is initialised before the async submit sends it");
+ok(iAsyncSubmit < iUse, "async submit happens before the targeted swap → async is always FULLY reviewed");
 
 // ── 3) the local completeness gate behaves ─────────────────────────────────────
 function loadCompleteness(style) {
@@ -62,6 +78,22 @@ ok(/S\.genPhase = "reviewing"/.test(html), "two-phase wait signal still fires be
 const gi = html.indexOf('S.genPhase = "reviewing"'), ci = html.indexOf("var critiqueOK");
 ok(gi > 0 && ci > gi, "phase signal comes BEFORE the review loop");
 ok(/S\.citationAuditPending = true/.test(html), "background PubMed citation audit still runs after render");
+
+// ── 5) audit must not overwrite a DIFFERENT talk (identity guard, not just genId) ─
+// S.genId is bumped only by generate() and the async resume, so opening a talk from the Library, a
+// shared talk, or an instant depth swap left it unchanged — and the in-flight audit then replaced the
+// talk on screen with the PREVIOUS talk's audited content. Found independently by two audits.
+const auditBlock = html.slice(html.indexOf("async function runBackgroundAudit"), html.indexOf("async function runBackgroundAudit") + 1400);
+ok(auditBlock.includes("if(S.talk !== _talkBeforeAudit) return;"),
+   "background audit bails when S.talk is no longer the talk it audited (identity guard)");
+const iIdent = auditBlock.indexOf("S.talk !== _talkBeforeAudit"), iAssign = auditBlock.indexOf("S.talk = auditedTalk");
+ok(iIdent > 0 && iAssign > iIdent, "the identity guard runs BEFORE the audit result is assigned");
+
+// ── 6) cancel flag: stale check must precede consuming the shared S.genCancelled ──
+// S.genCancelled is one global. When a superseded generation consumed+reset it first, a NEWER
+// generation never saw the user's Cancel and rendered + charged for a cancelled talk.
+const cancelIdx = html.indexOf("if (_myGenId !== S.genId) return;\n    if (S.genCancelled) { S.genCancelled = false; return; }");
+ok(cancelIdx > 0, "stale-gen check comes BEFORE consuming S.genCancelled (a stale gen can't eat a newer gen's cancel)");
 
 console.log("\n" + (failures === 0 ? "✔ TARGETED REVIEW TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

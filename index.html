@@ -1227,7 +1227,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-02";
+var BUILD_ID = "2026-07-26-03";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6704,10 +6704,14 @@ async function generate(){
         return true;
       }catch(_){ return false; }
     }
-    var _useTargetedReview = (S.style !== "boards") && (S.depth === "concise") && _draftIsComplete(draftTalk);
-    var critiqueSystem = (S.style === "boards") ? BOARDS_CRITIQUE_PROMPT
-                       : (_useTargetedReview ? SAFETY_CRITIQUE_PROMPT : LECTURE_CRITIQUE_PROMPT);
-    if(_useTargetedReview) console.info("Concise: targeted safety review (numbers/drugs/guidelines/citations/contradictions).");
+    // Default to the FULL critique. The targeted swap can only be decided once the draft exists, and
+    // it happens further down (search "_useTargetedReview") — critiqueSystem must already hold a valid
+    // prompt HERE because the async submit at the `critique:` field below sends it before any draft
+    // exists. Defaulting to the full review means the async path is always fully reviewed.
+    // (Bug fix 2026-07-26: this line previously read `_draftIsComplete(draftTalk)` with draftTalk
+    // declared ~60 lines LATER — var-hoisting made it undefined, so the targeted review never ran at
+    // all and every Concise talk still paid the full whole-talk re-emission.)
+    var critiqueSystem = (S.style === "boards") ? BOARDS_CRITIQUE_PROMPT : LECTURE_CRITIQUE_PROMPT;
     // Give the critic the SELECTED difficulty + the calibration rubric so it can verify the item
     // sits at the target level and repair it if not (Jenni 2026-07-21). Flows into both the async
     // Worker submit and the synchronous critique call below.
@@ -6775,6 +6779,15 @@ async function generate(){
     // so the critic reviews content rather than tripping on a mislabeled choice or a missing difficulty field.
     if(S.style === "boards" && draftTalk && draftTalk.question) _repairBoardQuestionInPlace(draftTalk.question, boardsDifficulty());
 
+    // TARGETED SAFETY REVIEW swap — now that draftTalk actually EXISTS, decide whether this Concise
+    // lecture qualifies for the scoped review. Sync path only: the async path already submitted the full
+    // critique spec to the Worker above, and we do not downgrade a review that is already server-side.
+    var _useTargetedReview = !_useAsync && (S.style !== "boards") && (S.depth === "concise") && _draftIsComplete(draftTalk);
+    if (_useTargetedReview) {
+      critiqueSystem = SAFETY_CRITIQUE_PROMPT;
+      console.info("Concise: targeted safety review (numbers/drugs/guidelines/citations/contradictions).");
+    }
+
     var critiqueInput = critiquePrefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
     // Phase → REVIEWING (Jenni 2026-07): the draft is in hand; the AI safety-review now runs. Signal it
@@ -6808,8 +6821,12 @@ async function generate(){
         console.warn("Review attempt " + (_cAtt+1) + " failed:", critErr && critErr.message);
       }
     }
-    if (S.genCancelled) { S.genCancelled = false; return; }
+    // ORDER MATTERS (bug fix 2026-07-26): the stale check MUST come first. S.genCancelled is a single
+    // global; when a superseded generation reached the cancel check first it CONSUMED and reset the flag,
+    // so a newer generation never saw the user's Cancel and went on to render + charge for a talk the
+    // user had explicitly cancelled. Only the current generation may consume the flag.
     if (_myGenId !== S.genId) return;
+    if (S.genCancelled) { S.genCancelled = false; return; }
     if (!critiqueOK) {
       // MEDICAL-SAFETY WITHHOLD (Jenni 2026-07 user spec): the review pass could not finish. Preserve the
       // draft privately and show the "review couldn't finish" card — do NOT render it as a normal talk,
@@ -6941,6 +6958,12 @@ async function generate(){
       try {
         var auditedTalk = await verifyCitations(await verifyModelPmids(_talkBeforeAudit));
         // Don't apply the audit result if the user has navigated away or started a new gen.
+        // IDENTITY check, not just genId (bug fix 2026-07-26): S.genId is bumped ONLY by generate() and
+        // the async resume, so opening a different talk from the Library (loadSavedTalk), loading a
+        // shared talk, or an instant depth-variant swap all left genId unchanged — and this closure then
+        // overwrote the talk now on screen with the PREVIOUS talk's audited content (wrong medical
+        // content, silently, tens of seconds later). Same guard the proofread path already uses.
+        if(S.talk !== _talkBeforeAudit) return;
         if(_auditTargetGenId !== S.genId) return;
         if(!S.talk) return;
         // Count differences in reference list as a proxy for "citations were modified."
