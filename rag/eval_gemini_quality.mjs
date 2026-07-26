@@ -81,10 +81,17 @@ function extractVarString(name) {
   while (j < html.length) { if (html[j] === "\\") j += 2; else if (html[j] === "'") break; else j++; }
   return vm.runInNewContext(html.slice(start, j + 1));   // evaluate the JS string literal
 }
+// Extract a top-level declaration. Brace-COUNTING is unsafe here: fixJSON's own comments contain a
+// literal "}" ("Truncate at the LAST `}`"), which throws the depth count off and silently truncates the
+// extraction. Every target is declared at column 0, so key on the first column-0 "}" / "};" instead,
+// and only fall back to counting if that isn't found. (2026-07-26)
 function extractBlock(startRe, name) {
   const m = html.match(startRe);
   if (!m) throw new Error(`could not find ${name}`);
-  const i = m.index; let s = html.indexOf("{", i), d = 0, j = s;
+  const i = m.index;
+  const endM = /\n\};?/.exec(html.slice(i));
+  if (endM) return html.slice(i, i + endM.index + endM[0].length);
+  let s = html.indexOf("{", i), d = 0, j = s;
   for (; j < html.length; j++) { if (html[j] === "{") d++; else if (html[j] === "}") { d--; if (d === 0) break; } }
   return html.slice(i, j + 1);
 }
@@ -95,6 +102,10 @@ const GET_GL_SRC = extractBlock(/^function getGuidelinesForTopic\(/m, "getGuidel
 const TOPICS_SRC = extractBlock(/var TOPICS = /, "TOPICS");
 const VALIDATE_SRC = extractBlock(/^function validateBoardQuestion\(/m, "validateBoardQuestion")
                    + "\n" + extractBlock(/^function _boardHardErrors\(/m, "_boardHardErrors");
+// The app repairs slightly-off model JSON with fixJSON() before parsing (models routinely emit a
+// preamble, a trailing postscript, or ``` fences). Grading with a bare JSON.parse measured something
+// production never sees and scored valid talks as "invalid JSON". Use the REAL repair. (2026-07-26)
+const FIXJSON_SRC = extractBlock(/^function fixJSON\(/m, "fixJSON");
 
 // sandbox with the real guideline data + matcher + board validator.
 // guidelines.json is wrapped as {schema_version, generated, note, specialties}; unwrap exactly the way
@@ -104,9 +115,10 @@ const _glRaw = JSON.parse(readFileSync("guidelines.json", "utf8"));
 const GUIDELINES = (_glRaw && _glRaw.specialties) ? _glRaw.specialties : _glRaw;
 const sandbox = { GUIDELINES, console, S: { boardsDifficulty: 4 } };
 vm.createContext(sandbox);
-vm.runInContext(`${TOPICS_SRC}\n${BOARDS_DIFFICULTY_SRC}\n${GET_GL_SRC}\n${VALIDATE_SRC}`, sandbox);
+vm.runInContext(`${TOPICS_SRC}\n${BOARDS_DIFFICULTY_SRC}\n${GET_GL_SRC}\n${VALIDATE_SRC}\n${FIXJSON_SRC}`, sandbox);
 const getGuidelinesForTopic = (t) => vm.runInContext("getGuidelinesForTopic", sandbox)(t);
 const validateBoardQuestion = (q) => vm.runInContext("validateBoardQuestion", sandbox)(q);
+const fixJSON = (s) => vm.runInContext("fixJSON", sandbox)(s);
 const BOARDS_DIFF = vm.runInContext("BOARDS_DIFFICULTY", sandbox);
 
 // ── canonical drug list for misspelling detection ──────────────────────────────
@@ -128,29 +140,55 @@ const DRUGS = ("rivaroxaban apixaban edoxaban dabigatran clopidogrel ticagrelor 
  + "ozanimod mirikizumab risankizumab guselkumab abrocitinib baricitinib denosumab romosozumab teriparatide abaloparatide "
  + "zoledronic alendronate risedronate raloxifene varenicline bupropion naltrexone buprenorphine methadone").split(/\s+/);
 const DRUGSET = new Set(DRUGS);
-function editDistance(a, b) {
-  const m = a.length, n = b.length; if (Math.abs(m - n) > 2) return 9;
+function editDistance(a, b, maxDiff = 2) {
+  const m = a.length, n = b.length; if (Math.abs(m - n) > maxDiff) return 9;
   const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
   for (let j = 0; j <= n; j++) dp[0][j] = j;
   for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++)
     dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
   return dp[m][n];
 }
-// A token that is 1-2 edits from a canonical drug but is not itself a real word we know = likely misspelling.
+// Ordinary English/medical words that sit within 2 edits of a drug name and must NEVER be reported as
+// misspellings. Without this, "renal insult" was flagged as a misspelling of "insulin" — a false
+// positive that would wrongly fail a perfectly good talk. (Caught in the live eval, 2026-07-26.)
+const NOT_DRUGS = new Set(("insult insults result results consult consulted insulted assault statin statins station stations relation "
+ + "dilation dilated isolation elevation elevated deviation duration titration filtration hydration inhalation infusion effusion "
+ + "infarct infection injection ingestion digestion congestion suggestion indication induction reduction retention resection "
+ + "excretion secretion depletion deletion repletion completion delusion collusion illusion perfusion diffusion occlusion "
+ + "adherence adherent apparent aberrant abstinent abundant abnormal albumin albuminuria bilirubin globulin insulinoma "
+ + "melanoma lymphoma sarcoma carcinoma glaucoma edema anemia ischemia uremia acidemia alkalemia bacteremia viremia "
+ + "creatinine cytokine histamine dopamine adenosine guanine thiamine melatonin serotonin oxytocin calcitonin somatostatin").split(/\s+/));
+// Drug-class SUFFIXES (USAN stems). A token carrying one of these is claiming to be a drug, so if it
+// isn't a real one it's a fabrication — this catches badly-mangled invented names that edit-distance
+// misses entirely (e.g. "rivarelbaxaban" is 3 edits from rivaroxaban, past any sane distance cutoff,
+// yet it is exactly the fabrication the prompt warns about). (2026-07-26)
+const DRUG_SUFFIX = /(aban|gliflozin|glutide|tinib|ciclib|mab|nacog|pril|prilat|sartan|statin|conazole|azole|mycin|micin|cillin|penem|floxacin|dipine|olol|parin|vaptan|prazole|setron|triptan|gliptin|glinide|sentan|ciguat|mustine|rubicin|platin|taxel|tecan|virine|vudine|tegravir|previr|buvir|asvir)$/;
+// Known non-drug words that legitimately end in a drug-ish stem and must not be flagged.
+const SUFFIX_OK = new Set(["control", "alcohol", "cortisol", "protocol", "phenol", "menthol", "sorbitol", "mannitol", "ethanol", "methanol", "glycerol", "cholesterol", "insulin"]);
+
+// Two independent detectors: (a) near-miss of a canonical name, (b) drug-shaped token that is not a
+// real drug. Either one indicates a name a reader could not safely prescribe from.
 function findDrugMisspellings(text) {
   const out = [];
   const toks = new Set(String(text).toLowerCase().match(/[a-z]{6,}/g) || []);
   for (const tok of toks) {
-    if (DRUGSET.has(tok)) continue;
+    if (DRUGSET.has(tok) || NOT_DRUGS.has(tok) || SUFFIX_OK.has(tok)) continue;
+    if (NOT_DRUGS.has(tok.replace(/(s|ed|ing|es)$/, ""))) continue;   // plural/inflected forms of real words
+    if (DRUGSET.has(tok.replace(/s$/, ""))) continue;                  // plural of a real drug
+    // (a) near-miss of a canonical INN
+    let hit = null;
     for (const d of DRUGS) {
-      const dist = editDistance(tok, d);
-      if (dist > 0 && dist <= 2 && Math.abs(tok.length - d.length) <= 2) {
-        // guard: skip legitimate morphology (plural / adjectival / shared stems)
-        if (tok === d + "s" || tok === d.replace(/e$/, "") + "es") break;
-        out.push({ found: tok, closest: d, distance: dist });
-        break;
+      const maxDist = tok.length >= 12 ? 3 : 2;                        // longer names tolerate more drift
+      const dist = editDistance(tok, d, maxDist);
+      if (dist > 0 && dist <= maxDist && Math.abs(tok.length - d.length) <= 3) {
+        if (tok === d + "s" || tok === d.replace(/e$/, "") + "es") { hit = "morphology"; break; }
+        hit = { found: tok, closest: d, distance: dist }; break;
       }
     }
+    if (hit && hit !== "morphology") { out.push(hit); continue; }
+    if (hit === "morphology") continue;
+    // (b) drug-shaped but unknown → treat as a fabricated name
+    if (DRUG_SUFFIX.test(tok)) out.push({ found: tok, closest: "(no real drug matches this name)", distance: null });
   }
   return out;
 }
@@ -240,8 +278,12 @@ const REQUIRED_BOARDS = ["title", "question", "key_point", "board_pearls", "visu
 async function grade(style, raw) {
   const hard = [], soft = {};
   let talk = null;
-  try { talk = JSON.parse(stripFences(raw)); }
-  catch (e) { hard.push(`invalid JSON: ${e.message}`); return { hard, soft, talk: null }; }
+  // Parse the way PRODUCTION does: fixJSON() first, bare parse only as a fallback.
+  try { talk = JSON.parse(fixJSON(raw)); }
+  catch (e1) {
+    try { talk = JSON.parse(stripFences(raw)); }
+    catch (e2) { hard.push(`invalid JSON even after the app's fixJSON(): ${e1.message}`); return { hard, soft, talk: null }; }
+  }
 
   for (const f of (style === "boards" ? REQUIRED_BOARDS : REQUIRED_LECTURE))
     if (talk[f] == null) hard.push(`missing required field: ${f}`);
@@ -387,8 +429,10 @@ for (const topic of TOPICS_GOLD) {
           + "(4) citation honesty (no claim attributed to a source that would not support it). Ignore formatting and length. "
           + 'Reply ONLY as JSON: {"winner":"A"|"B"|"tie","accuracy_A":1-5,"accuracy_B":1-5,"errors_A":[""],"errors_B":[""],"why":""}. '
           + "List any factually WRONG medical statement in errors_*.";
-        const jr = await callClaude(judgeSys, `TOPIC: ${topic} (${style})\n\n--- ARTIFACT A ---\n${flip ? B : A}\n\n--- ARTIFACT B ---\n${flip ? A : B}`, 2000);
-        const j = JSON.parse(stripFences(jr));
+        // 2000 tokens truncated the judge's JSON (its errors[] arrays are long) → every judge row
+        // failed to parse. Give it room and repair with fixJSON like everything else. (2026-07-26)
+        const jr = await callClaude(judgeSys, `TOPIC: ${topic} (${style})\n\n--- ARTIFACT A ---\n${flip ? B : A}\n\n--- ARTIFACT B ---\n${flip ? A : B}`, 6000);
+        let j; try { j = JSON.parse(fixJSON(jr)); } catch { j = JSON.parse(stripFences(jr)); }
         // de-randomize back to model names
         const map = (w) => w === "tie" ? "tie" : ((w === "A") === !flip ? "gemini" : "claude");
         row.judge = { winner: map(j.winner), gemini_accuracy: flip ? j.accuracy_B : j.accuracy_A,
