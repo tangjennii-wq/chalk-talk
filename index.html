@@ -1227,7 +1227,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-03";
+var BUILD_ID = "2026-07-26-04";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3673,6 +3673,10 @@ async function loadPublicTalkByToken(token){
     }
     var data = await res.json();
     if(!data || !data.talk_json) throw new Error("Empty talk payload");
+    // Clear talk-scoped state before adopting the shared talk — otherwise the viewer inherited the
+    // previous talk's image, guideline chips, podcast, chat transcript and RAG chunks, and a stale
+    // depthVariantsCache could serve a DIFFERENT talk's content on the depth toggle. (2026-07-26)
+    _clearTalkScoped({ keepIdentity: true });
     S.talk = data.talk_json;
     _assignConfidence(S.talk);   // retro-gate: legacy talks get confidence filled from identifier presence (§5d)
     S.topic = data.topic || data.title || "";
@@ -4023,7 +4027,12 @@ async function signOut(){
   await window.sb.auth.signOut();
   S.session = null; S.user = null; S.profile = null;
   S.overflowOpen = false;
-  render();
+  // Don't leave the signed-out user's work on screen for whoever sits down next (shared workstation),
+  // and don't leave S.loadedTalkId pointing at their row so the next user's Save prompts against it.
+  // Also drop the withheld draft + its persisted copy — it belonged to the user who just left. (2026-07-26)
+  S.reviewPending = null; try{ localStorage.removeItem("ct_review_pending"); }catch(_){}
+  S.cloudTalks = []; S.favorites = {};
+  resetAll();   // clears all talk-scoped state and re-renders
 }
 
 // One-time prompt to migrate localStorage talks → Supabase on first cloud sign-in
@@ -4365,12 +4374,16 @@ async function loadSavedTalk(id){
     setTimeout(function(){ alert("Couldn't open that talk — it may have been deleted, or you may need to sign in first."); }, 50);
     return;
   }
+  // Clear ALL talk-scoped state first (shared helper) so nothing from the previously-open talk survives
+  // — Undo history, uploaded PDFs, RAG chunks, edit-in-progress, image, podcast, chat. Then assign this
+  // talk's own fields. keepIdentity:true because we set topic/style/depth/loadedTalkId right below.
+  _clearTalkScoped({ keepIdentity: true });
   S.topic=entry.topic||"";S.style=entry.style||"lecture";S.talk=entry.talk;S.podScript=entry.podScript||"";S.dg=entry.dg||null;S.glRef=entry.glRef||null;
   _assignConfidence(S.talk);   // retro-gate legacy saved talks (§5d)
   if(entry.depth) S.depth = entry.depth;
   // Cache the depth_variants map so the depth toggle can instant-swap. (Jenni 2026-06-08 Option B)
   S.depthVariantsCache = entry._depthVariantsFull || null;
-  S.sec=0;S.showAns=false;S.userPick="";S.msgs=[];S.error="";S.podShow=false;S.podPlaying=false;S.showSaved=false;S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;
+  S.showSaved=false;S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;
   S.loadingFromHash = false; // clear before render so the loading screen disappears
   // Track which saved-talk this is so Save can prompt "update existing vs save as new" when user refines.
   S.loadedTalkId = entry.id || null;
@@ -7384,7 +7397,11 @@ async function weaveFeedbackTalk(userMsg){
   // Charge-after: parse FIRST — if the model returned malformed JSON the refine failed and we throw
   // below without charging. Only consume once we have a usable result. (Jenni 2026-07-03)
   var parsed = JSON.parse(fixJSON(txt));
-  if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
+  // NOTE (2026-07-26): the charge used to happen HERE, on parse success. But the caller
+  // (applyProofreadFeedback) discards this result on four separate guard paths — content dropped,
+  // reference dropped, section dropped, or nothing actionable found — leaving the talk unchanged after
+  // the credit was already spent. Parse success is not "a usable result". The consume now lives in the
+  // caller's apply branch, where S.talk is actually replaced.
   // ── REFINE CITATION GUARD (Jenni 2026-07-15) — see helpers above _esummaryBatch et al. ──
   // Option A: drop any add_references whose PMID/DOI/URL is not verbatim in the paste — the model
   // invented it from memory. Option B: batch-verify surviving PMIDs (plus inline "PMID nnnn" tokens
@@ -7489,6 +7506,10 @@ async function applyProofreadFeedback(userMsg){
         S.msgs.push({r:"a",t:"ℹ️ I read the feedback but didn't find a concrete change to make — it either confirms the talk is accurate or is too general to act on. If there's a specific fix, quote the exact bullet or tell me what it should say."});
       } else {
         S.talk = revised;
+        // CHARGE HERE, not on parse (2026-07-26): this is the only branch that actually changes the
+        // user's talk. The four guard branches above keep the original untouched, and charging before
+        // them meant a user could pay a credit and get nothing.
+        if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
         if(S.dg && S.dg.imgB64) S.visualStale = true;
         else { S.dg = null; S.dgErr = ""; }
         S.podScript = ""; S.talkIsSaved = false;
@@ -8670,7 +8691,19 @@ async function retryReview(){
 }
 // Persist the withheld draft across refresh/reopen (Jenni 2026-07 — Codex) so a review that couldn't
 // finish isn't silently lost. Cleared on discard or on successful review.
-function _saveReviewPending(){ try{ if(S.reviewPending) localStorage.setItem("ct_review_pending", JSON.stringify(S.reviewPending)); else localStorage.removeItem("ct_review_pending"); }catch(_){} }
+// A withheld draft is persisted so a mid-review reload doesn't lose it. STAMP THE OWNER (2026-07-26):
+// on a shared workstation (a resident room, a hospital library machine) the restore below is what the
+// next person sees, and its Retry button spends THEIR credits on someone else's draft. Signed-out drafts
+// are stamped null and only restore for a signed-out session.
+function _reviewOwnerId(){ try{ return (S.user && S.user.id) || null; }catch(_){ return null; } }
+function _saveReviewPending(){
+  try{
+    if(S.reviewPending){
+      var _rp = Object.assign({}, S.reviewPending, { owner_user_id: _reviewOwnerId() });
+      localStorage.setItem("ct_review_pending", JSON.stringify(_rp));
+    } else localStorage.removeItem("ct_review_pending");
+  }catch(_){}
+}
 function discardReviewDraft(){ S.reviewPending = null; _saveReviewPending(); S.error = ""; render(); }
 
 // Honest provenance chips (Jenni 2026-07 — Codex). Pure + testable. Claims ONLY what actually happened:
@@ -8700,30 +8733,51 @@ async function switchProviderAndRetryReview(prov){
   await retryReview();
 }
 
-function resetAll(){
-  // Reset per-talk state + transient UI flags. Auth/profile/cloud/library survives — session-scoped.
-  S.talk=null; S.topic=""; S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview";
-  S.loadedTalkId=null; S.talkIsSaved=false;
-  S.modelPickerOpen=false;   // collapse the model picker back to its default on New talk (Jenni 2026-07-10)
-  S.mobileLibOpen=false;
-  // Uploaded references are per-talk too — they leaked into the next talk before. (Jenni 2026-06-10)
-  S.files=[];
-  S.dg=null; S.dgErr=""; S.dgBusy=false; S.visualStale=false;
+// ── SINGLE SOURCE OF TRUTH for clearing talk-scoped state (Jenni 2026-07-26) ──────────────────
+// FOUR paths begin a talk — resetAll(), loadSavedTalk(), loadPublicTalkByToken(), loadSample() — and
+// each used to hand-roll its own list of fields to clear. They drifted, and every state-leak bug was a
+// field one path cleared and another forgot: the previous talk's Undo history, uploaded PDFs, guideline
+// chips, generated image, podcast script, chat transcript, edit-in-progress, retrieved RAG chunks (which
+// silently UPGRADED the next talk's citation-confidence chips), and the "checking citations" spinner.
+// Everything talk-scoped now lives here, so a newly added field is cleared by all four by default.
+// Pass {keepIdentity:true} from the LOAD paths: they assign the loaded talk's own topic/style/depth/
+// loadedTalkId/talkIsSaved right after, so this must not stomp those.
+function _clearTalkScoped(opts){
+  var keepIdentity = !!(opts && opts.keepIdentity);
+  if(!keepIdentity){
+    S.talk=null; S.topic=""; S.loadedTalkId=null; S.talkIsSaved=false;
+    S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false; S.sharedCopySaved=false;
+    S.wantWebSearch=true;   // always-on default for a fresh talk
+  }
+  S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview"; S.allExpanded=false;
+  S.files=[];                                   // uploaded references are per-talk
+  S.dg=null; S.dgErr=""; S.dgBusy=false; S.visualStale=false; S.vmcStale=false;
   S.msgs=[]; S.error="";
   S.podScript=""; S.podBusy=false; S.podPlaying=false; S.podShow=false;
   S.showAns=false; S.userPick=""; S.reviseIn="";
   S.chatIn=""; S.chatBusy=false;
-  S.reorderMode=false; S.editingSection=null; S.editingDraft=null;   // a fresh talk never inherits reorder/edit mode (Jenni 2026-07-15)
-  S.glRef=null; S.ragChunks=[];
-  S.depthVariantsCache=null; S._pendingDepthMerge=false;   // clear cached depth variants so a new talk can't show a PRIOR talk's variant on depth-toggle (bug fix)
-  S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false; S.sharedCopySaved=false; S.talkIsSaved=false;
-  S.wantWebSearch=true;   // Verify with current literature always defaults ON for a fresh talk (Jenni 2026-07-10)
-  // Close any transient drawers/modals so a fresh compose view doesn't flash an open overlay.
+  S.reorderMode=false; S.editingSection=null; S.editingDraft=null;
+  S.talkHistory=[];                             // Undo must never reach back into a PREVIOUS talk
+  S.glRef=null; S.ragChunks=[]; S.ragGuidelines=[];   // stale chunks falsely upgraded confidence chips
+  S.citationAuditPending=false;                 // no phantom "checking citations" on the next talk
+  S.proofreadArmed=false; S._applyProofreadMode=false;
+  S.depthVariantsCache=null; S._pendingDepthMerge=false;
   S.editSettings=false; S.overflowOpen=false; S.lightbox=false; S.gldOpen=false; S.ragOpen=false;
+  try{ speechSynthesis.cancel(); }catch(_){}
+}
+
+function resetAll(){
+  // Reset per-talk state + transient UI flags. Auth/profile/cloud/library survives — session-scoped.
+  _clearTalkScoped();
+  S.reviewPending=null; try{ _saveReviewPending(); }catch(_){}   // else "+ New talk" is a no-op: the
+  // withheld-draft card REPLACES the compose form, so leaving it set left the user with no topic input.
+  // resetAll-only extras (not talk-scoped, so they don't belong in the shared helper):
+  S.modelPickerOpen=false;   // collapse the model picker back to its default on New talk (Jenni 2026-07-10)
+  S.mobileLibOpen=false;
   // Collapse "How it works" on New talk (Jenni 2026-07-03) — it only auto-expands on the very first
   // landing; an existing user starting another talk shouldn't get the intro re-opened.
   S.howitOpen=false;
-  speechSynthesis.cancel(); render();
+  render();
 }
 
 // ═══════════ DIAGRAM SVG ═══════════
@@ -9343,6 +9397,9 @@ function loadSample(slug, depth){
   if(s.talk_detailed && chosen === s.talk_detailed) actualDepth = "detailed";
   else if(s.talk_concise && chosen === s.talk_concise) actualDepth = "concise";
   // Otherwise it's the legacy single-version `talk` — we can't tell, default to concise.
+  // Clear talk-scoped state first (shared helper) so a sample never inherits the previous talk's
+  // uploaded files, Undo history, RAG chunks, edit-in-progress or image. (2026-07-26)
+  _clearTalkScoped({ keepIdentity: true });
   S.talk=chosen; S.topic=s.topic; S.style=s.style||"lecture"; S.depth=actualDepth;
   S.isSampleTalk=true; S.sampleSlug=s.slug; S.sharedTalk=false;
   S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;
@@ -12247,7 +12304,19 @@ try{ var _pendTopic = localStorage.getItem("ct_pending_topic"); if(_pendTopic){ 
 // Restore the Boards difficulty preference (Jenni 2026-07-21). Default stays 4 (Board-level).
 try{ var _bdStored = parseInt(localStorage.getItem("ct_boards_difficulty"),10); if(_bdStored>=1 && _bdStored<=5) S.boardsDifficulty = _bdStored; }catch(_){}
 // Restore a withheld draft whose medical review couldn't finish (Jenni 2026-07) — so a refresh doesn't lose it.
-try{ var _rpStored = localStorage.getItem("ct_review_pending"); if(_rpStored){ var _rpObj = JSON.parse(_rpStored); if(_rpObj && _rpObj.draft) S.reviewPending = _rpObj; } }catch(_){}
+// Restore a withheld draft ONLY for the user who created it. Deferred until auth resolves, because at
+// boot S.user isn't populated yet — restoring eagerly is what let one user inherit another's draft (and
+// a Retry that would charge their credits). A draft whose owner doesn't match is dropped, not shown.
+function _restoreReviewPendingForUser(){
+  try{
+    var raw = localStorage.getItem("ct_review_pending"); if(!raw) return;
+    var o = JSON.parse(raw); if(!o || !o.draft) return;
+    var mine = (o.owner_user_id || null) === (_reviewOwnerId() || null);
+    if(mine){ S.reviewPending = o; }
+    else { S.reviewPending = null; try{ localStorage.removeItem("ct_review_pending"); }catch(_){} }
+  }catch(_){}
+}
+try{ _restoreReviewPendingForUser(); }catch(_){}
 loadFromShareHash();
 loadFromPublicShareHash();
 loadFromUserProfileHash();

@@ -68,3 +68,6 @@ jobs:
 
       - name: Targeted Concise safety-review suite
         run: node test_targeted_review.mjs
+
+      - name: State isolation suite (talk-scoped reset + owner-scoped withheld draft)
+        run: node test_state_isolation.mjs
