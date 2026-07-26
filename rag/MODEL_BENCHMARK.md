@@ -131,15 +131,67 @@ objective layer alone.
 
 ### Summary
 
-| Model | Safety gate | Judge vs Claude | Accuracy | Verdict |
-|---|---|---|---|---|
-| Claude Opus 5 | pass | — (reference) | 4.67/5 | **CLEARED — the only writer that has** |
+| Model | Rows | Safety (absolute) | Judge | Accuracy | Verdict |
+|---|---|---|---|---|---|
+| `claude-opus-5` | 24 | 23/24 clean · **1 invalid JSON · 1 fabricated dated guideline** | reference | 4.67–4.83 | **CLEARED, ON NOTICE** |
+| `claude-sonnet-5` | **6** | **6/6 clean, 0 fabricated, 0 hard fails** (59s vs 104s) | 0–6 | 4.00 | **PILOT — needs the full 20** |
 | gemini-3.1-pro-preview | **pass** (0 fabricated) | **0–6** | 3.67/5 | **FAILED** bar 4/5/6 |
 | gemini-3.6-flash | **fail** | 0–18 | ~3.4/5 | **FAILED** bar 1/2/3/4/5/6 |
 | gpt-5.6-sol | gate failed (report lost) | — | — | **RE-RUN NEEDED** — and it is LIVE via BYOK |
 
 Anything not listed has never been tested. `WRITER_BENCHMARK_CLEARED` in index.html must match this
 table — a writer that hasn't cleared the bar shows a visible warning banner on every talk it writes.
+
+
+### ⚠️ A DESIGN FLAW IN THIS BAR (found 2026-07-26 — read before using it)
+
+Bars **5** and **6** are defined *relative to Claude*. That means **the reference model cannot fail its
+own benchmark**, which is not a property a safety gate should have. It surfaced concretely in the Sonnet 5
+pilot: the reference (`claude-opus-5`) failed the **absolute** bars in that very run —
+
+* returned **invalid JSON** on one row (bar 3), and
+* cited a **non-existent "2026 AHA/ACC/ESC/WHF Universal Definition of Heart Failure"** — the consensus
+  is **2021**, so as dated the source does not exist (bar 1, a fabricated source),
+* plus a COPERNICUS citation-metadata mismatch and a TRED-HF claim with no reference in the list.
+
+Meanwhile the candidate went 6/6 clean with none of those. So judged on bars **1–4 alone**, Sonnet 5
+outperformed the reference in that run, while "losing" 0–6 on the relative bars.
+
+**Rules that follow, both from Codex 2026-07-26:**
+
+1. **Judge every model — including the reference — on bars 1–4 on their own terms.** No automatic pass for
+   being the comparison arm. Opus 5 remains cleared only because it has by far the most evidence (24 rows)
+   and *something* must be able to write; if those absolute failures recur on the next full 20-row run,
+   Opus itself needs a decision.
+2. **A pilot is not clearance.** `claude-sonnet-5`'s 6/6 is 3 topics out of 10. Clearing a model on six
+   rows is precisely the moved goalpost this document exists to prevent. It stays `false` in
+   `WRITER_BENCHMARK_CLEARED` until a full 20-row pass.
+
+The relative bars are still useful as a *signal* — a large gap is worth investigating — but they must not
+be the thing that clears or blocks a model on their own.
+
+### Pending: the full 20-row runs
+
+```bash
+node rag/eval_gemini_quality.mjs --provider claude --claude-model claude-sonnet-5      # 20 rows
+mv rag/eval_gemini_report.json rag/eval_sonnet5_full20.json
+node rag/eval_gemini_quality.mjs --provider claude --claude-model claude-opus-4-8      # if you ever need 4-8 back
+node rag/eval_gemini_quality.mjs --provider openai --openai-model gpt-5.6-sol          # BYOK, still live + untested
+```
+
+Route based on the results — **do not ship routing off a pilot**. The style-aware chains (Boards→Opus,
+Lecture→Sonnet) are already written and simply dormant: the moment `claude-sonnet-5` flips to `true` in
+BOTH `index.html` and `worker.js`, they activate and the outage error disappears. Until then every chain
+resolves to `claude-opus-5` alone.
+
+### Fail-closed at BOTH layers
+
+`WRITER_BENCHMARK_CLEARED` (index.html) gates the client; `WRITER_CLEARED` (worker.js) gates the server.
+A CI test asserts they stay in sync. The Worker previously filtered generation against its broad
+`ALLOWED_MODELS` and, if nothing survived, **substituted a hardcoded chain of
+`["claude-opus-4-8", "claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"]`** — all unverified, one
+retired on the first-party API. That silently converted "refuse to write" into "write with anything".
+Generation now throws `no_cleared_writer` instead.
 
 ### gemini-3.1-pro-preview — **FAILED** (2026-07-26, 3 topics × 2 styles = 6 rows)
 

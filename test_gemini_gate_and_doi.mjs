@@ -174,9 +174,11 @@ ok(/S\.error = WRITER_UNAVAILABLE_MSG/.test(html), "an empty chain surfaces the 
   const HAI = (html.match(/var MODEL_CRITIC = "([^"]+)"/) || [])[1];
   // Updated 2026-07-26: TWO models are now cleared (Opus 5 + Sonnet 5), so the filter keeps both and the
   // leader is whichever the chain puts first. Haiku is still barred, so an all-Haiku chain yields nothing.
-  ok(allow([MAIN, SON, HAI]).length === 2 && allow([MAIN, SON, HAI])[0] === MAIN,
-     `both cleared writers survive the filter, ${MAIN} leading`);
-  ok(!allow([MAIN, SON, HAI]).includes(HAI), "the uncleared Haiku is filtered OUT of the chain");
+  // Reverted 2026-07-26: Sonnet 5 is a PILOT, not cleared, so exactly one writer survives.
+  ok(allow([MAIN, SON, HAI]).length === 1 && allow([MAIN, SON, HAI])[0] === MAIN,
+     `only the fully-benchmarked writer survives (${MAIN}); a 6-row pilot does not count`);
+  ok(!allow([MAIN, SON, HAI]).includes(HAI) && !allow([MAIN, SON, HAI]).includes(SON),
+     "both the uncleared Haiku and the PILOT Sonnet are filtered OUT of the chain");
   ok(allow([HAI]).length === 0, "a chain of only-uncleared models yields NOTHING (forces the honest error)");
   ok(allow([]).length === 0 && allow(null).length === 0, "empty/null input is safe");
   // MODEL_MAIN itself must be benchmarked, or the app cannot write at all
@@ -199,7 +201,7 @@ ok(/S\.error = WRITER_UNAVAILABLE_MSG/.test(html), "an empty chain surfaces the 
 }
 
 
-// ── E. TWO verified writers → resilience without loosening the bar (2026-07-26) ──
+// ── E. PILOT ≠ CLEARED, and the WORKER must fail closed (Codex 2026-07-26) ────
 {
   const rctx = { console: { warn() {} } };
   vm.createContext(rctx);
@@ -212,26 +214,44 @@ ok(/S\.error = WRITER_UNAVAILABLE_MSG/.test(html), "an empty chain surfaces the 
   const isB = vm.runInContext("writerIsBenchmarked", rctx);
   const refine = vm.runInContext("refineWriterModel", rctx);
 
-  ok(isB(SON) === true, `the Sonnet fallback (${SON}) is benchmarked — this is what removes the outage error`);
-  ok(allow([SON, HAI]).length >= 1, "an Opus outage still leaves a VERIFIED writer (no error)");
-  ok(allow([MAIN, HAI]).length >= 1, "a Sonnet outage still leaves a VERIFIED writer (no error)");
-  ok(allow([HAI]).length === 0, "if only Haiku remains it STILL refuses — the bar was not loosened to buy resilience");
-  ok(isB(HAI) === false, "Haiku is deliberately NOT cleared to write");
+  // A 6-row pilot is NOT benchmark clearance — the frozen suite is 20 rows.
+  ok(isB(SON) === false, `${SON} is NOT cleared on a 6-row pilot (the frozen benchmark is 20 rows)`);
+  ok(isB(HAI) === false, "Haiku is not cleared");
+  ok(allow([MAIN, SON, HAI]).length === 1 && allow([MAIN, SON, HAI])[0] === MAIN,
+     "only the fully-benchmarked writer survives the filter");
+  ok(allow([SON, MAIN, HAI])[0] === MAIN, "the lecture chain self-corrects to the cleared model while Sonnet is a pilot");
+  ok(allow([SON, HAI]).length === 0, "a chain of pilot/uncleared models yields NOTHING (honest error, no silent downgrade)");
+  ok(isB(refine()) === true, `the refine writer (${refine()}) is cleared — editing cannot un-verify a talk`);
 
-  // style-aware routing: Opus leads for boards, Sonnet leads for lectures
-  ok(/S\.style === "boards"[\s\S]{0,200}?\[MODEL_MAIN, MODEL_SONNET_FALLBACK/.test(html),
-     "BOARDS drafts lead with Opus (highest reasoning demand, small output)");
-  ok(/\[MODEL_SONNET_FALLBACK, MODEL_MAIN, MODEL_CRITIC\]/.test(html),
-     "LECTURE drafts lead with Sonnet (halves a 104-131s wait; Opus still REVIEWS)");
-  ok(allow([MAIN, SON, HAI])[0] === MAIN && allow([SON, MAIN, HAI])[0] === SON,
-     "both chains resolve to their intended leader");
-
-  // refines must no longer use an unbenchmarked model
-  ok(isB(refine()) === true, `the refine writer (${refine()}) is benchmarked — editing no longer un-verifies a talk`);
+  // the reference model must not get a free pass: its absolute failures are recorded in-code
+  const tableSrc = html.slice(html.indexOf("var WRITER_BENCHMARK_CLEARED"), html.indexOf("function writerIsBenchmarked"));
+  ok(/ON NOTICE/.test(tableSrc), "the reference model is marked ON NOTICE, not automatically passed");
+  ok(/Universal Definition/.test(tableSrc) && /invalid JSON/.test(tableSrc),
+     "the reference model's own ABSOLUTE failures (fabricated dated guideline, invalid JSON) are recorded");
+  ok(/PILOT ONLY — NOT CLEARED/.test(tableSrc), "the pilot result is labelled as a pilot, not clearance");
 }
 ok(!/model: *"claude-sonnet-4-6"/.test(html) && !/model:"claude-sonnet-4-6"/.test(html),
    "no refine path hardcodes the unbenchmarked claude-sonnet-4-6 any more");
 ok((html.match(/refineWriterModel\(\)/g) || []).length >= 6, "all refine call sites route through refineWriterModel()");
+
+// ── F. WORKER fails closed and stays in sync with the client ──────────────────
+{
+  const worker = readFileSync(new URL("./worker.js", import.meta.url), "utf8");
+  ok(/const WRITER_CLEARED = \[/.test(worker), "worker declares a WRITER_CLEARED list separate from ALLOWED_MODELS");
+  const genSrc = worker.slice(worker.indexOf("async function callAnthropicText"), worker.indexOf("async function runGeneration"));
+  ok(/WRITER_CLEARED\.indexOf\(m\) >= 0/.test(genSrc), "generation filters models against WRITER_CLEARED, not the broad allowlist");
+  ok(/throw err;/.test(genSrc) && /no_cleared_writer/.test(genSrc), "an empty chain THROWS instead of substituting a fallback");
+  ok(!/if \(!models\.length\) models = \[/.test(genSrc),
+     "the hardcoded fallback to unverified models is GONE (it silently defeated the writer restriction)");
+
+  // the two cleared-lists must agree, or the worker rejects what the client sends (or worse, permits more)
+  const clientCleared = [...html.matchAll(/^\s*"([a-z0-9.\-]+)":\s*true,/gm)].map((m) => m[1]).sort();
+  const wBlock = worker.slice(worker.indexOf("const WRITER_CLEARED"), worker.indexOf("const ALLOWED_TOOL_TYPES"));
+  const workerCleared = [...wBlock.matchAll(/^\s*"([a-z0-9.\-]+)",/gm)].map((m) => m[1]).sort();
+  ok(JSON.stringify(clientCleared) === JSON.stringify(workerCleared),
+     `client and worker cleared-writer lists are IN SYNC (client: [${clientCleared}], worker: [${workerCleared}])`);
+  ok(workerCleared.length >= 1, "at least one cleared writer exists, or generation is impossible");
+}
 
 console.log("\n" + (failures === 0 ? "✔ GEMINI GATE + DOI TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);
