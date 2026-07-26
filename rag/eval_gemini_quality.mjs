@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * GEMINI QUALITY EVAL — the pre-launch gate for exposing "Continue free with Gemini".
+ * MODEL BENCHMARK — the gate for letting any model WRITE user-facing medical teaching content.
+ * Pass bar, frozen topic list, and catalogued past failures: rag/MODEL_BENCHMARK.md
  *
  * WHY: the free-Gemini tier lets a talk be WRITTEN by Gemini instead of Claude. The evidence layer
  * (guidelines.json, RAG, landmark trials, PMIDs) is model-independent, so the open question is purely
@@ -19,7 +20,7 @@
  *   SOFT SIGNALS: reference count, uncited-bullet ratio, stem word count, guideline-name mentions.
  *
  * ARMS
- *   GEMINI_API_KEY (required)      -> Gemini arm
+ *   GEMINI_API_KEY / OPENROUTER_API_KEY -> the CANDIDATE arm (the model on trial)
  *   ANTHROPIC_API_KEY (optional)   -> adds the Claude arm for a head-to-head baseline, and a blind
  *                                    judge pass. Without it the script still runs Gemini-only and
  *                                    reports absolute safety numbers (which is what gates launch).
@@ -29,6 +30,11 @@
  *   node rag/eval_gemini_quality.mjs --topics 3         # quick smoke: first 3 topics
  *   node rag/eval_gemini_quality.mjs --style lecture    # one style only
  *   node rag/eval_gemini_quality.mjs --no-judge         # skip the LLM judge even if Claude key set
+ *   node rag/eval_gemini_quality.mjs --provider openrouter --model deepseek/deepseek-r1
+ *   node rag/eval_gemini_quality.mjs --provider openrouter --model qwen/qwen3-235b-a22b
+ *   node rag/eval_gemini_quality.mjs --provider openrouter --model meta-llama/llama-3.3-70b-instruct
+ *      (OpenRouter fronts many models, so a candidate can be judged on the SAME frozen benchmark
+ *       without wiring it into the app. Needs OPENROUTER_API_KEY; Claude stays the reference arm.)
  * Outputs: rag/eval_gemini_report.json (full, auditable) + a console summary.
  *
  * LIMITATION: Supabase RAG retrieval is not wired in here (it needs embeddings + the live index), so
@@ -48,9 +54,15 @@ const NO_JUDGE = ARGV.includes("--no-judge");
 const DRY = ARGV.includes("--dry");
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
 const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || "";
-if (!GEMINI_KEY && !DRY) {
-  console.error("✖ GEMINI_API_KEY not set. Add it to .env (GEMINI_API_KEY=...) and re-run.");
+const _needOR = ARGV.includes("--provider") && argVal("--provider","gemini") === "openrouter";
+if (!DRY && !_needOR && !GEMINI_KEY) {
+  console.error("✖ GEMINI_API_KEY not set. Add it with: node rag/setkey.mjs GEMINI_API_KEY");
   console.error("  Get one at https://aistudio.google.com/apikey  ·  never paste keys into chat.");
+  process.exit(1);
+}
+if (!DRY && _needOR && !process.env.OPENROUTER_API_KEY) {
+  console.error("✖ OPENROUTER_API_KEY not set. Add it with: node rag/setkey.mjs OPENROUTER_API_KEY");
+  console.error("  Get one at https://openrouter.ai/keys  ·  never paste keys into chat.");
   process.exit(1);
 }
 const RUN_CLAUDE = !!CLAUDE_KEY;
@@ -272,6 +284,34 @@ async function fetchWithTimeout(url, opts, label) {
     throw e;
   } finally { clearTimeout(to); stop(); process.stdout.write("\r" + " ".repeat(60) + "\r"); }
 }
+// ── OpenRouter: one API fronting DeepSeek / Qwen / Llama / etc. ────────────────
+// Lets a candidate model be judged against the SAME frozen benchmark without wiring it into the app.
+//   node rag/eval_gemini_quality.mjs --provider openrouter --model deepseek/deepseek-r1
+const OR_KEY = process.env.OPENROUTER_API_KEY || "";
+const PROVIDER = argVal("--provider", "gemini");
+const OR_MODEL = argVal("--model", "deepseek/deepseek-r1");
+async function callOpenRouter(system, user, maxTok = 16384) {
+  const r = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${OR_KEY}`,
+               "HTTP-Referer": "https://github.com/chalk-talk", "X-Title": "Chalk Talk model benchmark" },
+    body: JSON.stringify({ model: OR_MODEL, max_tokens: maxTok, temperature: 1,
+      messages: [{ role: "system", content: system }, { role: "user", content: user }] }),
+  }, OR_MODEL.split("/").pop().slice(0, 14));
+  const t = await r.text();
+  if (!r.ok) throw new Error(`openrouter ${r.status}: ${t.slice(0, 300)}`);
+  const j = JSON.parse(t);
+  const c = j?.choices?.[0];
+  const txt = c?.message?.content || "";
+  if (!txt) throw new Error(`openrouter returned no text (finish_reason: ${c?.finish_reason || "?"})`);
+  return txt;
+}
+// The "candidate" arm — whichever model is on trial. Claude remains the reference arm.
+async function callCandidate(system, user, maxTok = 16384) {
+  return PROVIDER === "openrouter" ? callOpenRouter(system, user, maxTok) : callGemini(system, user, maxTok);
+}
+const CANDIDATE_LABEL = PROVIDER === "openrouter" ? OR_MODEL : GEMINI_MODEL;
+
 async function callGemini(system, user, maxTok = 16384) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
   const body = { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }] }],
@@ -388,7 +428,7 @@ if (DRY) {
   console.log("DRY RUN — extraction + grading self-test, no API calls.\n");
   console.log(`  LECTURE_PROMPT extracted: ${LECTURE_PROMPT.length} chars`);
   console.log(`  BOARDS_PROMPT  extracted: ${BOARDS_PROMPT.length} chars`);
-  console.log(`  gemini model from index.html: ${GEMINI_MODEL}`);
+  console.log(`  candidate: ${CANDIDATE_LABEL} (provider: ${PROVIDER})`);
   console.log(`  BOARDS_DIFFICULTY[4]: ${BOARDS_DIFF[4] && BOARDS_DIFF[4].label}`);
   let ctxOK = 0;
   for (const t of TOPICS_GOLD) {
@@ -418,8 +458,8 @@ if (DRY) {
 }
 
 const results = [];
-console.log(`Gemini quality eval — ${TOPICS_GOLD.length} topic(s) × ${STYLES.length} style(s)`);
-console.log(`  gemini: ${GEMINI_MODEL}   claude arm: ${RUN_CLAUDE ? CLAUDE_MODEL : "SKIPPED (no ANTHROPIC_API_KEY)"}   judge: ${RUN_JUDGE ? "on" : "off"}\n`);
+console.log(`Model benchmark (see rag/MODEL_BENCHMARK.md) — ${TOPICS_GOLD.length} topic(s) × ${STYLES.length} style(s)`);
+console.log(`  candidate: ${CANDIDATE_LABEL}   claude arm: ${RUN_CLAUDE ? CLAUDE_MODEL : "SKIPPED (no ANTHROPIC_API_KEY)"}   judge: ${RUN_JUDGE ? "on" : "off"}\n`);
 
 const TOTAL_ROWS = TOPICS_GOLD.length * STYLES.length;
 let rowNum = 0;
@@ -436,7 +476,7 @@ for (const topic of TOPICS_GOLD) {
     // Both arms in PARALLEL — they're independent, so serializing them doubled wall-clock for nothing.
     const geminiP = (async () => {
       const t0 = Date.now();
-      try { const raw = await callGemini(system, user); const g = await grade(style, raw);
+      try { const raw = await callCandidate(system, user); const g = await grade(style, raw);
             return { ms: Date.now() - t0, hard: g.hard, soft: g.soft, raw_len: raw.length, raw, talk: g.talk }; }
       catch (e) { return { ms: Date.now() - t0, error: e.message, hard: [`call failed: ${e.message}`], soft: {} }; }
     })();
@@ -450,7 +490,7 @@ for (const topic of TOPICS_GOLD) {
     [row.gemini, row.claude] = await Promise.all([geminiP, claudeP]);
     const fmt = (r) => !r ? "" : r.error ? `ERR (${String(r.error).slice(0, 60)})`
       : `${r.hard.length ? "✖ " + r.hard.length + " hard-fail" + (r.hard.length > 1 ? "s" : "") : "✓ clean"} in ${Math.round(r.ms / 1000)}s`;
-    console.log(`        gemini: ${fmt(row.gemini)}`);
+    console.log(`        ${CANDIDATE_LABEL}: ${fmt(row.gemini)}`);
     if (row.gemini?.hard?.length) for (const h of row.gemini.hard) console.log(`           ✖ ${h}`);
     if (RUN_CLAUDE) {
       console.log(`        claude: ${fmt(row.claude)}`);
@@ -496,7 +536,7 @@ const sum = (arm) => {
   return { generations: rows.length, clean: rows.length - withHard.length, with_hard_fails: withHard.length,
            call_errors: errs, fabricated_citations: fab, drug_misspellings: drug, total_references: refs };
 };
-const summary = { generated_at: new Date().toISOString(), gemini_model: GEMINI_MODEL,
+const summary = { generated_at: new Date().toISOString(), candidate_model: CANDIDATE_LABEL, provider: PROVIDER, gemini_model: GEMINI_MODEL,
   claude_model: RUN_CLAUDE ? CLAUDE_MODEL : null, topics: TOPICS_GOLD, styles: STYLES,
   gemini: sum("gemini"), claude: RUN_CLAUDE ? sum("claude") : null };
 if (RUN_JUDGE) {
@@ -515,7 +555,7 @@ writeFileSync("rag/eval_gemini_report.json", JSON.stringify({ summary, results }
 console.log("\n═══ SUMMARY ═══");
 const p = (label, s) => { if (!s) return;
   console.log(`  ${label}: ${s.clean}/${s.generations} clean · hard-fails ${s.with_hard_fails} · fabricated citations ${s.fabricated_citations} · drug misspellings ${s.drug_misspellings} · refs ${s.total_references}${s.call_errors ? ` · call errors ${s.call_errors}` : ""}`); };
-p("GEMINI", summary.gemini);
+p(CANDIDATE_LABEL.toUpperCase(), summary.gemini);
 p("CLAUDE", summary.claude);
 if (summary.judge) {
   const j = summary.judge;
