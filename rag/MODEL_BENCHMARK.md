@@ -80,6 +80,88 @@ objective layer alone.
 
 ## Results
 
+### Summary
+
+| Model | Safety gate | Judge vs Claude | Accuracy | Verdict |
+|---|---|---|---|---|
+| Claude Opus 5 | pass | — (reference) | 4.67/5 | **CLEARED — the only writer that has** |
+| gemini-3.1-pro-preview | **pass** (0 fabricated) | **0–6** | 3.67/5 | **FAILED** bar 4/5/6 |
+| gemini-3.6-flash | **fail** | 0–18 | ~3.4/5 | **FAILED** bar 1/2/3/4/5/6 |
+| gpt-5.6-sol | gate failed (report lost) | — | — | **RE-RUN NEEDED** — and it is LIVE via BYOK |
+
+Anything not listed has never been tested. `WRITER_BENCHMARK_CLEARED` in index.html must match this
+table — a writer that hasn't cleared the bar shows a visible warning banner on every talk it writes.
+
+### gemini-3.1-pro-preview — **FAILED** (2026-07-26, 3 topics × 2 styles = 6 rows)
+
+Report: `rag/eval_gemini31pro.json`. Verdict: **do not open BYOK Gemini.** Materially better than
+Flash — it stopped *inventing* things — but it still misassigns mechanisms and overstates guidelines.
+
+| Metric | Gemini 3.1 Pro | Claude Opus 5 |
+|---|---|---|
+| Safety-clean rows | **6/6** | 2/6 (all harness artefacts, see below) |
+| Fabricated citations | **0** | 0 |
+| Fabricated/misspelled drugs | **0** | 0 |
+| Blind judge, head-to-head | **0 wins** | **6 wins** |
+| Mean accuracy (/5) | 3.67 | 4.67 |
+| Judge-flagged medical errors | 29 | 10 |
+| Median latency | ~48 s | ~95 s |
+| References produced | 15 | 43 |
+
+Bar: passes **1** (no fabrication) and **3** (valid JSON). Fails **4** (systematic guideline
+overstatement), **5** (accuracy gap 1.0 > 0.5), **6** (lost every high-risk row).
+
+Note the reference count — 15 vs Claude's 43. Part of the accuracy gap is that Pro simply cites less,
+which also means fewer chances to mis-cite.
+
+#### Representative failures (regression cases)
+
+**Mechanism / pharmacology — wrong, not vague**
+- "beta-1 **and AT1** receptor activation increases intracellular cAMP" — AT1 is Gq/PLC-coupled and does
+  not raise cAMP.
+- **V1 vs V2 confusion, twice:** attributed SIADH water reabsorption and volume expansion to V1; renal
+  water reabsorption is V2-mediated (V1 relates to urate clearance).
+- ODS mechanism attributed to "adapted **neurons** rapidly dehydrate" — the injured targets are
+  oligodendrocytes/astrocytes.
+- Lumped "efferent vasodilation / afferent vasoconstriction" as the mechanism for *both* ARNI and SGLT2i;
+  efferent belongs to RAAS blockade, afferent (tubuloglomerular feedback) to SGLT2i.
+- Claimed volume-mediated ADH release "requires a 10–15% drop" in EABV; standard physiology is ~5–10%.
+
+**Clinically actionable overstatement**
+- "**UNa > 40 mEq/L … confirms the patient is euvolemic**" — wrong as an absolute; high UNa also occurs
+  with diuretics, adrenal insufficiency, salt wasting, CKD.
+- Set the SIADH UNa criterion at >40 (guidelines use ~30) and left 30–40 undefined.
+- **GOLD Group E:** presented triple therapy as the blanket preferred initial regimen and **omitted the
+  eosinophil threshold entirely** (≥300, or ≥100 with continued exacerbations).
+- Described ODS as "irreversible" — meaningful recovery does occur with early recognition.
+- "If pH is normal, medical management is sufficient" — ignores NIV for respiratory muscle fatigue.
+- Implied a venous gas can substitute for ABG in assessing acute hypercapnia.
+
+**Attribution / strength (the systematic pattern — same failure class as Flash)**
+- Attributed a "2–4 weeks" GDMT initiation window to the 2022 AHA/ACC/HFSA guideline, which specifies no
+  such window (that's STRONG-HF, uncited).
+- Claimed the guideline "strongly recommends" horizontal all-four-at-low-dose initiation; it endorses no
+  specific sequence. Then asserted horizontal "reduces mortality more rapidly" — no head-to-head trial.
+- **Cited EMPHASIS-HF when the reference list contained only RALES.**
+- "Four pillars for **all** HFrEF patients" without eligibility caveats (MRA needs eGFR >30, K+ <5.0).
+- ICD criteria omitted NYHA II–III and the ≥40-day post-MI interval — stated broader than guideline.
+- Attributed the 8 mEq/24 h correction limit to the 2014 European guideline (it says 10 in the first 24 h,
+  8 per 24 h thereafter); listed vaptans as adjuncts while citing the guideline that recommends against them.
+- Attributed the "requiring mechanical ventilation" antibiotic criterion to Anthonisen 1987, which
+  addressed only type I/II/III exacerbations.
+- Called systemic steroids "universally beneficial" in severe COPD exacerbation; GOLD notes attenuated
+  benefit at low eosinophil counts.
+
+#### Claude's apparent failures in this run were BUGS, two of them real
+
+- **2 rows "missing key_point / board_pearls / visual_memory_card" → a genuine PRODUCTION bug.** Claude
+  dropped a closing brace and nested those fields *inside* `question`. The renderer reads them at the top
+  level, so those Boards talks would have displayed with no key point, no board pearls and no memory card
+  — silently, on 2 of 3 generations. Fixed by `_hoistMisplacedBoardFields()` (build 2026-07-26-07).
+  **The benchmark's most valuable find was a bug in the reference model's own output, not the candidate's.**
+- **2 drug false positives in the harness:** "vaptan" (a drug *class* suffix, so RxNorm rightly doesn't
+  know it — but correct usage) and "hearing" (read as a near-miss of heparin). Both now allow-listed.
+
 ### gemini-3.6-flash — **FAILED** (2026-07-26, 18/20 rows completed, run stopped early)
 
 Verdict: **do not expose to users.** Kept behind `geminiEnabled()` / `localStorage.ct_dev_gemini="1"`.

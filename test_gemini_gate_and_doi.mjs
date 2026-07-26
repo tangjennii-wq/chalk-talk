@@ -91,5 +91,44 @@ ok(tSim("Tolvaptan for Hyponatremia", "Colchicine for Acute Pericarditis") < 0.5
 ok(jAgree("N Engl J Med", "New England Journal of Medicine") === true, "journal abbreviation matches full name");
 ok(jAgree("Blood", "BMJ") === false, "different journals disagree");
 
+
+// ── C. UNVERIFIED-WRITER WARNING (Jenni 2026-07-26) ───────────────────────────
+// Only Claude has cleared the frozen benchmark. ChatGPT BYOK is LIVE and untested; Gemini Pro passed
+// safety but lost 0-6 on quality. A reader cannot tell any of that from the talk, so it must be said.
+ok(/var WRITER_BENCHMARK_CLEARED = /.test(html), "WRITER_BENCHMARK_CLEARED table exists");
+ok(/function writerIsBenchmarked\(/.test(html), "writerIsBenchmarked() exists");
+ok(/function writerWarningHtml\(/.test(html), "writerWarningHtml() exists");
+ok(/h \+= writerWarningHtml\(t\);/.test(html), "the warning is rendered into the talk view");
+{
+  const wctx = { esc: (x) => String(x) };
+  vm.createContext(wctx);
+  vm.runInContext(html.slice(html.indexOf("var WRITER_BENCHMARK_CLEARED"), html.indexOf("function _provenanceChips")), wctx);
+  const cleared = vm.runInContext("WRITER_BENCHMARK_CLEARED", wctx);
+  const isB = vm.runInContext("writerIsBenchmarked", wctx);
+  const warn = vm.runInContext("writerWarningHtml", wctx);
+
+  ok(cleared.claude === true, "Claude is marked as having cleared the benchmark");
+  ok(cleared.openai === false, "ChatGPT is NOT marked cleared (it has never been tested)");
+  ok(cleared.gemini === false, "Gemini is NOT marked cleared (Flash failed; Pro lost 0-6 on quality)");
+  ok(isB("claude") === true && isB("openai") === false && isB("gemini") === false, "writerIsBenchmarked reflects the table");
+  ok(isB(undefined) === true && isB(null) === true, "a missing writer defaults to Claude (the historical default)");
+
+  ok(warn({ _writtenBy: "claude" }) === "", "no warning on a Claude-written talk");
+  ok(warn({}) === "" && warn(null) === "", "no warning when the writer is unknown/absent");
+  const wOai = warn({ _writtenBy: "openai" }), wGem = warn({ _writtenBy: "gemini" });
+  ok(wOai.length > 200 && wGem.length > 200, "a warning IS produced for ChatGPT and Gemini");
+  ok(/ChatGPT/.test(wOai) && /Gemini/.test(wGem), "the warning names the actual model");
+  // it must be specific about the observed failure modes, not vague hand-waving
+  for (const [needle, why] of [
+    ["not verified", "says plainly it is unverified"],
+    ["more strongly than the guideline", "names guideline overstatement (the observed pattern)"],
+    ["wrong guideline", "names misattribution"],
+    ["mechanism errors", "names mechanism errors"],
+    ["primary source", "tells the reader what to actually do about it"],
+  ]) ok(needle && wOai.includes(needle), `warning ${why}`);
+}
+// the provenance chip must also read honestly for an unverified writer
+ok(/\(unverified model\)/.test(html), "the 'Written by' chip marks an unverified model too (defence in depth)");
+
 console.log("\n" + (failures === 0 ? "✔ GEMINI GATE + DOI TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

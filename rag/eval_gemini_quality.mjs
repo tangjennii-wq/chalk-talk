@@ -177,7 +177,12 @@ function editDistance(a, b, maxDiff = 2) {
 // Ordinary English/medical words that sit within 2 edits of a drug name and must NEVER be reported as
 // misspellings. Without this, "renal insult" was flagged as a misspelling of "insulin" — a false
 // positive that would wrongly fail a perfectly good talk. (Caught in the live eval, 2026-07-26.)
-const NOT_DRUGS = new Set(("hepatic hepatitis heparinized insult insults result results consult consulted insulted assault statin statins station stations relation "
+// "vaptan" is a drug CLASS suffix, not an INN, so RxNorm rightly doesn't know it — but it is correct
+// medical usage, not a fabrication. "hearing" was read as a near-miss of "heparin". Both were flagged
+// against CLAUDE output in the gemini-3.1-pro run. (2026-07-26)
+const NOT_DRUGS = new Set(("vaptan vaptans gliflozin gliflozins gliptin gliptins glutide sartan sartans statin statins "
+ + "hearing hearings clearing bearing searching teaching reaching heating healing "
+ + "hepatic hepatitis heparinized insult insults result results consult consulted insulted assault statin statins station stations relation "
  + "dilation dilated isolation elevation elevated deviation duration titration filtration hydration inhalation infusion effusion "
  + "infarct infection injection ingestion digestion congestion suggestion indication induction reduction retention resection "
  + "excretion secretion depletion deletion repletion completion delusion collusion illusion perfusion diffusion occlusion "
