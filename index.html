@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-13";
+var BUILD_ID = "2026-07-26-14";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6998,7 +6998,9 @@ async function generate(){
       if (mainResult.fellBack) console.info("Draft generated with " + _draftModel + " (Opus was overloaded)");
     }
     if (!txt || !txt.trim()) throw new Error("Empty response");
-    var draftTalk = JSON.parse(fixJSON(txt));
+    // parseTalkStrict: repair, then REQUIRE the schema. A partially-salvaged talk throws rather than
+    // rendering with its teaching payload silently missing. (Codex 2026-07-26)
+    var draftTalk = parseTalkStrict(txt, S.style);
     draftTalk = deepCleanCitations(draftTalk);
     draftTalk = pruneFakeReferences(draftTalk);
     // Repair the DRAFT board question before the critic sees it (Jenni 2026-07-21) — clean structure in,
@@ -8998,6 +9000,45 @@ function refineWriterModel(){
   var allowed = writeAllowedModels([MODEL_SONNET_FALLBACK, MODEL_MAIN, MODEL_CRITIC]);
   return allowed[0] || MODEL_MAIN;
 }
+// ── NEVER DISPLAY PARTIALLY PARSED MEDICAL CONTENT (Codex 2026-07-26) ─────────────────────────
+// fixJSON()'s last-resort fallback walks BACKWARD from the end of a malformed response, truncating at
+// the last point that parses and appending closers. That is the right instinct for a stray postscript,
+// but on brace-drift it can SALVAGE A PREFIX: we saw it keep title..question and silently drop
+// key_point, board_pearls, teaching_points, summary_points and visual_memory_card — most of a boards
+// talk's teaching payload — with no error. A half-parsed medical talk is worse than a failed one,
+// because the reader cannot tell which half is missing.
+// So: parse, then REQUIRE the schema. Anything missing is treated as a failed generation, not rendered.
+// The deliberate choice here is to make fixJSON STRICTER at the boundary rather than more permissive —
+// the fix for a truncated talk is a retry, not a lower bar.
+var _REQUIRED_LECTURE_FIELDS = ["title", "sections", "summary_points", "visual_memory_card"];
+var _REQUIRED_BOARDS_FIELDS  = ["title", "question", "key_point", "board_pearls", "visual_memory_card"];
+function _missingTalkFields(talk, style){
+  if(!talk || typeof talk !== "object") return ["(no object)"];
+  var req = (style === "boards") ? _REQUIRED_BOARDS_FIELDS : _REQUIRED_LECTURE_FIELDS;
+  var missing = [];
+  for(var i=0;i<req.length;i++){
+    var f = req[i], v = talk[f];
+    var empty = (v == null) || (Array.isArray(v) && !v.length)
+             || (typeof v === "string" && !v.trim())
+             || (typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length);
+    if(empty) missing.push(f);
+  }
+  return missing;
+}
+// Parse a model response the way production must: repair, then VERIFY. Throws on anything incomplete so
+// the caller's existing failure path runs (retry / honest error) instead of rendering a partial talk.
+function parseTalkStrict(txt, style){
+  var talk = JSON.parse(fixJSON(txt));            // throws on unrecoverable output — correct, don't loosen
+  if(style === "boards") _hoistMisplacedBoardFields(talk);   // recover known brace-drift before judging
+  var missing = _missingTalkFields(talk, style);
+  if(missing.length){
+    var e = new Error("incomplete_talk: fixJSON salvaged a PARTIAL object, missing " + missing.join(", "));
+    e.code = "incomplete_talk"; e.missing = missing;
+    throw e;                                       // never render half a medical talk
+  }
+  return talk;
+}
+
 var WRITER_UNAVAILABLE_MSG = "The verified writing model is temporarily unavailable. "
   + "Chalk Talk only writes talks with a model that has passed its medical-accuracy benchmark, so rather "
   + "than hand you an unverified draft it's better to wait — please try again in a few minutes.";

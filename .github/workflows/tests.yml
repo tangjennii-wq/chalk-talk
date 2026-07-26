@@ -74,3 +74,6 @@ jobs:
 
       - name: Gemini dev-gate + DOI verification suite
         run: node test_gemini_gate_and_doi.mjs
+
+      - name: Strict talk parsing (never render partial medical content)
+        run: node test_parse_strict.mjs

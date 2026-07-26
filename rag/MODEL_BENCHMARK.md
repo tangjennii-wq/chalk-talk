@@ -265,13 +265,45 @@ for resilience now, in order of preference:
 3. Use Sonnet 5 **only where it cannot assert medical facts** — podcast scripts, diagram prompts, chat
    scaffolding. It is fast and cheap and those roles carry no teaching authority.
 
-### ⚠️ A PRODUCTION ISSUE THIS RUN SURFACED: ~5% JSON failure rate
+### ⚠️ A PARSING RISK THIS RUN SURFACED (1 failure in 20 per model — NOT a measured 5% rate)
 
 **Both** models produced exactly **1 unparseable output in 20 — after the app's own `fixJSON()` repair.**
-That is not a model-comparison finding, it is a live reliability number: roughly **1 in 20 generations
-fails to parse for a real user**, on the primary production model. Worth investigating `fixJSON`
-robustness against these two saved cases (`rag/eval_sonnet5_full20.json`, the HRS-lecture and
-DKA-boards rows) before launch, since a parse failure is a failed generation the user pays for in time.
+
+**Statistical caveat (Codex 2026-07-26):** 1/20 does **not** establish a 5% failure rate. With n=20 and a
+single event the 95% CI is roughly **0.1%–25%** — this is a *signal that a real parsing risk exists*, and
+the true rate is unknown. Don't quote 5%.
+
+**Diagnosis before any fix.** Both failures share ONE defect, and it is the same one that produced the
+boards field-nesting bug the same day:
+
+| Model | Break point | Parser message |
+|---|---|---|
+| `claude-opus-5` (DKA boards) | `..."]}` then `,"key_point":…` | "Unexpected non-whitespace **after JSON**" — root object **closed early**, then more top-level fields |
+| `claude-sonnet-5` (HRS lecture) | `..."]` then `}],"summary_points":…` | nesting mismatch at the same boundary |
+
+Both are **brace drift at the transition from a large nested structure (`sections[]` / `question{}`) back
+to top-level fields** (`key_point`, `summary_points`, `visual_memory_card`). That is a **schema-shape
+problem, not a `fixJSON` deficiency** — which is why the fix is NOT to loosen the repair.
+
+**What was done:**
+
+* **Regression fixtures** — the two real raw outputs are saved verbatim in
+  `rag/fixtures_unparseable_talks.json`, with `test_parse_strict.mjs` asserting they stay REJECTED. The
+  fixture note explicitly warns against "fixing" them by loosening `fixJSON`.
+* **Never display partially parsed medical content.** `fixJSON`'s last-resort backward walk can salvage a
+  *prefix* that parses — observed for real, keeping `title..question` while silently dropping
+  `key_point`, `board_pearls`, `teaching_points`, `summary_points` and `visual_memory_card`. The draft now
+  goes through `parseTalkStrict()`, which repairs, recovers known brace-drift via
+  `_hoistMisplacedBoardFields()`, then **requires the schema** and throws `incomplete_talk` otherwise.
+  Empty-but-present fields count as missing, because an empty array renders as nothing.
+* **Stricter, not more permissive.** A truncated talk now fails the generation rather than rendering half
+  a talk the reader cannot audit.
+
+**Still to do (Codex's preferred direction):** prefer **structured-output enforcement** (a tool/JSON-schema
+constrained response, so the model cannot emit unbalanced JSON) plus a **bounded repair retry**, over any
+further permissive repair. Then **re-run the 20-row benchmark to confirm** the defect is gone. Reordering
+the prompt schema so the large nested structures come LAST is a cheap partial mitigation worth testing,
+since a brace slip at the end can then only orphan trailing nesting rather than the teaching payload.
 
 ### gemini-3.1-pro-preview — **FAILED** (2026-07-26, 3 topics × 2 styles = 6 rows)
 

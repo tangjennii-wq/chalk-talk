@@ -42,7 +42,7 @@ ok(/critiqueSystem = SAFETY_CRITIQUE_PROMPT/.test(html), "the targeted prompt is
 // _useTargetedReview called _draftIsComplete(draftTalk) ~60 lines BEFORE `var draftTalk` was declared.
 // Hoisting made it undefined, _draftIsComplete(undefined) returned false, and the targeted review never
 // ran once. Assert the declaration precedes the use. (Same bug class as the _draftWebSearched hoist.)
-const iDraftDecl = html.indexOf("var draftTalk = JSON.parse(fixJSON(txt));");
+const iDraftDecl = html.indexOf("var draftTalk = parseTalkStrict(txt, S.style);");   // was JSON.parse(fixJSON(txt)) before the strict-parse gate (2026-07-26)
 const iUse = html.indexOf("var _useTargetedReview");
 ok(iDraftDecl > 0 && iUse > 0, "found both the draftTalk declaration and the _useTargetedReview use");
 ok(iDraftDecl < iUse, "draftTalk is DECLARED BEFORE _useTargetedReview reads it (no var-hoisting undefined)");
