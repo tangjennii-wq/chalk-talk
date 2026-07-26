@@ -1274,7 +1274,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-08";
+var BUILD_ID = "2026-07-26-09";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6918,7 +6918,11 @@ async function generate(){
     // ── Draft acquisition: background (async) path first, synchronous streaming as fallback ──
     // _draftWebSearched: whether Claude ACTUALLY ran a web_search (async path reads it from the Worker
     // result; sync path from callAPIWithFallback). Declared here so the async assignment isn't reset.
-    var txt, _asyncCritTxt = null, _useAsync = false, _draftWebSearched = false;
+    // _draftModel: the EXACT model that wrote this draft. Not the provider — the model id, including a
+    // fallback if Opus was overloaded. The benchmark clears specific model IDs, so the honesty banner has
+    // to know which one actually ran. Declared HERE with the other draft flags to avoid the var-hoisting
+    // trap that has bitten this function twice. (Codex 2026-07-26)
+    var txt, _asyncCritTxt = null, _useAsync = false, _draftWebSearched = false, _draftModel = "";
     if (asyncGenApplicable()) {
       var _job = await submitAsyncGeneration({
         draft:    { sys: sys, content: uc, maxTok: maxTok, models: mainModels, tools: (mainOpts.tools || null) },
@@ -6941,7 +6945,8 @@ async function generate(){
         _asyncCritTxt = (_res && _res.critText) || "";
         _draftWebSearched = !!(_res && _res.webSearched);   // Worker reports actual web-search usage (Jenni 2026-07 — Codex)
         S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
-        if (_res && _res.modelUsed) console.info("Background draft via " + _res.modelUsed);
+        _draftModel = (_res && _res.modelUsed) || "";
+        if (_draftModel) console.info("Background draft via " + _draftModel);
       }
     }
     if (!_useAsync) {
@@ -6950,7 +6955,8 @@ async function generate(){
       S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
       txt = mainResult.txt;
       _draftWebSearched = !!mainResult.webSearched;
-      if (mainResult.fellBack) console.info("Draft generated with " + mainResult.modelUsed + " (Opus was overloaded)");
+      _draftModel = mainResult.modelUsed || "";
+      if (mainResult.fellBack) console.info("Draft generated with " + _draftModel + " (Opus was overloaded)");
     }
     if (!txt || !txt.trim()) throw new Error("Empty response");
     var draftTalk = JSON.parse(fixJSON(txt));
@@ -7017,7 +7023,7 @@ async function generate(){
       // do NOT charge a credit, do NOT permit share/publish, do NOT count it complete.
       S.reviewPending = { draft: draftTalk, critiqueSystem: critiqueSystem, critiquePrefix: critiquePrefix,
         critMaxTok: critMaxTok, criticModels: criticModels, topic: S.topic, style: S.style, depth: S.depth,
-        provider: (S.genProvider || "claude"), charged: !!_useAsync, ragCount: (S.ragChunks || []).length,
+        provider: (S.genProvider || "claude"), writerModel: _draftModel || "", charged: !!_useAsync, ragCount: (S.ragChunks || []).length,
         guidelinesLoaded: !!glRef, webSearched: ((S.genProvider || "claude") === "claude" && _draftWebSearched),
         err: (lastCritErr && lastCritErr.message) || "" };
       _saveReviewPending();
@@ -7039,6 +7045,7 @@ async function generate(){
     // grounded in Chalk Talk's retrieved evidence but do NOT perform live web search.
     finalTalk._reviewStatus = "reviewed";
     finalTalk._writtenBy = (S.genProvider || "claude");
+    finalTalk._writerModel = _draftModel || "";   // exact model id — what the benchmark clears (Codex 2026-07-26)
     finalTalk._webSearched = ((S.genProvider || "claude") === "claude" && _draftWebSearched);   // ACTUAL search, not the toggle
     finalTalk._ragCount = (S.ragChunks || []).length;   // 0 = retrieval returned nothing; don't claim RAG grounding
     finalTalk._guidelinesLoaded = !!glRef;              // a guideline actually matched this topic
@@ -8846,6 +8853,7 @@ async function retryReview(){
   finalTalk = _finalizeBoardQuestion(finalTalk);
   finalTalk._reviewStatus = "reviewed";
   finalTalk._writtenBy = (S.genProvider || "claude");
+  finalTalk._writerModel = rp.writerModel || "";   // a review retry never re-drafts, so the writer is unchanged
   finalTalk._webSearched = !!rp.webSearched;   // the DRAFT's actual search; a review retry never re-searches
   finalTalk._ragCount = (rp.ragCount != null ? rp.ragCount : (S.ragChunks || []).length);
   finalTalk._guidelinesLoaded = (rp.guidelinesLoaded != null ? rp.guidelinesLoaded : !!getGuidelinesForTopic(rp.topic));
@@ -8888,14 +8896,36 @@ function discardReviewDraft(){ S.reviewPending = null; _saveReviewPending(); S.e
 // all — and is LIVE via BYOK. A reader cannot tell any of this from the talk itself, so say it: any talk
 // written by a model that has not cleared the bar carries a visible warning, not just a neutral chip.
 // Add a provider here ONLY after it passes the benchmark.
-var WRITER_BENCHMARK_CLEARED = { claude: true, openai: false, gemini: false };
-function writerIsBenchmarked(w){ return WRITER_BENCHMARK_CLEARED[String(w || "claude")] === true; }
+// KEYED BY EXACT MODEL ID (Codex 2026-07-26). Keying by provider was wrong and actively misleading:
+// the benchmark cleared claude-opus-5, but production's MODEL_MAIN is claude-opus-4-8 with fallbacks to
+// Sonnet 4 and Haiku 4.5 when Opus is overloaded. Labelling all of those "Claude — cleared" vouched for
+// three models that were never tested. A model earns `true` ONLY after it passes the frozen 20-row
+// benchmark in rag/MODEL_BENCHMARK.md. Anything absent from this map is treated as NOT cleared.
+var WRITER_BENCHMARK_CLEARED = {
+  "claude-opus-5": true,               // benchmarked 2026-07-26: reference arm, 4.67/5, won 18/18 and 6/6
+  "claude-opus-4-8": false,            // production MODEL_MAIN — NOT yet benchmarked
+  "claude-opus-4-6": false,
+  "claude-sonnet-4-6": false,
+  "claude-sonnet-4-20250514": false,   // overload fallback
+  "claude-haiku-4-5-20251001": false,  // overload fallback + critic
+  "gpt-5": false,                      // ChatGPT BYOK default — never benchmarked
+  "gemini-3.6-flash": false,           // FAILED outright (fabricated a trial + DOI)
+  "gemini-3.1-pro-preview": false      // passed safety, lost 0-6 on quality
+};
+// An unknown model id is NOT cleared — fail closed, so a model swap can never silently inherit a
+// "verified" badge it hasn't earned. A talk with no recorded model at all (pre-2026-07-26 talks) is
+// left unlabelled rather than accused, since we genuinely don't know what wrote it.
+function writerIsBenchmarked(m){ return WRITER_BENCHMARK_CLEARED[String(m || "")] === true; }
+function writerModelKnown(m){ return !!String(m || "").trim(); }
 function writerLabel(w){ return w === "gemini" ? "Gemini" : (w === "openai" ? "ChatGPT" : "Claude"); }
 // Shown above a talk whose writer hasn't cleared the bar. Concrete about the failure MODES we actually
 // observed, because "may be less accurate" is too vague to change how someone reads a talk.
 function writerWarningHtml(t){
-  if(!t || !t._writtenBy || writerIsBenchmarked(t._writtenBy)) return "";
-  var w = writerLabel(t._writtenBy);
+  if(!t) return "";
+  var mdl = t._writerModel || "";
+  if(!writerModelKnown(mdl)) return "";           // legacy talk, model unrecorded → don't accuse
+  if(writerIsBenchmarked(mdl)) return "";
+  var w = writerLabel(t._writtenBy) + " (" + mdl + ")";
   return '<div style="background:#fdf3e7;border:1px solid #e8c9a0;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px;color:#6b4a1f;line-height:1.5">'
     + '⚠️ <b>Written by ' + esc(w) + ' — not verified to Chalk Talk\'s accuracy standard.</b> '
     + 'Only Claude has passed our medical-quality benchmark. In testing, other models stated guideline '
@@ -8908,7 +8938,7 @@ function _provenanceChips(t, auditPending){
   if(!t || !t._reviewStatus) return [];
   var wb = writerLabel(t._writtenBy);
   // Name the unverified writer in the chip too, so it reads honestly even where the banner isn't shown.
-  if(!writerIsBenchmarked(t._writtenBy)) wb = wb + " (unverified model)";
+  if(writerModelKnown(t._writerModel) && !writerIsBenchmarked(t._writerModel)) wb = wb + " (unverified model)";
   var chips = [];
   chips.push("✍️ Written by " + wb);
   chips.push("🔎 AI-reviewed");

@@ -107,27 +107,54 @@ ok(/h \+= writerWarningHtml\(t\);/.test(html), "the warning is rendered into the
   const isB = vm.runInContext("writerIsBenchmarked", wctx);
   const warn = vm.runInContext("writerWarningHtml", wctx);
 
-  ok(cleared.claude === true, "Claude is marked as having cleared the benchmark");
-  ok(cleared.openai === false, "ChatGPT is NOT marked cleared (it has never been tested)");
-  ok(cleared.gemini === false, "Gemini is NOT marked cleared (Flash failed; Pro lost 0-6 on quality)");
-  ok(isB("claude") === true && isB("openai") === false && isB("gemini") === false, "writerIsBenchmarked reflects the table");
-  ok(isB(undefined) === true && isB(null) === true, "a missing writer defaults to Claude (the historical default)");
+  // KEYED BY EXACT MODEL ID (Codex 2026-07-26). Provider-level keying vouched for claude-opus-4-8,
+  // Sonnet 4 and Haiku 4.5 — none of which were benchmarked — because they are all "Claude".
+  ok(cleared["claude-opus-5"] === true, "claude-opus-5 (the benchmarked reference arm) is cleared");
+  ok(cleared["claude-opus-4-8"] === false, "production MODEL_MAIN claude-opus-4-8 is NOT cleared (untested)");
+  ok(cleared["claude-sonnet-4-20250514"] === false, "the Sonnet overload fallback is NOT cleared");
+  ok(cleared["claude-haiku-4-5-20251001"] === false, "the Haiku overload fallback is NOT cleared");
+  ok(cleared["gpt-5"] === false, "gpt-5 (live ChatGPT BYOK default) is NOT cleared");
+  ok(cleared["gemini-3.6-flash"] === false && cleared["gemini-3.1-pro-preview"] === false, "neither Gemini is cleared");
+  ok(!("claude" in cleared) && !("openai" in cleared), "no PROVIDER-level keys remain (that was the bug)");
 
-  ok(warn({ _writtenBy: "claude" }) === "", "no warning on a Claude-written talk");
-  ok(warn({}) === "" && warn(null) === "", "no warning when the writer is unknown/absent");
-  const wOai = warn({ _writtenBy: "openai" }), wGem = warn({ _writtenBy: "gemini" });
-  ok(wOai.length > 200 && wGem.length > 200, "a warning IS produced for ChatGPT and Gemini");
-  ok(/ChatGPT/.test(wOai) && /Gemini/.test(wGem), "the warning names the actual model");
-  // it must be specific about the observed failure modes, not vague hand-waving
+  ok(isB("claude-opus-5") === true, "writerIsBenchmarked passes the cleared model");
+  ok(isB("claude-opus-4-8") === false, "writerIsBenchmarked rejects the untested production model");
+  ok(isB("some-future-model") === false, "an UNKNOWN model id fails CLOSED (a model swap can't inherit a badge)");
+  ok(isB("") === false && isB(null) === false, "empty/absent model id is not cleared");
+
+  // MODEL_MAIN must actually appear in the table, or a future bump silently escapes labelling
+  const mainModel = (html.match(/var MODEL_MAIN = "([^"]+)"/) || [])[1];
+  ok(!!mainModel, "found MODEL_MAIN in index.html");
+  ok(Object.prototype.hasOwnProperty.call(cleared, mainModel),
+     `production MODEL_MAIN (${mainModel}) is listed in WRITER_BENCHMARK_CLEARED`);
+
+  ok(warn({ _writtenBy: "claude", _writerModel: "claude-opus-5" }) === "", "no warning on a talk written by the cleared model");
+  ok(warn({ _writtenBy: "claude", _writerModel: "" }) === "", "no warning when the model is UNRECORDED (legacy talk — don't accuse)");
+  ok(warn({}) === "" && warn(null) === "", "no warning on absent/null talk");
+  const wProd = warn({ _writtenBy: "claude", _writerModel: "claude-opus-4-8" });
+  ok(wProd.length > 200, "the untested PRODUCTION model does warn");
+  ok(/claude-opus-4-8/.test(wProd), "the warning names the exact model id, not just the provider");
+  const wOai = warn({ _writtenBy: "openai", _writerModel: "gpt-5" }), wGem = warn({ _writtenBy: "gemini", _writerModel: "gemini-3.1-pro-preview" });
+  ok(/ChatGPT/.test(wOai) && /gpt-5/.test(wOai), "ChatGPT warning names provider AND model");
+  ok(/Gemini/.test(wGem) && /gemini-3.1-pro-preview/.test(wGem), "Gemini warning names provider AND model");
   for (const [needle, why] of [
     ["not verified", "says plainly it is unverified"],
     ["more strongly than the guideline", "names guideline overstatement (the observed pattern)"],
     ["wrong guideline", "names misattribution"],
     ["mechanism errors", "names mechanism errors"],
     ["primary source", "tells the reader what to actually do about it"],
-  ]) ok(needle && wOai.includes(needle), `warning ${why}`);
+  ]) ok(wOai.includes(needle), `warning ${why}`);
 }
-// the provenance chip must also read honestly for an unverified writer
+
+// the exact model must be CAPTURED from both generation paths, not inferred
+ok(/var txt, _asyncCritTxt = null, _useAsync = false, _draftWebSearched = false, _draftModel = ""/.test(html),
+   "_draftModel is declared with the other draft flags (no var-hoisting trap)");
+ok(/_draftModel = \(_res && _res\.modelUsed\) \|\| "";/.test(html), "async/Worker path captures modelUsed");
+ok(/_draftModel = mainResult\.modelUsed \|\| "";/.test(html), "sync path captures modelUsed (incl. an overload fallback)");
+ok(/finalTalk\._writerModel = _draftModel/.test(html), "the exact model is stamped onto the talk");
+ok(/writerModel: _draftModel/.test(html), "a WITHHELD draft remembers which model wrote it");
+ok(/finalTalk\._writerModel = rp\.writerModel/.test(html), "a review retry restores the original writer model (it never re-drafts)");
+
 ok(/\(unverified model\)/.test(html), "the 'Written by' chip marks an unverified model too (defence in depth)");
 
 console.log("\n" + (failures === 0 ? "✔ GEMINI GATE + DOI TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
