@@ -31,3 +31,6 @@ rag/landmark_validation_report.json
 .wrangler/
 .dev.vars
 .cd
+
+# Eval artifact — regenerated on every run
+rag/eval_gemini_report.json
