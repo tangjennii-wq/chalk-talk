@@ -627,6 +627,27 @@ var GEN_GEMINI_FREE_MODEL = "gemini-3.6-flash";   // "Continue free with Gemini"
 var GEN_GEMINI_BYOK_MODEL = "gemini-3.6-flash";   // user explicitly picks Gemini as their provider
 function activeGeminiModel(){ return (typeof S !== "undefined" && S.geminiFreeFlow) ? GEN_GEMINI_FREE_MODEL : GEN_GEMINI_BYOK_MODEL; }
 
+// ── GEMINI IS DEVELOPER-ONLY (launch decision 2026-07-26) ─────────────────────────────────────
+// A 20-topic head-to-head (rag/eval_gemini_quality.mjs, 18 rows completed) had a blind reviewer prefer
+// Claude in EVERY judged comparison, mean accuracy ~3.4/5 vs ~4.4/5. The failures were not stylistic —
+// they were teachable clinical errors a resident would carry to the bedside:
+//   · fabricated a trial ("EMPA-SIADH") with a DOI that matches no publication
+//   · counted age 64 toward sPESI (threshold is >80) → mis-risk-stratifies PE
+//   · offered "intravenous oseltamivir", which does not exist as a formulation
+//   · wrong DKA resolution criteria and K+ thresholds, wrong AGA ferritin cutoff (30 vs 45),
+//     tolvaptan boxed-warning conflation (Samsca vs Jynarque), misstated SLKT criteria
+//   · a systematic habit of overstating guideline strength and attributing recommendations to the
+//     wrong guideline — the single most dangerous failure mode for teaching material
+// "Gemini drafts, Claude reviews" was considered and rejected: the free tier exists precisely because
+// Claude credits are exhausted, so a mandatory Claude review restores the cost it was meant to avoid,
+// and reviewing a draft with 5-9 substantive errors returns a full REWRITE rather than a clean verdict —
+// paying Claude to redo Gemini's work while any missed error still ships.
+// Gemini stays in the codebase behind this flag so the harness can re-test future model versions.
+// Enable for yourself only:  localStorage.setItem("ct_dev_gemini","1")  then reload.
+function geminiEnabled(){
+  try { return localStorage.getItem("ct_dev_gemini") === "1"; } catch(_) { return false; }
+}
+
 // Segmented-control button helper. Used by Style/Depth on the compose form AND in the
 // edit-settings drawer. Keeps the look consistent and lets us tune the segmented style
 // in one place. Pass {compact:true} for the drawer (no box-shadow / transition).
@@ -1227,7 +1248,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-04";
+var BUILD_ID = "2026-07-26-05";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1479,7 +1500,7 @@ async function resumeAsyncJobIfAny(){
     var _auditGenId = S.genId;
     (async function(){
       try{
-        var audited = await verifyCitations(await verifyModelPmids(finalTalk));
+        var audited = await verifyCitations(await verifyModelDois(await verifyModelPmids(finalTalk)));
         if(_auditGenId === S.genId && audited){ S.talk = audited; S.citationAuditPending = false; render(); }
       }catch(_){ if(_auditGenId === S.genId){ S.citationAuditPending = false; render(); } }
     })();
@@ -5550,6 +5571,82 @@ async function verifyModelPmids(talk){
   return talk;
 }
 
+// ── TRUST-BUT-VERIFY, DOI EDITION (Jenni 2026-07-26) ──────────────────────────────────────────
+// verifyModelPmids only ever checked PMIDs, so a reference cited by DOI was never verified at all. The
+// 20-topic model eval caught exactly this: a fabricated trial ("EMPA-SIADH") carrying a DOI that matches
+// no publication sailed through untouched and would have rendered as an authoritative citation. Any
+// model can mint a plausible-looking DOI, so this is not a Gemini-specific hole.
+// Resolves each un-verified DOI against Crossref (free, no key). Exists → promote to a verified source
+// and adopt Crossref's canonical title/journal/year. Confirmed absent → drop the reference and strip its
+// inline [n] chips, same as a fabricated PMID. Network failure → FAIL OPEN (promote/drop nothing), because
+// a transport error must never be reported as a bad citation.
+// DOI suffixes legitimately CONTAIN parentheses — Lancet DOIs look like 10.1016/S0140-6736(19)31881-1.
+// Excluding ")" from the match truncated them, and a truncated DOI 404s on Crossref, which would have
+// made verifyModelDois DELETE real Lancet references as fabricated. So: allow parens in the body, then
+// trim trailing punctuation, then drop a single unbalanced trailing ")" (the "(see doi.org/10.x/y)" case).
+function _extractDoi(r){
+  if(!r) return "";
+  var hay = [r.doi, r.url, r.source].map(function(x){ return String(x == null ? "" : x); }).join(" ");
+  var m = hay.match(/(10\.\d{4,9}\/[^\s"'<>\]]+)/);
+  if(!m) return "";
+  var d = m[1].replace(/[.,;:]+$/, "").trim();
+  var opens = (d.match(/\(/g) || []).length, closes = (d.match(/\)/g) || []).length;
+  while(closes > opens && /\)$/.test(d)){ d = d.slice(0, -1); closes--; }
+  return d;
+}
+async function _crossrefBatch(dois){
+  var out = {}, any = false;
+  for(var i=0;i<dois.length && i<12;i++){                    // cap the fan-out; this runs in the background
+    var d = dois[i];
+    try{
+      var r = await fetch("https://api.crossref.org/works/" + encodeURIComponent(d), { headers: { "Accept": "application/json" } });
+      if(r.status === 404){ out[d] = { ok:false }; any = true; continue; }
+      if(!r.ok) { out[d] = null; continue; }                  // transient → unknown, fail open for this one
+      var j = await r.json(); var m = j && j.message;
+      if(!m){ out[d] = null; continue; }
+      var y = (m.issued && m.issued["date-parts"] && m.issued["date-parts"][0] && m.issued["date-parts"][0][0])
+           || (m["published-print"] && m["published-print"]["date-parts"] && m["published-print"]["date-parts"][0] && m["published-print"]["date-parts"][0][0]) || null;
+      out[d] = { ok:true, title:(m.title||[])[0]||"", journal:(m["container-title"]||[])[0]||"", year: y ? parseInt(y,10) : null };
+      any = true;
+    }catch(e){ out[d] = null; }
+  }
+  return any ? out : null;                                   // nothing resolved at all → treat as network failure
+}
+async function verifyModelDois(talk){
+  if(!talk || !Array.isArray(talk.references) || !talk.references.length) return talk;
+  var toCheck = [];
+  talk.references.forEach(function(r){
+    if(!r || r.src_verified) return;                         // already verified (retrieved / paste / pubmed)
+    if(r.pmid && /^\d{6,9}$/.test(String(r.pmid))) return;   // PMID path already handled it
+    var d = _extractDoi(r);
+    if(!d) return;                                           // nothing to verify (society landing page, etc.)
+    toCheck.push({ ref:r, doi:d });
+  });
+  if(!toCheck.length) return talk;
+  var map = await _crossrefBatch(toCheck.map(function(x){ return x.doi; }));
+  if(!map) return talk;                                      // fail open
+  var dropIds = [];
+  toCheck.forEach(function(x){
+    var v = map[x.doi];
+    if(v && v.ok){
+      x.ref.src_verified = "crossref";
+      if(v.title) x.ref.source = v.title;
+      if(v.year) x.ref.year = v.year;
+      if(v.journal) x.ref.society = v.journal;
+      x.ref.url = "https://doi.org/" + x.doi;
+    } else if(v && v.ok === false && x.ref.id != null){
+      dropIds.push(String(x.ref.id));                        // DOI resolves to nothing → fabricated
+    }
+  });
+  if(dropIds.length){
+    talk = _stripChipIds(talk, dropIds);
+    talk.references = (talk.references||[]).filter(function(r){ return r && dropIds.indexOf(String(r.id)) < 0; });
+    S.pubmedDropped = (S.pubmedDropped||0) + dropIds.length;
+  }
+  _assignConfidence(talk);
+  return talk;
+}
+
 // Option A filter: keep an add_references entry only if its PMID, DOI, or URL is literally present
 // in the pasted feedback. No identifier in the paste -> the correction still applies, UNCITED.
 function _filterRefsToPaste(addRefs, paste){
@@ -5702,6 +5799,7 @@ function _confidenceOf(r, retrieved){
   var _srcKey = String(r.source || "").trim().toLowerCase();
   if(_srcKey && retrieved.titles[_srcKey]) return ["high", "retrieved"];
   if(r.src_verified === "pubmed") return ["high", "pubmed_verified"];             // PMID resolved on NCBI eutils
+  if(r.src_verified === "crossref") return ["high", "doi_verified"];               // DOI resolved on Crossref (2026-07-26)
   if(r.src_verified === "paste") return ["medium", "paste_asserted"];             // identifier verbatim in paste, PubMed unreachable — don't punish a blip
   if(r.pmid || _u) return ["medium", "identifier_only"];                          // has a link the reader can verify, but no session grounding
   return ["low", "model_knowledge"];                                             // nothing backs it -> no chip
@@ -6969,7 +7067,7 @@ async function generate(){
     var _talkBeforeAudit = S.talk;
     (async function runBackgroundAudit(){
       try {
-        var auditedTalk = await verifyCitations(await verifyModelPmids(_talkBeforeAudit));
+        var auditedTalk = await verifyCitations(await verifyModelDois(await verifyModelPmids(_talkBeforeAudit)));
         // Don't apply the audit result if the user has navigated away or started a new gen.
         // IDENTITY check, not just genId (bug fix 2026-07-26): S.genId is bumped ONLY by generate() and
         // the async resume, so opening a different talk from the Library (loadSavedTalk), loading a
@@ -7531,7 +7629,7 @@ async function applyProofreadFeedback(userMsg){
           var _auditTarget = S.talk;
           (async function(){
             try{
-              var audited = await verifyCitations(await verifyModelPmids(_auditTarget));
+              var audited = await verifyCitations(await verifyModelDois(await verifyModelPmids(_auditTarget)));
               if(S.talk !== _auditTarget) return;   // user navigated / regenerated / refined again
               S.talk = audited;
               S.citationAuditPending = false;
@@ -9126,13 +9224,21 @@ function renderGlobalModals(){
     h+='<div class="drawer-head" style="padding:20px 22px 8px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>✨</span> '+(_paused?"Free tier paused":"You've used your free talks")+'</div><button class="drawer-close" id="freeModalCloseBtn">×</button></div>';
     h+='<div class="drawer-body" style="padding:0 22px 22px">';
     if(_paused){
-      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">'+esc(S.freePausedMsg)+' Keep generating <b style="color:var(--ink)">free with Gemini</b> using your own Google AI Studio key — or bring a Claude/ChatGPT key.</p>';
+      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">'+esc(S.freePausedMsg)+(geminiEnabled()
+        ? ' Keep generating <b style="color:var(--ink)">free with Gemini</b> using your own Google AI Studio key — or bring a Claude/ChatGPT key.'
+        : ' Bring your own <b style="color:var(--ink)">Claude</b> or <b style="color:var(--ink)">ChatGPT</b> key to keep going.')+'</p>';
     } else {
-      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">Thanks for trying Chalk Talk! You\'ve used your free talks. Keep going <b style="color:var(--ink)">free with Gemini</b> (your own Google AI Studio key), or bring a <b style="color:var(--ink)">Claude</b> (~$5 ≈ 30 talks) or <b style="color:var(--ink)">ChatGPT</b> key. Keys stay in this browser and go straight to the provider.</p>';
+      h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">'+(geminiEnabled()
+        ? 'Thanks for trying Chalk Talk! You\'ve used your free talks. Keep going <b style="color:var(--ink)">free with Gemini</b> (your own Google AI Studio key), or bring a <b style="color:var(--ink)">Claude</b> (~$5 ≈ 30 talks) or <b style="color:var(--ink)">ChatGPT</b> key. Keys stay in this browser and go straight to the provider.'
+        : 'Thanks for trying Chalk Talk! You\'ve used your free talks. To keep going, bring a <b style="color:var(--ink)">Claude</b> key (~$5 ≈ 30 talks) or a <b style="color:var(--ink)">ChatGPT</b> key. Keys stay in this browser and go straight to the provider.')+'</p>';
     }
-    // PRIMARY: continue free with Gemini (BYO free AI Studio key). Jenni 2026-07.
-    h+='<button id="freeGeminiBtn" style="width:100%;background:linear-gradient(135deg,#1a73e8,#4285f4);border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-bottom:6px">✨ Continue free with Gemini →</button>';
+    // PRIMARY: continue free with Gemini — DEVELOPER-ONLY as of 2026-07-26 (see geminiEnabled()).
+    // The 20-topic head-to-head found teachable clinical errors in Gemini output, so this CTA is not
+    // shown to users. It remains reachable with localStorage ct_dev_gemini="1" for future re-testing.
+    if (geminiEnabled()) {
+    h+='<button id="freeGeminiBtn" style="width:100%;background:linear-gradient(135deg,#1a73e8,#4285f4);border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-bottom:6px">✨ Continue free with Gemini → <span style="font-size:10px;opacity:.85">(dev)</span></button>';
     h+='<div style="font-size:11px;color:var(--ink-muted);line-height:1.45;margin:0 0 12px;text-align:center">Free Google AI Studio key · <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--plum)">get one in ~2 min</a></div>';
+    }
     // SECONDARY: premium keys
     h+='<button id="freeAddKeyBtn" style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px;font-size:13px;font-weight:600;color:var(--plum);cursor:pointer;margin-bottom:12px">Use a Claude or ChatGPT key instead</button>';
     // DISCLOSURES (Google data-use + no PHI) — required for the free Gemini path.
@@ -10099,7 +10205,7 @@ function renderMain(){
     h+='<button id="reviewRetryBtn" '+(S.reviewRetrying?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:12px;padding:13px;color:#fff;font-size:14px;font-weight:600;cursor:'+(S.reviewRetrying?"default":"pointer")+';opacity:'+(S.reviewRetrying?"0.6":"1")+'">'+(S.reviewRetrying?"Reviewing…":"↻ Retry review")+'</button>';
     h+='<div style="display:flex;gap:8px">';
     if(_rpProv!=="claude") h+='<button id="reviewSwitchClaudeBtn" '+(S.reviewRetrying?"disabled":"")+' style="flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">Review with Claude</button>';
-    if(_rpProv!=="gemini") h+='<button id="reviewSwitchGeminiBtn" '+(S.reviewRetrying?"disabled":"")+' style="flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">Review with Gemini</button>';
+    if(_rpProv!=="gemini" && geminiEnabled()) h+='<button id="reviewSwitchGeminiBtn" '+(S.reviewRetrying?"disabled":"")+' style="flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px;color:var(--plum);font-size:13px;font-weight:600;cursor:pointer">Review with Gemini</button>';
     h+='</div>';
     h+='<button id="reviewDiscardBtn" '+(S.reviewRetrying?"disabled":"")+' style="width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--ink-muted);font-size:12.5px;font-weight:600;cursor:pointer">Discard draft</button>';
     h+='</div>';
@@ -11484,6 +11590,7 @@ function bindMain(){
   var mpt=document.getElementById("modelPickerToggle");if(mpt)mpt.onclick=function(){S.modelPickerOpen=true;render();};
   document.querySelectorAll(".genProvBtn").forEach(function(b){b.onclick=function(){
     var p=b.dataset.p||"claude";
+    if(p==="gemini" && !geminiEnabled()) return;   // dev-only provider (2026-07-26)
     S.genProvider=p; try{ localStorage.setItem("ct_gen_provider", p); }catch(_){}
     if(p==="openai" && !getOpenAIKeyRaw()){ openKeyModal("openai"); return; }
     if(p==="gemini" && !getGeminiKeyRaw()){ openKeyModal("gemini"); return; }
@@ -11504,7 +11611,7 @@ function bindMain(){
   // Withheld-draft (review-incomplete) card handlers (Jenni 2026-07)
   var rvRetry=document.getElementById("reviewRetryBtn");if(rvRetry)rvRetry.onclick=function(){ retryReview(); };
   var rvClaude=document.getElementById("reviewSwitchClaudeBtn");if(rvClaude)rvClaude.onclick=function(){ switchProviderAndRetryReview("claude"); };
-  var rvGemini=document.getElementById("reviewSwitchGeminiBtn");if(rvGemini)rvGemini.onclick=function(){ switchProviderAndRetryReview("gemini"); };
+  var rvGemini=document.getElementById("reviewSwitchGeminiBtn");if(rvGemini)rvGemini.onclick=function(){ if(!geminiEnabled()) return; switchProviderAndRetryReview("gemini"); };
   var rvDiscard=document.getElementById("reviewDiscardBtn");if(rvDiscard)rvDiscard.onclick=function(){ discardReviewDraft(); };
   var cgb=document.getElementById("cancelGenBtn");if(cgb)cgb.onclick=cancelGen;
   // Live depth + verify controls inside the loading panel — changing restarts generation cleanly.
@@ -12296,7 +12403,8 @@ function bindMain(){
 // the FIRST time someone lands on this device. Returning users get it collapsed.
 try{ if(!localStorage.getItem("ct_seen_v1")){ S.howitOpen = true; localStorage.setItem("ct_seen_v1","1"); } }catch(_){}
 // Restore the chosen generation provider (Jenni 2026-07-03).
-try{ var _gp = localStorage.getItem("ct_gen_provider"); if(_gp==="openai"||_gp==="gemini"||_gp==="claude") S.genProvider = _gp; }catch(_){}
+try{ var _gp = localStorage.getItem("ct_gen_provider"); if(_gp==="gemini" && !geminiEnabled()) _gp = "claude";   /* Gemini is dev-only (2026-07-26) — a previously-saved gemini preference must not silently persist */
+     if(_gp==="openai"||_gp==="gemini"||_gp==="claude") S.genProvider = _gp; }catch(_){}
 // Remember whether the compose "Options" (depth/model/verify) were expanded. Default collapsed.
 try{ if(localStorage.getItem("ct_compose_options")==="1") S.composeOptionsOpen = true; }catch(_){}
 // Restore a topic the user typed before being bounced to sign-in (which reloads the page). (fix #2)

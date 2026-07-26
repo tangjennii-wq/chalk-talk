@@ -71,3 +71,6 @@ jobs:
 
       - name: State isolation suite (talk-scoped reset + owner-scoped withheld draft)
         run: node test_state_isolation.mjs
+
+      - name: Gemini dev-gate + DOI verification suite
+        run: node test_gemini_gate_and_doi.mjs

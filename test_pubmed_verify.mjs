@@ -66,7 +66,10 @@ ok(!out2.references.find(r=>r.id===1).src_verified, "network failure → nothing
 // ── 3) source guards: the prompt conflict fix + wiring ───────────────────────
 ok(/an uncited key point is fully acceptable/.test(html), "BOARDS KEY POINT no longer force-cites (uncited is acceptable)");
 ok(!/not a list\. End it with an inline citation marker like \[1\]\./.test(html), "removed the unconditional 'End it with [1]' KEY POINT mandate");
-ok((html.match(/verifyCitations\(await verifyModelPmids\(/g)||[]).length >= 3, "verifyModelPmids runs before verifyCitations in all audit paths");
+// The call is now nested with the DOI verifier — verifyCitations(await verifyModelDois(await
+// verifyModelPmids(x))) — so match the ORDER rather than one literal string. (2026-07-26)
+ok((html.match(/verifyCitations\(await verifyModelDois\(await verifyModelPmids\(/g)||[]).length >= 3,
+   "verifyModelPmids AND verifyModelDois both run before verifyCitations in all 3 audit paths");
 
 console.log("\n" + (failures === 0 ? "✔ PUBMED-VERIFY TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);
