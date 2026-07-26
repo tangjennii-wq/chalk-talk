@@ -19,9 +19,12 @@ function constLine(name){ const m = html.match(new RegExp("var\\s+" + name + '\\
 // ---- live values into a vm ---------------------------------------------------
 const FREE = constLine("GEN_GEMINI_FREE_MODEL");
 const BYOK = constLine("GEN_GEMINI_BYOK_MODEL");
-const ctx = { S: { geminiFreeFlow: false }, GEN_GEMINI_FREE_MODEL: FREE, GEN_GEMINI_BYOK_MODEL: BYOK, console };
+const ctx = { S: { geminiFreeFlow: false }, GEN_GEMINI_FREE_MODEL: FREE, GEN_GEMINI_BYOK_MODEL: BYOK, console, esc: (x) => String(x) };
 vm.createContext(ctx);
-vm.runInContext(fnSrc("activeGeminiModel") + "\n" + fnSrc("_provenanceChips"), ctx);
+// _provenanceChips now calls writerLabel/writerIsBenchmarked (unverified-writer warning, 2026-07-26),
+// so the writer-benchmark table and those helpers must be in the sandbox too.
+const _writerBlock = html.slice(html.indexOf("var WRITER_BENCHMARK_CLEARED"), html.indexOf("function _provenanceChips"));
+vm.runInContext(_writerBlock + "\n" + fnSrc("activeGeminiModel") + "\n" + fnSrc("_provenanceChips"), ctx);
 const activeGeminiModel = vm.runInContext("activeGeminiModel", ctx);
 const chips = vm.runInContext("_provenanceChips", ctx);
 
