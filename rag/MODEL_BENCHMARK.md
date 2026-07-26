@@ -22,6 +22,55 @@ harness can clear one.**
 
 ---
 
+
+## THE FULL EXPOSURE SURFACE — every model that can write text a reader sees
+
+Codex's rule (2026-07-26): benchmark by **exact model id**, and benchmark every model that might write
+user-facing text — not every model that exists. Passing `claude-opus-5` clears `claude-opus-5` only.
+
+Auditing index.html for that surface turned up more than the obvious one:
+
+| Model | Where it writes | Benchmarked? |
+|---|---|---|
+| `claude-opus-4-8` | `MODEL_MAIN` — draft primary | **NO** |
+| `claude-sonnet-4-20250514` | draft fallback **AND the LECTURE critic's first choice** | **NO** |
+| `claude-haiku-4-5-20251001` | draft fallback 2 + critic fallback | **NO** |
+| `claude-sonnet-4-6` | hardcoded in all 6 refine / proofread / weave paths | **NO** |
+| `gpt-5` | ChatGPT BYOK default — live and ungated | **NO** (report lost; re-run) |
+| `claude-opus-5` | not in production; the benchmark's reference arm | **YES** — 4.67/5, 18/18 + 6/6 |
+
+**The critic is a writer.** The lecture critic chain is `[MODEL_SONNET_FALLBACK, MODEL_CRITIC]` —
+Opus is not in it. When a critique returns a corrected talk instead of `{"verdict":"clean"}`, that model
+has **rewritten the talk**. So the final text of a typical lecture is written by Sonnet 4 or Haiku 4.5,
+not by the draft model. Any claim that "talks are written by Opus" is wrong today.
+
+**A known gap in the tracking:** `talk._writerModel` records the model that wrote the **draft**. It does
+not record a critic that rewrote it, nor the `claude-sonnet-4-6` that writes every refine. So the warning
+banner currently under-reports which model produced the text on screen. Worth closing.
+
+### Priority order for benchmarking (highest user impact first)
+
+1. `claude-sonnet-4-20250514` — writes the final text of most lecture talks (critic primary).
+2. `claude-opus-4-8` — draft primary; determines the starting quality of everything.
+3. `claude-sonnet-4-6` — writes every refine, proofread and section rewrite.
+4. `claude-haiku-4-5-20251001` — fallback for both draft and critic; also the cheapest, so likely weakest.
+5. `gpt-5` — BYOK; live and ungated, but user-elected rather than default.
+
+`claude-opus-5` only needs a decision if you switch `MODEL_MAIN` to it, which also requires adding it to
+`worker.js` `ALLOWED_MODELS` **and** `PRICING` (the Worker rejects unlisted models, and the cap
+mis-counts on wrong pricing).
+
+### Launch options (Codex)
+
+- **(A)** Benchmark all production fallbacks, and only ship models that pass; or
+- **(B)** Prevent unbenchmarked models from writing at all — let them return an availability error
+  instead of silently producing an unverified talk.
+
+(B) is cheaper and arguably more honest, but it trades resilience: an Opus overload would surface as an
+error rather than a quietly-lower-quality talk. Whichever is chosen, `WRITER_BENCHMARK_CLEARED` in
+index.html must stay in sync with the table above; a test asserts `MODEL_MAIN` appears in it, so bumping
+the model without a decision breaks CI.
+
 ## PASS BAR (all six required)
 
 A model may draft user-facing content only if, across the frozen 20-row benchmark:

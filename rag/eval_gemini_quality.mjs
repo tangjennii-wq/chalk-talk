@@ -31,6 +31,11 @@
  *   node rag/eval_gemini_quality.mjs --style lecture    # one style only
  *   node rag/eval_gemini_quality.mjs --no-judge         # skip the LLM judge even if Claude key set
  *   node rag/eval_gemini_quality.mjs --gemini-model gemini-3.1-pro     # is a PAID Pro model good enough?
+ *   node rag/eval_gemini_quality.mjs --provider claude --claude-model claude-opus-4-8
+ *   node rag/eval_gemini_quality.mjs --provider claude --claude-model claude-sonnet-4-20250514
+ *      (Passing claude-opus-5 does NOT clear the models that actually write talks today. The lecture
+ *       CRITIC chain is [Sonnet 4, Haiku 4.5] — a critique that returns a corrected talk rewrote it —
+ *       and every refine path hardcodes claude-sonnet-4-6. Benchmark by exact id.)
  *   node rag/eval_gemini_quality.mjs --provider openai --openai-model gpt-5.6
  *      (ChatGPT BYOK is LIVE in the app and unbenchmarked — same bar applies.)
  *   node rag/eval_gemini_quality.mjs --provider openrouter --model deepseek/deepseek-r1
@@ -60,11 +65,21 @@ const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || "";
 const _prov0 = argVal("--provider", "gemini");
 const _needOR = _prov0 === "openrouter";
 const _needOAI = _prov0 === "openai";
+const _needCla = _prov0 === "claude";
+if (!DRY && _needCla && !ARGV.includes("--claude-model")) {
+  console.error("✖ --provider claude also needs --claude-model <id>, e.g. claude-sonnet-4-20250514");
+  console.error("  (claude-opus-5 stays the reference arm, so testing it against itself is pointless.)");
+  process.exit(1);
+}
+if (!DRY && _needCla && !process.env.ANTHROPIC_API_KEY) {
+  console.error("✖ ANTHROPIC_API_KEY not set. Add it with: node rag/setkey.mjs ANTHROPIC_API_KEY");
+  process.exit(1);
+}
 if (!DRY && _needOAI && !process.env.OPENAI_API_KEY) {
   console.error("✖ OPENAI_API_KEY not set. Add it with: node rag/setkey.mjs OPENAI_API_KEY");
   process.exit(1);
 }
-if (!DRY && !_needOR && !_needOAI && !GEMINI_KEY) {
+if (!DRY && !_needOR && !_needOAI && !_needCla && !GEMINI_KEY) {
   console.error("✖ GEMINI_API_KEY not set. Add it with: node rag/setkey.mjs GEMINI_API_KEY");
   console.error("  Get one at https://aistudio.google.com/apikey  ·  never paste keys into chat.");
   process.exit(1);
@@ -360,14 +375,34 @@ async function callOpenAI(system, user, maxTok = 16384) {
   return txt;
 }
 
-// The "candidate" arm — whichever model is on trial. Claude remains the reference arm.
+// ── Claude-vs-Claude arm ──────────────────────────────────────────────────────
+// The benchmark clears EXACT model ids, so passing claude-opus-5 does not clear the models that
+// actually write user-facing text today. Every one of these can produce the final text a reader sees:
+//   claude-opus-4-8              draft primary (MODEL_MAIN)
+//   claude-sonnet-4-20250514     draft fallback AND the LECTURE critic's FIRST choice — a critique that
+//                                returns a corrected talk has REWRITTEN it, so this model writes the
+//                                final text of most lecture talks. Opus is not in the lecture critic chain.
+//   claude-haiku-4-5-20251001    draft fallback + critic fallback
+//   claude-sonnet-4-6            hardcoded in every refine / proofread / weave path
+// Usage: --provider claude --claude-model claude-sonnet-4-20250514
+// claude-opus-5 stays the REFERENCE arm, so this measures "is the shipping model as good as the one we
+// actually benchmarked?" rather than comparing a model to itself.
+const CLAUDE_CANDIDATE = argVal("--claude-model", "");
+async function callClaudeCandidate(system, user, maxTok = 16384) {
+  return callClaude(system, user, maxTok, CLAUDE_CANDIDATE);
+}
+
+// The "candidate" arm — whichever model is on trial. claude-opus-5 remains the reference arm.
 async function callCandidate(system, user, maxTok = 16384) {
   if (PROVIDER === "openrouter") return callOpenRouter(system, user, maxTok);
   if (PROVIDER === "openai") return callOpenAI(system, user, maxTok);
+  if (PROVIDER === "claude") return callClaudeCandidate(system, user, maxTok);
   return callGemini(system, user, maxTok);
 }
 const CANDIDATE_LABEL = PROVIDER === "openrouter" ? OR_MODEL
-                      : PROVIDER === "openai" ? OPENAI_MODEL : GEMINI_MODEL;
+                      : PROVIDER === "openai" ? OPENAI_MODEL
+                      : PROVIDER === "claude" ? (CLAUDE_CANDIDATE || "(--claude-model not set!)")
+                      : GEMINI_MODEL;
 
 async function callGemini(system, user, maxTok = 16384) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
