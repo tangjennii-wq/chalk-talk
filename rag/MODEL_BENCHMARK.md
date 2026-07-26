@@ -134,7 +134,7 @@ objective layer alone.
 | Model | Rows | Safety (absolute) | Judge | Accuracy | Verdict |
 |---|---|---|---|---|---|
 | `claude-opus-5` | 24 | 23/24 clean · **1 invalid JSON · 1 fabricated dated guideline** | reference | 4.67–4.83 | **CLEARED, ON NOTICE** |
-| `claude-sonnet-5` | **6** | **6/6 clean, 0 fabricated, 0 hard fails** (59s vs 104s) | 0–6 | 4.00 | **PILOT — needs the full 20** |
+| `claude-sonnet-5` | **20** | 19/20 clean · 1 invalid JSON (same as Opus) | **0–19** | **3.53** | **FAILED** bars 2/5/6 |
 | gemini-3.1-pro-preview | **pass** (0 fabricated) | **0–6** | 3.67/5 | **FAILED** bar 4/5/6 |
 | gemini-3.6-flash | **fail** | 0–18 | ~3.4/5 | **FAILED** bar 1/2/3/4/5/6 |
 | gpt-5.6-sol | gate failed (report lost) | — | — | **RE-RUN NEEDED** — and it is LIVE via BYOK |
@@ -192,6 +192,86 @@ A CI test asserts they stay in sync. The Worker previously filtered generation a
 `["claude-opus-4-8", "claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"]`** — all unverified, one
 retired on the first-party API. That silently converted "refuse to write" into "write with anything".
 Generation now throws `no_cleared_writer` instead.
+
+
+### claude-sonnet-5 — **FAILED** (2026-07-26, full 20 rows)
+
+Report: `rag/eval_sonnet5_full20.json`. **Do not route talks to it.** It stays `false` in both
+`WRITER_BENCHMARK_CLEARED` and `WRITER_CLEARED`.
+
+#### The pilot was misleading — this is the case for insisting on all 20 rows
+
+| | 6-row pilot | full 20 rows |
+|---|---|---|
+| Mean accuracy | 4.00 | **3.53** |
+| Judge head-to-head | 0–6 | **0–19** |
+| Gap vs Opus 5 | 0.83 | **0.94** |
+| Worst single row | 3/5 | **2/5** (PE risk stratification) |
+
+Six rows suggested a fast, near-equal model. Twenty rows found a core risk-stratification error, an
+MRA-withholding error, and a fabricated society attribution — **none of which appeared in the pilot**.
+Codex's insistence on the full frozen suite before clearing was correct, and clearing on the pilot (which
+I briefly did) would have shipped these to users.
+
+#### On the ABSOLUTE bars the two models are TIED
+
+| | Sonnet 5 | Opus 5 |
+|---|---|---|
+| Clean rows | 19/20 | 19/20 |
+| Invalid JSON | 1 | 1 |
+| Fabricated PMIDs / drugs | 0 / 0 | 0 / 0 |
+| References produced | 77 | **126** |
+| Median latency | ~57s | ~92s |
+
+So the structural checks could not separate them. What separated them was **bar 2 (dangerous errors)** and
+the judge's specific findings — which is the same lesson as the Gemini run, now demonstrated between two
+models that look identical on automated grading.
+
+#### Disqualifying findings (bar 2 — actionable at the bedside)
+
+* **PE risk misclassification.** Called sPESI 0 + RV dysfunction + elevated troponin
+  "intermediate-**HIGH**" risk; ESC 2019 classifies exactly that patient as intermediate-**LOW**
+  (intermediate-high requires PESI III–V or sPESI ≥1 *plus* both). Attributed the misstatement to the
+  guideline. Changes monitoring intensity and thrombolysis consideration. Row scored **2/5**.
+* **Withholding a Class 1 therapy.** Framed K+ 4.6 mEq/L and eGFR 58 as "meaningful hyperkalemia risk"
+  precluding MRA initiation — both are inside the guideline-safe range (K+ <5.0, eGFR >30). As the judge
+  noted, this "perpetuates the real-world under-use of MRAs."
+* **Self-contradictory ECG teaching.** "K+ 6.2 with peaked T waves and no ECG changes" — peaked T waves
+  *are* the ECG change, and their presence mandates urgent membrane stabilisation, not reassurance.
+* **DKA taught from superseded numbers, attributed to the current consensus.** Said the 2024 ADA/EASD
+  grading uses mental status (2024 **removed** it), used the >250 mg/dL glucose criterion (2024 lowered it
+  to ≥200), and quoted 2009-era K+ bands and the pH <6.9 bicarbonate trigger as if from the 2024 report.
+* **Physiologically impossible ABG** in a boards vignette: pH 7.29 with PaCO2 68 and HCO3 26.
+
+#### Fabricated / misattributed sources (bar 1, missed by the automated layer)
+
+* Attributed the 2020 iron-deficiency GI-evaluation guideline to **ACG**; it is **AGA** (Ko CW et al.,
+  *Gastroenterology* 2020), with a DOI that corresponds to no ACG IDA guideline — **twice**, and every
+  downstream "[1] ACG 2020" claim inherits the error.
+* Cited **NOTT (1980)**, a long-term home-oxygen mortality trial, in support of an *acute* SpO2 target and
+  the hyperoxic-hypercapnia mechanism.
+* Cited AMPLIFY and EINSTEIN-PE (both acute-treatment trials) for **reduced-dose extended** therapy.
+* STARRT-AKI given the wrong PMID (32738793; correct is 32668114).
+* Same unverifiable "2026 AHA/ACC Categories A–E" attribution that Opus also produced.
+
+#### Consequence for routing
+
+The style-aware split stays **dormant**. Every chain resolves to `claude-opus-5` alone, so the honest
+availability error on an Opus outage **remains** — that is the correct outcome given the evidence. Options
+for resilience now, in order of preference:
+
+1. **Benchmark another candidate** (`claude-sonnet-4-6`, `claude-opus-4-8`) and see if one clears bar 2.
+2. **Accept the error state.** An Opus outage is rare and "try again shortly" is honest.
+3. Use Sonnet 5 **only where it cannot assert medical facts** — podcast scripts, diagram prompts, chat
+   scaffolding. It is fast and cheap and those roles carry no teaching authority.
+
+### ⚠️ A PRODUCTION ISSUE THIS RUN SURFACED: ~5% JSON failure rate
+
+**Both** models produced exactly **1 unparseable output in 20 — after the app's own `fixJSON()` repair.**
+That is not a model-comparison finding, it is a live reliability number: roughly **1 in 20 generations
+fails to parse for a real user**, on the primary production model. Worth investigating `fixJSON`
+robustness against these two saved cases (`rag/eval_sonnet5_full20.json`, the HRS-lecture and
+DKA-boards rows) before launch, since a parse failure is a failed generation the user pays for in time.
 
 ### gemini-3.1-pro-preview — **FAILED** (2026-07-26, 3 topics × 2 styles = 6 rows)
 

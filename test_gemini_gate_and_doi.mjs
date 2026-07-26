@@ -201,7 +201,7 @@ ok(/S\.error = WRITER_UNAVAILABLE_MSG/.test(html), "an empty chain surfaces the 
 }
 
 
-// ── E. PILOT ≠ CLEARED, and the WORKER must fail closed (Codex 2026-07-26) ────
+// ── E. A FAILED candidate stays barred; the WORKER fails closed (Codex 2026-07-26) ────
 {
   const rctx = { console: { warn() {} } };
   vm.createContext(rctx);
@@ -215,12 +215,12 @@ ok(/S\.error = WRITER_UNAVAILABLE_MSG/.test(html), "an empty chain surfaces the 
   const refine = vm.runInContext("refineWriterModel", rctx);
 
   // A 6-row pilot is NOT benchmark clearance — the frozen suite is 20 rows.
-  ok(isB(SON) === false, `${SON} is NOT cleared on a 6-row pilot (the frozen benchmark is 20 rows)`);
+  ok(isB(SON) === false, `${SON} is NOT cleared — it FAILED the full 20-row benchmark (bars 2/5/6)`);
   ok(isB(HAI) === false, "Haiku is not cleared");
   ok(allow([MAIN, SON, HAI]).length === 1 && allow([MAIN, SON, HAI])[0] === MAIN,
      "only the fully-benchmarked writer survives the filter");
-  ok(allow([SON, MAIN, HAI])[0] === MAIN, "the lecture chain self-corrects to the cleared model while Sonnet is a pilot");
-  ok(allow([SON, HAI]).length === 0, "a chain of pilot/uncleared models yields NOTHING (honest error, no silent downgrade)");
+  ok(allow([SON, MAIN, HAI])[0] === MAIN, "the lecture chain self-corrects to the cleared model now that Sonnet failed");
+  ok(allow([SON, HAI]).length === 0, "a chain of FAILED/uncleared models yields NOTHING (honest error, no silent downgrade)");
   ok(isB(refine()) === true, `the refine writer (${refine()}) is cleared — editing cannot un-verify a talk`);
 
   // the reference model must not get a free pass: its absolute failures are recorded in-code
@@ -228,7 +228,12 @@ ok(/S\.error = WRITER_UNAVAILABLE_MSG/.test(html), "an empty chain surfaces the 
   ok(/ON NOTICE/.test(tableSrc), "the reference model is marked ON NOTICE, not automatically passed");
   ok(/Universal Definition/.test(tableSrc) && /invalid JSON/.test(tableSrc),
      "the reference model's own ABSOLUTE failures (fabricated dated guideline, invalid JSON) are recorded");
-  ok(/PILOT ONLY — NOT CLEARED/.test(tableSrc), "the pilot result is labelled as a pilot, not clearance");
+  ok(/FAILED the full 20-row benchmark/.test(tableSrc),
+     "Sonnet 5's FULL 20-row failure is recorded in-code (the 6-row pilot looked fine; the full suite did not)");
+  ok(/intermediate-HIGH/.test(tableSrc) && /MRA/.test(tableSrc),
+     "the disqualifying bedside-actionable findings (PE misclassification, withholding an MRA) are named");
+  ok(/TIED Opus on every automated check/.test(tableSrc),
+     "records that the automated layer could NOT separate the two models — only the judge did");
 }
 ok(!/model: *"claude-sonnet-4-6"/.test(html) && !/model:"claude-sonnet-4-6"/.test(html),
    "no refine path hardcodes the unbenchmarked claude-sonnet-4-6 any more");

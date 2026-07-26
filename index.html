@@ -8950,11 +8950,15 @@ var WRITER_BENCHMARK_CLEARED = {
   // write; if those failures recur on the next full 20-row run, Opus itself needs a decision.
   "claude-opus-5": true,
   "claude-opus-4-8": false,            // previous MODEL_MAIN — never benchmarked
-  // PILOT ONLY — NOT CLEARED (Codex 2026-07-26). Sonnet 5 passed 6/6 rows on a 3-topic pilot with 0
-  // fabricated citations, 0 drug errors, 0 hard fails, at 1.8x Opus's speed. That is promising and
-  // nothing more: the frozen benchmark is TWENTY rows, and clearing a model on six is exactly the
-  // moved-goalpost this file exists to prevent. Flip to true only after a full 20-row pass judged on the
-  // ABSOLUTE criteria. Until then it cannot write, and the filtered chains fall back to Opus by themselves.
+  // FAILED the full 20-row benchmark (2026-07-26) — see rag/MODEL_BENCHMARK.md. The 6-row pilot looked
+  // strong (4.00, 6/6 clean) and I briefly cleared it; the full suite dropped that to 3.53, lost 0-19, and
+  // exposed errors the pilot never surfaced: it called sPESI 0 + RV dysfunction + troponin
+  // "intermediate-HIGH" risk when ESC 2019 says intermediate-LOW; it framed K+ 4.6 / eGFR 58 as
+  // precluding an MRA (both are guideline-safe, so this teaches withholding a Class 1 therapy); it wrote
+  // "peaked T waves and no ECG changes"; it taught DKA from 2009 numbers attributed to the 2024
+  // consensus; and it attributed the 2020 IDA guideline to ACG (it is AGA) with a non-corresponding DOI.
+  // Note it TIED Opus on every automated check (19/20 clean, 1 invalid JSON each, 0 fabricated PMIDs) —
+  // the structural layer could not tell them apart. Do not re-clear it without a full passing run.
   "claude-sonnet-5": false,
   "claude-opus-4-6": false,
   "claude-sonnet-4-6": false,
