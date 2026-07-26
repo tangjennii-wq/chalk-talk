@@ -157,5 +157,43 @@ ok(/finalTalk\._writerModel = rp\.writerModel/.test(html), "a review retry resto
 
 ok(/\(unverified model\)/.test(html), "the 'Written by' chip marks an unverified model too (defence in depth)");
 
+
+// ── D. ONLY BENCHMARKED MODELS MAY WRITE (launch option B, 2026-07-26) ────────
+ok(/function writeAllowedModels\(/.test(html), "writeAllowedModels() gate exists");
+ok(/var WRITER_UNAVAILABLE_MSG = /.test(html), "an honest availability message exists");
+ok(/var mainModels = writeAllowedModels\(/.test(html), "the DRAFT chain is filtered to benchmarked models");
+ok(/var criticModels = writeAllowedModels\(/.test(html), "the CRITIC chain is filtered too (a critique that returns a corrected talk WRITES)");
+ok(/S\.error = WRITER_UNAVAILABLE_MSG/.test(html), "an empty chain surfaces the availability error instead of writing");
+{
+  const gctx = { console: { warn() {} } };
+  vm.createContext(gctx);
+  vm.runInContext(html.slice(html.indexOf("var WRITER_BENCHMARK_CLEARED"), html.indexOf("function _provenanceChips")), gctx);
+  const allow = vm.runInContext("writeAllowedModels", gctx);
+  const MAIN = (html.match(/var MODEL_MAIN = "([^"]+)"/) || [])[1];
+  const SON = (html.match(/var MODEL_SONNET_FALLBACK = "([^"]+)"/) || [])[1];
+  const HAI = (html.match(/var MODEL_CRITIC = "([^"]+)"/) || [])[1];
+  ok(allow([MAIN, SON, HAI]).length === 1 && allow([MAIN, SON, HAI])[0] === MAIN,
+     `only the benchmarked model survives the filter (${MAIN})`);
+  ok(allow([SON, HAI]).length === 0, "an all-unbenchmarked chain yields NOTHING (forces the honest error)");
+  ok(allow([]).length === 0 && allow(null).length === 0, "empty/null input is safe");
+  // MODEL_MAIN itself must be benchmarked, or the app cannot write at all
+  const isB = vm.runInContext("writerIsBenchmarked", gctx);
+  ok(isB(MAIN) === true, `MODEL_MAIN (${MAIN}) is benchmarked — otherwise generation is dead on arrival`);
+}
+// worker.js must ALLOW the model the client now asks for, or every free-tier call 400s
+{
+  const worker = readFileSync(new URL("./worker.js", import.meta.url), "utf8");
+  const MAIN = (html.match(/var MODEL_MAIN = "([^"]+)"/) || [])[1];
+  const SON = (html.match(/var MODEL_SONNET_FALLBACK = "([^"]+)"/) || [])[1];
+  ok(worker.includes(`"${MAIN}"`), `worker ALLOWED_MODELS includes MODEL_MAIN (${MAIN}) — it rejects anything unlisted`);
+  ok(worker.includes(`"${SON}"`), `worker ALLOWED_MODELS includes the Sonnet fallback (${SON})`);
+  // and price it, or the spend cap mis-counts
+  const priceBlock = worker.slice(worker.indexOf("const MODEL_PRICES"), worker.indexOf("const IMAGE_FLAT_CENTS"));
+  ok(priceBlock.includes(`"${MAIN}"`), `MODEL_PRICES has an entry for ${MAIN} (the $250 cap depends on it)`);
+  ok(/"claude-opus-5":\s*\{ in: 5\.0,\s*out: 25\.0/.test(priceBlock), "Opus priced at the REAL $5/$25, not the old $15/$75");
+  ok(/"claude-haiku-4-5-20251001":\s*\{ in: 1\.0,\s*out: 5\.0/.test(priceBlock), "Haiku 4.5 priced at the real $1/$5");
+  ok(!/in: 15\.0, out: 75\.0/.test(priceBlock), "the 3x-overstated Opus price is gone (it was throttling the cap early)");
+}
+
 console.log("\n" + (failures === 0 ? "✔ GEMINI GATE + DOI TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

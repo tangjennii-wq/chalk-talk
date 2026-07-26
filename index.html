@@ -608,9 +608,19 @@ a.pmid-pill:hover { background:var(--lavender-soft); }
    ═══════════════════════════════════════════════════════════════════════ */
 
 // ═══════════ CONFIG ═══════════
-var MODEL_MAIN = "claude-opus-4-8";  // Bumped 2026-06-11 (Jenni). If 4-8 isn't available yet on the API, the fallback chain catches it: Opus → Sonnet 4 → Haiku 4.5.
+// MODELS (2026-07-26). Two changes, both evidence-driven:
+//  · MODEL_MAIN: claude-opus-4-8 → claude-opus-5. Opus 5 is the ONLY model that has passed the frozen
+//    medical-quality benchmark (rag/MODEL_BENCHMARK.md: 4.67/5, won 18/18 and 6/6), and per Anthropic's
+//    pricing page it costs exactly the same as Opus 4.8 ($5/$25 per MTok). A free upgrade in confidence.
+//  · MODEL_SONNET_FALLBACK: claude-sonnet-4-20250514 → claude-sonnet-5. Sonnet 4 is RETIRED on the
+//    first-party API (Bedrock/Vertex only), so that fallback could fail exactly when it was needed.
+//    Sonnet 5 is also cheaper than Sonnet 4.6 until 2026-08-31 ($2/$10 introductory).
+// Sonnet 5 and Haiku 4.5 are NOT benchmarked, so writeAllowedModels() below refuses to let them WRITE a
+// talk — they stay in the chain only so an Opus outage surfaces as an honest error, not a silent
+// downgrade to unverified prose.
+var MODEL_MAIN = "claude-opus-5";
 var MODEL_CRITIC = "claude-haiku-4-5-20251001";
-var MODEL_SONNET_FALLBACK = "claude-sonnet-4-20250514"; // middle-tier fallback when Opus is overloaded
+var MODEL_SONNET_FALLBACK = "claude-sonnet-5";
 var MODEL = MODEL_CRITIC; // legacy fallback for non-critical calls (diagrams, podcast, chat)
 // Generation provider (Jenni 2026-07-03): the app defaults to Claude (free tier + BYOK). Users who
 // prefer ChatGPT or Gemini bring their OWN key — those never touch the free tier / owner's budget.
@@ -1274,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-09";
+var BUILD_ID = "2026-07-26-10";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6802,7 +6812,13 @@ async function generate(){
     }
     // Always use Opus first for draft quality (regardless of depth). Sonnet/Haiku are overload fallbacks only.
     // Tested Sonnet-first for Concise — quality regressed too much, not worth the ~15s saved.
-    var mainModels = [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC];
+    // Only BENCHMARKED models may write (option B, 2026-07-26). An unbenchmarked fallback silently
+    // producing a talk is worse than an honest error — see writeAllowedModels().
+    var mainModels = writeAllowedModels([MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]);
+    if(!mainModels.length){
+      S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
+      S.error = WRITER_UNAVAILABLE_MSG; render(); return;
+    }
     // Lifted from 4096/6144 → 16384 (Jenni 2026-06-10 "no cap please"). The old ceiling was
     // squeezing detailed talks, which caused the model to compress content to fit.
     var maxTok=(S.style==="boards")?16384:16384;
@@ -6910,9 +6926,13 @@ async function generate(){
     var critiquePrefix = "Topic: " + S.topic + critiqueGrounding;
     if(S.style === "boards"){ var _cpLvl = boardsDifficulty(), _cpBd = BOARDS_DIFFICULTY[_cpLvl]; critiquePrefix += "\n\nTARGET DIFFICULTY FOR THIS QUESTION: Level " + _cpLvl + " (" + _cpBd.label + "). " + _cpBd.directive; }
     // Boards-mode review prefers Opus (high-stakes); Lecture uses Sonnet first (Haiku fallback).
-    var criticModels = (S.style === "boards")
+    // The critic is a WRITER: when it returns a corrected talk instead of {"verdict":"clean"} it has
+    // rewritten the text the user reads. So the critic chain is filtered too. Note the lecture chain
+    // previously excluded Opus entirely, meaning most lecture text was written by Sonnet/Haiku — now it
+    // falls back to MODEL_MAIN rather than to an unverified model. (2026-07-26)
+    var criticModels = writeAllowedModels((S.style === "boards")
       ? [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]
-      : [MODEL_SONNET_FALLBACK, MODEL_CRITIC];
+      : [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]);
     var critMaxTok = (S.style === "boards") ? 6144 : 16384;
 
     // ── Draft acquisition: background (async) path first, synchronous streaming as fallback ──
@@ -8902,8 +8922,9 @@ function discardReviewDraft(){ S.reviewPending = null; _saveReviewPending(); S.e
 // three models that were never tested. A model earns `true` ONLY after it passes the frozen 20-row
 // benchmark in rag/MODEL_BENCHMARK.md. Anything absent from this map is treated as NOT cleared.
 var WRITER_BENCHMARK_CLEARED = {
-  "claude-opus-5": true,               // benchmarked 2026-07-26: reference arm, 4.67/5, won 18/18 and 6/6
-  "claude-opus-4-8": false,            // production MODEL_MAIN — NOT yet benchmarked
+  "claude-opus-5": true,               // benchmarked 2026-07-26: 4.67/5, won 18/18 and 6/6. Now MODEL_MAIN.
+  "claude-opus-4-8": false,            // previous MODEL_MAIN — never benchmarked
+  "claude-sonnet-5": false,            // Sonnet fallback — NOT benchmarked (cannot write; see writeAllowedModels)
   "claude-opus-4-6": false,
   "claude-sonnet-4-6": false,
   "claude-sonnet-4-20250514": false,   // overload fallback
@@ -8917,6 +8938,26 @@ var WRITER_BENCHMARK_CLEARED = {
 // left unlabelled rather than accused, since we genuinely don't know what wrote it.
 function writerIsBenchmarked(m){ return WRITER_BENCHMARK_CLEARED[String(m || "")] === true; }
 function writerModelKnown(m){ return !!String(m || "").trim(); }
+
+// ── RESTRICT WRITING TO BENCHMARKED MODELS (Jenni + Codex 2026-07-26, launch option B) ──────────
+// The fallback chain existed for resilience: if Opus is overloaded, drop to Sonnet, then Haiku. But an
+// unbenchmarked model quietly producing a talk is worse than no talk — the reader cannot tell, and the
+// content carries the same authority. So a model that has not passed the frozen benchmark is filtered
+// OUT of any chain used to WRITE user-facing content. If that leaves nothing, generate() surfaces an
+// honest availability error instead.
+// This deliberately trades resilience for verifiability: an Opus outage now reads "try again shortly"
+// rather than silently handing the user unverified prose. Benchmark a fallback (and flip it to true in
+// WRITER_BENCHMARK_CLEARED) to restore it to the chain.
+// NOT applied to: the audio/podcast script and image paths, which don't assert medical facts as teaching
+// content, and the critique-only pass when it returns {"verdict":"clean"} — that writes nothing.
+function writeAllowedModels(models){
+  var arr = (models || []).filter(writerIsBenchmarked);
+  if(!arr.length) console.warn("No BENCHMARKED writer available from [" + (models || []).join(", ") + "] — refusing to write with an unverified model.");
+  return arr;
+}
+var WRITER_UNAVAILABLE_MSG = "The verified writing model is temporarily unavailable. "
+  + "Chalk Talk only writes talks with a model that has passed its medical-accuracy benchmark, so rather "
+  + "than hand you an unverified draft it's better to wait — please try again in a few minutes.";
 function writerLabel(w){ return w === "gemini" ? "Gemini" : (w === "openai" ? "ChatGPT" : "Claude"); }
 // Shown above a talk whose writer hasn't cleared the bar. Concrete about the failure MODES we actually
 // observed, because "may be less accurate" is too vague to change how someone reads a talk.

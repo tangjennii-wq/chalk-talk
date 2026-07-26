@@ -11,8 +11,10 @@
  */
 
 const ALLOWED_MODELS = [
-  "claude-opus-4-8",            // current MODEL_MAIN in index.html (was being rejected)
+  "claude-opus-5",              // MODEL_MAIN as of 2026-07-26 — the only BENCHMARKED writer
+  "claude-opus-4-8",            // previous MODEL_MAIN; kept so in-flight/older clients still work
   "claude-opus-4-6",
+  "claude-sonnet-5",            // Sonnet fallback as of 2026-07-26 (Sonnet 4 is retired first-party)
   "claude-sonnet-4-6",
   "claude-sonnet-4-20250514",
   "claude-haiku-4-5-20251001",
@@ -31,13 +33,24 @@ const MAX_REQUEST_BYTES = 5_000_000;
 const FREE_TALKS_DEFAULT = 10;
 const FREE_IMAGES_DEFAULT = 5;
 const MAX_MONTHLY_SPEND_USD_DEFAULT = 250;
-// Per-million-token prices in USD (2026-06). Update if Anthropic pricing changes.
+// Per-million-token prices in USD. VERIFIED against platform.claude.com/docs/en/about-claude/pricing
+// on 2026-07-26. `cache` is the cache-HIT (read) rate = 0.1x base input.
+//
+// CORRECTION 2026-07-26: Opus was listed at $15/$75 — that is Opus 4.1/4.0 pricing. Opus 4.5 through
+// Opus 5 are $5/$25, so this table was overstating every Opus call by 3x. Because these numbers drive
+// MAX_MONTHLY_SPEND_USD, the $250 cap has been tripping at roughly a THIRD of the real spend, cutting
+// the free tier off far earlier than intended. Haiku 4.5 was also slightly under-priced ($0.8/$4 vs the
+// actual $1/$5).
 const MODEL_PRICES = {
-  "claude-opus-4-8":            { in: 15.0, out: 75.0, cache: 1.5 },
-  "claude-opus-4-6":            { in: 15.0, out: 75.0, cache: 1.5 },
+  "claude-opus-5":              { in: 5.0,  out: 25.0, cache: 0.5 },
+  "claude-opus-4-8":            { in: 5.0,  out: 25.0, cache: 0.5 },
+  "claude-opus-4-6":            { in: 5.0,  out: 25.0, cache: 0.5 },
+  // Sonnet 5 is $2/$10 introductory THROUGH 2026-08-31, then $3/$15. Listed at the standard rate so the
+  // cap errs conservative (over-counts slightly until September, never under-counts).
+  "claude-sonnet-5":            { in: 3.0,  out: 15.0, cache: 0.3 },
   "claude-sonnet-4-6":          { in: 3.0,  out: 15.0, cache: 0.3 },
   "claude-sonnet-4-20250514":   { in: 3.0,  out: 15.0, cache: 0.3 },
-  "claude-haiku-4-5-20251001":  { in: 0.8,  out: 4.0,  cache: 0.08 },
+  "claude-haiku-4-5-20251001":  { in: 1.0,  out: 5.0,  cache: 0.1 },
 };
 const IMAGE_FLAT_CENTS = 8;   // gpt-image-1.5 high quality ≈ $0.08/image
 const EMBEDDING_MODEL = "text-embedding-3-small";
