@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-11";
+var BUILD_ID = "2026-07-26-12";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6823,7 +6823,17 @@ async function generate(){
     // Tested Sonnet-first for Concise — quality regressed too much, not worth the ~15s saved.
     // Only BENCHMARKED models may write (option B, 2026-07-26). An unbenchmarked fallback silently
     // producing a talk is worse than an honest error — see writeAllowedModels().
-    var mainModels = writeAllowedModels([MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]);
+    // STYLE-AWARE DRAFTING (2026-07-26). Put the slow, careful model only where it earns its latency:
+    //  · BOARDS → Opus first. Highest reasoning demand (one unambiguous best answer, distractors that each
+    //    encode a specific error) and the output is small, so Opus costs only ~60-80s here.
+    //  · LECTURE → Sonnet 5 first. Opus took 104-131s on lectures; Sonnet does the same job in 51-71s and
+    //    passed the benchmark with 6/6 clean. The Opus REVIEW then checks it, so the strong model still
+    //    sees every lecture — it just isn't the bottleneck.
+    // Both are benchmarked, so either order is a verified writer and an overload of one falls back to the
+    // other instead of erroring.
+    var mainModels = writeAllowedModels(S.style === "boards"
+      ? [MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]
+      : [MODEL_SONNET_FALLBACK, MODEL_MAIN, MODEL_CRITIC]);
     if(!mainModels.length){
       S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
       S.error = WRITER_UNAVAILABLE_MSG; render(); return;
@@ -7531,7 +7541,7 @@ async function restructureTalk(userMsg){
     type: "text",
     text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (restructure per the user's request; preserve every bullet, fact, and citation):\n" + existingJson
   }];
-  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6" });
+  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel() });
   var restructured = JSON.parse(fixJSON(txt));
   if(typeof deepCleanCitations === "function") restructured = deepCleanCitations(restructured);
   if(typeof pruneFakeReferences === "function") restructured = pruneFakeReferences(restructured);
@@ -7600,7 +7610,7 @@ async function weaveFeedbackTalk(userMsg){
     text: "REVIEWER FEEDBACK TO APPLY:\n" + userMsg +
       "\n\n===== CURRENT TALK JSON (0-based section indices; apply the feedback, return only changes) =====\n" + existingJson
   }].concat(buildReferenceParts(S.files));
-  var txt = await callAPI(sys, contentParts, 32768, { model:"claude-sonnet-4-6", meterKind:"talk" });
+  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind:"talk" });
   // Charge-after: parse FIRST — if the model returned malformed JSON the refine failed and we throw
   // below without charging. Only consume once we have a usable result. (Jenni 2026-07-03)
   var parsed = JSON.parse(fixJSON(txt));
@@ -7811,7 +7821,7 @@ async function compressTalk(userMsg){
     text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (compress this; preserve every section, fact, and citation):\n" + existingJson
   }];
   // No file refs needed — this is a copy-edit of the existing talk, not a content addition.
-  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6", meterKind: "talk" });
+  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk" });
   var compressed = JSON.parse(fixJSON(txt));   // parse before charging — malformed = no charge
   if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }   // was a free full generation with no consume (quota bypass)
   if(typeof deepCleanCitations === "function") compressed = deepCleanCitations(compressed);
@@ -7868,7 +7878,7 @@ async function expandTalk(userMsg){
     text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (expand each section with more depth; preserve every existing fact and section):\n" + existingJson
   }].concat(buildReferenceParts(S.files));
   // Higher max — expansion grows the talk so we need headroom.
-  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6", meterKind: "talk" });
+  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk" });
   var expanded = JSON.parse(fixJSON(txt));   // parse before charging — malformed = no charge
   if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }   // was a free full generation with no consume (quota bypass)
   if(typeof deepCleanCitations === "function") expanded = deepCleanCitations(expanded);
@@ -8017,7 +8027,7 @@ async function weaveRevision(userMsg){
   // Also routes refine through Sonnet (was Haiku via default MODEL) — refine is a context-heavy
   // task where Haiku was occasionally dropping bullets. Worth ~$0.02/refine for the bump in
   // reliability. (Jenni 2026-06-10 "increase the cap for refine".)
-  var txt = await callAPI(sys, contentParts, 32768, { model: "claude-sonnet-4-6", meterKind: "talk" });
+  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk" });
   // Charge-after: the refine model call succeeded (owner billed), so consume 1 talk now.
   if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
   var patch = JSON.parse(fixJSON(txt));
@@ -8933,7 +8943,12 @@ function discardReviewDraft(){ S.reviewPending = null; _saveReviewPending(); S.e
 var WRITER_BENCHMARK_CLEARED = {
   "claude-opus-5": true,               // benchmarked 2026-07-26: 4.67/5, won 18/18 and 6/6. Now MODEL_MAIN.
   "claude-opus-4-8": false,            // previous MODEL_MAIN — never benchmarked
-  "claude-sonnet-5": false,            // Sonnet fallback — NOT benchmarked (cannot write; see writeAllowedModels)
+  "claude-sonnet-5": true,             // benchmarked 2026-07-26: 6/6 clean, 0 fabricated, 0 hard-fails,
+                                       // 1.8x faster than Opus (59s vs 104s median). Judge preferred Opus
+                                       // 6-0 (4.83 vs 4.00), but bars 5/6 are RELATIVE to the reference and
+                                       // so cannot fail it; on the ABSOLUTE bars Sonnet 5 beat Opus this run
+                                       // (Opus produced 1 invalid JSON and cited a non-existent "2026
+                                       // Universal Definition of Heart Failure" — it is 2021).
   "claude-opus-4-6": false,
   "claude-sonnet-4-6": false,
   "claude-sonnet-4-20250514": false,   // overload fallback
@@ -8963,6 +8978,14 @@ function writeAllowedModels(models){
   var arr = (models || []).filter(writerIsBenchmarked);
   if(!arr.length) console.warn("No BENCHMARKED writer available from [" + (models || []).join(", ") + "] — refusing to write with an unverified model.");
   return arr;
+}
+// Refines (restructure / weave feedback / compress / expand / revise) used to hardcode
+// claude-sonnet-4-6, an UNBENCHMARKED model — so a talk drafted by a verified model became unverified
+// the moment the user edited it. They now use the fastest BENCHMARKED writer, so editing preserves
+// verification. Falls back through the chain if the preferred model isn't cleared. (2026-07-26)
+function refineWriterModel(){
+  var allowed = writeAllowedModels([MODEL_SONNET_FALLBACK, MODEL_MAIN, MODEL_CRITIC]);
+  return allowed[0] || MODEL_MAIN;
 }
 var WRITER_UNAVAILABLE_MSG = "The verified writing model is temporarily unavailable. "
   + "Chalk Talk only writes talks with a model that has passed its medical-accuracy benchmark, so rather "

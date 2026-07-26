@@ -172,9 +172,12 @@ ok(/S\.error = WRITER_UNAVAILABLE_MSG/.test(html), "an empty chain surfaces the 
   const MAIN = (html.match(/var MODEL_MAIN = "([^"]+)"/) || [])[1];
   const SON = (html.match(/var MODEL_SONNET_FALLBACK = "([^"]+)"/) || [])[1];
   const HAI = (html.match(/var MODEL_CRITIC = "([^"]+)"/) || [])[1];
-  ok(allow([MAIN, SON, HAI]).length === 1 && allow([MAIN, SON, HAI])[0] === MAIN,
-     `only the benchmarked model survives the filter (${MAIN})`);
-  ok(allow([SON, HAI]).length === 0, "an all-unbenchmarked chain yields NOTHING (forces the honest error)");
+  // Updated 2026-07-26: TWO models are now cleared (Opus 5 + Sonnet 5), so the filter keeps both and the
+  // leader is whichever the chain puts first. Haiku is still barred, so an all-Haiku chain yields nothing.
+  ok(allow([MAIN, SON, HAI]).length === 2 && allow([MAIN, SON, HAI])[0] === MAIN,
+     `both cleared writers survive the filter, ${MAIN} leading`);
+  ok(!allow([MAIN, SON, HAI]).includes(HAI), "the uncleared Haiku is filtered OUT of the chain");
+  ok(allow([HAI]).length === 0, "a chain of only-uncleared models yields NOTHING (forces the honest error)");
   ok(allow([]).length === 0 && allow(null).length === 0, "empty/null input is safe");
   // MODEL_MAIN itself must be benchmarked, or the app cannot write at all
   const isB = vm.runInContext("writerIsBenchmarked", gctx);
@@ -194,6 +197,41 @@ ok(/S\.error = WRITER_UNAVAILABLE_MSG/.test(html), "an empty chain surfaces the 
   ok(/"claude-haiku-4-5-20251001":\s*\{ in: 1\.0,\s*out: 5\.0/.test(priceBlock), "Haiku 4.5 priced at the real $1/$5");
   ok(!/in: 15\.0, out: 75\.0/.test(priceBlock), "the 3x-overstated Opus price is gone (it was throttling the cap early)");
 }
+
+
+// ── E. TWO verified writers → resilience without loosening the bar (2026-07-26) ──
+{
+  const rctx = { console: { warn() {} } };
+  vm.createContext(rctx);
+  const MAIN = (html.match(/var MODEL_MAIN = "([^"]+)"/) || [])[1];
+  const SON = (html.match(/var MODEL_SONNET_FALLBACK = "([^"]+)"/) || [])[1];
+  const HAI = (html.match(/var MODEL_CRITIC = "([^"]+)"/) || [])[1];
+  rctx.MODEL_MAIN = MAIN; rctx.MODEL_SONNET_FALLBACK = SON; rctx.MODEL_CRITIC = HAI;
+  vm.runInContext(html.slice(html.indexOf("var WRITER_BENCHMARK_CLEARED"), html.indexOf("function _provenanceChips")), rctx);
+  const allow = vm.runInContext("writeAllowedModels", rctx);
+  const isB = vm.runInContext("writerIsBenchmarked", rctx);
+  const refine = vm.runInContext("refineWriterModel", rctx);
+
+  ok(isB(SON) === true, `the Sonnet fallback (${SON}) is benchmarked — this is what removes the outage error`);
+  ok(allow([SON, HAI]).length >= 1, "an Opus outage still leaves a VERIFIED writer (no error)");
+  ok(allow([MAIN, HAI]).length >= 1, "a Sonnet outage still leaves a VERIFIED writer (no error)");
+  ok(allow([HAI]).length === 0, "if only Haiku remains it STILL refuses — the bar was not loosened to buy resilience");
+  ok(isB(HAI) === false, "Haiku is deliberately NOT cleared to write");
+
+  // style-aware routing: Opus leads for boards, Sonnet leads for lectures
+  ok(/S\.style === "boards"[\s\S]{0,200}?\[MODEL_MAIN, MODEL_SONNET_FALLBACK/.test(html),
+     "BOARDS drafts lead with Opus (highest reasoning demand, small output)");
+  ok(/\[MODEL_SONNET_FALLBACK, MODEL_MAIN, MODEL_CRITIC\]/.test(html),
+     "LECTURE drafts lead with Sonnet (halves a 104-131s wait; Opus still REVIEWS)");
+  ok(allow([MAIN, SON, HAI])[0] === MAIN && allow([SON, MAIN, HAI])[0] === SON,
+     "both chains resolve to their intended leader");
+
+  // refines must no longer use an unbenchmarked model
+  ok(isB(refine()) === true, `the refine writer (${refine()}) is benchmarked — editing no longer un-verifies a talk`);
+}
+ok(!/model: *"claude-sonnet-4-6"/.test(html) && !/model:"claude-sonnet-4-6"/.test(html),
+   "no refine path hardcodes the unbenchmarked claude-sonnet-4-6 any more");
+ok((html.match(/refineWriterModel\(\)/g) || []).length >= 6, "all refine call sites route through refineWriterModel()");
 
 console.log("\n" + (failures === 0 ? "✔ GEMINI GATE + DOI TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);
