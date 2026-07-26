@@ -542,4 +542,17 @@ if (g.with_hard_fails > 0) {
   console.log("  Review the report: structural misses may be fixable with a prompt tweak; re-run after.");
   process.exit(2);
 }
-console.log(`\n✔ GATE PASSED — ${g.clean}/${g.generations} Gemini generations clean, 0 fabricated citations, 0 drug misspellings.`);
+console.log(`\n✔ SAFETY GATE PASSED — ${g.clean}/${g.generations} Gemini generations clean, 0 fabricated citations, 0 drug misspellings.`);
+// Safety and quality are separate questions. A model can invent nothing and still teach worse, and the
+// launch decision needs both numbers side by side — otherwise "GATE PASSED" reads as a verdict on
+// quality that this script never measured. (2026-07-26)
+if (summary.judge && summary.judge.compared) {
+  const j = summary.judge, delta = +(j.mean_accuracy_claude - j.mean_accuracy_gemini).toFixed(2);
+  console.log(`\n  QUALITY (separate from safety): judge accuracy Gemini ${j.mean_accuracy_gemini}/5 vs Claude ${j.mean_accuracy_claude}/5 (gap ${delta >= 0 ? "+" : ""}${delta} favouring Claude), head-to-head ${j.gemini_wins}-${j.claude_wins}-${j.ties}.`);
+  if (delta >= 0.75) console.log(`  ⚠ That is a MATERIAL quality gap. Safe ≠ equivalent: if you ship the Gemini CTA, label it honestly as a lower-fidelity free option rather than presenting it as the same product.`);
+  else if (delta > 0.25) console.log(`  → Modest gap; defensible to ship with honest labeling.`);
+  else console.log(`  → No meaningful quality gap detected.`);
+  if ((j.gemini_flagged_errors || []).length) console.log(`  ⚠ The judge flagged ${j.gemini_flagged_errors.length} specific medical error(s) in Gemini output — read those in the report before deciding; a factual error matters more than the average score.`);
+} else if (RUN_CLAUDE) {
+  console.log("\n  QUALITY: no judge comparisons succeeded — safety passed but relative teaching quality is UNMEASURED.");
+}
