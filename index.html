@@ -1227,7 +1227,11 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
+<<<<<<< HEAD
 var BUILD_ID = "2026-07-26-01";
+=======
+var BUILD_ID = "2026-07-24-01";
+>>>>>>> ux-polish
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1447,7 +1451,7 @@ async function resumeAsyncJobIfAny(){
   loadTimer = setInterval(function(){ S.loadSec++; render(); }, 1000);
   try{
     var res = await pollAsyncGeneration(stored.jobId,
-      function(stage){ S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Finishing your talk (server-side)…"; render(); },
+      function(stage){ S.genPhase = (stage === "critique") ? "reviewing" : "drafting"; S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Finishing your talk (server-side)…"; render(); },
       function(){ return S.genCancelled || _myGenId !== S.genId; },
       function(partial){ if(S.genCancelled || _myGenId !== S.genId) return; _applyStreamingPartial(partial); }
     );
@@ -3134,6 +3138,7 @@ var S = {
   // Option B: cached depth variants for the currently-loaded saved talk. Enables instant depth swap.
   depthVariantsCache:null,
   loading:false, loadSec:0, loadMsg:"", error:"",
+  genPhase:"",   // "drafting" | "reviewing" — drives the honest two-act wait UI (Jenni 2026-07)
   // — Current talk + interaction
   talk:null, sec:0, activeSection:0, tab:"overview",
   // June 2026 per Jenni: when true, ALL accordion sections render expanded.
@@ -6540,12 +6545,23 @@ async function generate(){
   // checks for this case and renders a small banner instead of a full takeover. New draft swaps in
   // when ready (or on cancel/error, the old content stays).
   var _hadExistingTalk = !!S.talk;
-  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;S.vmcStale=false;S.modelPickerOpen=false;S.genBackgroundSafe=false;
+  S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.genPhase="drafting";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;S.vmcStale=false;S.modelPickerOpen=false;S.genBackgroundSafe=false;
   S.streamingTitle="";S.streamingSubtitle="";S.streamingSections=[];S.streamingStem="";S.streamingChars=0;  // clear stale preview from prior gen (Jenni 2026)
   speechSynthesis.cancel();
   if(!_hadExistingTalk) S.talk = null;   // only blank the view when there's no prior content to read
   render();
-  loadTimer=setInterval(function(){S.loadSec++;var msgs=S.wantWebSearch?["Reasoning through physiology...","Retrieving PubMed abstracts...","Searching journal + society sites...","Building content...","AI review pass...","Polishing final version..."]:["Reasoning through physiology...","Retrieving PubMed abstracts...","Building content...","AI review pass & polish..."];S.loadMsg=msgs[Math.min(Math.floor(S.loadSec/3),msgs.length-1)];render()},1000);
+  loadTimer=setInterval(function(){
+    S.loadSec++;
+    if(S.genPhase==="reviewing"){
+      // Review phase — cycle messages so it never looks stuck; these describe the actual safety checks.
+      var rmsgs=["Cross-checking every number & dose…","Verifying drug-name spelling…","Matching claims to the guidelines…","Finalizing the reviewed talk…"];
+      S.loadMsg=rmsgs[Math.floor(S.loadSec/3)%rmsgs.length];
+    } else {
+      var dmsgs=S.wantWebSearch?["Reasoning through physiology…","Retrieving PubMed abstracts…","Searching society + journal sites…","Drafting the talk…"]:["Reasoning through physiology…","Retrieving PubMed abstracts…","Drafting the talk…"];
+      S.loadMsg=dmsgs[Math.min(Math.floor(S.loadSec/3),dmsgs.length-1)];
+    }
+    render();
+  },1000);
   try{
     var glRef = getGuidelinesForTopic(S.topic);
     var ragResult = await retrieveRAG(S.topic); var ragContext = ragResult.text || ""; S.ragChunks = ragResult.chunks || [];
@@ -6708,7 +6724,7 @@ async function generate(){
         S.loadMsg = "Generating on our servers — safe to switch tabs or lock your phone.";
         if (typeof render === "function") render();
         var _res = await pollAsyncGeneration(_job.jobId,
-          function(stage){ S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Drafting your talk (server-side)…"; if (typeof render === "function") render(); },
+          function(stage){ S.genPhase = (stage === "critique") ? "reviewing" : "drafting"; S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Drafting your talk (server-side)…"; if (typeof render === "function") render(); },
           function(){ return S.genCancelled || _myGenId !== S.genId; },
           function(partial){ if (S.genCancelled || _myGenId !== S.genId) return; _applyStreamingPartial(partial); }
         );
@@ -6738,6 +6754,7 @@ async function generate(){
 
     var critiqueInput = critiquePrefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
+<<<<<<< HEAD
     var finalTalk = null;
     // ALWAYS run the AI review (critique). MEDICAL-SAFETY (Jenni 2026-07): retry ONCE with backoff; if the
     // review still can't finish (e.g. a free-Gemini quota block between draft and review), WITHHOLD the
@@ -6753,6 +6770,35 @@ async function generate(){
           var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels);
           critTxt = critResult.txt;
           if (critResult.fellBack) console.info("Critique via " + critResult.modelUsed);
+=======
+    // Phase → REVIEWING (Jenni 2026-07): the draft is in hand; the AI safety-review now runs. Signal it
+    // honestly so the ~15s review reads as purposeful (the trust step) instead of a stuck progress bar.
+    S.genPhase = "reviewing"; if(typeof render === "function") render();
+
+    var finalTalk = draftTalk;
+    // ALWAYS run critique — accuracy > a few seconds saved. Concise uses Sonnet draft + Haiku review,
+    // so total still ~25-30s. Detailed: Opus draft + Haiku review. Boards: Opus draft + Opus review fallback chain.
+    try {
+      // Async path already ran the critique server-side (reuse it). Sync path calls it now.
+      // criticModels / critMaxTok were set up above alongside the draft spec.
+      var critTxt;
+      if (_useAsync) {
+        critTxt = _asyncCritTxt || "";
+      } else {
+        var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels);
+        critTxt = critResult.txt;
+        if (critResult.fellBack) console.info("Critique done by " + critResult.modelUsed + " (Opus was overloaded)");
+      }
+      if (critTxt && critTxt.trim()) {
+        var parsed = JSON.parse(fixJSON(critTxt));
+        parsed = deepCleanCitations(parsed);
+        // If verdict is "clean", keep draft. Otherwise the parsed object IS the corrected talk.
+        if (parsed.verdict === "clean") {
+          finalTalk = draftTalk;
+        } else if (parsed.title || parsed.question) {
+          // Looks like a corrected talk (has expected schema fields)
+          finalTalk = parsed;
+>>>>>>> ux-polish
         }
         if (!critTxt || !critTxt.trim()) throw new Error("empty review response");
         var parsed = deepCleanCitations(JSON.parse(fixJSON(critTxt)));
@@ -10064,20 +10110,24 @@ function renderMain(){
     // until the new draft swaps in.
     // (Dead branch from earlier; compose-cta is gated by !S.talk so this never runs during regen.
     // The regen banner now lives inside the talk view below.) (Jenni 2026-06-11)
-    h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:18px;padding:18px 16px;text-align:center;margin-bottom:8px">';
-    var _genLabel = S.streamingTitle ? ("Drafting: "+S.streamingTitle) : "Generating talk";
-    h+='<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><span class="spinner" style="width:22px;height:22px;border-width:3px"></span><span style="font-size:14px;font-weight:600;color:var(--plum-deep)">'+esc(_genLabel)+'</span></div>';
+    var _reviewing = (S.genPhase === "reviewing");
+    h+='<div style="background:var(--cream);border:1px solid '+(_reviewing?"#bfe0bf":"var(--line)")+';border-radius:18px;padding:18px 16px;text-align:center;margin-bottom:8px;transition:border-color .3s ease">';
+    var _genLabel = _reviewing ? "🔎 AI safety-review" : (S.streamingTitle ? ("Drafting: "+S.streamingTitle) : "Generating talk");
+    h+='<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><span class="spinner" style="width:22px;height:22px;border-width:3px'+(_reviewing?';border-top-color:#2d8a2d':'')+'"></span><span style="font-size:14px;font-weight:700;color:'+(_reviewing?"#2d6a2d":"var(--plum-deep)")+'">'+esc(_genLabel)+'</span></div>';
     h+='<div style="font-size:12px;color:var(--ink);margin-bottom:6px">'+esc(S.loadMsg||"Working…")+'</div>';
-    h+='<div style="font-size:10.5px;color:var(--ink-muted);letter-spacing:0.04em;text-transform:uppercase">'+S.loadSec+'s elapsed'+(S.streamingChars?(' · ~'+Math.round(S.streamingChars/5)+' words drafted'):'')+'</div>';
+    if(_reviewing) h+='<div style="font-size:11px;color:var(--ink-muted);line-height:1.45;margin-bottom:6px;max-width:340px;margin-left:auto;margin-right:auto">A second model checks every number, dose, drug name, and guideline against the sources — the step that makes it safe to teach from.</div>';
+    h+='<div style="font-size:10.5px;color:var(--ink-muted);letter-spacing:0.04em;text-transform:uppercase">'+S.loadSec+'s elapsed'+((!_reviewing&&S.streamingChars)?(' · ~'+Math.round(S.streamingChars/5)+' words drafted'):'')+'</div>';
     // Progress bar — uses streamed-char count when available (real activity); falls back to
     // wall-clock interpolation. Both cap at ~95% until response completes.
     var _pct;
-    if (S.streamingChars > 0) {
+    if (_reviewing) {
+      _pct = 97;   // draft complete → review pass; nudge to near-done so the bar reads as progress, not stall
+    } else if (S.streamingChars > 0) {
       // Estimate based on expected output length (~4500 chars for Detailed lecture, ~2500 Concise)
       var expectedLen = (S.style==="boards"?5500:(S.depth==="detailed"?4500:2500));
-      _pct = Math.min(95, Math.round((S.streamingChars / expectedLen) * 100));
+      _pct = Math.min(90, Math.round((S.streamingChars / expectedLen) * 100));
     } else {
-      _pct = Math.min(95, Math.round((S.loadSec/45)*100));
+      _pct = Math.min(90, Math.round((S.loadSec/45)*100));
     }
     h+='<div style="margin-top:10px;height:4px;background:var(--lavender-bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,var(--plum-rich),var(--plum-deep));transition:width 0.6s ease"></div></div>';
     // Mobile backgrounding warning (Jenni 2026-06-09) — iOS Safari kills fetch when tab is
@@ -10092,7 +10142,8 @@ function renderMain(){
     // Swaps to the full talk view once the draft parses + passes peer review.
     var _hasStreamPreview = (S.streamingSections && S.streamingSections.length) || S.streamingStem;
     if (_hasStreamPreview) {
-      h+='<div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:8px;text-align:left;animation:fadeIn .3s ease">';
+      h+='<div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:8px;text-align:left;animation:fadeIn .3s ease'+(_reviewing?';opacity:0.55;transition:opacity .3s ease':'')+'">';
+      if(_reviewing) h+='<div style="font-size:10px;font-weight:700;color:#2d6a2d;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Draft · under review</div>';
       if (S.streamingTitle) h+='<div style="font-size:15.5px;font-weight:700;color:var(--plum-deep);line-height:1.3;margin-bottom:'+(S.streamingSubtitle?"2px":"10px")+'">'+esc(S.streamingTitle)+'</div>';
       if (S.streamingSubtitle) h+='<div style="font-size:12px;color:var(--ink-muted);line-height:1.4;margin-bottom:12px">'+esc(S.streamingSubtitle)+'</div>';
       // Boards: stream the vignette stem as it forms.
