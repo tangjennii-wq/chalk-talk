@@ -45,7 +45,10 @@ function extractFn(name){
 }
 const ctx = { console, BOARDS_DIFFICULTY, S: { boardsDifficulty: 4 } };
 vm.createContext(ctx);
-vm.runInContext(["boardsDifficulty","validateBoardQuestion","_boardHardErrors","_repairBoardQuestionInPlace","_finalizeBoardQuestion"].map(extractFn).join("\n\n"), ctx);
+// _finalizeBoardQuestion now also calls _hoistMisplacedBoardFields (brace-drift repair, 2026-07-26),
+// so that function and its field list must be in the sandbox too.
+const _boardFieldsDecl = (html.match(/^var _BOARD_TOPLEVEL_FIELDS = .*$/m) || [""])[0];
+vm.runInContext(_boardFieldsDecl + "\n\n" + ["boardsDifficulty","validateBoardQuestion","_boardHardErrors","_repairBoardQuestionInPlace","_hoistMisplacedBoardFields","_finalizeBoardQuestion"].map(extractFn).join("\n\n"), ctx);
 const validateBoardQuestion = vm.runInContext("validateBoardQuestion", ctx);
 const _boardHardErrors      = vm.runInContext("_boardHardErrors", ctx);
 const _repair               = vm.runInContext("_repairBoardQuestionInPlace", ctx);
