@@ -1227,11 +1227,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-<<<<<<< HEAD
 var BUILD_ID = "2026-07-26-01";
-=======
-var BUILD_ID = "2026-07-24-01";
->>>>>>> ux-polish
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6754,7 +6750,10 @@ async function generate(){
 
     var critiqueInput = critiquePrefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
-<<<<<<< HEAD
+    // Phase → REVIEWING (Jenni 2026-07): the draft is in hand; the AI safety-review now runs. Signal it
+    // honestly so the ~15s review reads as purposeful (the trust step) instead of a stuck progress bar.
+    S.genPhase = "reviewing"; if(typeof render === "function") render();
+
     var finalTalk = null;
     // ALWAYS run the AI review (critique). MEDICAL-SAFETY (Jenni 2026-07): retry ONCE with backoff; if the
     // review still can't finish (e.g. a free-Gemini quota block between draft and review), WITHHOLD the
@@ -6770,35 +6769,6 @@ async function generate(){
           var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels);
           critTxt = critResult.txt;
           if (critResult.fellBack) console.info("Critique via " + critResult.modelUsed);
-=======
-    // Phase → REVIEWING (Jenni 2026-07): the draft is in hand; the AI safety-review now runs. Signal it
-    // honestly so the ~15s review reads as purposeful (the trust step) instead of a stuck progress bar.
-    S.genPhase = "reviewing"; if(typeof render === "function") render();
-
-    var finalTalk = draftTalk;
-    // ALWAYS run critique — accuracy > a few seconds saved. Concise uses Sonnet draft + Haiku review,
-    // so total still ~25-30s. Detailed: Opus draft + Haiku review. Boards: Opus draft + Opus review fallback chain.
-    try {
-      // Async path already ran the critique server-side (reuse it). Sync path calls it now.
-      // criticModels / critMaxTok were set up above alongside the draft spec.
-      var critTxt;
-      if (_useAsync) {
-        critTxt = _asyncCritTxt || "";
-      } else {
-        var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels);
-        critTxt = critResult.txt;
-        if (critResult.fellBack) console.info("Critique done by " + critResult.modelUsed + " (Opus was overloaded)");
-      }
-      if (critTxt && critTxt.trim()) {
-        var parsed = JSON.parse(fixJSON(critTxt));
-        parsed = deepCleanCitations(parsed);
-        // If verdict is "clean", keep draft. Otherwise the parsed object IS the corrected talk.
-        if (parsed.verdict === "clean") {
-          finalTalk = draftTalk;
-        } else if (parsed.title || parsed.question) {
-          // Looks like a corrected talk (has expected schema fields)
-          finalTalk = parsed;
->>>>>>> ux-polish
         }
         if (!critTxt || !critTxt.trim()) throw new Error("empty review response");
         var parsed = deepCleanCitations(JSON.parse(fixJSON(critTxt)));
