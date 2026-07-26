@@ -65,3 +65,6 @@ jobs:
 
       - name: Gemini funnel + withheld-review safety/provenance suite
         run: node test_gemini_safety.mjs
+
+      - name: Targeted Concise safety-review suite
+        run: node test_targeted_review.mjs
