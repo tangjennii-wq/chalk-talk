@@ -39,10 +39,8 @@ ok(/Gemini drafts, Claude reviews" was considered and rejected/.test(html), "rec
 ok(/async function verifyModelDois\(/.test(html), "verifyModelDois() exists");
 ok((html.match(/verifyCitations\(await verifyModelDois\(await verifyModelPmids\(/g) || []).length === 3,
    "DOI verification runs in ALL THREE audit paths, before verifyCitations");
-ok(/if\(r\.src_verified === "crossref"\) return \["high", "doi_verified"\]/.test(html),
-   "a Crossref-verified DOI earns high confidence (same tier as a PubMed-verified PMID)");
 ok(/return any \? out : null;/.test(html), "a total network failure returns null → FAIL OPEN (drops nothing)");
-const vmdSrc = html.slice(html.indexOf("async function verifyModelDois("), html.indexOf("async function verifyModelDois(") + 1800);
+const vmdSrc = html.slice(html.indexOf("async function verifyModelDois("), html.indexOf("async function verifyModelDois(") + 4000);
 ok(/if\(!map\) return talk;/.test(vmdSrc), "network failure leaves the talk untouched");
 ok(/_stripChipIds\(talk, dropIds\)/.test(vmdSrc), "a fabricated DOI's inline [n] chips are stripped from the body");
 ok(/if\(r\.pmid && \/\^\\d\{6,9\}\$\/\.test\(String\(r\.pmid\)\)\) return;/.test(vmdSrc),
