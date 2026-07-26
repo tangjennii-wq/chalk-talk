@@ -175,22 +175,44 @@ async function pmidExists(pmid) {
 // ── model calls ───────────────────────────────────────────────────────────────
 const GEMINI_MODEL = (html.match(/GEN_GEMINI_BYOK_MODEL\s*=\s*"([^"]+)"/) || [])[1] || "gemini-3.6-flash";
 const CLAUDE_MODEL = "claude-opus-5";
+// A big lecture/boards JSON can take 60-120s, so these calls MUST have a visible heartbeat and a hard
+// timeout — otherwise a hung socket looks identical to "slow but working" and the run appears frozen.
+const CALL_TIMEOUT_MS = parseInt(argVal("--timeout", "240000"), 10);
+function heartbeat(label) {
+  const t0 = Date.now();
+  const iv = setInterval(() => process.stdout.write(`\r    ${label} … ${Math.round((Date.now() - t0) / 1000)}s`), 5000);
+  return () => { clearInterval(iv); return Date.now() - t0; };
+}
+async function fetchWithTimeout(url, opts, label) {
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), CALL_TIMEOUT_MS);
+  const stop = heartbeat(label);
+  try { return await fetch(url, { ...opts, signal: ac.signal }); }
+  catch (e) {
+    if (e.name === "AbortError") throw new Error(`timed out after ${Math.round(CALL_TIMEOUT_MS / 1000)}s (raise with --timeout <ms>)`);
+    throw e;
+  } finally { clearTimeout(to); stop(); process.stdout.write("\r" + " ".repeat(60) + "\r"); }
+}
 async function callGemini(system, user, maxTok = 8000) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
   const body = { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }] }],
                  generationConfig: { maxOutputTokens: maxTok, temperature: 1 } };
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const r = await fetchWithTimeout(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }, "gemini");
   const t = await r.text();
   if (!r.ok) throw new Error(`gemini ${r.status}: ${t.slice(0, 300)}`);
   const j = JSON.parse(t);
-  return (j?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+  const cand = j?.candidates?.[0];
+  const txt = (cand?.content?.parts || []).map(p => p.text || "").join("");
+  // MAX_TOKENS with empty text = the model spent its budget on reasoning and emitted nothing usable
+  if (!txt && cand?.finishReason) throw new Error(`gemini returned no text (finishReason: ${cand.finishReason})`);
+  return txt;
 }
 async function callClaude(system, user, maxTok = 8000, model = CLAUDE_MODEL) {
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+  const r = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": CLAUDE_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({ model, max_tokens: maxTok, system, messages: [{ role: "user", content: user }] }),
-  });
+  }, "claude");
   const t = await r.text();
   if (!r.ok) throw new Error(`claude ${r.status}: ${t.slice(0, 300)}`);
   const j = JSON.parse(t);
@@ -244,6 +266,7 @@ async function grade(style, raw) {
   }
   soft.pmids_cited = pmids.size;
   let fabricated = 0, uncheckable = 0;
+  if (pmids.size) process.stdout.write(`(verifying ${pmids.size} PMID${pmids.size === 1 ? "" : "s"}) `);
   for (const p of pmids) {
     const ex = await pmidExists(p);
     if (ex === false) { hard.push(`FABRICATED CITATION: PMID ${p} does not exist on Europe PMC`); fabricated++; }
