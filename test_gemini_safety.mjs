@@ -64,7 +64,7 @@ ok(/webSearched:\s*!!modelOpts\.__webSearched/.test(html), "callAPIWithFallback 
 ok(/S\.reviewPending\.charged/.test(html) && /retrying the review won/.test(html), "withheld-draft copy is conditional on whether a credit was already charged");
 ok(/charged:\s*!!_useAsync/.test(html), "async (Worker-reserved credit) is tracked as charged on the withheld draft");
 ok(/if\s*\(\s*genUsesFreeTier\(\)\s*&&\s*!rp\.charged\s*\)/.test(html), "retry does NOT re-charge a credit");
-ok(/_guidelinesLoaded\s*=\s*!!glRef/.test(html), "_guidelinesLoaded is derived from an actual guideline match");
+ok(/guidelinesLoaded: !!glRef/.test(html), "_guidelinesLoaded is derived from an actual guideline match (passed to the provenance stamp)");
 
 // ---- Worker → browser web-search propagation (Codex 2026-07) ----------------
 const worker = readFileSync(new URL("./worker.js", import.meta.url), "utf8");

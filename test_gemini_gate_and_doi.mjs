@@ -147,13 +147,20 @@ ok(/h \+= writerWarningHtml\(t\);/.test(html), "the warning is rendered into the
 }
 
 // the exact model must be CAPTURED from both generation paths, not inferred
-ok(/var txt, _asyncCritTxt = null, _useAsync = false, _draftWebSearched = false, _draftModel = ""/.test(html),
+// Declared together with the other draft flags — this file has produced two var-hoisting bugs, so the
+// point is that the declaration exists at the top of generate(), not its exact spelling.
+ok(/var txt, _asyncCritTxt = null,[^;]*_draftModel = ""/.test(html),
    "_draftModel is declared with the other draft flags (no var-hoisting trap)");
 ok(/_draftModel = \(_res && _res\.modelUsed\) \|\| "";/.test(html), "async/Worker path captures modelUsed");
 ok(/_draftModel = mainResult\.modelUsed \|\| "";/.test(html), "sync path captures modelUsed (incl. an overload fallback)");
-ok(/finalTalk\._writerModel = _draftModel/.test(html), "the exact model is stamped onto the talk");
+// Provenance now goes through ONE helper (three hand-rolled copies had drifted, and the resume path had
+// none at all), so assert the model reaches that helper rather than a specific assignment line.
+ok(/_stampProvenance\(finalTalk, \{\s*\n\s*writerModel: _draftModel/.test(html),
+   "the exact drafting model is passed to the provenance stamp");
+ok(/writerModels: \[_draftModel \|\| ""\]\.concat\(_critiqueRewroteTalk/.test(html),
+   "a critic REWRITE records the critic's model too — it wrote the text on screen");
 ok(/writerModel: _draftModel/.test(html), "a WITHHELD draft remembers which model wrote it");
-ok(/finalTalk\._writerModel = rp\.writerModel/.test(html), "a review retry restores the original writer model (it never re-drafts)");
+ok(/writerModel: rp\.writerModel \|\| ""/.test(html), "a review retry restores the original writer model (it never re-drafts)");
 
 ok(/\(unverified model\)/.test(html), "the 'Written by' chip marks an unverified model too (defence in depth)");
 

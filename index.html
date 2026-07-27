@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-17";
+var BUILD_ID = "2026-07-26-18";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1521,15 +1521,24 @@ async function resumeAsyncJobIfAny(){
     // review actually completed on it.
     var finalTalk = null, _resumeCritErr = null;
     var _glRef = getGuidelinesForTopic(S.topic) || null;
-    var _spec = buildCritiqueSpec(S.style, S.topic, _glRef, S.ragChunks);
+    // EVIDENCE MUST SURVIVE THE RELOAD. This function runs on a fresh page load, so S.ragChunks is [] —
+    // using it here handed the reviewer a ground-truth block with the retrieved sources missing. Prefer the
+    // digest persisted at submit time, and fall back to live state only if it isn't there (older job
+    // records). (Codex 2026-07-26)
+    var _resumeRag = (stored && stored.ragDigest && stored.ragDigest.length) ? stored.ragDigest
+                   : ((S.ragChunks && S.ragChunks.length) ? S.ragChunks : []);
+    if(!_resumeRag.length && (stored && stored.ragCount)) console.warn("Resumed job cited " + stored.ragCount + " retrieved source(s) but no digest survived — the review runs on guidelines only.");
+    var _spec = buildCritiqueSpec(S.style, S.topic, _glRef, _resumeRag);
     var _critInput = _spec.prefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
+    var _resumeRewroteTalk = false, _resumeRetryModel = "";
     function _acceptCritique(rawCrit){
       var parsed = deepCleanCitations(JSON.parse(fixJSON(rawCrit)));
       if(parsed.verdict === "clean") return draftTalk;
       if(parsed.title || parsed.question){
         if(S.style === "boards") _hoistMisplacedBoardFields(parsed);
         _assertCompleteTalk(parsed, S.style, "resumed critic rewrite");
+        _resumeRewroteTalk = true;   // the critic's text is what will be displayed
         return parsed;
       }
       throw new Error("unrecognized review output");
@@ -1547,6 +1556,7 @@ async function resumeAsyncJobIfAny(){
       if(S.genCancelled || _myGenId !== S.genId) return;
       try{
         var _r2 = await callAPIWithFallback(_spec.sys, _critInput, _spec.maxTok, _spec.models);
+        _resumeRetryModel = _r2.modelUsed || "";
         finalTalk = _acceptCritique(_r2.txt);
       }catch(e2){ _resumeCritErr = e2; console.warn("Resumed critique retry failed:", e2 && e2.message); }
     }
@@ -1559,7 +1569,7 @@ async function resumeAsyncJobIfAny(){
       S.reviewPending = { draft: draftTalk, critiqueSystem: _spec.sys, critiquePrefix: _spec.prefix,
         critMaxTok: _spec.maxTok, criticModels: _spec.models, topic: S.topic, style: S.style, depth: S.depth,
         provider: (S.genProvider || "claude"), writerModel: (res && res.modelUsed) || "",
-        charged: true, ragCount: (S.ragChunks || []).length, guidelinesLoaded: !!_glRef,
+        charged: true, ragCount: (stored && stored.ragCount != null) ? stored.ragCount : _resumeRag.length, guidelinesLoaded: !!_glRef,
         webSearched: !!(res && res.webSearched), err: (_resumeCritErr && _resumeCritErr.message) || "" };
       _saveReviewPending();
       S.citationAuditPending = false; S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
@@ -1569,6 +1579,17 @@ async function resumeAsyncJobIfAny(){
     finalTalk = pruneFakeReferences(finalTalk);
     finalTalk = _normalizeInlinePmids(finalTalk);
     finalTalk = _finalizeBoardQuestion(finalTalk);   // repair + hard-invalid gate (Jenni 2026-07-21)
+    // PROVENANCE — this path had NONE, so a resumed talk (most mobile generations) rendered with no
+    // "AI-reviewed" chip, no writer attribution, and no possibility of the unverified-model warning,
+    // which keys off _writerModel. Same stamp as the synchronous path. (Codex 2026-07-26)
+    _stampProvenance(finalTalk, {
+      writerModel: (res && res.modelUsed) || "",
+      writerModels: [(res && res.modelUsed) || ""].concat(_resumeRewroteTalk ? [(res && res.critModelUsed) || _resumeRetryModel || ""] : []),
+      webSearched: !!(res && res.webSearched),
+      // the count the DRAFT was actually written with, persisted at submit — S.ragChunks is empty after a reload
+      ragCount: (stored && stored.ragCount != null) ? stored.ragCount : _resumeRag.length,
+      guidelinesLoaded: !!_glRef
+    });
     if(S.genCancelled || _myGenId !== S.genId) return;
     // NOTE: no client consume here — the background job already consumed quota SERVER-SIDE on success
     // (worker runGeneration). We only refresh the badge below. (Jenni 2026-07-03)
@@ -6248,6 +6269,23 @@ function getOpenAIKeyRaw(){ return (localStorage.getItem("openai_api_key")||"").
 function getGeminiKeyRaw(){ return (localStorage.getItem("gemini_api_key")||"").trim(); }
 function _sysToText(sys){ if(typeof sys==="string") return sys; if(Array.isArray(sys)) return sys.map(function(p){return (p&&p.text)||"";}).filter(Boolean).join("\n\n"); return String(sys||""); }
 function _contentToText(content){ if(typeof content==="string") return content; if(Array.isArray(content)) return content.map(function(p){return (p&&p.type==="text")?p.text:"";}).filter(Boolean).join("\n\n"); return String(content||""); }
+// Append an instruction to a request body WITHOUT losing any of its evidence.
+// A request body here is either a plain string or an Anthropic-style content-parts array whose later
+// parts are the user's uploaded PDFs/images. `content + note` on the array form stringifies it to
+// "[object Object],[object Object]" and silently throws the entire evidence payload away, so every
+// retry/repair path must route through this. Returns a NEW value; never mutates the original, because
+// callers reuse the same body across attempts. (Codex 2026-07-26)
+function _appendNoteToContent(content, note){
+  if(!note) return content;
+  if(typeof content === "string") return content + note;
+  if(!Array.isArray(content)) return String(content == null ? "" : content) + note;
+  var out = content.map(function(p){ return p; });          // shallow copy — parts stay shared, array does not
+  var iLastText = -1;
+  for(var i = 0; i < out.length; i++){ if(out[i] && out[i].type === "text" && typeof out[i].text === "string") iLastText = i; }
+  if(iLastText >= 0) out[iLastText] = { type: "text", text: out[iLastText].text + note };
+  else out.push({ type: "text", text: note.replace(/^\n+/, "") });
+  return out;
+}
 // Convert Anthropic-style content parts (text + document/image, from buildReferenceParts) into the
 // native shapes ChatGPT and Gemini expect — so uploaded PDFs/images actually reach those models
 // instead of being silently dropped to text-only. (Jenni 2026-07 — Codex bug #1.)
@@ -7038,7 +7076,7 @@ async function generate(){
     // fallback if Opus was overloaded. The benchmark clears specific model IDs, so the honesty banner has
     // to know which one actually ran. Declared HERE with the other draft flags to avoid the var-hoisting
     // trap that has bitten this function twice. (Codex 2026-07-26)
-    var txt, _asyncCritTxt = null, _useAsync = false, _draftWebSearched = false, _draftModel = "";
+    var txt, _asyncCritTxt = null, _asyncCritModel = "", _useAsync = false, _draftWebSearched = false, _draftModel = "";
     if (asyncGenApplicable()) {
       var _job = await submitAsyncGeneration({
         draft:    { sys: sys, content: uc, maxTok: maxTok, models: mainModels, tools: (mainOpts.tools || null) },
@@ -7047,7 +7085,18 @@ async function generate(){
       if (_job && _job.jobId) {
         _useAsync = true;
         // Persist for reload-reconnect: if the user reloads mid-gen, boot logic resumes this job.
-        try { localStorage.setItem(ASYNC_GEN_CONFIG.jobKey, JSON.stringify({ jobId: _job.jobId, genId: _myGenId, topic: S.topic, style: S.style, depth: S.depth, at: Date.now() })); } catch(_){}
+        // Persist the RETRIEVED-SOURCE DIGEST too. resumeAsyncJobIfAny() runs after a page reload, where
+        // S.ragChunks is empty — so its critique retry was rebuilding the reviewer's ground-truth context
+        // WITHOUT the sources the draft was written from, i.e. checking medical claims against less
+        // evidence than produced them, silently. Only title+pmid are needed (all buildCritiqueSpec reads),
+        // so this stays small enough for localStorage. Guidelines don't need persisting: they're static and
+        // getGuidelinesForTopic(topic) recomputes them deterministically. (Codex 2026-07-26)
+        var _ragDigest = [];
+        try {
+          _ragDigest = (S.ragChunks || []).slice(0, 8).map(function(c){ return { title: (c && c.title) || "", pmid: (c && c.pmid) || "" }; });
+        } catch(_){ _ragDigest = []; }
+        try { localStorage.setItem(ASYNC_GEN_CONFIG.jobKey, JSON.stringify({ jobId: _job.jobId, genId: _myGenId, topic: S.topic, style: S.style, depth: S.depth,
+          ragDigest: _ragDigest, ragCount: (S.ragChunks || []).length, at: Date.now() })); } catch(_){}
         S.genBackgroundSafe = true;   // async path survives backgrounding → swap the "keep tab open" warning
         S.loadMsg = "Generating on our servers — safe to switch tabs or lock your phone.";
         if (typeof render === "function") render();
@@ -7059,6 +7108,7 @@ async function generate(){
         try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){}
         txt = (_res && _res.draftText) || "";
         _asyncCritTxt = (_res && _res.critText) || "";
+        _asyncCritModel = (_res && _res.critModelUsed) || "";   // absent on an older Worker → stays "" (unknown, not accused)
         _draftWebSearched = !!(_res && _res.webSearched);   // Worker reports actual web-search usage (Jenni 2026-07 — Codex)
         S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
         _draftModel = (_res && _res.modelUsed) || "";
@@ -7093,7 +7143,13 @@ async function generate(){
             : "it was not valid JSON (likely an unbalanced brace or bracket).") +
           " Return ONE complete, valid JSON object matching the schema exactly, and nothing else — no preamble, no commentary, no markdown fences.";
         try {
-          var _retry = await callAPIWithFallback(sys, uc + _fixNote, maxTok, mainModels, mainOpts);
+          // `uc` is a content-parts ARRAY (text + the user's uploaded reference documents from
+          // buildReferenceParts). Concatenating a string onto it stringifies the whole thing to
+          // "[object Object],[object Object]" — the retry would have gone out with NO topic, NO guideline
+          // context, NO landmark trials, NO retrieved sources and NO uploaded documents, while the
+          // resulting talk still got labelled "Grounded in guidelines + N sources" (those chips are
+          // computed from S, not from what was actually sent). Never coerce; append properly. (Codex)
+          var _retry = await callAPIWithFallback(sys, _appendNoteToContent(uc, _fixNote), maxTok, mainModels, mainOpts);
           txt = _retry.txt; _draftModel = _retry.modelUsed || _draftModel;
         } catch(_re){ _draftParseErr = _re; break; }
       }
@@ -7152,6 +7208,7 @@ async function generate(){
           if (S.style === "boards") _hoistMisplacedBoardFields(parsed);
           _assertCompleteTalk(parsed, S.style, "critic rewrite");
           finalTalk = parsed; critiqueOK = true;
+          _critiqueRewroteTalk = true;   // the reader is seeing the CRITIC's text, not the draft's
         }
         else throw new Error("unrecognized review output");
       } catch(critErr) {
@@ -7191,13 +7248,14 @@ async function generate(){
     // Provenance for honest labeling (Jenni 2026-07): the review DID finish (we're past the withhold gate);
     // record who wrote it and whether a live web search actually ran (Claude-only tool). Gemini/OpenAI are
     // grounded in Chalk Talk's retrieved evidence but do NOT perform live web search.
-    finalTalk._reviewStatus = "reviewed";
-    finalTalk._writtenBy = (S.genProvider || "claude");
-    finalTalk._writerModel = _draftModel || "";   // exact model id — what the benchmark clears (Codex 2026-07-26)
-    finalTalk._webSearched = ((S.genProvider || "claude") === "claude" && _draftWebSearched);   // ACTUAL search, not the toggle
-    finalTalk._ragCount = (S.ragChunks || []).length;   // 0 = retrieval returned nothing; don't claim RAG grounding
-    finalTalk._guidelinesLoaded = !!glRef;              // a guideline actually matched this topic
-    finalTalk._citationsVerified = false;                // set true ONLY after the background citation audit succeeds
+    _stampProvenance(finalTalk, {
+      writerModel: _draftModel || "",
+      // if the critic returned a CORRECTED talk, that model wrote what the reader sees — record it too
+      writerModels: [_draftModel || ""].concat(_critiqueRewroteTalk ? [_critiqueModel || ""] : []),
+      webSearched: ((S.genProvider || "claude") === "claude" && _draftWebSearched),
+      ragCount: (S.ragChunks || []).length,
+      guidelinesLoaded: !!glRef
+    });
 
     // If the user cancelled mid-flight, discard the result so they don't suddenly
   // see a talk appear after they tapped Cancel (Jenni 2026-06-08).
@@ -8997,18 +9055,20 @@ async function retryReview(){
   S.reviewRetrying = true; S.error = ""; render();
   var critiqueInput = rp.critiquePrefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(rp.draft);
   var ok = false, finalTalk = null, err = null;
+  // a review retry never re-drafts, but the critic CAN return a corrected talk — then it wrote the text
+  var _retryRewroteTalk = false, _retryCriticModel = "";
   for (var a = 0; a < 2 && !ok; a++){
     if (a > 0) await new Promise(function(r){ setTimeout(r, 1200); });
     try {
       var res = await callAPIWithFallback(rp.critiqueSystem, critiqueInput, rp.critMaxTok, rp.criticModels);
-      var txt = res.txt;
+      var txt = res.txt; _retryCriticModel = res.modelUsed || "";
       if (!txt || !txt.trim()) throw new Error("empty review response");
       var parsed = deepCleanCitations(JSON.parse(fixJSON(txt)));
       if (parsed.verdict === "clean") { finalTalk = rp.draft; ok = true; }
       else if (parsed.title || parsed.question) {
         if ((rp.style || S.style) === "boards") _hoistMisplacedBoardFields(parsed);
         _assertCompleteTalk(parsed, rp.style || S.style, "retried critic rewrite");   // partial → stays withheld
-        finalTalk = parsed; ok = true;
+        finalTalk = parsed; ok = true; _retryRewroteTalk = true;
       }
       else throw new Error("unrecognized review output");
     } catch(e){ err = e; console.warn("retryReview attempt " + (a+1) + " failed:", e && e.message); }
@@ -9019,13 +9079,13 @@ async function retryReview(){
   finalTalk = pruneFakeReferences(finalTalk);
   finalTalk = _normalizeInlinePmids(finalTalk);
   finalTalk = _finalizeBoardQuestion(finalTalk);
-  finalTalk._reviewStatus = "reviewed";
-  finalTalk._writtenBy = (S.genProvider || "claude");
-  finalTalk._writerModel = rp.writerModel || "";   // a review retry never re-drafts, so the writer is unchanged
-  finalTalk._webSearched = !!rp.webSearched;   // the DRAFT's actual search; a review retry never re-searches
-  finalTalk._ragCount = (rp.ragCount != null ? rp.ragCount : (S.ragChunks || []).length);
-  finalTalk._guidelinesLoaded = (rp.guidelinesLoaded != null ? rp.guidelinesLoaded : !!getGuidelinesForTopic(rp.topic));
-  finalTalk._citationsVerified = false;
+  _stampProvenance(finalTalk, {
+    writerModel: rp.writerModel || "",           // a review retry never re-drafts, so the drafter is unchanged
+    writerModels: [rp.writerModel || ""].concat(_retryRewroteTalk ? [_retryCriticModel || ""] : []),
+    webSearched: !!rp.webSearched,               // the DRAFT's actual search; a review retry never re-searches
+    ragCount: (rp.ragCount != null ? rp.ragCount : (S.ragChunks || []).length),
+    guidelinesLoaded: (rp.guidelinesLoaded != null ? rp.guidelinesLoaded : !!getGuidelinesForTopic(rp.topic))
+  });
   if (genUsesFreeTier() && !rp.charged){ try{ await consumeFreeTier("talk"); }catch(_){} }
   S.reviewPending = null; _saveReviewPending();
   S.topic = rp.topic; S.style = rp.style || S.style; if(rp.depth) S.depth = rp.depth;
@@ -9102,6 +9162,46 @@ var WRITER_BENCHMARK_CLEARED = {
 // left unlabelled rather than accused, since we genuinely don't know what wrote it.
 function writerIsBenchmarked(m){ return WRITER_BENCHMARK_CLEARED[String(m || "")] === true; }
 function writerModelKnown(m){ return !!String(m || "").trim(); }
+// EVERY model that produced text the reader sees — the draft model AND any critic that returned a
+// rewritten talk. A "clean" verdict keeps the draft, but a corrected talk means the critic wrote what is
+// on screen, so labeling only the drafter would under-warn if a non-cleared model ever did the rewrite.
+// Both chains are gate-filtered by writeAllowedModels() today, which makes this latent rather than live —
+// but the label must be correct by construction, not by luck. (Codex 2026-07-26)
+function talkWriterModels(t){
+  if(!t) return [];
+  var out = [], seen = {};
+  var list = (t._writerModels && t._writerModels.length) ? t._writerModels : [t._writerModel];
+  for(var i = 0; i < list.length; i++){
+    var m = String(list[i] || "").trim();
+    if(m && !seen[m]){ seen[m] = 1; out.push(m); }
+  }
+  return out;
+}
+// Unverified if ANY contributing model is known-but-uncleared. Unknown models are not accused (legacy talks).
+function talkHasUnverifiedWriter(t){
+  var ms = talkWriterModels(t);
+  if(!ms.length) return false;
+  for(var i = 0; i < ms.length; i++){ if(!writerIsBenchmarked(ms[i])) return true; }
+  return false;
+}
+// ── ONE provenance stamp, used by every path that can show a talk ──────────────────────────────
+// There were three near-identical copies of this block and the async/resume path had NONE — so a resumed
+// generation (most mobile talks) rendered with no "AI-reviewed" chip, no writer attribution, and, because
+// writerWarningHtml() keys off _writerModel, NO unverified-model warning could ever appear on that path.
+// Honest labeling can't live in three hand-maintained copies. (Codex 2026-07-26)
+function _stampProvenance(talk, o){
+  if(!talk) return talk;
+  o = o || {};
+  talk._reviewStatus = "reviewed";                       // only ever called past the withhold gate
+  talk._writtenBy = o.writtenBy || (S.genProvider || "claude");
+  talk._writerModels = talkWriterModels({ _writerModels: o.writerModels || [], _writerModel: o.writerModel });
+  talk._writerModel = talk._writerModels[0] || "";       // the drafter, kept for display + back-compat
+  talk._webSearched = !!o.webSearched;                   // ACTUAL search, not the toggle
+  talk._ragCount = (o.ragCount != null ? o.ragCount : 0);// 0 = don't claim RAG grounding
+  talk._guidelinesLoaded = !!o.guidelinesLoaded;         // a guideline actually matched this topic
+  talk._citationsVerified = false;                       // true ONLY after the background audit succeeds
+  return talk;
+}
 
 // ── RESTRICT WRITING TO BENCHMARKED MODELS (Jenni + Codex 2026-07-26, launch option B) ──────────
 // The fallback chain existed for resilience: if Opus is overloaded, drop to Sonnet, then Haiku. But an
@@ -9189,10 +9289,13 @@ function writerLabel(w){ return w === "gemini" ? "Gemini" : (w === "openai" ? "C
 // observed, because "may be less accurate" is too vague to change how someone reads a talk.
 function writerWarningHtml(t){
   if(!t) return "";
-  var mdl = t._writerModel || "";
-  if(!writerModelKnown(mdl)) return "";           // legacy talk, model unrecorded → don't accuse
-  if(writerIsBenchmarked(mdl)) return "";
-  var w = writerLabel(t._writtenBy) + " (" + mdl + ")";
+  var models = talkWriterModels(t);
+  if(!models.length) return "";                   // legacy talk, model unrecorded → don't accuse
+  if(!talkHasUnverifiedWriter(t)) return "";
+  // Name every uncleared contributor, not just the drafter — if a critic rewrote the talk, its model is
+  // what the reader is actually reading. (Codex 2026-07-26)
+  var unverified = models.filter(function(m){ return !writerIsBenchmarked(m); });
+  var w = writerLabel(t._writtenBy) + " (" + unverified.join(", ") + ")";
   return '<div style="background:#fdf3e7;border:1px solid #e8c9a0;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px;color:#6b4a1f;line-height:1.5">'
     + '⚠️ <b>Written by ' + esc(w) + ' — not verified to Chalk Talk\'s accuracy standard.</b> '
     + 'Only Claude has passed our medical-quality benchmark. In testing, other models stated guideline '
@@ -9205,7 +9308,7 @@ function _provenanceChips(t, auditPending){
   if(!t || !t._reviewStatus) return [];
   var wb = writerLabel(t._writtenBy);
   // Name the unverified writer in the chip too, so it reads honestly even where the banner isn't shown.
-  if(writerModelKnown(t._writerModel) && !writerIsBenchmarked(t._writerModel)) wb = wb + " (unverified model)";
+  if(talkHasUnverifiedWriter(t)) wb = wb + " (unverified model)";
   var chips = [];
   chips.push("✍️ Written by " + wb);
   chips.push("🔎 AI-reviewed");

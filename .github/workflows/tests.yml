@@ -78,6 +78,10 @@ jobs:
       - name: Strict talk parsing (never render partial medical content)
         run: node test_parse_strict.mjs
 
+      # Behavioural, not regex: executes the retry loop and inspects the request it reconstructs.
+      - name: Retry evidence preservation + provenance stamping
+        run: node test_retry_evidence.mjs
+
       # The benchmark harness decides which models may write medical content. If it can report a PASS
       # when its verifiers were unreachable, every clearance it has ever granted is suspect.
       - name: Benchmark harness (never pass on unverified evidence)

@@ -11,6 +11,15 @@ const F = JSON.parse(readFileSync(new URL("./rag/fixtures_unparseable_talks.json
 let failures = 0;
 const ok = (c, m) => { console.log((c ? "✓" : "✗ FAIL") + " — " + m); if (!c) failures++; };
 
+// Slice a whole function by its real end (a column-0 "\n}"), never by a magic character count —
+// a fixed-length window silently stops covering the tail of the function as soon as anyone adds a line.
+function fnBody(name){
+  const i = html.indexOf(name);
+  if(i < 0) throw new Error("not found: " + name);
+  const e = /\n\}/.exec(html.slice(i));
+  return html.slice(i, e ? i + e.index + 2 : html.length);
+}
+
 function block(re) {
   const m = html.match(re); if (!m) throw new Error("not found: " + re);
   const i = m.index, e = /\n\};?/.exec(html.slice(i));
@@ -95,7 +104,7 @@ ok(!/var draftTalk = JSON\.parse\(fixJSON\(txt\)\);/.test(html), "the old unchec
 ok(/function _assertCompleteTalk\(/.test(html), "_assertCompleteTalk() exists for non-draft candidates");
 
 // (a) resumed async draft
-const resumeSrc = html.slice(html.indexOf("async function resumeAsyncJobIfAny"), html.indexOf("async function resumeAsyncJobIfAny") + 4000);
+const resumeSrc = fnBody("async function resumeAsyncJobIfAny");
 ok(/parseTalkStrict\(txt, S\.style\)/.test(resumeSrc), "the RESUMED async draft goes through parseTalkStrict");
 ok(!/var draftTalk = pruneFakeReferences\(deepCleanCitations\(JSON\.parse\(fixJSON\(txt\)\)\)\)/.test(html),
    "the resumed draft's raw JSON.parse path is gone");
@@ -155,7 +164,7 @@ ok(/kept your original untouched/.test(html.slice(revIdx, revIdx + 700)),
 // server-side critique was missing/malformed/incomplete — silently weaker than the synchronous path,
 // which retries once then WITHHOLDS. Most mobile generations complete via this path.
 {
-  const rs = html.slice(html.indexOf("async function resumeAsyncJobIfAny"), html.indexOf("async function resumeAsyncJobIfAny") + 7000);
+  const rs = fnBody("async function resumeAsyncJobIfAny");
   ok(/parseTalkStrict\(txt, S\.style\)/.test(rs), "resume: draft parsed with the strict gate");
   ok(/function _acceptCritique\(/.test(rs), "resume: a single acceptance helper decides clean-vs-rewrite");
   ok(/_assertCompleteTalk\(parsed, S\.style, "resumed critic rewrite"\)/.test(rs),

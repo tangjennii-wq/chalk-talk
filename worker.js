@@ -884,7 +884,7 @@ async function runGeneration(jobId, body, env) {
     } catch (_) {}
     // updateJob returns false if a cancel landed between the final check and this write — in that race
     // the result is discarded, so refund the reservation too.
-    const wrote = await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed, webSearched: !!draft.webSearched }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
+    const wrote = await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed, critModelUsed: critModel || "", webSearched: !!draft.webSearched }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
     if (!wrote) await refundOnce();
   } catch (err) {
     await refundOnce();   // job failed — don't burn the reserved talk (no-op if already refunded)
