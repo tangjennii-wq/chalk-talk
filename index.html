@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-21";
+var BUILD_ID = "2026-07-26-22";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -9047,6 +9047,7 @@ function rebuildLesson(){
   // Full rebuild, NOT a cache swap: drop the loaded talk's cached depth variants + re-arm web verify so
   // the new draft is retrieved and cited exactly like a fresh generation.
   S.depthVariantsCache=null; S._pendingDepthMerge=false; S.ragChunks=[];
+  S.depth="concise";   // every new talk starts on the fast path; Detailed is a post-generation expansion
   S.wantWebSearch=true;
   generate();
 }
@@ -10956,13 +10957,19 @@ function renderMain(){
     h+='<div style="font-size:10.5px;color:var(--plum-deep);margin:5px 0 0 4px;font-weight:600"><span style="letter-spacing:1px">'+_bdInfo.stars+'</span> '+esc(_bdInfo.label)+(_bdCur===4?' · default':'')+'</div>';
     h+='</div>';
   } else {
-  // Depth
-  h+='<div style="flex:1 1 220px;min-width:0" title="5 min vs 10 min">';
-  h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth<span tabindex="0" class="opt-hint" aria-label="What is Depth?">i<span class="opt-hint-pop"><b>Concise:</b> ~5 minutes, the high-yield pass.<br><b>Detailed:</b> ~10 minutes, full chalk talk with deeper mechanism and evidence.<br><i style="opacity:.75">Not used in Boards mode.</i></span></span></div>';
-  h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
-  h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{title:"~5 min — the high-yield pass, generates fastest. Recommended.",badge:"★ REC"});
-  h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{title:"~10 min — full chalk talk with deeper mechanism and evidence (generates slower, ~40-50s)"});
-  h+='</div></div>';
+  // REFERENCES now sits where Depth used to. Depth is GONE from compose (Jenni 2026-07-26): every
+  // generation starts Concise — the fast path — and Detailed became a toggle on the FINISHED talk.
+  // Choosing depth up front only made the user wait longer before seeing anything; the honest default
+  // is "show the talk, then let them expand it".
+  h+='<div style="flex:1 1 220px;min-width:0">';
+  h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">References<span tabindex="0" class="opt-hint" aria-label="About references">i<span class="opt-hint-pop">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.<br>&#128274; Not stored, not used for training.</span></span></div>';
+  h+='<div id="dropZone" style="min-height:48px;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:10px 14px;background:var(--cream);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-soft);cursor:pointer;transition:background .15s ease">';
+  h+='<span aria-hidden="true" style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:400;flex-shrink:0">+</span>';
+  h+='<span style="font-size:13px;font-weight:600;color:var(--ink)">Add references</span>';
+  h+='<span class="optionalText" style="color:var(--ink-soft);font-weight:400;font-size:12px">(optional)</span>';
+  h+='<input type="file" id="fileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none">';
+  h+='</div>';
+  h+='</div>';
   }
   h+='</div>';
 
@@ -10975,6 +10982,7 @@ function renderMain(){
   // GONE from the compose screen entirely — we ALWAYS search the web while drafting (S.wantWebSearch is
   // pinned true), so there is nothing for the user to decide here. It stays adjustable mid-generation in
   // the "Change anytime" panel. (Jenni 2026-07-11)
+  if(S.style==="boards"){   // boards keeps Difficulty in the slot above, so references get their own row
   h+='<div class="compose-ref-row" style="margin-bottom:14px">';
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">References<span tabindex="0" class="opt-hint" aria-label="About references">i<span class="opt-hint-pop">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.<br>&#128274; Not stored, not used for training.</span></span></div>';
   h+='<div id="dropZone" style="min-height:48px;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:10px 14px;background:var(--cream);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-soft);cursor:pointer;transition:background .15s ease">';
@@ -10984,6 +10992,7 @@ function renderMain(){
   h+='<input type="file" id="fileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none">';
   h+='</div>';
   h+='</div>';
+  }
   for(var fi=0;fi<S.files.length;fi++)h+='<div style="display:flex;justify-content:space-between;background:var(--lavender-bg);border-radius:8px;padding:6px 12px;margin-bottom:6px"><span style="font-size:12px;color:var(--ink)">📄 '+esc(S.files[fi].n)+'</span><button class="rmFile" data-i="'+fi+'" style="background:none;border:none;color:var(--ink-muted);font-size:16px;cursor:pointer">×</button></div>';
   } // end if(!S.loading) — compose controls hidden during generation
 
@@ -11068,15 +11077,10 @@ function renderMain(){
     if(S.style==="lecture"){
       h+='<div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px">';
       h+='<div style="font-size:10px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;display:flex;align-items:center;gap:5px"><span>⚙</span> Change anytime</div>';
-      // Depth row
-      var _dC = (S.depth==="concise"), _dD = (S.depth==="detailed");
-      h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
-      h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink)">Depth</span>';
-      h+='<div style="display:inline-flex;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:2px;font-size:11px;font-weight:600">';
-      h+='<button class="loadingDepthBtn" data-d="concise"  style="background:'+(_dC?"#fff":"transparent")+';color:'+(_dC?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dC?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dC?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dC?"700":"500")+'">Concise<span style="font-size:8px;font-weight:800;color:#a07d1a;letter-spacing:0.02em;margin-left:4px">★ REC</span></button>';
-      // Un-gated 2026-07-03 (Jenni): switching to Detailed mid-generation restarts at full depth.
-      h+='<button class="loadingDepthBtn" data-d="detailed" title="Switch to full depth — restarts this generation (~40-50s)" style="background:'+(_dD?"#fff":"transparent")+';color:'+(_dD?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(_dD?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:4px 10px;cursor:'+(_dD?"default":"pointer")+';font-family:inherit;font-size:11px;font-weight:'+(_dD?"700":"500")+'">Detailed</button>';
-      h+='</div></div>';
+      // DEPTH ROW REMOVED (Jenni 2026-07-26). Changing depth mid-generation RESTARTED the whole thing —
+      // the user had already waited, and pressing it threw that work away. Generation is always Concise
+      // now; Detailed is a toggle on the finished talk, which expands what you already have instead of
+      // starting over. Nothing about the run should be changeable while it runs.
       // Verify toggle — restarts generation on toggle (in either direction)
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
       h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px"><span style="font-size:13px">🔬</span>Search the web while drafting</span>';
@@ -11945,8 +11949,8 @@ function renderMain(){
       h+='</div><div style="font-size:10.5px;color:var(--plum-deep);margin:5px 0 0 4px;font-weight:600"><span style="letter-spacing:1px">'+_bdInfo2.stars+'</span> '+esc(_bdInfo2.label)+'</div></div>';
     } else {
     h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth</div><div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px">';
-    h+=segBtn("depthBtn","d","concise",S.depth,"⊜","Concise",{compact:true});
-    h+=segBtn("depthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true,title:"~10 min — full depth"});
+    h+=segBtn("flipDepthBtn","d","concise",S.depth,"⊜","Concise",{compact:true});
+    h+=segBtn("flipDepthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true,title:"~10 min — full depth, expands the talk you already have"});
     h+='</div></div>';
     }
     // Model picker — lets you rebuild with a different provider (Jenni 2026-07)
@@ -12323,16 +12327,8 @@ function bindMain(){
   var cgb=document.getElementById("cancelGenBtn");if(cgb)cgb.onclick=cancelGen;
   // Live depth + verify controls inside the loading panel — changing restarts generation cleanly.
   // Audio toggle just sets a flag (no restart) — fires after the current generation completes.
-  document.querySelectorAll(".loadingDepthBtn").forEach(function(b){
-    b.onclick=function(){
-      if(b.disabled) return;
-      var d=b.dataset.d;
-      // Un-gated 2026-07-03: detailed-from-scratch is supported; switching restarts generation.
-      if(!d || S.depth===d) return;
-      S.depth=d;
-      restartGen();
-    };
-  });
+  // (the mid-generation depth buttons and their restart handler are gone — see the note in the
+  //  "Change anytime" panel. Generation is Concise-only; Detailed expands the finished talk.)
   var lvc=document.getElementById("loadingVerifyCheck");
   if(lvc) lvc.onchange=function(e){
     S.wantWebSearch=e.target.checked;
@@ -12375,6 +12371,8 @@ function bindMain(){
     S._pendingDepthMerge = !!(S.loadedTalkId && !String(S.loadedTalkId).startsWith("t_"));
     generate();
   }
+  // Post-talk depth switch — expands/collapses the EXISTING talk. Never wipes it. (2026-07-26)
+  document.querySelectorAll(".flipDepthBtn").forEach(function(b){ b.onclick=function(){ if(b.disabled) return; _flipDepthTo(b.dataset.d); }; });
   var dtbC=document.getElementById("depthToggleBtnConcise");if(dtbC)dtbC.onclick=function(){_flipDepthTo("concise")};
   var dtbD=document.getElementById("depthToggleBtnDetailed");if(dtbD)dtbD.onclick=function(){_flipDepthTo("detailed")};
   // Legacy capsule depth toggle (if it ever renders) — same handler
