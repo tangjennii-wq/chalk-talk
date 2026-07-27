@@ -218,6 +218,15 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
 .composer-bubble .composer-pill{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;border-radius:50%;width:48px;height:48px;padding:0;font-size:18px;cursor:pointer;box-shadow:0 6px 22px rgba(75,17,111,0.32);font-family:inherit;transition:transform .15s ease,box-shadow .15s ease}
 .composer-bubble .composer-pill:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(75,17,111,0.40)}
 .composer-bubble .composer-pill .composer-pill-spinner{display:none}
+/* Desktop: the pencil alone didn't say what it did, so label it. Mobile keeps the circle — screen
+   space is the constraint there, and the FAB overlaps content. (Jenni 2026-07-26) */
+.composer-bubble .composer-pill .composer-pill-label{display:inline-block;margin-left:8px;font-size:13.5px;font-weight:600;letter-spacing:0.01em;white-space:nowrap}
+.composer-bubble .composer-pill{width:auto;min-width:48px;border-radius:26px;padding:0 18px 0 16px}
+.composer-bubble .composer-pill.busy .composer-pill-label{display:none}
+@media(max-width:640px){
+  .composer-bubble .composer-pill .composer-pill-label{display:none}
+  .composer-bubble .composer-pill{width:48px;min-width:0;border-radius:50%;padding:0}
+}
 .composer-bubble .composer-pill.busy .composer-pill-icon{display:none}
 .composer-bubble .composer-pill.busy .composer-pill-spinner{display:inline-flex}
 /* Expanded: 360 wide x 520 tall portrait card. Flex column so textarea fills middle. */
@@ -1284,7 +1293,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-24";
+var BUILD_ID = "2026-07-26-25";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -11430,6 +11439,70 @@ function renderMain(){
     // Mode pill lives inline right of the title (Jenni 2026-07-03 — saves a vertical row; was in ttl-pills).
     h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap"><span class="tk-title-text" title="'+esc(t.title||"")+'" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto">'+esc(t.title||"")+'</span><span class="tk-pill tk-pill-modetype" style="flex-shrink:0;font-size:10.5px;padding:1px 8px;opacity:0.85">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span><button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0;margin-left:auto">✎</button></h1>';
     if(t.subtitle)h+='<p class="ttl-sub">'+esc(t.subtitle)+'</p>';
+
+      // ─── CHECK FOR UPDATES ───────────────────────────────────────────────
+    // Drafting is deliberately offline (curated guidelines + verified corpus), so recency lives here.
+    var _uc = S.updateCheck, _fast = talkIsFastMoving(t);
+    if(!_uc){
+      // COMPACT by default — a single inline pill. Fast-moving specialties get an amber tint and a
+      // reason, because on those a stale corpus is a clinical problem, not a cosmetic one. Everything
+      // else stays quiet. A full card here would push the teaching content down the page, which is the
+      // complaint that moved the provenance chips to the foot in the first place.
+      h+='<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:2px 0 10px">';
+      h+='<button id="checkUpdatesBtn" title="Search society sites and journals for anything published since this talk\'s sources" '
+        + 'style="display:inline-flex;align-items:center;gap:6px;background:'+(_fast ? "#fdf6ec" : "var(--cream)")+';color:'+(_fast ? "#7a5b1a" : "var(--plum)")+';'
+        + 'border:1px solid '+(_fast ? "#e8c9a0" : "var(--line)")+';border-radius:999px;padding:5px 12px;font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer">'
+        + (_fast ? "⚠️" : "🔎") + ' Check for updates</button>';
+      if(_fast) h+='<span style="font-size:11px;color:var(--ink-muted)">This topic changes often — worth checking before you teach it.</span>';
+      if(t._updateChecked) h+='<span style="font-size:11px;color:var(--ink-muted)">Last checked '+esc(t._updateChecked)+'</span>';
+      h+='</div>';
+    } else {
+    h+='<div style="margin:2px 0 12px;padding:12px 14px;background:var(--cream);border:1px solid var(--line);border-radius:12px">';
+    if(_uc.status === "running"){
+      h+='<div style="font-size:12.5px;font-weight:600;color:var(--ink)">Searching society sites and journals…</div>';
+      h+='<div style="font-size:11.5px;color:var(--ink-muted);margin-top:3px">Looking only for material newer than this talk\'s sources.</div>';
+    } else if(_uc.status === "error"){
+      h+='<div style="font-size:12.5px;font-weight:600;color:#c0392b">Couldn\'t complete the check</div>';
+      h+='<div style="font-size:11.5px;color:var(--ink-muted);margin:3px 0 9px">'+esc(_uc.err)+'</div>';
+      h+='<button id="checkUpdatesBtn" style="background:none;border:1px solid var(--line);border-radius:10px;padding:7px 13px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;color:var(--ink)">Try again</button>';
+    } else {
+      var _verified = _uc.items.filter(function(x){ return x._verified; });
+      var _rejected = _uc.items.filter(function(x){ return !x._verified; });
+      if(!_uc.items.length){
+        h+='<div style="font-size:12.5px;font-weight:600;color:#2d6a2d">✓ Nothing newer found</div>';
+        h+='<div style="font-size:11.5px;color:var(--ink-muted);margin-top:3px">The sources this talk cites are still the current ones.</div>';
+      } else {
+        h+='<div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:8px">'+_verified.length+' newer source'+(_verified.length===1?"":"s")+' found — choose what to add</div>';
+        for(var _ui=0; _ui<_uc.items.length; _ui++){
+          var _it = _uc.items[_ui];
+          if(!_it._verified) continue;
+          h+='<label style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line-soft);cursor:pointer">';
+          h+='<input type="checkbox" class="updatePick" data-i="'+_ui+'"'+(_it._selected?" checked":"")+' style="margin-top:3px;flex-shrink:0">';
+          h+='<span style="min-width:0">';
+          h+='<span style="display:block;font-size:12px;font-weight:600;color:var(--ink);line-height:1.4">'+esc(_it.title||"")+'</span>';
+          h+='<span style="display:block;font-size:11px;color:var(--ink-muted);margin-top:2px">'+esc([_it.journal, _it.year].filter(Boolean).join(" · "))+' · PMID '+esc(String(_it.pmid))+' <span style="color:#2d6a2d">✓ verified</span></span>';
+          if(_it.what_changed) h+='<span style="display:block;font-size:11.5px;color:var(--ink);margin-top:4px;line-height:1.5">'+esc(_it.what_changed)+'</span>';
+          if(_it.why_it_matters) h+='<span style="display:block;font-size:11.5px;color:var(--ink-muted);margin-top:2px;line-height:1.5"><i>'+esc(_it.why_it_matters)+'</i></span>';
+          h+='</span></label>';
+        }
+        if(_verified.length){
+          h+='<button id="applyUpdatesBtn" style="margin-top:10px;background:var(--plum);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer">Add selected to references</button>';
+          h+='<div style="font-size:10.5px;color:var(--ink-muted);margin-top:6px;line-height:1.5">Adds them to the reference list only. Your teaching text is never rewritten — read the source and decide what to change yourself.</div>';
+        }
+        // Say out loud what was thrown away and why. A proposal we could not verify is a near-miss of
+        // a fabricated citation, and hiding it would hide how often that happens.
+        if(_rejected.length){
+          h+='<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-muted);line-height:1.6">';
+          h+='<b>'+_rejected.length+' proposal'+(_rejected.length===1?" was":"s were")+' discarded — could not be verified:</b><br>';
+          for(var _ri=0; _ri<_rejected.length; _ri++) h+='· '+esc(String(_rejected[_ri].title||"untitled").slice(0,64))+' — '+esc(_rejected[_ri]._why||"unverified")+'<br>';
+          h+='</div>';
+        }
+      }
+      h+='<button id="checkUpdatesBtn" style="margin-top:10px;background:none;border:none;color:var(--plum);font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;padding:0">Check again</button>';
+    }
+    h+='</div>';
+    }   // end if(_uc)
+
     // Pills
     var spec=(S.glRef&&S.glRef.specialties&&S.glRef.specialties[0])||"";
     if(!spec&&S.sampleSlug&&typeof SAMPLES!=="undefined"){for(var ssli=0;ssli<SAMPLES.length;ssli++){if(SAMPLES[ssli].slug===S.sampleSlug){spec=SAMPLES[ssli].specialty||"";break}}}
@@ -11735,62 +11808,6 @@ function renderMain(){
       }
       h+=renderRAGSources();
 
-      // ─── CHECK FOR UPDATES ───────────────────────────────────────────────
-      // Drafting is deliberately offline (curated guidelines + verified corpus), so recency lives here.
-      var _uc = S.updateCheck, _fast = talkIsFastMoving(t);
-      h+='<div style="margin:18px 0 4px;padding:12px 14px;background:'+(_fast && !_uc ? "#fdf6ec" : "var(--cream)")+';border:1px solid '+(_fast && !_uc ? "#e8c9a0" : "var(--line)")+';border-radius:12px">';
-      if(!_uc){
-        h+='<div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:3px">'+(_fast ? "⚠️ This topic moves fast" : "Check for newer evidence")+'</div>';
-        h+='<div style="font-size:11.5px;color:var(--ink-muted);line-height:1.5;margin-bottom:9px">'
-          + (_fast
-             ? "Approvals and guidance in this area change often, and this talk was written from stored sources. Worth checking before you teach it."
-             : "This talk was written from the curated guideline set and verified trial corpus. Search for guidelines, approvals and trials published since.")
-          + '</div>';
-        h+='<button id="checkUpdatesBtn" style="background:var(--plum);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer">🔎 Check for updates</button>';
-      } else if(_uc.status === "running"){
-        h+='<div style="font-size:12.5px;font-weight:600;color:var(--ink)">Searching society sites and journals…</div>';
-        h+='<div style="font-size:11.5px;color:var(--ink-muted);margin-top:3px">Looking only for material newer than this talk\'s sources.</div>';
-      } else if(_uc.status === "error"){
-        h+='<div style="font-size:12.5px;font-weight:600;color:#c0392b">Couldn\'t complete the check</div>';
-        h+='<div style="font-size:11.5px;color:var(--ink-muted);margin:3px 0 9px">'+esc(_uc.err)+'</div>';
-        h+='<button id="checkUpdatesBtn" style="background:none;border:1px solid var(--line);border-radius:10px;padding:7px 13px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;color:var(--ink)">Try again</button>';
-      } else {
-        var _verified = _uc.items.filter(function(x){ return x._verified; });
-        var _rejected = _uc.items.filter(function(x){ return !x._verified; });
-        if(!_uc.items.length){
-          h+='<div style="font-size:12.5px;font-weight:600;color:#2d6a2d">✓ Nothing newer found</div>';
-          h+='<div style="font-size:11.5px;color:var(--ink-muted);margin-top:3px">The sources this talk cites are still the current ones.</div>';
-        } else {
-          h+='<div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:8px">'+_verified.length+' newer source'+(_verified.length===1?"":"s")+' found — choose what to add</div>';
-          for(var _ui=0; _ui<_uc.items.length; _ui++){
-            var _it = _uc.items[_ui];
-            if(!_it._verified) continue;
-            h+='<label style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line-soft);cursor:pointer">';
-            h+='<input type="checkbox" class="updatePick" data-i="'+_ui+'"'+(_it._selected?" checked":"")+' style="margin-top:3px;flex-shrink:0">';
-            h+='<span style="min-width:0">';
-            h+='<span style="display:block;font-size:12px;font-weight:600;color:var(--ink);line-height:1.4">'+esc(_it.title||"")+'</span>';
-            h+='<span style="display:block;font-size:11px;color:var(--ink-muted);margin-top:2px">'+esc([_it.journal, _it.year].filter(Boolean).join(" · "))+' · PMID '+esc(String(_it.pmid))+' <span style="color:#2d6a2d">✓ verified</span></span>';
-            if(_it.what_changed) h+='<span style="display:block;font-size:11.5px;color:var(--ink);margin-top:4px;line-height:1.5">'+esc(_it.what_changed)+'</span>';
-            if(_it.why_it_matters) h+='<span style="display:block;font-size:11.5px;color:var(--ink-muted);margin-top:2px;line-height:1.5"><i>'+esc(_it.why_it_matters)+'</i></span>';
-            h+='</span></label>';
-          }
-          if(_verified.length){
-            h+='<button id="applyUpdatesBtn" style="margin-top:10px;background:var(--plum);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer">Add selected to references</button>';
-            h+='<div style="font-size:10.5px;color:var(--ink-muted);margin-top:6px;line-height:1.5">Adds them to the reference list only. Your teaching text is never rewritten — read the source and decide what to change yourself.</div>';
-          }
-          // Say out loud what was thrown away and why. A proposal we could not verify is a near-miss of
-          // a fabricated citation, and hiding it would hide how often that happens.
-          if(_rejected.length){
-            h+='<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-muted);line-height:1.6">';
-            h+='<b>'+_rejected.length+' proposal'+(_rejected.length===1?" was":"s were")+' discarded — could not be verified:</b><br>';
-            for(var _ri=0; _ri<_rejected.length; _ri++) h+='· '+esc(String(_rejected[_ri].title||"untitled").slice(0,64))+' — '+esc(_rejected[_ri]._why||"unverified")+'<br>';
-            h+='</div>';
-          }
-        }
-        h+='<button id="checkUpdatesBtn" style="margin-top:10px;background:none;border:none;color:var(--plum);font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;padding:0">Check again</button>';
-      }
-      h+='</div>';
-
       // Citation-audit result belongs down here with the provenance, not as a green bar above the title.
       if(S.savedFlash){
         h+='<div style="margin:14px 0 0;padding:8px 12px;background:#f0f7f0;border:1px solid #b8d8b8;'
@@ -12084,6 +12101,7 @@ function renderMain(){
     // Collapsed FAB — ✎ icon, swaps to spinner during refine
     h+='  <button class="composer-pill'+(_refineBusy?' busy':'')+'" id="composerOpenBtn" aria-label="'+(_refineBusy?'Refining in background — tap for details':'Refine this lesson')+'" title="'+(_refineBusy?'Refining in background — keep reading. Tap to see status.':'Refine this lesson')+'">';
     h+='    <span class="composer-pill-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></span>';
+    h+='    <span class="composer-pill-label">Refine</span>';
     h+='    <span class="composer-pill-spinner"><span class="spinner"></span></span>';
     h+='  </button>';
     // Expanded panel
