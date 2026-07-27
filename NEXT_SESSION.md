@@ -13,6 +13,56 @@ remains is one benchmark run only you can do, your call on merging, plus launch 
 
 ---
 
+## STABILIZATION GATE — do not merge until all five pass
+
+Codex, 2026-07-27: *"this branch contains high-risk changes and source-pattern tests alone aren't
+sufficient... today's branch deserves stabilization now — not more features."* That is the right call and
+it is the plan. **No further generation-path changes unless a test exposes a blocker.**
+
+83 commits ahead of main, 65 of them from today, +1,678 lines in `index.html` alone — the file that
+writes medical content. That is a large surface for one day.
+
+### 1 · Full automated suite ✅ PASSED (2026-07-27)
+`for t in test_*.mjs rag/test_drug_detector.mjs; do node "$t"; done`
+18 suites · 715 assertions · every suite wired into CI · index.html, worker.js and all rag scripts parse.
+
+### 2 · Runtime click tests ⬜ — the part the suite cannot do
+Source-pattern tests passed all day while an undeclared variable crashed every generation. Run these
+against `python3 -m http.server` on `launch-integration`:
+
+| # | path | what must happen |
+|---|---|---|
+| 1 | Concise lecture, common topic | talk renders · provenance line at the FOOT · no console errors |
+| 2 | Boards question | 5 choices, one correct, explanation present |
+| 3 | Detailed toggle on a finished talk | EXPANDS in place — must not wipe the talk (was the "scroll bug") |
+| 4 | Refine on a finished talk | patch applies; the rest of the talk is unchanged |
+| 5 | Check for updates on an ID topic | amber prompt shows · proposals verified · refused ones listed with reasons |
+| 6 | Apply an update, then Refine | **the added reference SURVIVES** (this was Codex bug #2) |
+| 7 | Apply an update, look at Save | talk shows UNSAVED, and Undo offers to reverse it |
+| 8 | Reload mid-generation | resume path completes and stamps provenance |
+| 9 | Open a saved talk right after generating | no bleed-through of the previous talk's content |
+| 10 | Signed out / free tier | Worker's own key path works (needs the redeploy below first) |
+
+### 3 · Independent diff review ⬜
+`git diff main..launch-integration -- index.html worker.js > /tmp/chalktalk.diff`
+Give that to Codex. Everything Claude found today, Codex found first — including a crash that would have
+broken every generation. Do not substitute Claude's summary for this step.
+
+### 4 · Staged deploy + production smoke test ⬜
+- `npx wrangler deploy` — the Worker is STILL running the old code; fail-closed `WRITER_CLEARED` and the
+  corrected `MODEL_PRICES` are not live
+- merge to `main`, then immediately generate one talk on the live site before telling anyone
+
+### 5 · Merge ⬜ — only after 1-4
+
+### Benchmarks, status
+- **Critic**: `claude-opus-5` CLEARED as reviewer (5/5 detection, 7/7 usable, 23.2s). Haiku REJECTED —
+  7x faster but missed the fabricated guideline, the class the detectors cannot see. See MODEL_BENCHMARK.md.
+- **Writer**: the paired 20-row run is IN FLIGHT as of this writing. Until it lands there is no measured
+  basis for merging — the morning's run died at row 7 on billing and predates every change since.
+
+---
+
 ## FIRST — four things only you can do
 
 **0. Run the benchmark + the structured-output probe.** These must run on YOUR machine. The Cowork
