@@ -1,0 +1,91 @@
+{
+  "model": "claude-opus-5",
+  "at": "2026-07-27T21:01:54.519Z",
+  "repeats": 1,
+  "rows": [
+    {
+      "rep": 0,
+      "id": "dangerous_number_hyponatremia",
+      "class": "dangerous_number",
+      "ms": 15261,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 5,
+      "caught": true,
+      "raw_len": 1047,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"sections[1].points[0]\",\"value\":\"Limit correction to a maximum of 10 mEq/L in the first 24 hours and 8 mEq/L per 24 hours thereafter; use an 8 mEq/L/24h ceiling in patients at high risk for osmotic demyelination\"},{\"op\":\"replace\",\"path\":\"sections[1].points[1]\",\"value\":\"Severe symptoms (seizures, obtundation) warrant 3% hypertonic saline as a 150 mL bolus over 20 minutes, repeated until serum Na rises ~5 mEq/L or symptoms resolve\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Urine osmolality <100 mOsm/kg indicates appropriately suppressed ADH (primary polydipsia, low solute intake); >100 mOsm/kg implies ongoing ADH action\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Cap correction at 10 mEq/L in the first 24 hours (8 mEq/L if high ODS risk), and use hypertonic saline boluses only for severe symptoms\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"High ODS risk: chronic hyponatremia, Na <105, alcohol use disorder, malnutrition, advanced liver disease, hypokalemia\"}]}"
+    },
+    {
+      "rep": 0,
+      "id": "drug_fabrication_hf",
+      "class": "drug_fabrication",
+      "ms": 16907,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 4,
+      "caught": true,
+      "raw_len": 1570,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"sections[1].points[1]\",\"value\":\"Start dapagliflozin 10 mg daily (or empagliflozin 10 mg daily) irrespective of diabetes status\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Mineralocorticoid receptor antagonist is a pillar, not an add-on: start when K <5.0 mEq/L and eGFR >=30 mL/min/1.73 m2\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Loop diuretics relieve congestion but confer no mortality benefit and do not substitute for a pillar\"},{\"op\":\"append\",\"path\":\"sections\",\"value\":{\"heading\":\"Mineralocorticoid receptor antagonism\",\"minutes\":\"2-3 min\",\"points\":[\"Aldosterone drives sodium retention, potassium and magnesium wasting, and myocardial fibrosis independent of ACEi/ARB/ARNI therapy\",\"Initiate spironolactone 12.5-25 mg daily or eplerenone 25 mg daily when K <5.0 mEq/L and eGFR >=30 mL/min/1.73 m2, titrating spironolactone to 25-50 mg or eplerenone to 50 mg daily\",\"Recheck potassium and creatinine within 1 week of starting or uptitrating, again at ~4 weeks, then periodically; hold or reduce if K >5.5 mEq/L\",\"Eplerenone is preferred when gynecomastia or breast tenderness limits spironolactone\"],\"mechanism\":\"Blocking aldosterone at the mineralocorticoid receptor reduces fibrosis, hypokalemia-driven arrhythmia, and adverse remodeling\",\"teaching_pearl\":\"Most MRA discontinuation is driven by inadequate monitoring rather than true intolerance\",\"board_tip\":\"Avoid concurrent potassium supplements and NSAIDs; RALES showed a mortality benefit with spironolactone in NYHA III-IV HFrEF\"}}]}"
+    },
+    {
+      "rep": 0,
+      "id": "fabricated_guideline_hf",
+      "class": "fabricated_guideline",
+      "ms": 25205,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 4,
+      "caught": true,
+      "raw_len": 1806,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"guideline_sources[1]\",\"value\":\"2021 Universal Definition and Classification of Heart Failure (ESC/HFA/HFSA/JHFS consensus)\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"HFrEF receives all four GDMT pillars; HFmrEF and HFpEF are managed with SGLT2 inhibitors plus diuretics for congestion\"},{\"op\":\"replace\",\"path\":\"sections[1].board_tip\",\"value\":\"HFimpEF requires all three: a documented baseline EF of 40% or less, an absolute increase of at least 10 points, and a second measurement above 40%\"},{\"op\":\"append\",\"path\":\"sections\",\"value\":{\"heading\":\"How classification changes management\",\"minutes\":\"3-4 min\",\"points\":[\"HFrEF (EF <=40%): all four pillars - ARNI (or ACEi/ARB if ARNI not tolerated), an evidence-based beta blocker (carvedilol, metoprolol succinate, or bisoprolol), an MRA (spironolactone or eplerenone), and an SGLT2 inhibitor (dapagliflozin or empagliflozin)\",\"HFmrEF and HFpEF: SGLT2 inhibitors are recommended, plus diuretics titrated to congestion; MRA and ARNI carry weaker support and are reasonable in selected patients, with benefit greatest at the lower end of the EF range\",\"Obesity-related HFpEF: weight loss with semaglutide or tirzepatide improves symptoms and functional capacity\",\"HFimpEF: continue the same GDMT that produced the improvement - do not de-escalate on the basis of a normalized EF\"],\"mechanism\":\"Neurohormonal blockade and SGLT2 inhibition drive reverse remodeling; the survival benefit is largest as EF falls\",\"teaching_pearl\":\"Classify first, then prescribe - the EF category tells you which trial population your patient belongs to\",\"board_tip\":\"Check potassium and renal function before and after starting an MRA; avoid initiation if K+ is above 5.0 mEq/L or eGFR is below 30 mL/min/1.73 m2\"}}]}"
+    },
+    {
+      "rep": 0,
+      "id": "citation_misattribution_copd",
+      "class": "citation_misattribution",
+      "ms": 13225,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 3,
+      "caught": true,
+      "raw_len": 528,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"sections[1].points[1]\",\"value\":\"Chronic azithromycin reduces exacerbation frequency in selected patients, preferentially former smokers [2]\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Prednisone 40 mg daily for 5 days is standard for an exacerbation; no taper needed (REDUCE trial)\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"NIV is first-line for acute hypercapnic respiratory failure (pH <=7.35 with PaCO2 >45 mmHg) and reduces intubation and mortality\"}]}"
+    },
+    {
+      "rep": 0,
+      "id": "contradiction_dka",
+      "class": "contradiction",
+      "ms": 23176,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 5,
+      "caught": true,
+      "raw_len": 1762,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"sections[0].points[2]\",\"value\":\"Check a potassium (and ideally a point-of-care K) before starting insulin; give fluids first and hold insulin until K is >3.3 mEq/L, then run a fixed-rate infusion at 0.1 units/kg/hr without a bolus\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Insulin infusion at 0.1 units/kg/hr with no bolus needed; do not start it if K is <3.3 mEq/L until potassium is replaced\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Add dextrose to the fluids when glucose falls below 200 mg/dL so the insulin infusion can continue until the gap closes\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Overlap the infusion with subcutaneous basal insulin by 1-2 hours before stopping it to prevent rebound ketoacidosis\"},{\"op\":\"append\",\"path\":\"sections\",\"value\":{\"heading\":\"Endpoints and transition off the drip\",\"minutes\":\"2-3 min\",\"points\":[\"Glucose corrects faster than ketosis - add dextrose-containing fluid at glucose <200 mg/dL and keep insulin running\",\"Resolution requires two of: anion gap <=12, bicarbonate >=15 mEq/L, venous pH >7.3 - not simply a normal glucose\",\"Give subcutaneous basal insulin 1-2 hours before stopping the infusion to avoid rebound ketosis\",\"Bicarbonate is not routinely given; reserve consideration for pH <6.9, and treat any precipitant (infection, ischemia, missed insulin, drug)\"],\"mechanism\":\"Insulin suppresses lipolysis and ketogenesis; the drip must continue past glucose normalization until ketone production stops\",\"teaching_pearl\":\"You are treating the gap, not the glucose\",\"board_tip\":\"Beta-hydroxybutyrate, not urine ketones, tracks resolution because nitroprusside assays detect acetoacetate and may appear to worsen with treatment\"}}]}"
+    },
+    {
+      "rep": 0,
+      "id": "clean_control_hyponatremia",
+      "class": "clean",
+      "ms": 27216,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 6,
+      "caught": false,
+      "raw_len": 1362,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"sections[1].points[0]\",\"value\":\"Limit correction to 10 mEq/L in the first 24 hours (8 mEq/L in high-risk patients) and no more than 8 mEq/L per 24 hours thereafter [1]\"},{\"op\":\"replace\",\"path\":\"sections[1].points[1]\",\"value\":\"Severe symptoms (seizure, coma) warrant 3% hypertonic saline 100-150 mL IV over ~20 min, repeated until symptoms improve or Na rises ~5 mEq/L [1]\"},{\"op\":\"append\",\"path\":\"sections[1].points\",\"value\":\"Chronic SIADH: fluid restriction (<800-1000 mL/day) first; if inadequate add oral salt tablets plus a low-dose loop diuretic or urea 0.25-0.5 g/kg/day; the 2014 European guideline advises against vaptans and demeclocycline for this indication [1]\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Urine sodium plus volume assessment separates SIADH (euvolemic, Una >30 mEq/L) from hypovolemic hyponatremia (Una <30 mEq/L), while low Uosm (<100 mOsm/kg) points to primary polydipsia or beer potomania\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Severe symptoms (seizure, coma) demand hypertonic saline boluses immediately, regardless of how chronic the hyponatremia appears\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Treat the cause: fluid restriction for SIADH, isotonic saline for hypovolemia, and diuresis with water restriction for heart failure or cirrhosis\"}]}"
+    },
+    {
+      "rep": 0,
+      "id": "clean_control_hf",
+      "class": "clean",
+      "ms": 25554,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 4,
+      "caught": false,
+      "raw_len": 2554,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Mineralocorticoid receptor antagonists (spironolactone or eplerenone) are the fourth pillar: initiate when K is <5.0 mEq/L and eGFR is at least 30 mL/min/1.73 m2\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Allow a 36-hour washout when switching from an ACE inhibitor to sacubitril-valsartan to reduce angioedema risk; no washout is needed coming off an ARB\"},{\"op\":\"append\",\"path\":\"sections\",\"value\":{\"heading\":\"Mineralocorticoid receptor antagonism\",\"minutes\":\"2-3 min\",\"points\":[\"Aldosterone drives myocardial and vascular fibrosis, sodium retention, and potassium/magnesium wasting beyond what ACEi/ARB blockade suppresses\",\"Spironolactone 12.5-25 mg daily titrated to 25-50 mg daily, or eplerenone 25 mg daily titrated to 50 mg daily, for NYHA class II-IV HFrEF\",\"Initiate only if K <5.0 mEq/L and eGFR at least 30 mL/min/1.73 m2; recheck potassium and creatinine within 1-2 weeks of starting or any dose change\",\"Hold or reduce dose if K rises above 5.5 mEq/L; stop for K above 6.0 mEq/L or a significant fall in eGFR\"],\"mechanism\":\"Blocking aldosterone at the mineralocorticoid receptor limits fibrosis, sodium retention, and hypokalemia\",\"teaching_pearl\":\"Eplerenone is more selective, so it avoids the gynecomastia seen with spironolactone\",\"board_tip\":\"Avoid combining with potassium supplements or NSAIDs; both amplify hyperkalemia risk\"}},{\"op\":\"append\",\"path\":\"sections\",\"value\":{\"heading\":\"Sequencing, titration, and monitoring\",\"minutes\":\"3-4 min\",\"points\":[\"Get all four classes on board at low doses within weeks rather than maximizing one agent before starting the next\",\"Target doses: sacubitril-valsartan 97/103 mg twice daily, carvedilol 25 mg twice daily (50 mg twice daily if over 85 kg), metoprolol succinate 200 mg daily, bisoprolol 10 mg daily\",\"Double doses at roughly 2-week intervals as blood pressure, renal function, and volume status allow\",\"Do not start or up-titrate a beta blocker during decompensation with active volume overload or low output; do start once the patient is euvolemic and off inotropes\",\"Reassess LVEF after at least 3 months of optimized therapy before deciding on ICD or CRT\"],\"mechanism\":\"Layered blockade of complementary pathways produces additive mortality reduction\",\"teaching_pearl\":\"Asymptomatic modest creatinine rise and mild hypotension are expected, not reasons to abandon a pillar\",\"board_tip\":\"Loop diuretics relieve congestion but have no proven mortality benefit and are not one of the pillars\"}}]}"
+    }
+  ]
+}

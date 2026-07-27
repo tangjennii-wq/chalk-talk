@@ -1,21 +1,40 @@
-// Show the raw responses behind the UNUSABLE rows and the clean-talk patches.
-import { readFileSync } from "fs";
-const r = JSON.parse(readFileSync("rag/eval_critic_report.json", "utf8"));
-console.log(`model: ${r.model} · ${r.at}\n`);
+// Inspect a critic-benchmark report. Run:
+//   node rag/inspect_critic_report.mjs                       (most recent)
+//   node rag/inspect_critic_report.mjs claude-opus-5         (a specific model)
+import { readFileSync, existsSync } from "fs";
+const arg = process.argv[2];
+const path = arg
+  ? (existsSync(`rag/eval_critic_${arg}.json`) ? `rag/eval_critic_${arg}.json` : arg)
+  : "rag/eval_critic_report.json";
+const r = JSON.parse(readFileSync(path, "utf8"));
+console.log(`${path}\nmodel: ${r.model} · ${r.at}\n`);
+
+const patchesOf = (row) => {
+  try {
+    const p = JSON.parse(String(row.raw || "").replace(/^[^{]*/, "").replace(/[^}]*$/, ""));
+    return Array.isArray(p.patches) ? p.patches : [];
+  } catch { return []; }
+};
+
 for (const row of r.rows) {
-  const interesting = /UNUSABLE/.test(row.verdict) || (row.class === "clean" && row.verdict !== "clean");
-  if (!interesting) continue;
+  const isCleanTouch = row.class === "clean" && row.verdict !== "clean";
+  const isUnusable = /UNUSABLE/.test(row.verdict);
+  const isMiss = row.class !== "clean" && !row.caught;
+  if (!isCleanTouch && !isUnusable && !isMiss) continue;
   console.log("─".repeat(78));
-  console.log(`${row.id}  [${row.class}]  verdict=${row.verdict}`);
-  console.log(`first 400 chars of the raw response:`);
-  console.log(JSON.stringify(String(row.raw || "").slice(0, 400)));
-  if (row.class === "clean") {
-    try {
-      const p = JSON.parse(String(row.raw).replace(/^[^{]*/, "").replace(/[^}]*$/, ""));
-      if (Array.isArray(p.patches)) {
-        console.log(`\nWHAT IT WANTED TO CHANGE IN A HEALTHY TALK (${p.patches.length}):`);
-        for (const q of p.patches) console.log(`   ${q.op} ${q.path}\n      → ${String(q.value || "").slice(0, 150)}`);
-      }
-    } catch {}
+  console.log(`${row.id}  [${row.class}]  ${row.verdict}  ${Math.round(row.ms / 100) / 10}s`);
+  if (isUnusable) {
+    console.log("raw (first 300):", JSON.stringify(String(row.raw || "").slice(0, 300)));
+    continue;
+  }
+  if (isMiss) {
+    console.log("MISSED the planted defect. What it DID change instead:");
+  } else {
+    console.log("CHANGED A TALK I CALLED CLEAN — is the fixture wrong, or the critic over-eager?");
+  }
+  for (const q of patchesOf(row)) {
+    const v = typeof q.value === "string" ? q.value : JSON.stringify(q.value);
+    console.log(`  ${q.op.padEnd(8)} ${q.path}`);
+    console.log(`      → ${String(v).slice(0, 180)}`);
   }
 }
