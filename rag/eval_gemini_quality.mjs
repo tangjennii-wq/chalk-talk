@@ -230,6 +230,12 @@ function findDrugMisspellings(text) {
   const toks = new Set(String(text).toLowerCase().match(/[a-z]{6,}/g) || []);
   for (const tok of toks) {
     if (DRUGSET.has(tok) || NOT_DRUGS.has(tok) || SUFFIX_OK.has(tok)) continue;
+    // "nonheparin anticoagulant" is standard HIT phrasing; "non-<drug>" is an adjectival construction,
+    // not a drug name. Accept ONLY when the stem is itself a confirmable drug — so "nonheparin" passes
+    // while "nvancomycin" (no such construction) is still flagged. Detector strength unchanged.
+    // (Codex 2026-07-26: allow canonical nonheparin WITHOUT weakening the detector.)
+    { const stem = tok.replace(/^non-?/, "");
+      if (stem !== tok && (DRUGSET.has(stem) || SUFFIX_OK.has(stem) || NOT_DRUGS.has(stem))) continue; }
     if (NOT_DRUGS.has(tok.replace(/(s|ed|ing|es)$/, ""))) continue;   // plural/inflected forms of real words
     if (DRUGSET.has(tok.replace(/s$/, ""))) continue;                  // plural of a real drug
     // (a) near-miss of a canonical INN
@@ -317,7 +323,9 @@ const GEMINI_MODEL = argVal("--gemini-model",
 const CLAUDE_MODEL = "claude-opus-5";
 // A big lecture/boards JSON can take 60-120s, so these calls MUST have a visible heartbeat and a hard
 // timeout — otherwise a hung socket looks identical to "slow but working" and the run appears frozen.
-const CALL_TIMEOUT_MS = parseInt(argVal("--timeout", "240000"), 10);
+// 240s truncated 2 legitimate gpt-5.6-sol rows in the 2026-07-26 run — a slow model is not an unsafe
+// one, and a timeout must never be scored as a medical-quality failure. (Codex)
+const CALL_TIMEOUT_MS = parseInt(argVal("--timeout", "360000"), 10);
 // Heartbeat prints on its OWN line (a \r-based one overwrote the row label and made progress
 // unreadable — which is what made a working run look frozen).
 let HB_ACTIVE = new Map();
@@ -591,13 +599,19 @@ for (const topic of TOPICS_GOLD) {
       const t0 = Date.now();
       try { const raw = await callCandidate(system, user); const g = await grade(style, raw);
             return { ms: Date.now() - t0, hard: g.hard, soft: g.soft, raw_len: raw.length, raw, talk: g.talk }; }
-      catch (e) { return { ms: Date.now() - t0, error: e.message, hard: [`call failed: ${e.message}`], soft: {} }; }
+      catch (e) { return { ms: Date.now() - t0, error: e.message, infra: true,
+              // INFRASTRUCTURE, not model quality: a timeout, a 429, or an exhausted balance says nothing
+              // about whether the model writes safe medicine. Kept out of the safety counts entirely.
+              timeout: /timed out after/.test(e.message || ""), hard: [], soft: {} }; }
     })();
     const claudeP = RUN_CLAUDE ? (async () => {
       const t0 = Date.now();
       try { const raw = await callClaude(system, user); const g = await grade(style, raw);
             return { ms: Date.now() - t0, hard: g.hard, soft: g.soft, raw_len: raw.length, raw, talk: g.talk }; }
-      catch (e) { return { ms: Date.now() - t0, error: e.message, hard: [`call failed: ${e.message}`], soft: {} }; }
+      catch (e) { return { ms: Date.now() - t0, error: e.message, infra: true,
+              // INFRASTRUCTURE, not model quality: a timeout, a 429, or an exhausted balance says nothing
+              // about whether the model writes safe medicine. Kept out of the safety counts entirely.
+              timeout: /timed out after/.test(e.message || ""), hard: [], soft: {} }; }
     })() : Promise.resolve(null);
 
     [row.gemini, row.claude] = await Promise.all([geminiP, claudeP]);
@@ -649,9 +663,14 @@ const sum = (arm) => {
   const unchkPmid = rows.reduce((a, r) => a + (r.soft?.uncheckable_pmids || 0), 0);
   const unchkDrug = rows.reduce((a, r) => a + (r.soft?.unverified_drug_candidates || 0), 0);
   const errs = rows.filter(r => r.error).length;
+  const timeouts = rows.filter(r => r.timeout).length;
+  const ran = rows.filter(r => !r.error);          // rows that actually produced a talk to judge
   return { generations: rows.length, clean: rows.length - withHard.length, with_hard_fails: withHard.length,
            call_errors: errs, fabricated_citations: fab, drug_misspellings: drug, total_references: refs,
-           uncheckable_pmids: unchkPmid, unverified_drug_candidates: unchkDrug };
+           uncheckable_pmids: unchkPmid, unverified_drug_candidates: unchkDrug,
+           executed: ran.length, timeouts,
+           // clean OUT OF WHAT ACTUALLY RAN — a model can't be credited or blamed for a row it never got
+           clean_of_executed: ran.filter(r => !(r.hard || []).length).length };
 };
 const summary = { generated_at: new Date().toISOString(), candidate_model: CANDIDATE_LABEL, provider: PROVIDER, gemini_model: GEMINI_MODEL,
   claude_model: RUN_CLAUDE ? CLAUDE_MODEL : null, topics: TOPICS_GOLD, styles: STYLES,
@@ -670,16 +689,30 @@ if (RUN_JUDGE) {
 }
 writeFileSync("rag/eval_gemini_report.json", JSON.stringify({ summary, results }, null, 2) + "\n");
 
-console.log("\n═══ SUMMARY ═══");
+// Four buckets, never blended (Codex 2026-07-26). Blending them is how "16/20 clean" reads as a safety
+// result when 2 of the 4 failures were network timeouts, and how an LLM's opinion reads as a measurement.
+const SELF_JUDGED = RUN_JUDGE && (CLAUDE_MODEL === CANDIDATE_LABEL || CLAUDE_MODEL === CLAUDE_MODEL);
+console.log("\n═══ 1 · DETERMINISTIC CHECKS (mechanical, reproducible) ═══");
+console.log("   Identifier existence (Europe PMC), RxNorm drug confirmation, JSON validity, schema completeness.");
 const p = (label, s) => { if (!s) return;
   console.log(`  ${label}: ${s.clean}/${s.generations} clean · hard-fails ${s.with_hard_fails} · fabricated citations ${s.fabricated_citations} · drug misspellings ${s.drug_misspellings} · refs ${s.total_references}${s.call_errors ? ` · call errors ${s.call_errors}` : ""}`);
   if (s.uncheckable_pmids || s.unverified_drug_candidates)
     console.log(`     \u26a0 NOT VERIFIED: ${s.uncheckable_pmids} PMID(s) unreachable, ${s.unverified_drug_candidates} drug name(s) unadjudicated — those zeros above are "unknown", not "clean".`); };
 if (RUN_CANDIDATE) p(CANDIDATE_LABEL.toUpperCase(), summary.gemini);
 p("CLAUDE", summary.claude);
+console.log("\n═══ 2 · INFRASTRUCTURE (says NOTHING about medical quality) ═══");
+for (const [label, sm] of [[CANDIDATE_LABEL, summary.gemini], ["CLAUDE", summary.claude]]) {
+  if (!sm) continue;
+  console.log(`   ${label}: ${sm.executed}/${sm.generations} rows executed · ${sm.timeouts} timeout(s) · ${sm.call_errors - sm.timeouts} other call error(s)`);
+  if (sm.executed < sm.generations) console.log(`      \u26a0 ${sm.generations - sm.executed} row(s) never ran — this model was NOT fully tested; its rates are out of ${sm.executed}, not ${sm.generations}.`);
+}
 if (summary.judge) {
   const j = summary.judge;
-  console.log(`  JUDGE: gemini ${j.gemini_wins} · claude ${j.claude_wins} · tie ${j.ties} | mean accuracy gemini ${j.mean_accuracy_gemini} vs claude ${j.mean_accuracy_claude}`);
+  console.log("\n═══ 3 · JUDGE FINDINGS (an LLM's opinion — claims to verify, not measurements) ═══");
+  console.log(`   Judge model: ${CLAUDE_MODEL}${CLAUDE_MODEL === CLAUDE_MODEL ? "  \u26a0 THIS IS ALSO THE REFERENCE ARM — it is grading its own output. Treat its verdict on Claude as self-assessment, NOT independent review." : ""}`);
+  console.log(`   Compared on ${j.compared}/${TOTAL_ROWS} rows (both arms had to succeed).`);
+  console.log("\n═══ 4 · RELATIVE PREFERENCE (which the judge liked better \u2014 not a safety result) ═══");
+  console.log(`  JUDGE: ${CANDIDATE_LABEL} ${j.gemini_wins} · claude ${j.claude_wins} · tie ${j.ties} | mean accuracy ${j.mean_accuracy_gemini} vs ${j.mean_accuracy_claude}`);
   if (j.gemini_flagged_errors.length) { console.log("  judge-flagged CANDIDATE (" + CANDIDATE_LABEL + ") medical errors:"); for (const e of j.gemini_flagged_errors.slice(0, 10)) console.log("    - " + e); }
   if (j.claude_flagged_errors.length) { console.log("  judge-flagged REFERENCE (" + CLAUDE_MODEL + ") medical errors:"); for (const e of j.claude_flagged_errors.slice(0, 10)) console.log("    - " + e); }
 }
@@ -709,6 +742,11 @@ if (g.with_hard_fails > 0) {
 // A "0 fabricated citations" that only means "Europe PMC was unreachable" is not evidence of safety.
 // Two of the six pass-bar items depend on live verifiers; if they could not run, the honest verdict is
 // INCONCLUSIVE, not PASSED. (Offline/sandboxed runs used to print a green gate here. 2026-07-26)
+if (g.executed < g.generations) {
+  console.log(`\n\u26a0 GATE INCONCLUSIVE — only ${g.executed}/${g.generations} rows executed for ${GATED_LABEL}. A model cannot be`);
+  console.log("  cleared on a partial run: the rows that failed to execute are not a random sample of difficulty.");
+  process.exit(2);
+}
 if (g.uncheckable_pmids > 0 || g.unverified_drug_candidates > 0) {
   console.log(`\n\u26a0 GATE INCONCLUSIVE — structural checks passed (${g.clean}/${g.generations} clean), but the CITATION and/or DRUG verifier could not be reached:`);
   if (g.uncheckable_pmids > 0) console.log(`    ${g.uncheckable_pmids} cited PMID(s) were never confirmed to exist (Europe PMC unreachable).`);

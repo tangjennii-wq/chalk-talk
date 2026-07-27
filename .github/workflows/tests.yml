@@ -91,6 +91,10 @@ jobs:
       - name: Retry evidence preservation + provenance stamping
         run: node test_retry_evidence.mjs
 
+      # The drug detector can DISQUALIFY a model, so its false positives cost as much as its misses.
+      - name: Drug-name detector (true positives + the 2026-07-26 false positives)
+        run: node rag/test_drug_detector.mjs
+
       # The benchmark harness decides which models may write medical content. If it can report a PASS
       # when its verifiers were unreachable, every clearance it has ever granted is suspect.
       - name: Benchmark harness (never pass on unverified evidence)
