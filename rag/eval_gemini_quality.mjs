@@ -665,7 +665,7 @@ const sum = (arm) => {
   const errs = rows.filter(r => r.error).length;
   const timeouts = rows.filter(r => r.timeout).length;
   const ran = rows.filter(r => !r.error);          // rows that actually produced a talk to judge
-  return { generations: rows.length, clean: rows.length - withHard.length, with_hard_fails: withHard.length,
+  return { generations: rows.length, clean: ran.length - withHard.length, with_hard_fails: withHard.length,
            call_errors: errs, fabricated_citations: fab, drug_misspellings: drug, total_references: refs,
            uncheckable_pmids: unchkPmid, unverified_drug_candidates: unchkDrug,
            executed: ran.length, timeouts,
@@ -695,7 +695,7 @@ const SELF_JUDGED = RUN_JUDGE && (CLAUDE_MODEL === CANDIDATE_LABEL || CLAUDE_MOD
 console.log("\n═══ 1 · DETERMINISTIC CHECKS (mechanical, reproducible) ═══");
 console.log("   Identifier existence (Europe PMC), RxNorm drug confirmation, JSON validity, schema completeness.");
 const p = (label, s) => { if (!s) return;
-  console.log(`  ${label}: ${s.clean}/${s.generations} clean · hard-fails ${s.with_hard_fails} · fabricated citations ${s.fabricated_citations} · drug misspellings ${s.drug_misspellings} · refs ${s.total_references}${s.call_errors ? ` · call errors ${s.call_errors}` : ""}`);
+  console.log(`  ${label}: ${s.clean}/${s.executed} clean OF ROWS THAT RAN · hard-fails ${s.with_hard_fails} · fabricated citations ${s.fabricated_citations} · drug misspellings ${s.drug_misspellings} · refs ${s.total_references}${s.call_errors ? ` · call errors ${s.call_errors}` : ""}`);
   if (s.uncheckable_pmids || s.unverified_drug_candidates)
     console.log(`     \u26a0 NOT VERIFIED: ${s.uncheckable_pmids} PMID(s) unreachable, ${s.unverified_drug_candidates} drug name(s) unadjudicated — those zeros above are "unknown", not "clean".`); };
 if (RUN_CANDIDATE) p(CANDIDATE_LABEL.toUpperCase(), summary.gemini);
