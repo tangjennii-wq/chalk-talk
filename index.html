@@ -10709,6 +10709,11 @@ function renderMain(){
   // Header
   var savedCount=getDisplayLibrary().length;
   // === Hero card: single 3-column row — title LEFT, tagline MIDDLE, Sign in + Library RIGHT ===
+  // HIDDEN WHILE GENERATING (Jenni 2026-07-26): the hero fought the drafting card for the top of
+  // the screen and ended up clipped behind it. Nothing in it is actionable mid-generation — the
+  // account menu and Library both navigate AWAY from the talk being made. Same rule as "How this
+  // works" below, hidden during generation since June.
+  if(!S.loading){
   h+='<div class="hero-card">';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">';
   // Column 1 — title + byline
@@ -10768,6 +10773,7 @@ function renderMain(){
   h+='</div>';
   h+='</div>';
   h+='</div>';
+  }   // end if(!S.loading) — hero hidden during generation
 
   // === "How this works" — inline expandable, closed by default ===
   // Open state tracked in S.howitOpen so unrelated render() calls don't collapse it.
