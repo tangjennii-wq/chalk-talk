@@ -19,7 +19,8 @@ const line = (re) => { const m = html.match(re); if (!m) throw new Error("line n
 
 // ── sandbox with the real verification path; _esummaryBatch is the injectable seam ──
 function build(esummary) {
-  const ctx = { console: { warn() {}, info() {} }, S: { topic: "HIT" }, JSON, String, Number, Math, Array, Object, Date, parseInt, RegExp, setTimeout };
+  const ctx = { console: { warn() {}, info() {} }, S: { topic: "HIT" }, JSON, String, Number, Math, Array, Object, Date, parseInt, RegExp, setTimeout,
+    pushTalkHistory() {}, render() {} };
   vm.createContext(ctx);
   vm.runInContext([
     line(/^var FAST_MOVING_RE = .*$/m),
@@ -106,7 +107,9 @@ const okBatch = (ids) => { const o = {}; ids.forEach((i) => { o[i] = REAL[i] || 
 
   ok(talk.references.length === 2, "exactly the SELECTED, VERIFIED item is added");
   ok(talk.references[1].pmid === "37845198", "…the right one");
-  ok(talk.references[1].confidence === "pmid_verified", "…marked as verified provenance, not asserted");
+  ok(talk.references[1].src_verified === "pubmed",
+     "…carrying src_verified, the field pruneFakeReferences actually honours (see 5b — this was Codex's bug #2)");
+  ok(talk.references[1].confidence === "high", "…and confidence:'high' so it isn't hidden as low-confidence");
   ok(/pubmed\.ncbi\.nlm\.nih\.gov\/37845198/.test(talk.references[1].url), "…with a real PubMed URL built from the verified id");
   ok(talk.references[1].added_by_update_check === true, "…and flagged as coming from the update check, not the original draft");
   ok(JSON.stringify(talk.sections) + JSON.stringify(talk.summary_points) === before,
@@ -114,6 +117,7 @@ const okBatch = (ids) => { const o = {}; ids.forEach((i) => { o[i] = REAL[i] || 
   ok(talk._updateChecked && /^\d{4}-\d{2}-\d{2}$/.test(talk._updateChecked), "the talk records WHEN it was last checked");
   ok(ctx.S.updateCheck === null, "the proposal list is cleared after applying");
   ok(/was not changed/.test(ctx.S.savedFlash || ""), "the confirmation says the text was not changed");
+  ok(ctx.S.talkIsSaved === false, "…and the talk is marked unsaved (Codex bug #1)");
 }
 {
   // an UNVERIFIED item can never be applied, even if somehow selected
@@ -123,6 +127,75 @@ const okBatch = (ids) => { const o = {}; ids.forEach((i) => { o[i] = REAL[i] || 
   ctx.render = () => {};
   vm.runInContext("applySelectedUpdates()", ctx);
   ok(ctx.S.talk.references.length === 0, "a selected-but-UNVERIFIED proposal is still refused at apply time");
+}
+
+// ── 5b) CODEX'S FOUR (2026-07-26) — each of these was a real, uncovered bug ────
+{
+  // (1) an added reference is an EDIT: undoable, and it makes the talk unsaved. Without this a
+  // previously-saved talk kept showing "✓ Saved" while holding additions the user could lose by
+  // navigating away — right after being told they were added.
+  const ctx = build("()=>({})");
+  const hist = [];
+  ctx.pushTalkHistory = (label) => hist.push(label);
+  ctx.render = () => {};
+  ctx.S.talk = { title: "T", references: [{ id: 1, source: "old", year: 2018 }] };
+  ctx.S.talkIsSaved = true;
+  ctx.S.updateCheck = { status: "done", items: [{ title: "New", pmid: "37845198", year: 2024, journal: "J", _verified: true, _selected: true }] };
+  vm.runInContext("applySelectedUpdates()", ctx);
+  ok(hist.length === 1, "applying pushes ONE undo snapshot");
+  ok(/reference/.test(hist[0] || ""), `…labelled for the undo button ("${hist[0]}")`);
+  ok(ctx.S.talkIsSaved === false, "the talk is marked UNSAVED — it no longer matches the library copy");
+  ok(/save to keep them/i.test(ctx.S.savedFlash || ""), "…and the confirmation tells the user to save");
+}
+{
+  // (2) SURVIVES PRUNING. pruneFakeReferences keeps a ref only if it is cited by a [N] marker,
+  // retrieved into ragChunks, named verbatim in the body, user-uploaded, or src_verified. An
+  // update-added reference is none of the first four BY DESIGN — we never touch the teaching text —
+  // so without src_verified the next refine/expand would silently delete what the user just added.
+  const pctx = { console: { warn() {} }, S: { ragChunks: [] }, JSON, String, Number, Array, Object, RegExp, parseInt };
+  vm.createContext(pctx);
+  // pruneFakeReferences calls _assignConfidence at the end (a separate concern — it grades what SURVIVED,
+  // it does not decide survival). Stub it: this test is about the keep/drop rule, not the grading.
+  vm.runInContext("function _assignConfidence(t){ return t; }\n" + block(/^function pruneFakeReferences\(/m), pctx);
+  const prune = vm.runInContext("pruneFakeReferences", pctx);
+
+  const actx = build("()=>({})");
+  actx.pushTalkHistory = () => {}; actx.render = () => {};
+  actx.S.talk = { title: "HIT", sections: [{ heading: "Physiology", points: ["4T score first"] }], references: [] };
+  actx.S.updateCheck = { status: "done", items: [{ title: "Newer HIT guidance", pmid: "37845198", year: 2024, journal: "Blood Adv", _verified: true, _selected: true }] };
+  vm.runInContext("applySelectedUpdates()", actx);
+  const added = actx.S.talk.references[0];
+  ok(added.src_verified === "pubmed", "an update-added reference carries src_verified:'pubmed'");
+  ok(added.confidence === "high", "…and confidence:'high' so it is not hidden as low-confidence");
+
+  const pruned = prune(JSON.parse(JSON.stringify(actx.S.talk)));
+  ok(pruned.references.length === 1, "IT SURVIVES pruneFakeReferences — uncited, unretrieved, unmentioned");
+  ok(pruned.references[0].pmid === "37845198", "…the same reference, intact");
+
+  // control: the OLD shape (confidence only, no src_verified) would have been deleted
+  const oldShape = { title: "HIT", sections: [{ heading: "P", points: ["x"] }],
+    references: [{ id: 1, source: "Newer HIT guidance", pmid: "37845198", confidence: "pmid_verified" }] };
+  ok(prune(oldShape).references.length === 0,
+     "…and the shape this shipped with an hour ago WOULD have been pruned away (the bug was real)");
+}
+{
+  // (3) verification scope: we confirmed the PAPER, not the model's description of it
+  ok(/AI summary · not verified against the paper/.test(html),
+     "the model's what_changed/why_it_matters is labelled as an UNVERIFIED AI summary");
+  ok(/✓ paper confirmed on PubMed/.test(html), "…while the identity claim says exactly what was checked");
+  ok(!/>✓ verified<\/span>/.test(html), "the bare '✓ verified' beside an unverified summary is gone");
+  ok(/The identifier and title are confirmed against PubMed; the summaries above are not/.test(html),
+     "the apply note draws the same line");
+}
+{
+  // (4) an absence of findings is not proof of currency
+  ok(/No verified newer sources found in this check/.test(html), "the empty result is scoped to THIS CHECK");
+  ok(!/Nothing newer found/.test(html), "…the old absolute claim is gone");
+  ok(!/still the current ones/.test(html), "…as is 'the sources are still the current ones'");
+  ok(/not proof nothing newer exists/.test(html), "…and it says so outright");
+  const fn = block(/^async function checkForUpdates\(/m);
+  ok(/_target\._updateChecked = new Date\(\)/.test(fn),
+     "the check date is recorded even when NOTHING is added — 'we looked and found nothing' is useful");
 }
 
 // ── 6) fast-moving topics get the check surfaced, stable ones don't ────────────

@@ -1293,7 +1293,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-27";
+var BUILD_ID = "2026-07-26-28";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -11499,8 +11499,10 @@ function renderMain(){
       var _verified = _uc.items.filter(function(x){ return x._verified; });
       var _rejected = _uc.items.filter(function(x){ return !x._verified; });
       if(!_uc.items.length){
-        h+='<div style="font-size:12.5px;font-weight:600;color:#2d6a2d">✓ Nothing newer found</div>';
-        h+='<div style="font-size:11.5px;color:var(--ink-muted);margin-top:3px">The sources this talk cites are still the current ones.</div>';
+        // NOT "nothing newer exists" — five domain-restricted searches cannot establish that, and a
+        // green tick saying so would be a stronger claim than the evidence supports. (Codex 2026-07-26)
+        h+='<div style="font-size:12.5px;font-weight:600;color:var(--ink)">No verified newer sources found in this check</div>';
+        h+='<div style="font-size:11.5px;color:var(--ink-muted);margin-top:3px">Searched society sites and journals for material newer than this talk\'s sources. That is not proof nothing newer exists.</div>';
       } else {
         h+='<div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:8px">'+_verified.length+' newer source'+(_verified.length===1?"":"s")+' found — choose what to add</div>';
         for(var _ui=0; _ui<_uc.items.length; _ui++){
@@ -11510,14 +11512,23 @@ function renderMain(){
           h+='<input type="checkbox" class="updatePick" data-i="'+_ui+'"'+(_it._selected?" checked":"")+' style="margin-top:3px;flex-shrink:0">';
           h+='<span style="min-width:0">';
           h+='<span style="display:block;font-size:12px;font-weight:600;color:var(--ink);line-height:1.4">'+esc(_it.title||"")+'</span>';
-          h+='<span style="display:block;font-size:11px;color:var(--ink-muted);margin-top:2px">'+esc([_it.journal, _it.year].filter(Boolean).join(" · "))+' · PMID '+esc(String(_it.pmid))+' <span style="color:#2d6a2d">✓ verified</span></span>';
-          if(_it.what_changed) h+='<span style="display:block;font-size:11.5px;color:var(--ink);margin-top:4px;line-height:1.5">'+esc(_it.what_changed)+'</span>';
-          if(_it.why_it_matters) h+='<span style="display:block;font-size:11.5px;color:var(--ink-muted);margin-top:2px;line-height:1.5"><i>'+esc(_it.why_it_matters)+'</i></span>';
+          h+='<span style="display:block;font-size:11px;color:var(--ink-muted);margin-top:2px">'+esc([_it.journal, _it.year].filter(Boolean).join(" · "))+' · <a href="https://pubmed.ncbi.nlm.nih.gov/'+esc(String(_it.pmid))+'/" target="_blank" rel="noopener" style="color:var(--plum)">PMID '+esc(String(_it.pmid))+'</a> <span style="color:#2d6a2d" title="This paper exists and its title matches — confirmed against PubMed">✓ paper confirmed on PubMed</span></span>';
+          // SCOPE THE CLAIM (Codex 2026-07-26). We verified the PAPER: it exists, and it is the paper
+          // named. We did NOT read the abstract and check these two sentences against it. Setting them
+          // flush against a green tick invites the reader to think the clinical summary was checked too.
+          // It was not — it is the model's description of a real paper. Open the link before acting on it.
+          if(_it.what_changed || _it.why_it_matters){
+            h+='<span style="display:block;margin-top:5px;padding-left:8px;border-left:2px solid #e8c9a0">';
+            h+='<span style="display:block;font-size:10px;font-weight:700;color:#7a5b1a;text-transform:uppercase;letter-spacing:0.05em">AI summary · not verified against the paper</span>';
+            if(_it.what_changed) h+='<span style="display:block;font-size:11.5px;color:var(--ink);margin-top:3px;line-height:1.5">'+esc(_it.what_changed)+'</span>';
+            if(_it.why_it_matters) h+='<span style="display:block;font-size:11.5px;color:var(--ink-muted);margin-top:2px;line-height:1.5"><i>'+esc(_it.why_it_matters)+'</i></span>';
+            h+='</span>';
+          }
           h+='</span></label>';
         }
         if(_verified.length){
           h+='<button id="applyUpdatesBtn" style="margin-top:10px;background:var(--plum);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer">Add selected to references</button>';
-          h+='<div style="font-size:10.5px;color:var(--ink-muted);margin-top:6px;line-height:1.5">Adds them to the reference list only. Your teaching text is never rewritten — read the source and decide what to change yourself.</div>';
+          h+='<div style="font-size:10.5px;color:var(--ink-muted);margin-top:6px;line-height:1.5">Adds them to the reference list only. Your teaching text is never rewritten — open the paper and decide what to change yourself. The identifier and title are confirmed against PubMed; the summaries above are not.</div>';
         }
         // Say out loud what was thrown away and why. A proposal we could not verify is a near-miss of
         // a fabricated citation, and hiding it would hide how often that happens.
