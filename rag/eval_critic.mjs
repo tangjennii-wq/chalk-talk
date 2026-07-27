@@ -234,6 +234,17 @@ console.log("\n-> rag/eval_critic_" + _slug + ".json  (and rag/eval_critic_repor
 const CRITICAL = ["dangerous_number", "drug_fabrication"];
 const criticalMiss = missed.filter(m => CRITICAL.indexOf(m.class) >= 0);
 const criticalUnusable = defectiveUnusable.filter(m => CRITICAL.indexOf(m.class) >= 0);
+// Detection over ALL defective rows (including unusable ones) — "did it see the problem", ignoring
+// whether it could express it. This is the medical score, and it is NOT sufficient on its own.
+const allDefective = rows.filter(r => r.class !== "clean" && !r.err);
+const sawIt = allDefective.filter(r => r.caught);
+const usableRows = rows.filter(r => !r.err && !/UNUSABLE/.test(r.verdict));
+console.log("\n═══ THE TWO SCORES (both required for production) ═══");
+console.log(`   MEDICAL DETECTION   ${sawIt.length}/${allDefective.length} defects noticed anywhere in the response`);
+console.log(`   CONTRACT COMPLIANCE ${usableRows.length}/${rows.filter(r => !r.err).length} responses the app can actually act on`);
+console.log("   Spotting an error in prose the app discards is not a safety correction — the learner never");
+console.log("   sees it. A model must do both to review production talks.");
+
 console.log("\n═══ VERDICT ═══");
 if (errs.length) { console.log(`⚠ INCONCLUSIVE — ${errs.length} call(s) failed; this run did not fully test the model.`); process.exit(2); }
 if (criticalMiss.length) {
@@ -249,7 +260,16 @@ if (criticalUnusable.length) {
   console.log("  have retried once and then WITHHELD the talk. A reviewer we cannot parse is not a reviewer.");
   process.exit(1);
 }
-if (unusable.length) { console.log(`✖ REJECTED — ${unusable.length} response(s) the app could not use.`); process.exit(1); }
+if (unusable.length) {
+  const medicallyFine = sawIt.length === allDefective.length;
+  console.log(`✖ REJECTED on CONTRACT COMPLIANCE — ${unusable.length} response(s) the app could not use.`);
+  if (medicallyFine) {
+    console.log(`  NOTE: medical detection was ${sawIt.length}/${allDefective.length}. It saw the problems and could not say so in a`);
+    console.log("  form the app can apply. That is a format failure, not a competence one — but it is still a");
+    console.log("  rejection, because in production those reviews fail, retry once, and WITHHOLD the talk.");
+  }
+  process.exit(1);
+}
 if (falsePos.length > clean.length / 2) { console.log(`✖ REJECTED — rewrote ${falsePos.length}/${clean.length} healthy talks; too eager to be trusted with them.`); process.exit(1); }
 console.log(`✓ Caught ${caught.length}/${defective.length}, left ${clean.length - falsePos.length}/${clean.length} clean talks alone, median ${Math.round(medMs(rows) / 100) / 10}s.`);
 console.log("  This clears the model to REVIEW only. It says nothing about whether it may WRITE — that is the");
