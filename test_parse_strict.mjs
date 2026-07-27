@@ -135,15 +135,26 @@ const resumeSrc = fnBody("async function resumeAsyncJobIfAny");
 ok(/parseTalkStrict\(txt, S\.style\)/.test(resumeSrc), "the RESUMED async draft goes through parseTalkStrict");
 ok(!/var draftTalk = pruneFakeReferences\(deepCleanCitations\(JSON\.parse\(fixJSON\(txt\)\)\)\)/.test(html),
    "the resumed draft's raw JSON.parse path is gone");
-ok(/_assertCompleteTalk\(parsed, S\.style, "resumed critic rewrite"\)/.test(resumeSrc),
-   "the resumed CRITIC rewrite is asserted complete before it is accepted");
+// The three hand-rolled acceptance blocks are now ONE acceptCritique() helper (patch-based review,
+// 2026-07-26). The invariant is unchanged — a critic-produced talk must pass the completeness gate before
+// it is accepted — but it now lives in one place, so assert it there rather than at each call site.
+ok(/acceptCritique\(rawCrit, draftTalk, S\.style, "resumed critic rewrite"\)/.test(resumeSrc),
+   "the resumed critique goes through the shared acceptCritique()");
 
-// (b) generate()'s critic
-ok(/_assertCompleteTalk\(parsed, S\.style, "critic rewrite"\)/.test(html),
-   "generate()'s critic rewrite is asserted complete (a partial rewrite fails the review → retry → withhold)");
-// (c) retryReview()'s critic
-ok(/_assertCompleteTalk\(parsed, rp\.style \|\| S\.style, "retried critic rewrite"\)/.test(html),
-   "retryReview()'s critic rewrite is asserted complete (partial stays withheld)");
+// (b) generate()'s critic  (c) retryReview()'s critic — both via the shared helper
+ok(/acceptCritique\(critTxt, draftTalk, S\.style, "critic rewrite"\)/.test(html),
+   "generate()'s critique goes through acceptCritique()");
+ok(/acceptCritique\(txt, rp\.draft, rp\.style \|\| S\.style, "retried critic rewrite"\)/.test(html),
+   "retryReview()'s critique goes through acceptCritique()");
+// and the helper itself still enforces the completeness bar on a full-talk rewrite
+{
+  const acc = html.slice(html.indexOf("function acceptCritique("));
+  ok(/_assertCompleteTalk\(parsed, style, label \|\| "critic rewrite"\)/.test(acc),
+     "acceptCritique() asserts completeness on a full-talk rewrite (the old per-site check, now central)");
+  ok(/applyTalkPatches\(draftTalk, parsed\.patches, style\)/.test(acc),
+     "…and a PATCH SET goes through applyTalkPatches(), which re-runs the same whole-talk gate");
+  ok(/pe\.code = "bad_patch"; throw pe;/.test(acc), "…and a rejected patch set THROWS → retry → withhold");
+}
 // the weak old acceptance test must no longer stand alone anywhere
 const weakAccepts = (html.match(/else if \(?parsed\.title \|\| parsed\.question\)? \{ finalTalk = parsed/g) || []).length;
 ok(weakAccepts === 0, "no critic path still accepts a rewrite on `title || question` alone");
@@ -187,8 +198,8 @@ ok(/kept your original untouched/.test(html.slice(revIdx, revIdx + 700)),
   const rs = fnBody("async function resumeAsyncJobIfAny");
   ok(/parseTalkStrict\(txt, S\.style\)/.test(rs), "resume: draft parsed with the strict gate");
   ok(/function _acceptCritique\(/.test(rs), "resume: a single acceptance helper decides clean-vs-rewrite");
-  ok(/_assertCompleteTalk\(parsed, S\.style, "resumed critic rewrite"\)/.test(rs),
-     "resume: a critic REWRITE must be schema-complete to be accepted");
+  ok(/acceptCritique\(rawCrit, draftTalk, S\.style, "resumed critic rewrite"\)/.test(rs),
+     "resume: a critic rewrite goes through the shared, gated acceptance path");
   ok(/_acceptCritique\(critTxt\)/.test(rs), "resume: the Worker's existing critique is tried first (no wasted call)");
   ok(/callAPIWithFallback\(_spec\.sys, _critInput, _spec\.maxTok, _spec\.models\)/.test(rs),
      "resume: exactly ONE bounded client-side retry when the server critique is unusable");

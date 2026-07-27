@@ -91,6 +91,10 @@ jobs:
       - name: Retry evidence preservation + provenance stamping
         run: node test_retry_evidence.mjs
 
+      # A patch cannot silently drop a field it never names — but only if the applier is airtight.
+      - name: Patch-based review (all-or-nothing, re-gated, no rewrite in disguise)
+        run: node test_patch_review.mjs
+
       # The drug detector can DISQUALIFY a model, so its false positives cost as much as its misses.
       - name: Drug-name detector (true positives + the 2026-07-26 false positives)
         run: node rag/test_drug_detector.mjs
