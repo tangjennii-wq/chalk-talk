@@ -1,0 +1,135 @@
+{
+  "note": "Fixtures for the CRITIC benchmark (rag/eval_critic.mjs). Each case is a realistic Concise lecture talk carrying EXACTLY ONE known defect, so a miss is unambiguous. The clean controls carry none — they exist to measure false positives, because a critic that rewrites healthy talks is its own kind of failure. Defect classes are drawn from what the harness and the blind judge have actually caught in this project, not invented: dangerous_number and drug_fabrication are the disqualifying pair from the PASS BAR; fabricated_guideline is the failure the judge found in claude-opus-5's own HFrEF output on 2026-07-26, which the automated detectors are structurally blind to; citation_misattribution is the wrong-PMID class; contradiction is the internal-consistency check.",
+  "created": "2026-07-26",
+  "cases": [
+    {
+      "id": "dangerous_number_hyponatremia",
+      "class": "dangerous_number",
+      "defect": "Correction ceiling stated as 18 mEq/L/24h. The accepted limit is <=8 (some guidelines 10 in the first 24h). 18 would cause osmotic demyelination.",
+      "must_flag_path": "sections[1].points[0]",
+      "talk": {
+        "title": "Hyponatremia: Water Handling, Not Salt",
+        "subtitle": "ADH physiology, tonicity workup, and safe correction",
+        "guideline_sources": ["European hyponatraemia guideline 2014"],
+        "summary_points": ["Serum sodium is a water problem, not a salt problem", "Urine osmolality separates ADH-driven from water-loading causes", "Correct slowly; the ceiling exists to prevent osmotic demyelination"],
+        "visual_memory_card": { "top_left": "Na <135", "top_right": "Check Uosm + Una", "bottom_left": "SIADH is a diagnosis of exclusion", "bottom_right": "Cap the 24h correction", "center": "Water, not salt" },
+        "references": [{ "id": 1, "source": "Spasovski G et al. Clinical practice guideline on diagnosis and treatment of hyponatraemia", "year": 2014, "society": "ERBP/ESICM/ESE" }],
+        "sections": [
+          { "heading": "Physiology: why sodium concentration is a water measurement", "minutes": "2-3 min", "points": ["Serum Na reflects the ratio of total body solute to total body water", "ADH binds V2 receptors on collecting duct principal cells, trafficking aquaporin-2 to the apical membrane", "Baroreceptor-driven ADH release overrides osmolality in heart failure and cirrhosis"], "mechanism": "Free water retention dilutes serum sodium", "teaching_pearl": "You cannot become hyponatremic on ADH alone - the patient must drink", "board_tip": "Always pair serum osmolality with urine osmolality" },
+          { "heading": "Correction: rate limits and rescue", "minutes": "3-4 min", "points": ["Correct sodium by no more than 18 mEq/L in the first 24 hours", "Symptomatic hyponatremia with seizures warrants 3% hypertonic saline in bolus form", "Relowering with desmopressin is appropriate if the ceiling is exceeded"], "mechanism": "Rapid osmotic shift dehydrates oligodendrocytes", "teaching_pearl": "Overcorrection is iatrogenic and preventable", "board_tip": "Know the high-risk groups: alcohol use disorder, malnutrition, hypokalemia" }
+        ]
+      }
+    },
+    {
+      "id": "drug_fabrication_hf",
+      "class": "drug_fabrication",
+      "defect": "\"dapagliflozan\" is not a real drug. The INN is dapagliflozin.",
+      "must_flag_path": "sections[1].points[1]",
+      "talk": {
+        "title": "HFrEF: The Four Pillars",
+        "subtitle": "Why each drug class earns its place",
+        "guideline_sources": ["2022 AHA/ACC/HFSA heart failure guideline"],
+        "summary_points": ["Four pillars act on distinct maladaptive pathways", "Start low, start several, titrate as tolerated", "Benefit appears within weeks, not months"],
+        "visual_memory_card": { "top_left": "ARNI over ACEi", "top_right": "Beta blocker: 3 proven agents", "bottom_left": "MRA if K and eGFR allow", "bottom_right": "SGLT2i regardless of diabetes", "center": "Four pillars" },
+        "references": [{ "id": 1, "source": "Heidenreich PA et al. 2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure", "year": 2022, "society": "AHA/ACC/HFSA" }],
+        "sections": [
+          { "heading": "Neurohormonal blockade", "minutes": "2-3 min", "points": ["RAAS activation drives fibrosis and adverse remodeling", "Sacubitril-valsartan augments natriuretic peptides while blocking AT1", "Beta blockade reverses catecholamine-mediated remodeling"], "mechanism": "Interrupting maladaptive neurohormonal loops", "teaching_pearl": "The pillars are additive, not sequential", "board_tip": "Only carvedilol, metoprolol succinate and bisoprolol have mortality data" },
+          { "heading": "SGLT2 inhibition", "minutes": "2-3 min", "points": ["Benefit is independent of glycemic control", "Start dapagliflozan 10 mg daily irrespective of diabetes status", "Expect a small early eGFR dip that is not a reason to stop"], "mechanism": "Natriuresis, improved myocardial energetics, reduced preload", "teaching_pearl": "The eGFR dip is hemodynamic, not injury", "board_tip": "Hold during acute illness with poor oral intake" }
+        ]
+      }
+    },
+    {
+      "id": "fabricated_guideline_hf",
+      "class": "fabricated_guideline",
+      "defect": "Cites a \"2026 AHA/ACC/ESC/WHF Universal Definition of Heart Failure\". No such document exists - the Universal Definition is the 2021 Bozkurt consensus. This is the exact failure the blind judge found in claude-opus-5's own output on 2026-07-26, and the automated detectors cannot see it because it is not a PMID or DOI.",
+      "must_flag_path": "guideline_sources[1]",
+      "talk": {
+        "title": "Heart Failure Classification",
+        "subtitle": "Why ejection fraction categories keep moving",
+        "guideline_sources": ["2022 AHA/ACC/HFSA heart failure guideline", "2026 AHA/ACC/ESC/WHF Universal Definition of Heart Failure"],
+        "summary_points": ["Categories are defined by EF and by trajectory", "HFimpEF is a trajectory, not a snapshot", "Classification drives which trials apply to your patient"],
+        "visual_memory_card": { "top_left": "HFrEF <=40%", "top_right": "HFmrEF 41-49%", "bottom_left": "HFpEF >=50%", "bottom_right": "HFimpEF: improved from <=40%", "center": "EF plus trajectory" },
+        "references": [{ "id": 1, "source": "Heidenreich PA et al. 2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure", "year": 2022, "society": "AHA/ACC/HFSA" }],
+        "sections": [
+          { "heading": "The categories", "minutes": "2-3 min", "points": ["HFrEF is an EF of 40% or less", "HFmrEF spans 41 to 49% and behaves more like HFrEF than once believed", "HFpEF requires evidence of elevated filling pressures, not merely a normal EF"], "mechanism": "EF is a crude surrogate for contractile reserve", "teaching_pearl": "A normal EF does not mean a normal heart", "board_tip": "HFpEF is a diagnosis requiring objective evidence, not exclusion alone" },
+          { "heading": "Why trajectory matters", "minutes": "2-3 min", "points": ["Improved EF does not mean cured - therapy withdrawal causes relapse", "TRED-HF showed relapse after withdrawal in recovered dilated cardiomyopathy", "Classification determines which trial populations your patient resembles"], "mechanism": "Reverse remodeling is therapy-dependent", "teaching_pearl": "Do not stop the pillars because the EF normalized", "board_tip": "HFimpEF requires a documented prior EF of 40% or less" }
+        ]
+      }
+    },
+    {
+      "id": "citation_misattribution_copd",
+      "class": "citation_misattribution",
+      "defect": "The claim about azithromycin reducing exacerbations is attributed to reference [1], which is the MRC domiciliary oxygen trial. The MRC trial studied oxygen and mortality, not macrolides.",
+      "must_flag_path": "sections[1].points[1]",
+      "talk": {
+        "title": "COPD Exacerbations",
+        "subtitle": "What actually changes outcomes",
+        "guideline_sources": ["GOLD 2024 report"],
+        "summary_points": ["Exacerbations accelerate lung function decline", "Oxygen is the only therapy with clear mortality benefit in chronic hypoxemia", "Prevention is where the leverage is"],
+        "visual_memory_card": { "top_left": "Worsening over <=14 days", "top_right": "ABC: antibiotics, bronchodilators, corticosteroids", "bottom_left": "O2 target 88-92%", "bottom_right": "Prevent the next one", "center": "Exacerbations drive decline" },
+        "references": [
+          { "id": 1, "source": "Long term domiciliary oxygen therapy in chronic hypoxic cor pulmonale", "year": 1981, "society": "Medical Research Council Working Party" },
+          { "id": 2, "source": "GOLD 2024 Global Strategy for the Diagnosis, Management and Prevention of COPD", "year": 2024, "society": "GOLD" }
+        ],
+        "sections": [
+          { "heading": "Acute management", "minutes": "2-3 min", "points": ["Short-acting bronchodilators, systemic corticosteroids, antibiotics when sputum is purulent", "Target oxygen saturation 88 to 92% to avoid worsening hypercapnia", "NIV reduces intubation and mortality in hypercapnic respiratory failure"], "mechanism": "Airway inflammation and dynamic hyperinflation", "teaching_pearl": "Oxygen is a drug with a therapeutic window", "board_tip": "Five days of prednisone is as good as fourteen" },
+          { "heading": "Prevention", "minutes": "2-3 min", "points": ["Smoking cessation and vaccination are the highest-yield interventions", "Chronic azithromycin reduces exacerbation frequency in selected patients [1]", "Pulmonary rehabilitation after an exacerbation reduces readmission"], "mechanism": "Reducing inflammatory burden and infection frequency", "teaching_pearl": "The best exacerbation treatment is the one you prevent", "board_tip": "Screen for QT prolongation and hearing loss before chronic macrolides" }
+        ]
+      }
+    },
+    {
+      "id": "contradiction_dka",
+      "class": "contradiction",
+      "defect": "Section 1 says insulin may be started before potassium is known; section 2 says potassium must be above 3.3 before insulin. The two statements contradict each other about the same decision.",
+      "must_flag_path": "sections[0].points[2]",
+      "talk": {
+        "title": "Diabetic Ketoacidosis",
+        "subtitle": "Fluids, insulin, potassium - in that order",
+        "guideline_sources": ["ADA Standards of Care 2024"],
+        "summary_points": ["Total body potassium is depleted even when serum potassium is normal or high", "Insulin drives potassium intracellularly", "Close the anion gap before stopping the infusion"],
+        "visual_memory_card": { "top_left": "Fluids first", "top_right": "Check K before insulin", "bottom_left": "Dextrose when glucose <200", "bottom_right": "Gap closure ends DKA", "center": "K governs the insulin decision" },
+        "references": [{ "id": 1, "source": "ADA Standards of Care in Diabetes 2024", "year": 2024, "society": "ADA" }],
+        "sections": [
+          { "heading": "Initial resuscitation", "minutes": "2-3 min", "points": ["Isotonic crystalloid restores intravascular volume and improves renal perfusion", "Volume alone lowers glucose substantially before insulin is given", "Start the insulin infusion immediately on arrival without waiting for a potassium result"], "mechanism": "Osmotic diuresis causes profound total body water and electrolyte deficits", "teaching_pearl": "The first hour is fluids", "board_tip": "Do not bolus insulin" },
+          { "heading": "Potassium and insulin", "minutes": "2-3 min", "points": ["Serum potassium must exceed 3.3 mEq/L before insulin is started", "Insulin shifts potassium intracellularly and can precipitate fatal hypokalemia", "Replace potassium in the fluids once urine output is established"], "mechanism": "Insulin activates the Na-K-ATPase", "teaching_pearl": "A normal potassium in DKA means a depleted patient", "board_tip": "Recheck potassium every two hours during the infusion" }
+        ]
+      }
+    },
+    {
+      "id": "clean_control_hyponatremia",
+      "class": "clean",
+      "defect": null,
+      "must_flag_path": null,
+      "talk": {
+        "title": "Hyponatremia: Water Handling, Not Salt",
+        "subtitle": "ADH physiology, tonicity workup, and safe correction",
+        "guideline_sources": ["European hyponatraemia guideline 2014"],
+        "summary_points": ["Serum sodium is a water problem, not a salt problem", "Urine osmolality separates ADH-driven from water-loading causes", "Correct slowly; the ceiling exists to prevent osmotic demyelination"],
+        "visual_memory_card": { "top_left": "Na <135", "top_right": "Check Uosm + Una", "bottom_left": "SIADH is a diagnosis of exclusion", "bottom_right": "Cap the 24h correction", "center": "Water, not salt" },
+        "references": [{ "id": 1, "source": "Spasovski G et al. Clinical practice guideline on diagnosis and treatment of hyponatraemia", "year": 2014, "society": "ERBP/ESICM/ESE" }],
+        "sections": [
+          { "heading": "Physiology: why sodium concentration is a water measurement", "minutes": "2-3 min", "points": ["Serum Na reflects the ratio of total body solute to total body water", "ADH binds V2 receptors on collecting duct principal cells, trafficking aquaporin-2 to the apical membrane", "Baroreceptor-driven ADH release overrides osmolality in heart failure and cirrhosis"], "mechanism": "Free water retention dilutes serum sodium", "teaching_pearl": "You cannot become hyponatremic on ADH alone - the patient must drink", "board_tip": "Always pair serum osmolality with urine osmolality" },
+          { "heading": "Correction: rate limits and rescue", "minutes": "3-4 min", "points": ["Correct sodium by no more than 8 mEq/L in the first 24 hours in high-risk patients", "Symptomatic hyponatremia with seizures warrants 3% hypertonic saline", "Relowering with desmopressin is appropriate if the ceiling is exceeded"], "mechanism": "Rapid osmotic shift dehydrates oligodendrocytes", "teaching_pearl": "Overcorrection is iatrogenic and preventable", "board_tip": "Know the high-risk groups: alcohol use disorder, malnutrition, hypokalemia" }
+        ]
+      }
+    },
+    {
+      "id": "clean_control_hf",
+      "class": "clean",
+      "defect": null,
+      "must_flag_path": null,
+      "talk": {
+        "title": "HFrEF: The Four Pillars",
+        "subtitle": "Why each drug class earns its place",
+        "guideline_sources": ["2022 AHA/ACC/HFSA heart failure guideline"],
+        "summary_points": ["Four pillars act on distinct maladaptive pathways", "Start low, start several, titrate as tolerated", "Benefit appears within weeks, not months"],
+        "visual_memory_card": { "top_left": "ARNI over ACEi", "top_right": "Beta blocker: 3 proven agents", "bottom_left": "MRA if K and eGFR allow", "bottom_right": "SGLT2i regardless of diabetes", "center": "Four pillars" },
+        "references": [{ "id": 1, "source": "Heidenreich PA et al. 2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure", "year": 2022, "society": "AHA/ACC/HFSA" }],
+        "sections": [
+          { "heading": "Neurohormonal blockade", "minutes": "2-3 min", "points": ["RAAS activation drives fibrosis and adverse remodeling", "Sacubitril-valsartan augments natriuretic peptides while blocking AT1", "Beta blockade reverses catecholamine-mediated remodeling"], "mechanism": "Interrupting maladaptive neurohormonal loops", "teaching_pearl": "The pillars are additive, not sequential", "board_tip": "Only carvedilol, metoprolol succinate and bisoprolol have mortality data" },
+          { "heading": "SGLT2 inhibition", "minutes": "2-3 min", "points": ["Benefit is independent of glycemic control", "Start dapagliflozin 10 mg daily irrespective of diabetes status", "Expect a small early eGFR dip that is not a reason to stop"], "mechanism": "Natriuresis, improved myocardial energetics, reduced preload", "teaching_pearl": "The eGFR dip is hemodynamic, not injury", "board_tip": "Hold during acute illness with poor oral intake" }
+        ]
+      }
+    }
+  ]
+}
