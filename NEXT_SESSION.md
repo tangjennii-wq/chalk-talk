@@ -15,8 +15,12 @@ remains is one benchmark run only you can do, your call on merging, plus launch 
 
 ## FIRST — four things only you can do
 
-**0. Run the two benchmark commands.** They need a network that can reach `www.ebi.ac.uk` and
-`rxnav.nlm.nih.gov` (this sandbox cannot, and neither can it reach `api.openai.com`).
+**0. Run the benchmark + the structured-output probe.** These must run on YOUR machine. The Cowork
+sandbox routes all egress through a MITM proxy that permits a plain `GET https://api.anthropic.com/v1/models`
+but returns a bare `Unauthorized` for an authenticated `POST /v1/messages` — so **no model calls are
+possible from there at all**, and `api.openai.com`, `www.ebi.ac.uk`, `rxnav.nlm.nih.gov` and
+`api.crossref.org` are unreachable outright. Any claim that a benchmark or API shape was "verified" from
+the sandbox is false by construction.
 ```
 cd ~/Developer/chalk-talk
 

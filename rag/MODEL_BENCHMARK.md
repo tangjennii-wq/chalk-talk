@@ -111,7 +111,12 @@ verdict (every one below is a FAIL or an explicit non-clearance), and `claude-op
 CLEARED, ON NOTICE rather than proven. Future runs are auditable because the counts are in the report.
 
 **Any run whose verifiers were unreachable cannot clear a writer**, regardless of how clean it looks.
-Reruns from a sandbox are structurally useful (JSON validity, schema completeness) and *safety-blind*.
+
+For the avoidance of doubt: the Cowork sandbox cannot run this benchmark at all. Its proxy allows an
+unauthenticated `GET https://api.anthropic.com/v1/models` (which returns Anthropic's real error body, and
+is therefore easy to mistake for working access) but returns a bare `Unauthorized` for an authenticated
+`POST /v1/messages`. Europe PMC, RxNorm, Crossref and api.openai.com are unreachable outright. Benchmarks
+and API-shape probes run on Jenni's machine, full stop.
 
 ---
 
