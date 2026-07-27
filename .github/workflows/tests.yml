@@ -91,6 +91,10 @@ jobs:
       - name: Retry evidence preservation + provenance stamping
         run: node test_retry_evidence.mjs
 
+      # The preview must survive review (perceived speed) but be retired at every exit (safety).
+      - name: Streaming preview through review, retired at every exit
+        run: node test_review_preview.mjs
+
       # A proposed reference is a MODEL-SUPPLIED CITATION — the exact thing this app never trusts.
       - name: Check for updates (verify before offering; never rewrite the talk)
         run: node test_update_check.mjs

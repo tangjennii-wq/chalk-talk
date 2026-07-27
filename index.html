@@ -1293,7 +1293,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-25";
+var BUILD_ID = "2026-07-26-26";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1574,6 +1574,7 @@ async function resumeAsyncJobIfAny(){
         provider: (S.genProvider || "claude"), writerModel: (res && res.modelUsed) || "",
         charged: true, ragCount: (stored && stored.ragCount != null) ? stored.ragCount : _resumeRag.length, guidelinesLoaded: !!_glRef,
         webSearched: !!(res && res.webSearched), err: (_resumeCritErr && _resumeCritErr.message) || "" };
+      S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";   // WITHHELD: the preview must not linger as if it were a finished talk
       _saveReviewPending();
       S.citationAuditPending = false; S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
       render();
@@ -1597,6 +1598,7 @@ async function resumeAsyncJobIfAny(){
     // NOTE: no client consume here — the background job already consumed quota SERVER-SIDE on success
     // (worker runGeneration). We only refresh the badge below. (Jenni 2026-07-03)
     S.citationAuditPending = true;
+    S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";   // preview retired — the real talk is on screen now
     S.talk = finalTalk;
     S.glRef = getGuidelinesForTopic(S.topic) || null;
     clearInterval(loadTimer); S.loading = false; render();
@@ -7250,15 +7252,22 @@ async function generate(){
         _asyncCritTxt = (_res && _res.critText) || "";
         _asyncCritModel = (_res && _res.critModelUsed) || "";   // absent on an older Worker → stays "" (unknown, not accused)
         _draftWebSearched = !!(_res && _res.webSearched);   // Worker reports actual web-search usage (Jenni 2026-07 — Codex)
-        S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
+        // KEEP THE PREVIEW UP THROUGH THE REVIEW (Jenni measured it, 2026-07-26). Clearing it here wiped the
+        // talk the user had just watched appear and replaced it with a bare spinner for the whole 28s review
+        // phase. The render layer already has a "reviewing" state for the preview — it was simply unreachable,
+        // because the data behind it was deleted one line after the draft arrived. Cleared later instead: when
+        // the finished talk replaces it, or on withhold/cancel/error.
         _draftModel = (_res && _res.modelUsed) || "";
         if (_draftModel) console.info("Background draft via " + _draftModel);
       }
     }
     if (!_useAsync) {
       var mainResult = await callAPIWithFallback(sys, uc, maxTok, mainModels, mainOpts);
-      // Clear streaming progress now that the main draft is in hand; critique/audit run after.
-      S.streamingTitle = ""; S.streamingChars = 0; S.streamingSubtitle = ""; S.streamingSections = []; S.streamingStem = "";
+      // KEEP THE PREVIEW UP THROUGH THE REVIEW (Jenni measured it, 2026-07-26). Clearing it here wiped the
+      // talk the user had just watched appear and replaced it with a bare spinner for the whole 28s review
+      // phase. The render layer already has a "reviewing" state for the preview — it was simply unreachable,
+      // because the data behind it was deleted one line after the draft arrived. Cleared later instead: when
+      // the finished talk replaces it, or on withhold/cancel/error.
       txt = mainResult.txt;
       _draftWebSearched = !!mainResult.webSearched;
       _draftModel = mainResult.modelUsed || "";
@@ -7375,6 +7384,7 @@ async function generate(){
         provider: (S.genProvider || "claude"), writerModel: _draftModel || "", charged: !!_useAsync, ragCount: (S.ragChunks || []).length,
         guidelinesLoaded: !!glRef, webSearched: ((S.genProvider || "claude") === "claude" && _draftWebSearched),
         err: (lastCritErr && lastCritErr.message) || "" };
+      S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";   // WITHHELD: the preview must not linger as if it were a finished talk
       _saveReviewPending();
       S.citationAuditPending = false; S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
       render();
@@ -7430,6 +7440,7 @@ async function generate(){
     try{ refreshFreeTierStatus(); }catch(_){}
   }
   S.citationAuditPending = true;
+  S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";   // preview retired — the real talk is on screen now
   S.talk = finalTalk;
     S.sec=0;S.dg=null;S.dgErr="";S.podScript="";
     if (glRef) { S.glRef = glRef; } else { S.glRef = null; }
