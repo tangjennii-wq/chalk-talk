@@ -78,6 +78,11 @@ jobs:
       - name: Strict talk parsing (never render partial medical content)
         run: node test_parse_strict.mjs
 
+      # EXECUTES generate()'s review -> finalize path. The pattern-matching suites all passed while an
+      # undeclared local threw a ReferenceError on every successful generation; only running it catches that.
+      - name: generate() review -> finalize, executed
+        run: node test_generate_execution.mjs
+
       # A present-but-hollow field renders as blank space — same harm as a missing one, harder to notice.
       - name: Deep completeness gate + citation audit on every release path
         run: node test_deep_completeness.mjs

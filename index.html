@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-19";
+var BUILD_ID = "2026-07-26-20";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1606,7 +1606,7 @@ async function resumeAsyncJobIfAny(){
         // genId alone is not enough: opening a SAVED talk doesn't bump it, so a late audit could overwrite
         // the talk the user is now reading. Identity guard, same as generate(). (Codex 2026-07-26)
         if(_auditGenId === S.genId && S.talk === finalTalk && audited){ S.talk = audited; S.citationAuditPending = false; render(); }
-      }catch(_){ if(_auditGenId === S.genId){ S.citationAuditPending = false; render(); } }
+      }catch(_){ if(_auditGenId === S.genId && S.talk === finalTalk){ S.citationAuditPending = false; render(); } }
     })();
     if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
   }catch(err){
@@ -7188,15 +7188,25 @@ async function generate(){
     // review still can't finish (e.g. a free-Gemini quota block between draft and review), WITHHOLD the
     // draft below rather than presenting an unreviewed talk as verified.
     var critiqueOK = false, lastCritErr = null;
+    // WHO wrote the text on screen. A "clean" verdict keeps the draft; a corrected talk means the CRITIC
+    // wrote what the reader sees, so its model id has to reach the provenance stamp.
+    // These MUST be declared here: they are read unconditionally at finalization below, so leaving them
+    // as implicit globals assigned only inside the rewrite branch threw a ReferenceError on every clean
+    // review — i.e. on every successful generation. (Codex, launch blocker, 2026-07-26)
+    var _critiqueRewroteTalk = false, _critiqueModel = "";
     for (var _cAtt = 0; _cAtt < 2 && !critiqueOK; _cAtt++){
       if (_cAtt > 0) { await new Promise(function(_r){ setTimeout(_r, 1200); }); }   // backoff before the single retry
       if (S.genCancelled || _myGenId !== S.genId) return;
       try {
         var critTxt;
-        if (_useAsync && _cAtt === 0) { critTxt = _asyncCritTxt || ""; }   // server-side critique reusable only on attempt 0
+        if (_useAsync && _cAtt === 0) {
+          critTxt = _asyncCritTxt || "";                 // server-side critique reusable only on attempt 0
+          _critiqueModel = _asyncCritModel || "";        // the Worker's reviewer ("" on an older Worker)
+        }
         else {
           var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels);
           critTxt = critResult.txt;
+          _critiqueModel = critResult.modelUsed || "";
           if (critResult.fellBack) console.info("Critique via " + critResult.modelUsed);
         }
         if (!critTxt || !critTxt.trim()) throw new Error("empty review response");
@@ -7397,7 +7407,9 @@ async function generate(){
         // else: nothing was checked and nothing changed — say nothing.
       } catch(auditErr){
         console.warn("Background citation audit failed:", auditErr && auditErr.message);
-        if(_auditTargetGenId === S.genId){
+        // identity, not just genId: opening a saved talk doesn't bump genId, so a failed OLD audit could
+        // clear the NEW talk's pending indicator and imply its citations had been checked. (Codex)
+        if(_auditTargetGenId === S.genId && S.talk === _talkBeforeAudit){
           S.citationAuditPending = false;
           render();
         }
@@ -9102,7 +9114,7 @@ async function retryReview(){
   // review retry skipped live PMID existence checks and the DOI title/journal/year identity check. A
   // release path that reaches the reader must not verify less than the path beside it.
   var _talkBeforeAudit = finalTalk;
-  (async function(){ try{ var au = await verifyCitations(await verifyModelDois(await verifyModelPmids(_talkBeforeAudit))); if(_agid === S.genId && S.talk === _talkBeforeAudit && au){ S.talk = au; S.citationAuditPending = false; render(); } }catch(_){ if(_agid === S.genId){ S.citationAuditPending = false; render(); } } })();
+  (async function(){ try{ var au = await verifyCitations(await verifyModelDois(await verifyModelPmids(_talkBeforeAudit))); if(_agid === S.genId && S.talk === _talkBeforeAudit && au){ S.talk = au; S.citationAuditPending = false; render(); } }catch(_){ if(_agid === S.genId && S.talk === _talkBeforeAudit){ S.citationAuditPending = false; render(); } } })();
 }
 // Persist the withheld draft across refresh/reopen (Jenni 2026-07 — Codex) so a review that couldn't
 // finish isn't silently lost. Cleared on discard or on successful review.
