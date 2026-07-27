@@ -167,7 +167,20 @@ const defectiveUnusable = rows.filter(r => r.class !== "clean" && !r.err && /UNU
 const clean = rows.filter(r => r.class === "clean" && !r.err);
 const caught = defective.filter(r => r.caught);
 const missed = defective.filter(r => !r.caught);
-const falsePos = clean.filter(r => r.verdict !== "clean");
+// A critic that ADDS a missing treatment section to a 2-section talk is not being over-eager — check (4)
+// of LECTURE_CRITIQUE_PROMPT explicitly tells it to "WRITE the missing content". Scoring that as a false
+// positive measured my fixture design, not the model. What actually matters for restraint is whether it
+// CHANGED existing teaching text that was already correct. Appends are reported separately. (2026-07-27)
+function cleanTouchKind(r) {
+  try {
+    const p = JSON.parse(String(r.raw || "").replace(/^[^{]*/, "").replace(/[^}]*$/, ""));
+    if (!Array.isArray(p.patches)) return r.verdict === "clean" ? "none" : "unparsed";
+    const mutating = p.patches.filter(q => q.op !== "append");
+    return mutating.length ? "rewrote_existing" : (p.patches.length ? "appended_only" : "none");
+  } catch { return r.verdict === "clean" ? "none" : "unparsed"; }
+}
+const falsePos = clean.filter(r => cleanTouchKind(r) === "rewrote_existing");
+const appendOnly = clean.filter(r => cleanTouchKind(r) === "appended_only");
 const unusable = rows.filter(r => /UNUSABLE/.test(r.verdict));
 const errs = rows.filter(r => r.err);
 const medMs = (arr) => { const v = arr.map(r => r.ms).sort((a, b) => a - b); return v.length ? v[Math.floor(v.length / 2)] : 0; };
@@ -189,8 +202,13 @@ if (defectiveUnusable.length) {
 }
 
 console.log("\n═══ 2 · RESTRAINT (did it leave healthy talks alone?) ═══");
-console.log(`   clean talks left untouched: ${clean.length - falsePos.length}/${clean.length}`);
-if (falsePos.length) for (const f of falsePos) console.log(`     ✖ ${f.id} → ${f.verdict} (${f.patchCount} patch(es))`);
+console.log(`   existing text left alone: ${clean.length - falsePos.length}/${clean.length}`);
+if (falsePos.length) for (const f of falsePos) console.log(`     ✖ ${f.id} REWROTE correct text (${f.patchCount} patch(es)) — read them; the fixture may not be as clean as assumed`);
+if (appendOnly.length) {
+  console.log(`   added-content-only: ${appendOnly.length} — NOT counted against it. The critique prompt's`);
+  console.log("   check (4) instructs the critic to write missing content, so appending a treatment section");
+  console.log("   to a short talk is compliance, not over-eagerness.");
+}
 
 console.log("\n═══ 3 · MECHANICS (can the app use its output?) ═══");
 console.log(`   unusable responses: ${unusable.length}/${rows.length - errs.length}`);
@@ -200,9 +218,15 @@ console.log("\n═══ 4 · SPEED (the reason we are doing this) ═══");
 console.log(`   median ${Math.round(medMs(rows.filter(r => !r.err)) / 100) / 10}s per review · slowest ${Math.round(Math.max(...rows.filter(r => !r.err).map(r => r.ms)) / 100) / 10}s`);
 if (errs.length) console.log(`\n   infrastructure errors (say nothing about quality): ${errs.length}`);
 
+// PER-MODEL FILENAME. The first run of this benchmark overwrote the Opus report with the Haiku one, so
+// when the Opus result needed inspecting it was gone. A report you cannot go back to is a report you
+// have to pay to regenerate. (2026-07-27)
+const _slug = MODEL.replace(/[^a-z0-9.-]+/gi, "_");
+const _out = new URL("./eval_critic_" + _slug + ".json", import.meta.url);
+writeFileSync(_out, JSON.stringify({ model: MODEL, at: new Date().toISOString(), repeats: REPEATS, rows }, null, 2) + "\n");
 writeFileSync(new URL("./eval_critic_report.json", import.meta.url),
   JSON.stringify({ model: MODEL, at: new Date().toISOString(), repeats: REPEATS, rows }, null, 2) + "\n");
-console.log("\n-> full report: rag/eval_critic_report.json");
+console.log("\n-> rag/eval_critic_" + _slug + ".json  (and rag/eval_critic_report.json = most recent)");
 
 // ── the bar ────────────────────────────────────────────────────────────────────
 // A reviewer that misses a dangerous number or a fabricated drug is worse than no reviewer, because the
