@@ -1,0 +1,91 @@
+{
+  "model": "claude-opus-5",
+  "at": "2026-07-27T20:39:28.137Z",
+  "repeats": 1,
+  "rows": [
+    {
+      "rep": 0,
+      "id": "dangerous_number_hyponatremia",
+      "class": "dangerous_number",
+      "ms": 22080,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 5,
+      "caught": true,
+      "raw_len": 1127,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"sections[1].points[0]\",\"value\":\"Limit correction to 10 mEq/L in the first 24 hours (and ~8 mEq/L per 24 hours thereafter); use a stricter 8 mEq/L/24h ceiling in high-risk patients [1]\"},{\"op\":\"append\",\"path\":\"sections[1].points\",\"value\":\"Chronic/asymptomatic SIADH: fluid restriction is first-line; if inadequate add oral urea or salt tablets with a loop diuretic, reserving vasopressin antagonists for selected monitored patients\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Severe symptoms (seizures, obtundation) get prompt 3% saline boluses (e.g. 150 mL over 20 min, repeatable) targeting only a ~5 mEq/L rise to break the emergency\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Chronic SIADH is managed with fluid restriction first, then urea or salt plus a loop diuretic; vasopressin antagonists are second-line and avoided in liver disease\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"High-risk-for-ODS patients (alcohol use disorder, malnutrition, hypokalemia, advanced liver disease) need the tightest correction limits and frequent Na checks\"}]}"
+    },
+    {
+      "rep": 0,
+      "id": "drug_fabrication_hf",
+      "class": "drug_fabrication",
+      "ms": 16074,
+      "err": null,
+      "verdict": "UNUSABLE(Expected ',' or '}' after property value in JSON at position 1368 (line 1 column 1369))",
+      "patchCount": 0,
+      "caught": false,
+      "raw_len": 1371,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"sections[1].points[1]\",\"value\":\"Start dapagliflozin 10 mg daily (or empagliflozin 10 mg daily) irrespective of diabetes status\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Mineralocorticoid receptor antagonists are the fourth pillar: start if K+ <5.0 mEq/L and eGFR >30 mL/min/1.73 m2\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Check K+ and creatinine 1-2 weeks after starting or up-titrating an MRA, ARNI, or ACEi\"},{\"op\":\"append\",\"path\":\"sections\",\"value\":{\"heading\":\"Mineralocorticoid receptor antagonism\",\"minutes\":\"2-3 min\",\"points\":[\"Aldosterone drives sodium retention, potassium/magnesium wasting, and myocardial fibrosis independent of ACEi/ARB effect\",\"Spironolactone 12.5-25 mg daily or eplerenone 25 mg daily, titrated to 50 mg daily as tolerated\",\"Initiate only if K+ <5.0 mEq/L and eGFR >30 mL/min/1.73 m2; recheck K+ and creatinine within 1-2 weeks\",\"Stop or reduce dose if K+ exceeds 5.5 mEq/L; avoid potassium supplements and NSAIDs\"],\"mechanism\":\"Blockade of aldosterone at the mineralocorticoid receptor limits fibrosis and volume retention\",\"teaching_pearl\":\"Gynecomastia is a spironolactone effect; switch to eplerenone rather than abandoning the pillar\",\"board_tip\":\"RALES (spironolactone, NYHA III-IV) and EMPHASIS-HF (eplerenone, NYHA II) established the mortality benefit\"}]}]"
+    },
+    {
+      "rep": 0,
+      "id": "fabricated_guideline_hf",
+      "class": "fabricated_guideline",
+      "ms": 21218,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 6,
+      "caught": true,
+      "raw_len": 1995,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"guideline_sources[1]\",\"value\":\"2021 AHA/ACC/ESC/WHF Universal Definition and Classification of Heart Failure\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"HFimpEF requires a prior LVEF <=40%, a >=10-point absolute rise, and a follow-up LVEF >40%\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Guideline-directed therapy is continued indefinitely after EF improves, not tapered off\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"SGLT2 inhibitors benefit patients across the entire EF spectrum, including HFmrEF and HFpEF\"},{\"op\":\"replace\",\"path\":\"visual_memory_card.bottom_right\",\"value\":\"HFimpEF: prior EF <=40%, >=10-pt rise, now >40%\"},{\"op\":\"append\",\"path\":\"sections\",\"value\":{\"heading\":\"How classification drives therapy\",\"minutes\":\"3-4 min\",\"points\":[\"HFrEF (EF <=40%): all four pillars - ARNI (preferred over ACE inhibitor or ARB), evidence-based beta-blocker (carvedilol, metoprolol succinate, or bisoprolol), mineralocorticoid receptor antagonist (spironolactone or eplerenone), and an SGLT2 inhibitor (dapagliflozin or empagliflozin)\",\"HFmrEF (EF 41-49%): SGLT2 inhibitor is recommended; ARNI/ACEi/ARB, MRA, and beta-blocker carry weaker (2b) recommendations, with greatest benefit at the lower end of the EF range\",\"HFpEF (EF >=50%): SGLT2 inhibitor recommended; MRA and ARNI may be considered, plus diuretics for congestion and aggressive treatment of hypertension, atrial fibrillation, and obesity\",\"HFimpEF: continue the full regimen that produced the improvement - TRED-HF showed relapse when therapy was withdrawn\"],\"mechanism\":\"Trial enrollment EF cutoffs, not pathophysiology, determine which drugs have proven benefit in each band\",\"teaching_pearl\":\"Check the potassium and creatinine before starting an MRA - generally avoid initiating if K+ >5.0 mEq/L or eGFR <30 mL/min/1.73 m2\",\"board_tip\":\"Do not withdraw GDMT for a normalized EF; the correct answer is to continue therapy and follow serial imaging\"}}]}"
+    },
+    {
+      "rep": 0,
+      "id": "citation_misattribution_copd",
+      "class": "citation_misattribution",
+      "ms": 21396,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 4,
+      "caught": true,
+      "raw_len": 1056,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"summary_points[1]\",\"value\":\"Long-term oxygen therapy improves survival only in severe chronic resting hypoxemia (PaO2 <=55 mmHg, or <=59 mmHg with cor pulmonale/polycythemia); it does not prolong survival in moderate desaturation, and smoking cessation is the other intervention with a clear mortality benefit\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Acute therapy: short-acting bronchodilators, prednisone 40 mg daily for 5 days, and antibiotics for selected exacerbations (increased sputum purulence plus increased dyspnea or volume, or need for ventilatory support)\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"NIV is first-line for acute hypercapnic respiratory failure (pH <=7.35 with PaCO2 >45 mmHg) and reduces intubation, length of stay, and mortality\"},{\"op\":\"replace\",\"path\":\"sections[1].points[1]\",\"value\":\"Chronic azithromycin reduces exacerbation frequency in selected patients, best evidence in former smokers with exacerbations despite optimized inhaled therapy [2]\"}]}"
+    },
+    {
+      "rep": 0,
+      "id": "contradiction_dka",
+      "class": "contradiction",
+      "ms": 21679,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 5,
+      "caught": true,
+      "raw_len": 1606,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"replace\",\"path\":\"sections[0].points[2]\",\"value\":\"Send the initial potassium before starting insulin: hold the infusion if K is <3.3 mEq/L and replace potassium first, since insulin will drive it lower\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Isotonic crystalloid comes first and itself lowers glucose substantially before any insulin is given\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Add dextrose to the fluids when glucose falls below ~200 mg/dL so the insulin infusion can continue until the gap closes\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Overlap the insulin infusion with subcutaneous basal insulin for 1-2 hours before stopping it to prevent rebound ketoacidosis\"},{\"op\":\"append\",\"path\":\"sections\",\"value\":{\"heading\":\"Resolution and transition\",\"minutes\":\"2-3 min\",\"points\":[\"Resolution requires glucose <200 mg/dL plus two of: serum bicarbonate >=15 mEq/L, venous pH >7.3, anion gap <=12\",\"Do not use glucose alone as the endpoint - add dextrose to the fluids when glucose falls below ~200 mg/dL and continue insulin at a lower rate until the gap closes\",\"Give subcutaneous basal insulin 1-2 hours before stopping the drip; stopping the infusion without overlap causes rebound ketoacidosis\"],\"mechanism\":\"Ketogenesis is suppressed by continuous insulin exposure, not by normoglycemia, so the infusion must outlast the hyperglycemia\",\"teaching_pearl\":\"Treat the gap, not the glucose\",\"board_tip\":\"Persistent hyperchloremic non-gap acidosis after gap closure is expected from saline resuscitation and needs no further insulin\"}}]}"
+    },
+    {
+      "rep": 0,
+      "id": "clean_control_hyponatremia",
+      "class": "clean",
+      "ms": 22728,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 4,
+      "caught": false,
+      "raw_len": 1050,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Confirm true hypotonic hyponatremia first — measure serum osmolality to exclude pseudohyponatremia (severe hyperlipidemia, paraproteinemia) and translocational causes (hyperglycemia, mannitol)\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Urine osmolality <100 mOsm/kg means ADH is appropriately suppressed (primary polydipsia, beer potomania, low solute intake); >100 mOsm/kg implies ongoing ADH action (SIADH, hypovolemia, heart failure, cirrhosis, thiazides)\"},{\"op\":\"replace\",\"path\":\"sections[1].points[1]\",\"value\":\"Severely symptomatic hyponatremia (seizures, obtundation) warrants prompt 3% hypertonic saline: 150 mL IV over 20 minutes, repeated until the sodium rises ~5 mEq/L or symptoms resolve\"},{\"op\":\"append\",\"path\":\"sections[1].points\",\"value\":\"For chronic SIADH, fluid restriction is first-line; add oral urea or salt tablets with a loop diuretic if restriction fails — the 2014 European guideline advises against vasopressin receptor antagonists\"}]}"
+    },
+    {
+      "rep": 0,
+      "id": "clean_control_hf",
+      "class": "clean",
+      "ms": 20997,
+      "err": null,
+      "verdict": "patched",
+      "patchCount": 3,
+      "caught": false,
+      "raw_len": 1615,
+      "raw": "{\"verdict\":\"corrected\",\"patches\":[{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Mineralocorticoid receptor antagonists are a pillar, not a last resort: start if K+ <5.0 mEq/L and eGFR >=30 mL/min/1.73 m2, then recheck K+ and creatinine within 1-2 weeks\"},{\"op\":\"append\",\"path\":\"summary_points\",\"value\":\"Titrate each agent toward the trial-proven target dose or the maximally tolerated dose rather than leaving all four at initiation doses\"},{\"op\":\"append\",\"path\":\"sections\",\"value\":{\"heading\":\"MRA and putting the four pillars together\",\"minutes\":\"3-4 min\",\"points\":[\"Spironolactone 12.5-25 mg daily or eplerenone 25 mg daily; MRA blocks aldosterone-mediated fibrosis, sodium retention and potassium/magnesium wasting\",\"Requires K+ <5.0 mEq/L and eGFR >=30 mL/min/1.73 m2 before initiation; hold or stop if K+ >5.5 mEq/L\",\"Recheck potassium and creatinine within 1-2 weeks of starting or up-titrating, then periodically\",\"Sequence is flexible: begin low doses of several classes early and up-titrate every 1-2 weeks as blood pressure, renal function and potassium allow\",\"Reserve loop diuretics for congestion and symptom relief; they do not confer the mortality benefit the four pillars do\"],\"mechanism\":\"Aldosterone blockade limits fibrosis and electrolyte losses, completing quadruple neurohormonal and metabolic therapy\",\"teaching_pearl\":\"A modest asymptomatic creatinine rise or soft blood pressure is usually a titration problem, not a reason to abandon a pillar\",\"board_tip\":\"Gynecomastia is a spironolactone effect; switch to eplerenone, which is far more selective for the mineralocorticoid receptor\"}}]}"
+    }
+  ]
+}
