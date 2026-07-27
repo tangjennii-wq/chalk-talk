@@ -87,6 +87,54 @@ error rather than a quietly-lower-quality talk. Whichever is chosen, `WRITER_BEN
 index.html must stay in sync with the table above; a test asserts `MODEL_MAIN` appears in it, so bumping
 the model without a decision breaks CI.
 
+## THE CRITIC BENCHMARK — a separate question, a separate clearance
+
+`node rag/eval_critic.mjs --model <exact-id>` · fixtures in `rag/critic_fixtures.json`
+
+The writer benchmark asks "does this model write safe medicine?". For a REVIEWER that is the wrong
+question — its job is to CATCH what the writer got wrong, and the two abilities are close to independent.
+Seven realistic Concise lectures: five carrying exactly one planted defect, two clean controls. Two scores
+are reported separately and BOTH are required: MEDICAL DETECTION (did it notice) and CONTRACT COMPLIANCE
+(can the app act on it). Spotting an error in prose the app discards is not a safety correction — the
+learner never sees it.
+
+Clearing here clears a model to REVIEW. It says nothing about whether it may WRITE.
+
+### Results, 2026-07-27
+
+| model | detection | compliance | clean talks left alone | median | verdict |
+|---|---|---|---|---|---|
+| `claude-opus-5` | **5/5** | **7/7** | 1/2 | 23.2s | **CLEARED as critic** |
+| `claude-haiku-4-5-20251001` | 4/5 | 7/7 | 0/2 | **3.0s** | REJECTED |
+
+**Opus caught all five**, including the fabricated "2026 AHA/ACC/ESC/WHF Universal Definition of Heart
+Failure" — the failure class the automated detectors are structurally blind to, because it is not a PMID
+or a DOI. Its 23.2s median matches the review phase Jenni measured in the app (28s), confirming that
+phase is one Opus pass with no hidden overhead.
+
+**Haiku is 7x faster and misses the one that matters.** It failed the fabricated guideline. If Haiku
+reviewed production talks, an invented guideline would pass BOTH layers unseen — the detectors cannot see
+it and the reviewer did not. That is not a trade worth 20 seconds for an app whose premise is that the
+citations are real. Everything else it caught, and quickly.
+
+### The first two runs were invalid, and the reasons are worth keeping
+
+1. **The prompt asked for the prose it then discarded.** `LECTURE_CRITIQUE_PROMPT` said "Work through this
+   checklist EXPLICITLY before deciding". Haiku obeyed — six of seven responses were markdown walk-throughs
+   the app threw away for not being JSON, which the harness reported as capability failures. Rewritten to
+   "work through this checklist INTERNALLY... do NOT write your reasoning out". Haiku's compliance went
+   6/7 unusable → 0/7, and its median 14.8s → 3.0s: twelve of those seconds were spent writing prose
+   nobody would ever read.
+2. **The restraint test measured the fixtures.** Both models "touched" both clean controls; reading the
+   patches showed they were APPENDING a missing treatment section, which check (4) of the critique prompt
+   explicitly instructs them to do. Appends are now separated from rewrites of existing text. One control
+   also contained a genuinely debatable claim, which both critics corrected and were right to.
+3. **The report file was overwritten per run**, so the Opus result was gone when it needed inspecting.
+   Reports are now per-model.
+
+Two of the three defects were mine, and the first published numbers said more about the instrument than
+about the models. Worth remembering before quoting any number from this file.
+
 ## PASS BAR (all six required)
 
 A model may draft user-facing content only if, across the frozen 20-row benchmark:
