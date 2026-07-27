@@ -43,7 +43,7 @@ ok(chips(claudeSearched, false).some(c => /Searched current sources/.test(c)), "
 ok(!chips(claudeNoSearch, false).some(c => /Searched current sources/.test(c)), "NO web-search chip when no search ran (toggle-on but _webSearched false)");
 const gemini = { _reviewStatus:"reviewed", _writtenBy:"gemini", _webSearched:false, _guidelinesLoaded:true, _ragCount:0 };
 ok(!chips(gemini, false).some(c => /Searched current sources/.test(c)), "Gemini never claims a web search");
-ok(chips(gemini, false).some(c => /Written by Gemini/.test(c)), "writer chip reflects Gemini");
+ok(chips(gemini, false).some(c => /Gemini/.test(c)), "the writer label still names Gemini (chip text shortened 2026-07-26)");
 
 // ---- 3) grounding claimed ONLY when a guideline matched and/or RAG hit -------
 const noGrounding = { _reviewStatus:"reviewed", _writtenBy:"claude", _guidelinesLoaded:false, _ragCount:0 };
@@ -56,7 +56,12 @@ ok(chips({ _reviewStatus:"reviewed", _guidelinesLoaded:true, _ragCount:2 }, fals
 ok(chips({ _reviewStatus:"reviewed", _citationsVerified:false }, true).some(c => /Checking citations/.test(c)), "citations 'checking' while audit pending");
 ok(!chips({ _reviewStatus:"reviewed", _citationsVerified:false }, false).some(c => /Citations checked/.test(c)), "review-complete does NOT imply citations checked");
 ok(chips({}, false).length === 0, "legacy talk (no _reviewStatus) shows no provenance chips");
-ok(chips(claudeSearched, false).some(c => /AI-reviewed/.test(c)), "a shown talk is labeled AI-reviewed");
+// "AI-reviewed" chip REMOVED 2026-07-26 (Jenni). An unreviewed draft is WITHHELD and never reaches the
+// talk view, so the chip had exactly one possible value and carried no information. The invariant it was
+// standing in for is enforced elsewhere and asserted properly: a talk without a completed review does not
+// render at all (test_parse_strict §7, test_generate_execution §4).
+ok(!chips(claudeSearched, false).some(c => /AI-reviewed/.test(c)), "the redundant AI-reviewed chip is gone");
+ok(chips({}, false).length === 0, "…and a talk with no review status still shows NO provenance at all");
 
 // ---- source-guards: behaviors that live in the generate/render flow ---------
 ok(/web_search_tool_result/.test(html) && /opts\.__webSearched\s*=\s*true/.test(html), "callAPI detects an actual web_search event (not the toggle)");
