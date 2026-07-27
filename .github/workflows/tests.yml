@@ -78,6 +78,10 @@ jobs:
       - name: Strict talk parsing (never render partial medical content)
         run: node test_parse_strict.mjs
 
+      # A present-but-hollow field renders as blank space — same harm as a missing one, harder to notice.
+      - name: Deep completeness gate + citation audit on every release path
+        run: node test_deep_completeness.mjs
+
       # Behavioural, not regex: executes the retry loop and inspects the request it reconstructs.
       - name: Retry evidence preservation + provenance stamping
         run: node test_retry_evidence.mjs

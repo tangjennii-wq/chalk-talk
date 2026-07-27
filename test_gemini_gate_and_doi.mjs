@@ -37,8 +37,11 @@ ok(/Gemini drafts, Claude reviews" was considered and rejected/.test(html), "rec
 
 // ── B. DOI verification ────────────────────────────────────────────────────────
 ok(/async function verifyModelDois\(/.test(html), "verifyModelDois() exists");
-ok((html.match(/verifyCitations\(await verifyModelDois\(await verifyModelPmids\(/g) || []).length === 3,
-   "DOI verification runs in ALL THREE audit paths, before verifyCitations");
+// FOUR paths can put an audited talk on screen: generate(), resumeAsyncJobIfAny(), retryReview() and
+// applyProofreadFeedback(). retryReview() ran verifyCitations() ALONE until 2026-07-26 — a semantic check
+// that never asks whether a PMID exists or a DOI belongs to the paper named. (Codex P1)
+ok((html.match(/verifyCitations\(await verifyModelDois\(await verifyModelPmids\(/g) || []).length === 4,
+   "DOI + PMID verification runs in ALL FOUR release paths, before verifyCitations");
 ok(/return any \? out : null;/.test(html), "a total network failure returns null → FAIL OPEN (drops nothing)");
 const vmdSrc = html.slice(html.indexOf("async function verifyModelDois("), html.indexOf("async function verifyModelDois(") + 4000);
 ok(/if\(!map\) return talk;/.test(vmdSrc), "network failure leaves the talk untouched");

@@ -101,7 +101,12 @@ function blockSrc(name) {
     async callAPIWithFallback(sys, content, maxTok, models, opts) {
       sent.push({ sys, content, maxTok, models, opts });
       // 2nd attempt returns a complete lecture talk
-      return { txt: JSON.stringify({ title: "T", summary_points: ["a"], visual_memory_card: { center: "c" }, sections: [{ heading: "h", points: ["p"] }] }), modelUsed: "claude-opus-5" };
+      // must satisfy the DEEP completeness gate — a 1-char heading and a single VMC quadrant are exactly
+      // what that gate now rejects, so a thin stub here would fail for the wrong reason. (2026-07-26)
+      return { txt: JSON.stringify({ title: "T",
+        summary_points: ["Correct slowly to avoid osmotic demyelination"],
+        visual_memory_card: { top_left: "Na <120", top_right: "Check urine osm", bottom_left: "SIADH", bottom_right: "Correct <8/24h" },
+        sections: [{ heading: "Physiology", points: ["ADH drives free water retention"] }] }), modelUsed: "claude-opus-5" };
     },
   };
   vm.createContext(ctx);
@@ -109,7 +114,10 @@ function blockSrc(name) {
     blockSrc("_appendNoteToContent"), fnSrc("_contentToText"), blockSrc("fixJSON"),
     lineOf(/^var _BOARD_TOPLEVEL_FIELDS = .*$/m), blockSrc("_hoistMisplacedBoardFields"),
     lineOf(/^var _REQUIRED_LECTURE_FIELDS = .*$/m), lineOf(/^var _REQUIRED_BOARDS_FIELDS  = .*$/m),
-    blockSrc("_missingTalkFields"), blockSrc("parseTalkStrict"),
+    lineOf(/^var _MIN_MEANINGFUL = .*$/m), lineOf(/^var _MIN_BOARD_PEARLS = .*$/m),
+    lineOf(/^function _meaningful\(.*$/m), blockSrc("_meaningfulList"),
+    lineOf(/^var _VMC_QUADRANTS = .*$/m), blockSrc("_vmcIncomplete"),
+    blockSrc("_missingTalkFields"), blockSrc("_normalizeTalkInPlace"), blockSrc("parseTalkStrict"),
     // the first draft is truncated mid-sections → parseTalkStrict throws → retry
     'var txt = \'{"title":"T","summary_points":["a"],"sections":[{"heading":"h"\';',
     'var uc = [{type:"text",text:"Create content on: \\"Hyponatremia\\"\\n\\nGUIDELINE CONTEXT: correct Na by <8 mEq/L/24h"},{type:"document",source:{type:"base64",data:"PDFBYTES"}}];',

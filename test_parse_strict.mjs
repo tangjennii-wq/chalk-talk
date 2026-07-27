@@ -27,16 +27,27 @@ function block(re) {
 }
 const line = (re) => (html.match(re) || [""])[0];
 
-const ctx = { console: { warn() {} } };
+const ctx = { console: { warn() {} }, S: { boardsDifficulty: 4 }, parseInt, String, Array, Object, JSON };
 vm.createContext(ctx);
+const objLiteral = (name) => { const i = html.indexOf("var " + name + " = {"); const e = /\n\};?/.exec(html.slice(i)); return html.slice(i, i + e.index + e[0].length); };
 vm.runInContext([
   block(/^function fixJSON\(/m),
+  objLiteral("BOARDS_DIFFICULTY"),
+  line(/^function boardsDifficulty\(.*$/m),
+  block(/^function _repairBoardQuestionInPlace\(/m),
   line(/^var _BOARD_TOPLEVEL_FIELDS = .*$/m),
   block(/^function _hoistMisplacedBoardFields\(/m),
+  line(/^var _MIN_MEANINGFUL = .*$/m), line(/^var _MIN_BOARD_PEARLS = .*$/m),
+  line(/^function _meaningful\(.*$/m),
+  block(/^function _meaningfulList\(/m),
+  line(/^var _VMC_QUADRANTS = .*$/m),
+  block(/^function _vmcIncomplete\(/m),
   line(/^var _REQUIRED_LECTURE_FIELDS = .*$/m),
   line(/^var _REQUIRED_BOARDS_FIELDS  = .*$/m),
   block(/^function _missingTalkFields\(/m),
+  block(/^function _normalizeTalkInPlace\(/m),
   block(/^function parseTalkStrict\(/m),
+  block(/^function _assertCompleteTalk\(/m),
 ].join("\n"), ctx);
 const parseTalkStrict = vm.runInContext("parseTalkStrict", ctx);
 const missingFields = vm.runInContext("_missingTalkFields", ctx);
@@ -68,11 +79,26 @@ try { parseTalkStrict(partialLecture, "lecture"); } catch (e) { e2 = e; }
 ok(!!e2 && e2.code === "incomplete_talk", "a partial LECTURE talk throws incomplete_talk (missing summary/VMC)");
 
 // ── 3) complete talks must still pass (no false rejections) ─────────────────────
-const goodBoards = { title: "T", question: { stem: "x" }, key_point: "kp", board_pearls: ["a"], visual_memory_card: { top_left: "a" } };
+// These fixtures used to be {question:{stem:"x"}, board_pearls:["a"], visual_memory_card:{top_left:"a"}} —
+// which the DEEP gate now rejects, correctly: that renders an unanswerable question and 3 blank quadrants.
+// A "does not over-reject" test is only meaningful against a talk a reader would actually accept. (2026-07-26)
+const VMC = { top_left: "Na <120", top_right: "Check urine osm", bottom_left: "SIADH", bottom_right: "Correct <8/24h" };
+const goodBoards = { title: "T", key_point: "Symptomatic hyponatremia needs hypertonic saline",
+  board_pearls: ["Correct <8 mEq/L/24h", "Check urine osmolality", "Treat symptoms, not the number"],
+  visual_memory_card: VMC,
+  question: { stem: "A 62-year-old with confusion and Na 112 mEq/L...", correct_letter: "C",
+    explanation: "Hypertonic saline is indicated when seizure risk is present.",
+    choices: [ { letter: "A", text: "Fluid restriction alone", correct: false }, { letter: "B", text: "Isotonic saline", correct: false },
+               { letter: "C", text: "3% hypertonic saline", correct: true }, { letter: "D", text: "Tolvaptan", correct: false },
+               { letter: "E", text: "Desmopressin", correct: false } ],
+    wrong_explanations: [ { letter: "A", why: "Too slow when symptomatic" }, { letter: "B", why: "Can worsen Na in SIADH" },
+                          { letter: "D", why: "Not first line acutely" }, { letter: "E", why: "Worsens water retention" } ],
+    difficulty_level: 4, difficulty_label: "Board-level" } };
 let okB = true; try { parseTalkStrict(JSON.stringify(goodBoards), "boards"); } catch { okB = false; }
 ok(okB, "a COMPLETE boards talk parses (the gate does not over-reject)");
 
-const goodLecture = { title: "T", sections: [{ heading: "h", points: ["p"] }], summary_points: ["a"], visual_memory_card: { top_left: "a" } };
+const goodLecture = { title: "T", sections: [{ heading: "Physiology", points: ["ADH drives free water retention"] }],
+  summary_points: ["Correct slowly to avoid ODS"], visual_memory_card: VMC };
 let okL = true; try { parseTalkStrict(JSON.stringify(goodLecture), "lecture"); } catch { okL = false; }
 ok(okL, "a COMPLETE lecture talk parses");
 
@@ -84,11 +110,12 @@ ok(missingFields(null, "lecture").length === 1, "null talk is reported missing, 
 // ── 4) the brace-drift recovery still runs BEFORE the completeness judgement ────
 // A boards talk whose top-level fields were nested inside `question` must be RECOVERED and accepted,
 // not rejected — otherwise the strict gate would throw away a talk the app can legitimately repair.
-const drifted = JSON.stringify({ title: "T", question: { stem: "x", key_point: "kp", board_pearls: ["a", "b"], visual_memory_card: { top_left: "a" } } });
+const drifted = JSON.stringify({ title: "T", question: Object.assign({}, goodBoards.question,
+  { key_point: goodBoards.key_point, board_pearls: goodBoards.board_pearls, visual_memory_card: VMC }) });
 let recovered = null;
 try { recovered = parseTalkStrict(drifted, "boards"); } catch { recovered = null; }
 ok(!!recovered, "a brace-drifted boards talk is RECOVERED by the hoist and then accepted");
-ok(recovered && recovered.key_point === "kp" && recovered.board_pearls.length === 2,
+ok(recovered && /hypertonic saline/.test(recovered.key_point) && recovered.board_pearls.length === 3,
    "the hoisted fields are present at top level after recovery");
 
 // ── 5) the draft path must actually use the strict parser ───────────────────────
@@ -140,20 +167,13 @@ ok(/kept your original untouched/.test(html.slice(revIdx, revIdx + 700)),
 
 // (f) the assertion itself behaves
 {
-  const actx = { console: { warn() {} } };
-  vm.createContext(actx);
-  vm.runInContext([
-    line(/^var _REQUIRED_LECTURE_FIELDS = .*$/m),
-    line(/^var _REQUIRED_BOARDS_FIELDS  = .*$/m),
-    block(/^function _missingTalkFields\(/m),
-    block(/^function _assertCompleteTalk\(/m),
-  ].join("\n"), actx);
-  const assertComplete = vm.runInContext("_assertCompleteTalk", actx);
+  // reuse the shared sandbox — a second minimal one silently missed the normalizer the gate now needs
+  const assertComplete = vm.runInContext("_assertCompleteTalk", ctx);
   let thrown = null;
   try { assertComplete({ title: "only a title" }, "boards", "critic rewrite"); } catch (e) { thrown = e; }
   ok(!!thrown && thrown.code === "incomplete_talk", "a rewrite carrying ONLY a title is rejected (the old weak test passed it)");
   ok(thrown && /critic rewrite/.test(thrown.message), "the error names WHICH candidate was incomplete");
-  const full = { title: "T", question: { stem: "x" }, key_point: "k", board_pearls: ["a"], visual_memory_card: { top_left: "a" } };
+  const full = JSON.parse(JSON.stringify(goodBoards));   // a REAL complete talk, not a title + one pearl
   let okFull = true; try { assertComplete(full, "boards", "x"); } catch { okFull = false; }
   ok(okFull, "a complete rewrite passes (no over-rejection)");
 }
@@ -198,7 +218,8 @@ ok((html.match(/var LECTURE_CRITIQUE_PROMPT = /g) || []).length === 1, "the lect
 // Both captured fixtures failed the same way: a brace slip deep inside sections[]/question{} orphaned
 // every top-level field that came AFTER it, so the *teaching payload* was the part lost. Emitting the
 // short top-level fields first means each is already written and closed before the long nesting starts,
-// so the same slip can only orphan trailing nesting. This is prompt-side structured output; it does not
+// so the same slip can only orphan trailing nesting. NOT schema-constrained output — the Anthropic
+// request supplies no schema and enforces nothing; this is a prompt-side mitigation only. It does not
 // replace parseTalkStrict, it reduces how much a slip can cost.
 {
   const schemaOf = (name) => {

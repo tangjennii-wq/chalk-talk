@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-18";
+var BUILD_ID = "2026-07-26-19";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1603,7 +1603,9 @@ async function resumeAsyncJobIfAny(){
     (async function(){
       try{
         var audited = await verifyCitations(await verifyModelDois(await verifyModelPmids(finalTalk)));
-        if(_auditGenId === S.genId && audited){ S.talk = audited; S.citationAuditPending = false; render(); }
+        // genId alone is not enough: opening a SAVED talk doesn't bump it, so a late audit could overwrite
+        // the talk the user is now reading. Identity guard, same as generate(). (Codex 2026-07-26)
+        if(_auditGenId === S.genId && S.talk === finalTalk && audited){ S.talk = audited; S.citationAuditPending = false; render(); }
       }catch(_){ if(_auditGenId === S.genId){ S.citationAuditPending = false; render(); } }
     })();
     if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
@@ -9094,7 +9096,13 @@ async function retryReview(){
   render();
   var ts = document.getElementById("talkStart"); if(ts) ts.scrollIntoView({behavior:"smooth", block:"start"});
   var _agid = S.genId;
-  (async function(){ try{ var au = await verifyCitations(finalTalk); if(_agid === S.genId && au){ S.talk = au; S.citationAuditPending = false; render(); } }catch(_){ if(_agid === S.genId){ S.citationAuditPending = false; render(); } } })();
+  // TRUST-BUT-VERIFY, SAME THREE STAGES AS NORMAL GENERATION (Codex 2026-07-26). This path used to run
+  // verifyCitations() alone — a SEMANTIC check of whether a source supports the claim. That never asks
+  // whether the identifier is real or belongs to the paper named, so a talk released after a successful
+  // review retry skipped live PMID existence checks and the DOI title/journal/year identity check. A
+  // release path that reaches the reader must not verify less than the path beside it.
+  var _talkBeforeAudit = finalTalk;
+  (async function(){ try{ var au = await verifyCitations(await verifyModelDois(await verifyModelPmids(_talkBeforeAudit))); if(_agid === S.genId && S.talk === _talkBeforeAudit && au){ S.talk = au; S.citationAuditPending = false; render(); } }catch(_){ if(_agid === S.genId){ S.citationAuditPending = false; render(); } } })();
 }
 // Persist the withheld draft across refresh/reopen (Jenni 2026-07 — Codex) so a review that couldn't
 // finish isn't silently lost. Cleared on discard or on successful review.
@@ -9239,6 +9247,25 @@ function refineWriterModel(){
 // the fix for a truncated talk is a retry, not a lower bar.
 var _REQUIRED_LECTURE_FIELDS = ["title", "sections", "summary_points", "visual_memory_card"];
 var _REQUIRED_BOARDS_FIELDS  = ["title", "question", "key_point", "board_pearls", "visual_memory_card"];
+// A PRESENT-BUT-HOLLOW field renders as blank space, which is the same harm as a missing one and is
+// harder for the reader to notice. The first version of this gate only asked "is the top-level value
+// non-empty", so `sections: [{}]` and `visual_memory_card: {top_left:"x"}` both passed and rendered a
+// talk with empty section bodies and three blank quadrants. Every rule below is tied to something the
+// renderer actually reads — see the field audit in the commit message. (Codex 2026-07-26)
+var _MIN_MEANINGFUL = 3;          // "x" is not a teaching point; "AKI" is. Deliberately low.
+var _MIN_BOARD_PEARLS = 3;        // the prompt asks for 5; reject a skeleton, don't fail a talk over an off-by-one
+function _meaningful(v){ return typeof v === "string" && v.trim().length >= _MIN_MEANINGFUL; }
+function _meaningfulList(v, min){
+  if(!Array.isArray(v) || v.length < (min || 1)) return false;
+  for(var i=0;i<v.length;i++){ if(!_meaningful(v[i])) return false; }   // one blank bullet is one blank bullet
+  return true;
+}
+// All four quadrants — the card renders a 2x2 grid, so a single filled quadrant is three empty boxes.
+var _VMC_QUADRANTS = ["top_left", "top_right", "bottom_left", "bottom_right"];
+function _vmcIncomplete(v){
+  if(!v || typeof v !== "object" || Array.isArray(v)) return _VMC_QUADRANTS.slice();
+  return _VMC_QUADRANTS.filter(function(q){ return !_meaningful(v[q]); });
+}
 function _missingTalkFields(talk, style){
   if(!talk || typeof talk !== "object") return ["(no object)"];
   var req = (style === "boards") ? _REQUIRED_BOARDS_FIELDS : _REQUIRED_LECTURE_FIELDS;
@@ -9250,6 +9277,50 @@ function _missingTalkFields(talk, style){
              || (typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length);
     if(empty) missing.push(f);
   }
+
+  // ── depth: the required fields exist, but are they usable? ──────────────────
+  var bad = _vmcIncomplete(talk.visual_memory_card);
+  if(bad.length && missing.indexOf("visual_memory_card") < 0){
+    missing.push("visual_memory_card." + bad.join("/"));
+  }
+
+  if(style !== "boards"){
+    if(Array.isArray(talk.sections) && talk.sections.length){
+      for(var s=0;s<talk.sections.length;s++){
+        var sec = talk.sections[s] || {}, why = [];
+        if(!_meaningful(sec.heading)) why.push("heading");                 // renderer prints s.heading
+        if(!_meaningfulList(sec.points, 1)) why.push("points");            // s.points is the teaching body
+        if(why.length) missing.push("sections[" + s + "]." + why.join("+"));
+      }
+    }
+    if(!_meaningfulList(talk.summary_points, 1) && missing.indexOf("summary_points") < 0) missing.push("summary_points(hollow)");
+  } else {
+    var q = talk.question;
+    if(q && typeof q === "object" && missing.indexOf("question") < 0){
+      var qbad = [];
+      if(!_meaningful(q.stem)) qbad.push("stem");
+      var ch = Array.isArray(q.choices) ? q.choices : [];
+      if(ch.length !== 5) qbad.push("choices(" + ch.length + "≠5)");
+      else {
+        for(var c=0;c<5;c++){ if(!ch[c] || !_meaningful(ch[c].text) || !/^[A-E]$/.test(String(ch[c].letter || ""))) { qbad.push("choices[" + c + "]"); } }
+        var correct = ch.filter(function(x){ return x && x.correct === true; });
+        if(correct.length !== 1) qbad.push("correct(" + correct.length + "≠1)");
+        else if(String(q.correct_letter || "") !== String(correct[0].letter)) qbad.push("correct_letter≠flagged");
+      }
+      if(!_meaningful(q.explanation)) qbad.push("explanation");
+      var lvl = parseInt(q.difficulty_level, 10);
+      if(!(lvl >= 1 && lvl <= 5)) qbad.push("difficulty_level");
+      if(!_meaningful(q.difficulty_label)) qbad.push("difficulty_label");
+      // one "why" per incorrect option — the renderer lists these under the answer
+      if(!Array.isArray(q.wrong_explanations) || q.wrong_explanations.length < 4
+         || q.wrong_explanations.some(function(w){ return !w || !_meaningful(w.why) || !/^[A-E]$/.test(String(w.letter || "")); })) qbad.push("wrong_explanations");
+      if(qbad.length) missing.push("question." + qbad.join("+"));
+    }
+    if(!_meaningful(talk.key_point) && missing.indexOf("key_point") < 0) missing.push("key_point(hollow)");
+    if(!_meaningfulList(talk.board_pearls, _MIN_BOARD_PEARLS) && missing.indexOf("board_pearls") < 0){
+      missing.push("board_pearls(<" + _MIN_BOARD_PEARLS + " usable)");
+    }
+  }
   return missing;
 }
 // Assert a talk object is schema-complete before it is allowed to become S.talk. Throws incomplete_talk.
@@ -9258,6 +9329,7 @@ function _missingTalkFields(talk, style){
 // talk has REWRITTEN what the reader sees, and the old `parsed.title || parsed.question` test accepted a
 // rewrite carrying nothing but a title. (Codex 2026-07-26)
 function _assertCompleteTalk(talk, style, label){
+  _normalizeTalkInPlace(talk, style);             // same normalization the draft gets, or the bar differs by path
   var missing = _missingTalkFields(talk, style);
   if(missing.length){
     var e = new Error((label || "talk") + " is incomplete, missing " + missing.join(", "));
@@ -9269,9 +9341,24 @@ function _assertCompleteTalk(talk, style, label){
 
 // Parse a model response the way production must: repair, then VERIFY. Throws on anything incomplete so
 // the caller's existing failure path runs (retry / honest error) instead of rendering a partial talk.
+// Deterministic normalization that must happen BEFORE judging completeness, or the gate rejects talks the
+// app can legitimately repair: the hoist recovers brace-drifted top-level fields, and the board repair
+// reconciles choice letters, the correct flag vs correct_letter, and difficulty. The completeness rules
+// assert POST-normalization invariants (exactly one flagged answer, correct_letter matching it), so
+// running them before the repair would fail a perfectly recoverable question. (Codex 2026-07-26)
+function _normalizeTalkInPlace(talk, style){
+  if(!talk || typeof talk !== "object") return talk;
+  if(style === "boards"){
+    _hoistMisplacedBoardFields(talk);
+    if(talk.question && typeof talk.question === "object"){
+      try { _repairBoardQuestionInPlace(talk.question, boardsDifficulty()); } catch(_){}
+    }
+  }
+  return talk;
+}
 function parseTalkStrict(txt, style){
   var talk = JSON.parse(fixJSON(txt));            // throws on unrecoverable output — correct, don't loosen
-  if(style === "boards") _hoistMisplacedBoardFields(talk);   // recover known brace-drift before judging
+  _normalizeTalkInPlace(talk, style);             // recover brace-drift + repair the question, THEN judge
   var missing = _missingTalkFields(talk, style);
   if(missing.length){
     var e = new Error("incomplete_talk: fixJSON salvaged a PARTIAL object, missing " + missing.join(", "));

@@ -356,8 +356,11 @@ problem, not a `fixJSON` deficiency** — which is why the fix is NOT to loosen 
 * **Stricter, not more permissive.** A truncated talk now fails the generation rather than rendering half
   a talk the reader cannot audit.
 
-**Done since (build 2026-07-26-17)** — the prompt-side half of Codex's preferred direction, chosen over
-API-shape changes because it carries zero request-format risk:
+**Done since (build 2026-07-26-17)** — a prompt-side MITIGATION, chosen over API-shape changes because it
+carries zero request-format risk. Naming, precisely (Codex): this is **not schema-constrained structured
+output**. The Anthropic request supplies no schema and the API enforces nothing; the model can still emit
+unbalanced JSON. What changed is how much a slip can cost, plus a strict post-parse gate and one bounded
+free-text retry:
 
 * **Schema reorder — the large nested structure is emitted LAST.**
   * lecture: `title, subtitle, guideline_sources, summary_points, visual_memory_card, references, sections[]`
