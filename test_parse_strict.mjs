@@ -86,5 +86,67 @@ ok(recovered && recovered.key_point === "kp" && recovered.board_pearls.length ==
 ok(/var draftTalk = parseTalkStrict\(txt, S\.style\);/.test(html), "generate() parses the draft with parseTalkStrict");
 ok(!/var draftTalk = JSON\.parse\(fixJSON\(txt\)\);/.test(html), "the old unchecked JSON.parse(fixJSON(...)) draft path is gone");
 
+
+// ── 6) EVERY path that can become S.talk must be gated (Codex 2026-07-26) ───────
+// The first pass only covered the synchronous draft. These were the holes: the RESUMED async draft
+// parsed raw, and the critic's replacement talk on all three review paths was accepted on nothing more
+// than `parsed.title || parsed.question` — so a rewrite carrying only a title would have rendered.
+ok(/function _assertCompleteTalk\(/.test(html), "_assertCompleteTalk() exists for non-draft candidates");
+
+// (a) resumed async draft
+const resumeSrc = html.slice(html.indexOf("async function resumeAsyncJobIfAny"), html.indexOf("async function resumeAsyncJobIfAny") + 4000);
+ok(/parseTalkStrict\(txt, S\.style\)/.test(resumeSrc), "the RESUMED async draft goes through parseTalkStrict");
+ok(!/var draftTalk = pruneFakeReferences\(deepCleanCitations\(JSON\.parse\(fixJSON\(txt\)\)\)\)/.test(html),
+   "the resumed draft's raw JSON.parse path is gone");
+ok(/_assertCompleteTalk\(parsed, S\.style, "resumed critic rewrite"\)/.test(resumeSrc),
+   "the resumed CRITIC rewrite is asserted complete before it is accepted");
+
+// (b) generate()'s critic
+ok(/_assertCompleteTalk\(parsed, S\.style, "critic rewrite"\)/.test(html),
+   "generate()'s critic rewrite is asserted complete (a partial rewrite fails the review → retry → withhold)");
+// (c) retryReview()'s critic
+ok(/_assertCompleteTalk\(parsed, rp\.style \|\| S\.style, "retried critic rewrite"\)/.test(html),
+   "retryReview()'s critic rewrite is asserted complete (partial stays withheld)");
+// the weak old acceptance test must no longer stand alone anywhere
+const weakAccepts = (html.match(/else if \(?parsed\.title \|\| parsed\.question\)? \{ finalTalk = parsed/g) || []).length;
+ok(weakAccepts === 0, "no critic path still accepts a rewrite on `title || question` alone");
+
+// (d) full-talk refine replacements
+for (const [needle, what] of [
+  ['_assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "restructured talk")', "restructureTalk"],
+  ['_assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "compressed talk")', "compressTalk"],
+  ['_assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "expanded talk")', "expandTalk"],
+]) ok(html.includes(needle), `${what} validates its full-talk replacement before display`);
+
+// (e) PATCH merges — the merged RESULT is what the reader sees
+ok(/_assertCompleteTalk\(revised, S\.style, "proofread-merged talk"\)/.test(html),
+   "the proofread-merged talk is validated before assignment");
+ok(/_assertCompleteTalk\(merge\.talk, S\.style, "weave-merged talk"\)/.test(html),
+   "the weave-merged talk is validated before assignment");
+// and a rejected merge must keep the original rather than blanking the talk
+const revIdx = html.indexOf('"proofread-merged talk"');
+ok(/kept your original untouched/.test(html.slice(revIdx, revIdx + 700)),
+   "a rejected proofread merge KEEPS the original talk (no blank screen)");
+
+// (f) the assertion itself behaves
+{
+  const actx = { console: { warn() {} } };
+  vm.createContext(actx);
+  vm.runInContext([
+    line(/^var _REQUIRED_LECTURE_FIELDS = .*$/m),
+    line(/^var _REQUIRED_BOARDS_FIELDS  = .*$/m),
+    block(/^function _missingTalkFields\(/m),
+    block(/^function _assertCompleteTalk\(/m),
+  ].join("\n"), actx);
+  const assertComplete = vm.runInContext("_assertCompleteTalk", actx);
+  let thrown = null;
+  try { assertComplete({ title: "only a title" }, "boards", "critic rewrite"); } catch (e) { thrown = e; }
+  ok(!!thrown && thrown.code === "incomplete_talk", "a rewrite carrying ONLY a title is rejected (the old weak test passed it)");
+  ok(thrown && /critic rewrite/.test(thrown.message), "the error names WHICH candidate was incomplete");
+  const full = { title: "T", question: { stem: "x" }, key_point: "k", board_pearls: ["a"], visual_memory_card: { top_left: "a" } };
+  let okFull = true; try { assertComplete(full, "boards", "x"); } catch { okFull = false; }
+  ok(okFull, "a complete rewrite passes (no over-rejection)");
+}
+
 console.log("\n" + (failures === 0 ? "✔ STRICT PARSE TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

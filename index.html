@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-14";
+var BUILD_ID = "2026-07-26-15";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1511,15 +1511,21 @@ async function resumeAsyncJobIfAny(){
     try{ localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); }catch(_){}
     var txt = (res && res.draftText) || "";
     if(!txt.trim()) throw new Error("Empty response");
-    var draftTalk = pruneFakeReferences(deepCleanCitations(JSON.parse(fixJSON(txt))));
+    // STRICT (Codex 2026-07-26): the resumed async draft reaches S.talk exactly like the synchronous one,
+    // so it gets the same schema gate. A throw here fails the resume — nothing partial is rendered.
+    var draftTalk = pruneFakeReferences(deepCleanCitations(parseTalkStrict(txt, S.style)));
     var finalTalk = draftTalk;
     var critTxt = (res && res.critText) || "";
     if(critTxt && critTxt.trim()){
       try{
         var parsed = deepCleanCitations(JSON.parse(fixJSON(critTxt)));
         if(parsed.verdict === "clean") finalTalk = draftTalk;
-        else if(parsed.title || parsed.question) finalTalk = parsed;
-      }catch(_){}
+        else if(parsed.title || parsed.question){
+          if(S.style === "boards") _hoistMisplacedBoardFields(parsed);
+          _assertCompleteTalk(parsed, S.style, "resumed critic rewrite");   // partial rewrite → throw
+          finalTalk = parsed;
+        }
+      }catch(_){ /* incomplete or unparseable critique → keep the VALIDATED draft, never a partial rewrite */ }
     }
     finalTalk = pruneFakeReferences(finalTalk);
     finalTalk = _normalizeInlinePmids(finalTalk);
@@ -7043,9 +7049,16 @@ async function generate(){
         }
         if (!critTxt || !critTxt.trim()) throw new Error("empty review response");
         var parsed = deepCleanCitations(JSON.parse(fixJSON(critTxt)));
-        // "clean" verdict keeps the draft; otherwise the parsed object IS the corrected talk.
+        // "clean" verdict keeps the draft; otherwise the parsed object IS the corrected talk — i.e. the
+        // critic has REWRITTEN what the reader sees, so it must satisfy the schema in full. A partial
+        // rewrite throws, which the catch below treats as a failed review: retry once, then WITHHOLD.
+        // (The old test accepted any object carrying a title.) (Codex 2026-07-26)
         if (parsed.verdict === "clean") { finalTalk = draftTalk; critiqueOK = true; }
-        else if (parsed.title || parsed.question) { finalTalk = parsed; critiqueOK = true; }
+        else if (parsed.title || parsed.question) {
+          if (S.style === "boards") _hoistMisplacedBoardFields(parsed);
+          _assertCompleteTalk(parsed, S.style, "critic rewrite");
+          finalTalk = parsed; critiqueOK = true;
+        }
         else throw new Error("unrecognized review output");
       } catch(critErr) {
         lastCritErr = critErr;
@@ -7544,7 +7557,8 @@ async function restructureTalk(userMsg){
     text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (restructure per the user's request; preserve every bullet, fact, and citation):\n" + existingJson
   }];
   var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel() });
-  var restructured = JSON.parse(fixJSON(txt));
+  // full-talk replacement → same schema gate as a draft (Codex 2026-07-26)
+  var restructured = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "restructured talk");
   if(typeof deepCleanCitations === "function") restructured = deepCleanCitations(restructured);
   if(typeof pruneFakeReferences === "function") restructured = pruneFakeReferences(restructured);
   return restructured;
@@ -7724,6 +7738,13 @@ async function applyProofreadFeedback(userMsg){
       } else if(!result.applied || result.applied.length === 0){
         S.msgs.push({r:"a",t:"ℹ️ I read the feedback but didn't find a concrete change to make — it either confirms the talk is accurate or is too general to act on. If there's a specific fix, quote the exact bullet or tell me what it should say."});
       } else {
+        // The merged result is what the reader sees, so it goes through the same gate. A patch that blanks
+        // summary_points or the memory card would otherwise render a partial talk. (Codex 2026-07-26)
+        try { _assertCompleteTalk(revised, S.style, "proofread-merged talk"); }
+        catch(_incomplete){
+          S.msgs.push({r:"a",t:"⚠ Applying that would have left the talk incomplete (" + (_incomplete.missing||[]).join(", ") + "), so I kept your original untouched. Try applying the corrections one at a time."});
+          if(refineTimer){ clearInterval(refineTimer); refineTimer=null; } S._proofreadRunning=false; S.chatBusy=false; render(); return;
+        }
         S.talk = revised;
         // CHARGE HERE, not on parse (2026-07-26): this is the only branch that actually changes the
         // user's talk. The four guard branches above keep the original untouched, and charging before
@@ -7824,7 +7845,8 @@ async function compressTalk(userMsg){
   }];
   // No file refs needed — this is a copy-edit of the existing talk, not a content addition.
   var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk" });
-  var compressed = JSON.parse(fixJSON(txt));   // parse before charging — malformed = no charge
+  // parse before charging — malformed OR incomplete = no charge, no render (Codex 2026-07-26)
+  var compressed = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "compressed talk");
   if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }   // was a free full generation with no consume (quota bypass)
   if(typeof deepCleanCitations === "function") compressed = deepCleanCitations(compressed);
   if(typeof pruneFakeReferences === "function") compressed = pruneFakeReferences(compressed);
@@ -7881,7 +7903,8 @@ async function expandTalk(userMsg){
   }].concat(buildReferenceParts(S.files));
   // Higher max — expansion grows the talk so we need headroom.
   var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk" });
-  var expanded = JSON.parse(fixJSON(txt));   // parse before charging — malformed = no charge
+  // parse before charging — malformed OR incomplete = no charge, no render (Codex 2026-07-26)
+  var expanded = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "expanded talk");
   if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }   // was a free full generation with no consume (quota bypass)
   if(typeof deepCleanCitations === "function") expanded = deepCleanCitations(expanded);
   if(typeof pruneFakeReferences === "function") expanded = pruneFakeReferences(expanded);
@@ -8470,6 +8493,12 @@ async function sendChat(){
           var warnMsg = (merge.warnings && merge.warnings.length) ? " \u2014 " + merge.warnings.join("; ") : "";
           S.msgs.push({r:"a",t:"\u2139\ufe0f Nothing landed" + warnMsg + ". Try a more specific phrasing or say \"rewrite\" for a full regenerate."});
         } else {
+          // same gate for a weave-patch merge — validate what will be displayed (Codex 2026-07-26)
+          try { _assertCompleteTalk(merge.talk, S.style, "weave-merged talk"); }
+          catch(_inc){
+            S.msgs.push({r:"a",t:"⚠ That edit would have left the talk incomplete (" + (_inc.missing||[]).join(", ") + "), so I kept your original. Try a narrower change."});
+            S.chatBusy=false; render(); return;
+          }
           S.talk = merge.talk;
           // VMC staleness (Jenni 2026-07-03): if the refine changed content but the model didn't
           // update the memory card, flag it so the reader knows the card may lag the latest edits.
@@ -8882,7 +8911,11 @@ async function retryReview(){
       if (!txt || !txt.trim()) throw new Error("empty review response");
       var parsed = deepCleanCitations(JSON.parse(fixJSON(txt)));
       if (parsed.verdict === "clean") { finalTalk = rp.draft; ok = true; }
-      else if (parsed.title || parsed.question) { finalTalk = parsed; ok = true; }
+      else if (parsed.title || parsed.question) {
+        if ((rp.style || S.style) === "boards") _hoistMisplacedBoardFields(parsed);
+        _assertCompleteTalk(parsed, rp.style || S.style, "retried critic rewrite");   // partial → stays withheld
+        finalTalk = parsed; ok = true;
+      }
       else throw new Error("unrecognized review output");
     } catch(e){ err = e; console.warn("retryReview attempt " + (a+1) + " failed:", e && e.message); }
   }
@@ -9025,6 +9058,21 @@ function _missingTalkFields(talk, style){
   }
   return missing;
 }
+// Assert a talk object is schema-complete before it is allowed to become S.talk. Throws incomplete_talk.
+// Used for EVERY candidate that can reach the screen, not just the synchronous draft: the resumed async
+// draft, and the critic's replacement talk on all three review paths. A critic that returns a corrected
+// talk has REWRITTEN what the reader sees, and the old `parsed.title || parsed.question` test accepted a
+// rewrite carrying nothing but a title. (Codex 2026-07-26)
+function _assertCompleteTalk(talk, style, label){
+  var missing = _missingTalkFields(talk, style);
+  if(missing.length){
+    var e = new Error((label || "talk") + " is incomplete, missing " + missing.join(", "));
+    e.code = "incomplete_talk"; e.missing = missing;
+    throw e;
+  }
+  return talk;
+}
+
 // Parse a model response the way production must: repair, then VERIFY. Throws on anything incomplete so
 // the caller's existing failure path runs (retry / honest error) instead of rendering a partial talk.
 function parseTalkStrict(txt, style){
