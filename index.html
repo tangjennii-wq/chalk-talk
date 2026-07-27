@@ -5708,6 +5708,9 @@ async function checkForUpdates(){
     var items = Array.isArray(parsed.updates) ? parsed.updates.slice(0, 8) : [];
     items = await _verifyProposedUpdates(items);
     if(S.talk !== _target || _uid !== S.genId) return;
+    // Record that a check HAPPENED even when nothing came back. "We looked on this date and found
+    // nothing verifiable" is a different, more useful statement than silence. (Codex 2026-07-26)
+    _target._updateChecked = new Date().toISOString().slice(0, 10);
     S.updateCheck = { status: "done", items: items, err: "", checkedAt: Date.now() };
   }catch(e){
     if(S.talk !== _target || _uid !== S.genId) return;
@@ -5723,20 +5726,32 @@ function applySelectedUpdates(){
   if(!uc || uc.status !== "done" || !S.talk) return;
   var chosen = uc.items.filter(function(x){ return x._verified && x._selected; });
   if(!chosen.length) return;
+  // UNDOABLE + DIRTY (Codex 2026-07-26). Adding references is an edit to the talk. Without this a
+  // previously-saved talk kept showing "✓ Saved" while holding unsaved additions, and the user could
+  // navigate away and lose them — silently, having just been told they were added.
+  pushTalkHistory("added " + chosen.length + " reference" + (chosen.length === 1 ? "" : "s") + " from an update check");
   var t = S.talk;
   t.references = (t.references || []).slice();
   var nextId = t.references.reduce(function(m, r){ return Math.max(m, parseInt(r.id, 10) || 0); }, 0);
   chosen.forEach(function(x){
+    // src_verified IS THE FIELD THAT MATTERS (Codex 2026-07-26). pruneFakeReferences keeps a reference
+    // only if it is cited by a [N] marker, retrieved into S.ragChunks, named verbatim in the body,
+    // user-uploaded, or src_verified. An update-added reference is NONE of the first four — it is not
+    // cited inline, by design, because we never touch the teaching text. Marking it only with a
+    // confidence string left it prunable, so the next refine/expand would have silently deleted the
+    // references the user had just chosen to add.
     t.references.push({ id: ++nextId, source: x.title, year: x.year, society: x.journal || "",
       pmid: String(x.pmid), url: "https://pubmed.ncbi.nlm.nih.gov/" + x.pmid + "/",
-      type: "update", confidence: "pmid_verified", added_by_update_check: true });
+      type: "update", src_verified: "pubmed", confidence: "high", provenance: "pubmed_verified",
+      added_by_update_check: true });
   });
   t._updateChecked = new Date().toISOString().slice(0, 10);
   t._updatesAdded = (t._updatesAdded || 0) + chosen.length;
+  S.talkIsSaved = false;   // the talk now differs from what is in the library
   S.updateCheck = null;
-  S.savedFlash = "\u2713 Added " + chosen.length + " newer reference" + (chosen.length === 1 ? "" : "s") + " — the teaching text was not changed";
+  S.savedFlash = "\u2713 Added " + chosen.length + " newer reference" + (chosen.length === 1 ? "" : "s") + " — save to keep them. The teaching text was not changed.";
   render();
-  setTimeout(function(){ S.savedFlash = ""; render(); }, 4000);
+  setTimeout(function(){ S.savedFlash = ""; render(); }, 5000);
 }
 
 // Batched PubMed esummary lookup (one call, comma-joined ids). Returns map pmid -> {ok, year, title,
