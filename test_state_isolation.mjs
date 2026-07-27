@@ -53,7 +53,10 @@ ctx.S = { talk: { title: "old" }, topic: "Old", loadedTalkId: "xyz", talkIsSaved
 clear();
 ok(ctx.S.talk === null && ctx.S.topic === "" && ctx.S.loadedTalkId === null && ctx.S.talkIsSaved === false,
    "without keepIdentity everything resets (New talk) — incl. loadedTalkId, so a new talk can't overwrite a saved row");
-ok(ctx.S.wantWebSearch === true, "web search returns to its always-on default for a fresh talk");
+// Flipped 2026-07-26: drafting no longer searches the web. Live search sat on the critical path of every
+// generation and its results were absorbed invisibly; recency is now an explicit post-generation check.
+// Still a RESET assertion — the point is that a fresh talk does not inherit the previous talk's setting.
+ok(ctx.S.wantWebSearch === false, "a fresh talk resets web search to OFF (drafting uses the curated corpus)");
 
 // ── 4) resetAll must clear the withheld draft, else '+ New talk' is a no-op ─────
 const resetSrc = html.slice(html.indexOf("function resetAll()"), html.indexOf("function resetAll()") + 700);

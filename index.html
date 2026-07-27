@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-22";
+var BUILD_ID = "2026-07-26-23";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3229,7 +3229,13 @@ var SAMPLES = [
 var S = {
   // — Compose form / generation
   topic:"", style:"lecture", depth:"concise", refineContext:"", files:[],
-  wantWebSearch:true, queueAudio:false, genId:0,   // always search the web while drafting; no compose toggle
+  // DRAFTING NO LONGER SEARCHES THE WEB (Jenni's design, 2026-07-26). Live search sat on the critical
+  // path of every generation — up to 3 round trips before a single word was written — and its results
+  // were absorbed into the draft invisibly, so nobody could see what it had changed or where it came
+  // from. Drafting now uses the curated guidelines + the verified 559-trial corpus, which is both faster
+  // and fully auditable. Recency is handled AFTER the talk exists, by an explicit "Check for updates"
+  // that shows proposed additions for review instead of silently rewriting.
+  wantWebSearch:false, queueAudio:false, genId:0,
   // Showcase / portfolio view — Phase 2 sharing MVP (Jenni 2026-06-08)
   showcase:false, showcaseLoading:false, showcaseTalks:[], showcaseProfile:null, showcaseCuratorId:null,
   // Landing-page featured cache — populated by loadLandingFeatured() on app init
@@ -9048,7 +9054,7 @@ function rebuildLesson(){
   // the new draft is retrieved and cited exactly like a fresh generation.
   S.depthVariantsCache=null; S._pendingDepthMerge=false; S.ragChunks=[];
   S.depth="concise";   // every new talk starts on the fast path; Detailed is a post-generation expansion
-  S.wantWebSearch=true;
+  S.wantWebSearch=false;
   generate();
 }
 
@@ -9553,7 +9559,7 @@ function _clearTalkScoped(opts){
   if(!keepIdentity){
     S.talk=null; S.topic=""; S.loadedTalkId=null; S.talkIsSaved=false;
     S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false; S.sharedCopySaved=false;
-    S.wantWebSearch=true;   // always-on default for a fresh talk
+    S.wantWebSearch=false;   // fresh talks draft from the curated corpus; recency is a post-hoc check
   }
   S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview"; S.allExpanded=false;
   S.files=[];                                   // uploaded references are per-talk
@@ -11083,11 +11089,9 @@ function renderMain(){
       // the user had already waited, and pressing it threw that work away. Generation is always Concise
       // now; Detailed is a toggle on the finished talk, which expands what you already have instead of
       // starting over. Nothing about the run should be changeable while it runs.
-      // Verify toggle — restarts generation on toggle (in either direction)
-      h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
-      h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px"><span style="font-size:13px">🔬</span>Search the web while drafting</span>';
-      h+='<span class="toggle-sw"><input type="checkbox" id="loadingVerifyCheck" '+(S.wantWebSearch?"checked":"")+'><span class="slider"></span></span>';
-      h+='</div>';
+      // WEB-SEARCH TOGGLE REMOVED from the generating panel too (2026-07-26). Flipping it RESTARTED the
+      // generation, throwing away work the user had already waited for — and drafting no longer searches
+      // the web at all. Recency is now an explicit post-generation check on the finished talk.
       // Audio queue toggle — same switch UX as Verify. No restart needed; flag is read after gen completes.
       h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">';
       h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px"><span style="font-size:13px">🎧</span>Queue audio version</span>';
@@ -12338,11 +12342,8 @@ function bindMain(){
   // Audio toggle just sets a flag (no restart) — fires after the current generation completes.
   // (the mid-generation depth buttons and their restart handler are gone — see the note in the
   //  "Change anytime" panel. Generation is Concise-only; Detailed expands the finished talk.)
-  var lvc=document.getElementById("loadingVerifyCheck");
-  if(lvc) lvc.onchange=function(e){
-    S.wantWebSearch=e.target.checked;
-    restartGen();
-  };
+  // (the mid-generation web-search toggle and its restart handler are gone — see the note in the
+  //  generating panel. Drafting no longer searches; recency is a post-generation check.)
   var lat=document.getElementById("loadingAudioToggle");
   if(lat) lat.onchange=function(e){
     S.queueAudio=e.target.checked;
