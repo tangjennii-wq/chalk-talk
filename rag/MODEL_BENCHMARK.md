@@ -90,6 +90,29 @@ A model may draft user-facing content only if, across the frozen 20-row benchmar
 Also required, though not model-quality: the app's own safety gate must remain intact — the review
 always runs, retries once, and **withholds** the draft if it cannot finish.
 
+### ⚠️ Item 1 is only meaningful if the verifiers actually ran (harness defect, fixed 2026-07-26)
+
+Items 1's two detectors both fail **open** on purpose — a flaky NLM endpoint must not fail a good talk.
+But nothing carried "could not check" forward into the verdict, so a run with no network access to the
+verifiers printed `fabricated citations 0 · drug misspellings 0` and `✔ SAFETY GATE PASSED`, character
+for character identical to a run in which every citation was confirmed to exist. Fabrication detection
+*is* this gate, and the harness was rendering "unknown" as "clean".
+
+Now: rows carry `uncheckable_pmids` and `unverified_drug_candidates`, the summary prints an explicit
+**NOT VERIFIED** line, and the gate returns **GATE INCONCLUSIVE (exit 2)** — never PASSED — if either
+count is non-zero. Covered by `test_eval_harness.mjs` (in CI), which asserts the guard precedes the
+PASSED line, because the ordering is the entire safety property.
+
+**Retroactive limit, stated plainly:** `rag/eval_gemini_report.json` is gitignored and overwritten each
+run, so the raw evidence for the results recorded below no longer exists. Those runs were executed from
+a normal network and their consoles showed live `(verifying N PMIDs)` progress, so the verifiers were
+almost certainly reachable — but that cannot now be *proven* per row. It does not change any recorded
+verdict (every one below is a FAIL or an explicit non-clearance), and `claude-opus-5` remains marked
+CLEARED, ON NOTICE rather than proven. Future runs are auditable because the counts are in the report.
+
+**Any run whose verifiers were unreachable cannot clear a writer**, regardless of how clean it looks.
+Reruns from a sandbox are structurally useful (JSON validity, schema completeness) and *safety-blind*.
+
 ---
 
 ## Frozen benchmark
@@ -172,11 +195,24 @@ be the thing that clears or blocks a model on their own.
 
 ### Pending: the full 20-row runs
 
+Run these from a machine that can reach `www.ebi.ac.uk` and `rxnav.nlm.nih.gov`, or the gate returns
+INCONCLUSIVE (see the note under the PASS BAR). Always `mv` the report afterwards — the harness
+overwrites `rag/eval_gemini_report.json` on every run.
+
 ```bash
-node rag/eval_gemini_quality.mjs --provider claude --claude-model claude-sonnet-5      # 20 rows
-mv rag/eval_gemini_report.json rag/eval_sonnet5_full20.json
+# 1. Verify the 2026-07-26-17 change (schema reorder + bounded draft retry) on PRODUCTION routing.
+#    Reference-only: no candidate arm, no A/B judge, absolute criteria applied to opus-5 itself.
+node rag/eval_gemini_quality.mjs --no-candidate
+mv rag/eval_gemini_report.json rag/eval_opus5_rerun_after_reorder.json
+#    Reading it: 20/20 valid JSON + schema-complete is the specific thing the change was for.
+#    1 structural failure in 20 was the pre-change rate, so 20/20 is encouraging, not proof.
+
+# 2. The still-unbenchmarked writer that users can already reach (ChatGPT BYOK).
+node rag/eval_gemini_quality.mjs --provider openai --openai-model gpt-5.6-sol
+mv rag/eval_gemini_report.json rag/eval_gpt56sol_full20.json
+
+# others, only if needed
 node rag/eval_gemini_quality.mjs --provider claude --claude-model claude-opus-4-8      # if you ever need 4-8 back
-node rag/eval_gemini_quality.mjs --provider openai --openai-model gpt-5.6-sol          # BYOK, still live + untested
 ```
 
 Route based on the results — **do not ship routing off a pilot**. The style-aware chains (Boards→Opus,
@@ -299,11 +335,28 @@ problem, not a `fixJSON` deficiency** — which is why the fix is NOT to loosen 
 * **Stricter, not more permissive.** A truncated talk now fails the generation rather than rendering half
   a talk the reader cannot audit.
 
-**Still to do (Codex's preferred direction):** prefer **structured-output enforcement** (a tool/JSON-schema
-constrained response, so the model cannot emit unbalanced JSON) plus a **bounded repair retry**, over any
-further permissive repair. Then **re-run the 20-row benchmark to confirm** the defect is gone. Reordering
-the prompt schema so the large nested structures come LAST is a cheap partial mitigation worth testing,
-since a brace slip at the end can then only orphan trailing nesting rather than the teaching payload.
+**Done since (build 2026-07-26-17)** — the prompt-side half of Codex's preferred direction, chosen over
+API-shape changes because it carries zero request-format risk:
+
+* **Schema reorder — the large nested structure is emitted LAST.**
+  * lecture: `title, subtitle, guideline_sources, summary_points, visual_memory_card, references, sections[]`
+  * boards: `title, subtitle, guideline_sources, key_point, abim_classification, board_pearls, teaching_points, summary_points, visual_memory_card, references, question{}`
+
+  Every short top-level field is now written and closed *before* the long nesting begins, so the exact
+  slip both models made can only orphan **trailing nesting** instead of the teaching payload. Both
+  prompts carry a `FIELD ORDER (matters for reliability)` note explaining why, so a later prompt edit
+  doesn't tidy the order back and silently undo it. Asserted in `test_parse_strict.mjs` §8.
+* **Bounded repair retry in `generate()`** — a `parseTalkStrict()` failure triggers **exactly one** retry
+  (2-attempt loop) with a corrective note naming the actual defect: missing top-level fields, listed by
+  name, versus invalid JSON. It re-checks `S.genCancelled` and generation identity before spending the
+  second call, and **throws** if the retry is still unusable. Asserted in `test_parse_strict.mjs` §9 —
+  the *bound* is the safety property, since an unbounded repair loop burns Opus tokens and can still end
+  in a partial render.
+
+**Still open:** tool-use / JSON-schema-constrained responses (so the model structurally cannot emit
+unbalanced JSON) remain the stronger fix, deliberately deferred as a separate reviewed change.
+**And the confirming rerun has not happened yet** — see "Pending: the full 20-row runs" above for the
+exact command. Until it runs, the reorder and the retry are *reasoned* mitigations, not measured ones.
 
 ### gemini-3.1-pro-preview — **FAILED** (2026-07-26, 3 topics × 2 styles = 6 rows)
 

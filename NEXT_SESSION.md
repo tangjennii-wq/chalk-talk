@@ -5,13 +5,33 @@ _Handoff from 2026-07-26. Long session; this replaces the 2026-07-17 handoff._
 ## One-line status
 
 The evidence foundation and the model decision are **done and verified**. Everything lives on
-`launch-integration` (build 2026-07-26-06), 9 test suites green. **`main` is ~34 commits behind and is
-what the live site still serves** — so none of it is user-visible yet. What remains is your call on
-merging, plus launch UX.
+`launch-integration` (build **2026-07-26-17**), **11 test suites / 443 assertions green**. **`main` is
+~49 commits behind and is what the live site still serves** — so none of it is user-visible yet. What
+remains is one benchmark run only you can do, your call on merging, plus launch UX.
+
+**Nothing is deployed.** Per Codex: don't ship the production routing until the rerun below is read.
 
 ---
 
-## FIRST — three things only you can do
+## FIRST — four things only you can do
+
+**0. Run the two benchmark commands.** They need a network that can reach `www.ebi.ac.uk` and
+`rxnav.nlm.nih.gov` (this sandbox cannot, and neither can it reach `api.openai.com`).
+```
+cd ~/Developer/chalk-talk
+
+# (a) Confirm the 2026-07-26-17 parse fix on production routing. ~20 Opus rows, no rival arm.
+node rag/eval_gemini_quality.mjs --no-candidate
+mv rag/eval_gemini_report.json rag/eval_opus5_rerun_after_reorder.json
+
+# (b) The one writer users can already reach that has NEVER been benchmarked.
+node rag/eval_gemini_quality.mjs --provider openai --openai-model gpt-5.6-sol
+mv rag/eval_gemini_report.json rag/eval_gpt56sol_full20.json
+```
+Reading (a): the specific question is **20/20 valid JSON + schema-complete**. One structural failure in
+20 was the pre-change rate, so a clean 20 is encouraging, not proof — the 95% CI on 1/20 is ~0.1–25%.
+If the gate says **INCONCLUSIVE (exit 2)**, a verifier was unreachable and the run cannot clear anything;
+that's the new guard working, not a failure of the model.
 
 **1. Push, then decide on merging to main.**
 ```
@@ -26,6 +46,9 @@ Make three talks: a **Concise lecture** (feel the new speed), a **Boards** quest
 **open a saved talk from your Library right after generating** — that last one exercises the state-leak
 fixes (the previous talk's image/chips/Undo used to bleed through, and the citation audit could
 overwrite the talk you were reading).
+
+Also: **redeploy the Worker.** It was deployed once with the *old* code; the fail-closed
+`WRITER_CLEARED` change and the corrected `MODEL_PRICES` are not live yet (`npx wrangler deploy`).
 
 **2. Rotate the exposed keys** — OpenAI + Supabase service-role. Still outstanding from an earlier
 session. Nothing blocks on it, but it shouldn't wait.
@@ -70,6 +93,19 @@ instead of inventing a new test.
   when the talk actually changes.
 - **DOIs are trust-but-verified** like PMIDs, with an identity check (a real DOI for an unrelated paper
   is dropped, not relabelled).
+
+**Never render partially parsed medical content** (builds -14 → -17). `parseTalkStrict()` now gates
+*every* path that can assign `S.talk`, including the async/resume path most mobile generations use and
+critic-produced rewrites. The async review gate **retries once, then withholds** — it will no longer
+fall back to showing an unreviewed draft. And the prompt schemas now emit the big nested structure
+(`sections[]` / `question{}`) **last**, so the brace drift that caused both benchmark parse failures can
+only orphan trailing nesting rather than `key_point` / `summary_points` / `visual_memory_card`; a failed
+parse gets exactly **one** bounded repair retry, then fails the generation.
+
+**The benchmark harness itself had a reporting defect.** Its citation and drug verifiers fail open by
+design, but "could not check" was printed as `fabricated citations 0 · ✔ GATE PASSED` — identical to a
+verified-clean run. An unmeasured run is now **GATE INCONCLUSIVE (exit 2)**. Worth remembering as a
+pattern: the instrument that grants clearances needs its own tests (`test_eval_harness.mjs`).
 
 ---
 
@@ -117,10 +153,16 @@ node rag/extract_guidelines.mjs && node rag/build_manifest.mjs && node rag/audit
 ```
 Audit must report `hard: 0`.
 
-**Tests (all offline, no keys needed):**
+**Tests (11 suites, all offline, no keys needed):**
 ```
-for t in test_*.mjs; do node $t; done
+for t in test_*.mjs; do node $t || echo "RED: $t"; done
 ```
+Every suite is wired into `.github/workflows/tests.yml` — if you add one, add it there in the *same*
+commit (an unwired test has been missed before).
+
+**Benchmark (needs keys + reachable verifiers):** see `rag/MODEL_BENCHMARK.md` → "Pending: the full
+20-row runs". `--no-candidate` reruns production routing alone; the report is overwritten every run, so
+`mv` it.
 
 **Keys:** `node rag/setkey.mjs` — prompts, sanitizes, live-validates, de-duplicates. Use it instead of
 `echo >> .env`; a literal `your_key_here` placeholder once shadowed two real keys because `loadenv`
