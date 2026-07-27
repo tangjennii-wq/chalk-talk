@@ -42,10 +42,13 @@ ok(/critiqueSystem = SAFETY_CRITIQUE_PROMPT/.test(html), "the targeted prompt is
 // _useTargetedReview called _draftIsComplete(draftTalk) ~60 lines BEFORE `var draftTalk` was declared.
 // Hoisting made it undefined, _draftIsComplete(undefined) returned false, and the targeted review never
 // ran once. Assert the declaration precedes the use. (Same bug class as the _draftWebSearched hoist.)
-const iDraftDecl = html.indexOf("var draftTalk = parseTalkStrict(txt, S.style);");   // was JSON.parse(fixJSON(txt)) before the strict-parse gate (2026-07-26)
+// Anchor on the point where draftTalk is GUARANTEED populated — the throw that ends the bounded repair
+// loop — not on a specific declaration line. (History: `var draftTalk = JSON.parse(fixJSON(txt))` →
+// `= parseTalkStrict(txt, S.style)` → a 2-attempt repair loop. The invariant is the ordering, not the line.)
+const iDraftDecl = html.indexOf("if (!draftTalk) throw (_draftParseErr");
 const iUse = html.indexOf("var _useTargetedReview");
-ok(iDraftDecl > 0 && iUse > 0, "found both the draftTalk declaration and the _useTargetedReview use");
-ok(iDraftDecl < iUse, "draftTalk is DECLARED BEFORE _useTargetedReview reads it (no var-hoisting undefined)");
+ok(iDraftDecl > 0 && iUse > 0, "found both the point draftTalk is guaranteed populated and the _useTargetedReview use");
+ok(iDraftDecl < iUse, "draftTalk is POPULATED BEFORE _useTargetedReview reads it (no var-hoisting undefined)");
 // critiqueSystem must still hold a valid prompt at the async submit, which happens before the draft
 const iCritDecl = html.indexOf("var critiqueSystem =");
 const iAsyncSubmit = html.indexOf("critique: { sys: critiqueSystem");

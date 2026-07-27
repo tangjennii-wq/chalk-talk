@@ -83,7 +83,8 @@ ok(recovered && recovered.key_point === "kp" && recovered.board_pearls.length ==
    "the hoisted fields are present at top level after recovery");
 
 // ── 5) the draft path must actually use the strict parser ───────────────────────
-ok(/var draftTalk = parseTalkStrict\(txt, S\.style\);/.test(html), "generate() parses the draft with parseTalkStrict");
+// (the single bare call became a bounded retry loop — see section 9 for the bound itself)
+ok(/draftTalk = parseTalkStrict\(txt, S\.style\)/.test(html), "generate() parses the draft with parseTalkStrict");
 ok(!/var draftTalk = JSON\.parse\(fixJSON\(txt\)\);/.test(html), "the old unchecked JSON.parse(fixJSON(...)) draft path is gone");
 
 
@@ -183,6 +184,63 @@ ok(/models: writeAllowedModels\(/.test(html), "the critique spec only ever uses 
   ok(iSpec > 0 && iSpec < iGen, "the critique prompts/spec are hoisted ABOVE generate() so the resume path can use them");
 }
 ok((html.match(/var LECTURE_CRITIQUE_PROMPT = /g) || []).length === 1, "the lecture critique prompt is declared exactly once (no drifting copy)");
+
+// ── 8) SCHEMA FIELD ORDER: THE BIG NESTED STRUCTURE MUST COME LAST ──────────────
+// Both captured fixtures failed the same way: a brace slip deep inside sections[]/question{} orphaned
+// every top-level field that came AFTER it, so the *teaching payload* was the part lost. Emitting the
+// short top-level fields first means each is already written and closed before the long nesting starts,
+// so the same slip can only orphan trailing nesting. This is prompt-side structured output; it does not
+// replace parseTalkStrict, it reduces how much a slip can cost.
+{
+  const schemaOf = (name) => {
+    const i = html.indexOf("var " + name + " = ");
+    const end = html.indexOf("\n", i);
+    const src = html.slice(i, end === -1 ? undefined : end);
+    const j = src.lastIndexOf("ONLY JSON:");
+    ok(j > 0, `${name}: the schema is introduced by "ONLY JSON:"`);
+    return src.slice(j);
+  };
+  const orderOk = (name, big, mustPrecede) => {
+    const s = schemaOf(name);
+    const iBig = s.indexOf('"' + big + '":');
+    ok(iBig > 0, `${name}: schema still declares ${big}`);
+    for (const f of mustPrecede) {
+      const iF = s.indexOf('"' + f + '":');
+      ok(iF > 0 && iF < iBig, `${name}: ${f} is emitted BEFORE ${big} (a slip inside ${big} cannot orphan it)`);
+    }
+    // nothing of substance may trail the big structure
+    const after = s.slice(iBig).replace(/^"[a-z_]+":/, "");
+    const trailingTop = [...after.matchAll(/,"([a-z_]+)":/g)].map((m) => m[1]);
+    ok(trailingTop.length === 0 || !["summary_points", "visual_memory_card", "key_point", "board_pearls", "teaching_points"].some((f) => trailingTop.includes(f)),
+       `${name}: no teaching field trails ${big}`);
+  };
+  orderOk("LECTURE_PROMPT", "sections", ["title", "summary_points", "visual_memory_card"]);
+  orderOk("BOARDS_PROMPT", "question", ["title", "key_point", "board_pearls", "teaching_points", "summary_points", "visual_memory_card"]);
+  // and the model must be told WHY, or a future prompt edit will "tidy" the order back
+  ok((html.match(/FIELD ORDER \(matters for reliability\)/g) || []).length === 2,
+     "both prompts explain WHY the order matters (so a future edit doesn't silently undo it)");
+}
+
+// ── 9) THE SYNCHRONOUS DRAFT GETS EXACTLY ONE BOUNDED REPAIR RETRY ──────────────
+// Codex: "prefer structured-output enforcement and a bounded repair retry over increasingly permissive
+// JSON repair." The bound is the safety property — an unbounded repair loop burns Opus tokens and can
+// still end in a partial render.
+{
+  const g = html.slice(html.indexOf("async function generate(){"));
+  const draftBlock = g.slice(g.indexOf("var draftTalk = null"), g.indexOf("var draftTalk = null") + 2200);
+  ok(draftBlock.length > 100, "generate(): the bounded draft-repair loop exists");
+  ok(/_dAtt < 2/.test(draftBlock), "generate(): the repair loop is bounded to 2 attempts = exactly ONE retry");
+  ok(/S\.genCancelled \|\| _myGenId !== S\.genId/.test(draftBlock),
+     "generate(): the retry re-checks cancel + generation identity before spending a second call");
+  ok(/incomplete_talk/.test(draftBlock) && /missing required top-level fields/.test(draftBlock),
+     "generate(): the corrective note tells the model WHICH failure occurred (missing fields vs bad JSON)");
+  ok(/unbalanced brace or bracket/.test(draftBlock), "generate(): the invalid-JSON branch names the likely cause");
+  ok(/if \(!draftTalk\) throw \(_draftParseErr/.test(draftBlock),
+     "generate(): after the single retry it THROWS — it never renders an unparsed draft");
+  ok(!/JSON\.parse\(fixJSON\(txt\)\)/.test(draftBlock), "generate(): the draft is never parsed with the loose path");
+  // the whole point of the retry is to avoid loosening the parser
+  ok(/parseTalkStrict\(txt, S\.style\)/.test(draftBlock), "generate(): each attempt is validated by the STRICT gate");
+}
 
 console.log("\n" + (failures === 0 ? "✔ STRICT PARSE TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);
