@@ -148,5 +148,41 @@ ok(/kept your original untouched/.test(html.slice(revIdx, revIdx + 700)),
   ok(okFull, "a complete rewrite passes (no over-rejection)");
 }
 
+
+// ── 7) THE ASYNC/RESUME PATH MUST WITHHOLD, NOT SHOW AN UNREVIEWED DRAFT ────────
+// Codex 2026-07-26: the resume path previously fell back to displaying the draft whenever the Worker's
+// server-side critique was missing/malformed/incomplete — silently weaker than the synchronous path,
+// which retries once then WITHHOLDS. Most mobile generations complete via this path.
+{
+  const rs = html.slice(html.indexOf("async function resumeAsyncJobIfAny"), html.indexOf("async function resumeAsyncJobIfAny") + 7000);
+  ok(/parseTalkStrict\(txt, S\.style\)/.test(rs), "resume: draft parsed with the strict gate");
+  ok(/function _acceptCritique\(/.test(rs), "resume: a single acceptance helper decides clean-vs-rewrite");
+  ok(/_assertCompleteTalk\(parsed, S\.style, "resumed critic rewrite"\)/.test(rs),
+     "resume: a critic REWRITE must be schema-complete to be accepted");
+  ok(/_acceptCritique\(critTxt\)/.test(rs), "resume: the Worker's existing critique is tried first (no wasted call)");
+  ok(/callAPIWithFallback\(_spec\.sys, _critInput, _spec\.maxTok, _spec\.models\)/.test(rs),
+     "resume: exactly ONE bounded client-side retry when the server critique is unusable");
+  // the retry must be bounded — no loop
+  ok((rs.match(/callAPIWithFallback\(_spec\.sys/g) || []).length === 1, "resume: the retry is bounded to a single attempt (no loop)");
+  ok(/if\(!finalTalk\)\{/.test(rs), "resume: there is an explicit no-review branch");
+  ok(/S\.reviewPending = \{ draft: draftTalk/.test(rs), "resume: an unreviewable draft is WITHHELD, not rendered");
+  ok(/return;   \/\/ NO S\.talk/.test(rs), "resume: the withhold branch returns without assigning S.talk");
+  ok(/charged: true/.test(rs), "resume: charged:true prevents a double charge (the async job billed server-side)");
+  ok(/_saveReviewPending\(\)/.test(rs), "resume: the withheld draft is persisted so a reload keeps it");
+  ok(/critiqueSystem: _spec\.sys/.test(rs) && /criticModels: _spec\.models/.test(rs),
+     "resume: the withheld draft carries the critique spec, so the card's Retry button actually works");
+  // and it must NOT silently keep the draft any more
+  ok(!/keep the VALIDATED draft, never a partial rewrite/.test(html),
+     "the old 'swallow the error and show the draft' fallback is gone");
+}
+// the spec builder must be shared, not duplicated — and must respect the writer gate
+ok(/function buildCritiqueSpec\(/.test(html), "buildCritiqueSpec() exists at module scope");
+ok(/models: writeAllowedModels\(/.test(html), "the critique spec only ever uses BENCHMARK-CLEARED models");
+{
+  const iSpec = html.indexOf("function buildCritiqueSpec("), iGen = html.indexOf("async function generate(){");
+  ok(iSpec > 0 && iSpec < iGen, "the critique prompts/spec are hoisted ABOVE generate() so the resume path can use them");
+}
+ok((html.match(/var LECTURE_CRITIQUE_PROMPT = /g) || []).length === 1, "the lecture critique prompt is declared exactly once (no drifting copy)");
+
 console.log("\n" + (failures === 0 ? "✔ STRICT PARSE TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-15";
+var BUILD_ID = "2026-07-26-16";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1514,18 +1514,57 @@ async function resumeAsyncJobIfAny(){
     // STRICT (Codex 2026-07-26): the resumed async draft reaches S.talk exactly like the synchronous one,
     // so it gets the same schema gate. A throw here fails the resume — nothing partial is rendered.
     var draftTalk = pruneFakeReferences(deepCleanCitations(parseTalkStrict(txt, S.style)));
-    var finalTalk = draftTalk;
+    // ── REVIEW GATE ON THE RESUME PATH (Codex 2026-07-26) ─────────────────────────────────────
+    // This used to fall back to displaying the UNREVIEWED draft whenever the Worker's server-side
+    // critique was missing, malformed or incomplete — silently weaker than the synchronous path, which
+    // retries once and then WITHHOLDS. Same invariant now applies here: a talk is never shown unless a
+    // review actually completed on it.
+    var finalTalk = null, _resumeCritErr = null;
+    var _glRef = getGuidelinesForTopic(S.topic) || null;
+    var _spec = buildCritiqueSpec(S.style, S.topic, _glRef, S.ragChunks);
+    var _critInput = _spec.prefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
+
+    function _acceptCritique(rawCrit){
+      var parsed = deepCleanCitations(JSON.parse(fixJSON(rawCrit)));
+      if(parsed.verdict === "clean") return draftTalk;
+      if(parsed.title || parsed.question){
+        if(S.style === "boards") _hoistMisplacedBoardFields(parsed);
+        _assertCompleteTalk(parsed, S.style, "resumed critic rewrite");
+        return parsed;
+      }
+      throw new Error("unrecognized review output");
+    }
+
+    // attempt 0: the critique the Worker already ran (free — reuse it)
     var critTxt = (res && res.critText) || "";
     if(critTxt && critTxt.trim()){
+      try{ finalTalk = _acceptCritique(critTxt); }
+      catch(e){ _resumeCritErr = e; console.warn("Resumed server critique unusable:", e && e.message); }
+    } else { _resumeCritErr = new Error("worker returned no critique"); }
+
+    // attempt 1: ONE bounded client-side retry, using the same spec the sync path would have used
+    if(!finalTalk && _spec.models.length){
+      if(S.genCancelled || _myGenId !== S.genId) return;
       try{
-        var parsed = deepCleanCitations(JSON.parse(fixJSON(critTxt)));
-        if(parsed.verdict === "clean") finalTalk = draftTalk;
-        else if(parsed.title || parsed.question){
-          if(S.style === "boards") _hoistMisplacedBoardFields(parsed);
-          _assertCompleteTalk(parsed, S.style, "resumed critic rewrite");   // partial rewrite → throw
-          finalTalk = parsed;
-        }
-      }catch(_){ /* incomplete or unparseable critique → keep the VALIDATED draft, never a partial rewrite */ }
+        var _r2 = await callAPIWithFallback(_spec.sys, _critInput, _spec.maxTok, _spec.models);
+        finalTalk = _acceptCritique(_r2.txt);
+      }catch(e2){ _resumeCritErr = e2; console.warn("Resumed critique retry failed:", e2 && e2.message); }
+    }
+
+    if(S.genCancelled || _myGenId !== S.genId) return;
+    if(!finalTalk){
+      // WITHHOLD — same treatment as the synchronous path. The draft is preserved privately with the
+      // spec attached so the card's "Retry review" button works; it is never rendered as a talk. The
+      // async job already consumed quota server-side, so charged:true prevents a double charge on retry.
+      S.reviewPending = { draft: draftTalk, critiqueSystem: _spec.sys, critiquePrefix: _spec.prefix,
+        critMaxTok: _spec.maxTok, criticModels: _spec.models, topic: S.topic, style: S.style, depth: S.depth,
+        provider: (S.genProvider || "claude"), writerModel: (res && res.modelUsed) || "",
+        charged: true, ragCount: (S.ragChunks || []).length, guidelinesLoaded: !!_glRef,
+        webSearched: !!(res && res.webSearched), err: (_resumeCritErr && _resumeCritErr.message) || "" };
+      _saveReviewPending();
+      S.citationAuditPending = false; S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
+      render();
+      return;   // NO S.talk — an unreviewed draft is never displayed
     }
     finalTalk = pruneFakeReferences(finalTalk);
     finalTalk = _normalizeInlinePmids(finalTalk);
@@ -6695,6 +6734,40 @@ function buildReferenceParts(files) {
   return parts;
 }
 
+// ── CRITIQUE PROMPTS + SPEC BUILDER (hoisted to module scope 2026-07-26) ───────────────────────
+// These were declared INSIDE generate(), so resumeAsyncJobIfAny() had no way to re-run a review: if the
+// Worker's server-side critique came back malformed or incomplete, the resume path silently fell back to
+// displaying the UNREVIEWED draft — breaking the withhold invariant the synchronous path enforces.
+// Hoisting them lets both paths build the same spec and retry identically. (Codex 2026-07-26)
+var LECTURE_CRITIQUE_PROMPT = "You are a senior IM attending peer-reviewing a chalk talk. Review for substantive accuracy only — do NOT flag stylistic preferences. Work through this checklist explicitly before deciding:\n\n(1) NUMERIC AUDIT (highest priority — these errors are dangerous): find EVERY numeric threshold, dose, rate, target, and cutoff in the talk (e.g. sodium correction rates, potassium thresholds for starting/stopping drugs, BP targets, eGFR cutoffs, drug doses). Re-derive each from the GUIDELINE / SOURCE CONTEXT if provided, otherwise from first principles. Fix any number that is wrong OR that contradicts a table/another bullet elsewhere in the SAME talk.\n(2) INTERNAL CONSISTENCY: scan for two statements that contradict each other about the same drug, mechanism, indication, or number (e.g. a drug called both first-line and refractory-only, or a mechanism labeled two different ways). Reconcile to the single correct version and delete the wrong one.\n(3) GROUNDING: where the GUIDELINE / SOURCE CONTEXT states a specific tier list, regimen, threshold, or recommendation, verify the talk matches it in substance. If the talk paraphrased it wrong or omitted an agent the guideline lists, correct it to match the source.\n(4) COMPLETENESS / REQUIRED FIELDS: the talk MUST have a non-empty summary_points array (4-6 items) AND all four visual_memory_card quadrants (top_left, top_right, bottom_left, bottom_right) non-empty, AND a management/treatment section if the topic warrants one. If any required field is empty or the talk is missing its treatment/management content, WRITE the missing content — do not return it empty.\n(5) factual errors in physiology or pharmacology, (6) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/USPSTF/AAHPM), (7) wrong landmark trial attributions, (8) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug MUST be corrected. If unsure of generic spelling, replace with the brand name.\n(9) CITATION HONESTY (accuracy over coverage): an inline marker like [1] must appear ONLY where a source in the references array GENUINELY SUPPORTS that specific claim. Do NOT add citations just to make bullets look sourced. Your job here is the reverse: find markers that are MIS-ATTRIBUTED (the cited source does not actually substantiate that claim) and REMOVE those markers, or re-point them to a listed source that does support the claim. An uncited teaching bullet is acceptable and preferable to a wrongly-cited one. Do NOT flag a bullet as an issue merely for lacking a citation. Also delete any reference entry that no longer supports anything in the talk.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk passes every check above with no changes needed:\n{\"verdict\":\"clean\"}\n\nIF you find ANY issue (including an empty required field OR a mis-attributed citation), return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
+var BOARDS_CRITIQUE_PROMPT = "You are a senior board-certified Internal Medicine attending acting as a peer reviewer for a chalk talk. Review for: (1) factual errors in physiology or pharmacology, (2) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/AAAAI/AAD/APA/AGS/ACOG/USPSTF/AAHPM), (3) internal contradictions, (4) wrong landmark trial attributions, (5) shallow physiology, (6) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug or known investigational compound MUST be corrected. If unsure of generic spelling, replace with the brand name. Do NOT flag stylistic preferences.\n\nBOARDS-MODE ANSWER VERIFICATION (when the input contains a 'question' field): EXPLICITLY re-derive the correct answer. (a) Restate the discriminating clinical features in the stem. (b) Identify the most relevant guideline and year (KDIGO, AHA/ACC, ADA, etc.) or landmark trial. (c) Confirm whether the marked correct_letter is truly best per that guideline. (d) If a different choice is better, fix correct_letter and rewrite explanation + wrong_explanations accordingly. Do not allow ambiguous or 'defensibly correct' answers to stand \u2014 the correct answer must be UNAMBIGUOUSLY best per current guidelines.\n\nSTEM STYLE VERIFICATION (boards mode): Also verify the stem follows UWorld / ABIM / MKSAP style. Check: (a) demographic + presentation opener \u2014 EITHER USMLE phrasing (A [age]-year-old [man/woman] comes to the physician because of...) OR MKSAP phrasing (...is evaluated in the office/emergency department for...) is acceptable; do not force one style, (b) quantitative symptom detail (frequency, duration, character, location, timing), (c) explicit pertinent positives AND key pertinent negatives stated together, (d) social/medical history quantified where relevant (e.g., 8-10 beers/week, 1 pack/day for 30 years), (e) specific vital signs with numbers and lab values with units, (f) imaging or diagnostic findings stated specifically, (g) ending phrase: Which of the following is the most [likely diagnosis / appropriate next step in management / appropriate initial test / likely cause]?, (h) 5 choices, parallel grammatical structure (all diagnoses OR all treatments OR all tests, not mixed), (i) each choice 2-8 words, no 'all of the above', no 'none of the above', no vague catch-alls, (j) distractors are plausible alternatives a less-prepared resident might pick \u2014 not throwaway, (k) CHOICE ORDER: the 5 choices MUST be sorted alphabetically by choice text (or ascending numeric/dose value) \u2014 if they are not, re-sort them, reassign letters A-E, and update correct_letter + wrong_explanations letters to match, (l) KEY POINT: a non-empty key_point field must exist (one standalone \u226430-word clinical-rule sentence) \u2014 if missing, write one. If the stem fails ANY criterion, REWRITE the stem and choices to match UWorld/MKSAP style while preserving the same correct answer and clinical scenario. Do not change the medical content; tighten the format.\n\nCITATION HONESTY (accuracy over coverage): an inline marker like [1] must appear ONLY where a source in the references array GENUINELY SUPPORTS that specific claim. Do NOT add citations just to make the key_point, board_pearls, or teaching_points look sourced. Instead, find MIS-ATTRIBUTED markers (cited source doesn't actually substantiate the claim) and remove or re-point them to a listed source that does. An uncited pearl is acceptable and preferable to a wrongly-cited one. Do NOT flag an item as an issue merely for lacking a citation.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk is accurate and needs no changes:\n{\"verdict\":\"clean\"}\n\nIF you find substantive accuracy issues, return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all your fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
+// One place that decides how a talk gets reviewed, used by generate(), the async submit, and the resume
+// path. glRef is the matched guideline object (may be null).
+function buildCritiqueSpec(style, topic, glRef, ragChunks){
+  var glCtx = (glRef && glRef.context) ? glRef.context : "";
+  var ragCtx = "";
+  try {
+    var chunks = ragChunks || [];
+    if(chunks.length) ragCtx = "\n\nRETRIEVED SOURCES:\n" + chunks.slice(0,8).map(function(c){
+      return "• " + (c.title || c.pmid || "source") + (c.pmid ? " (PMID " + c.pmid + ")" : "");
+    }).join("\n");
+  } catch(_){}
+  var grounding = (glCtx || ragCtx)
+    ? ("\n\n═══ GUIDELINE / SOURCE CONTEXT (ground truth — the talk MUST match these for every number, drug, tier list, and recommendation) ═══" + glCtx + ragCtx + "\n═══ END CONTEXT ═══")
+    : "";
+  var prefix = "Topic: " + (topic || "") + grounding;
+  if(style === "boards"){
+    var lvl = boardsDifficulty(), bd = BOARDS_DIFFICULTY[lvl];
+    prefix += "\n\nTARGET DIFFICULTY FOR THIS QUESTION: Level " + lvl + " (" + bd.label + "). " + bd.directive;
+  }
+  return {
+    sys: (style === "boards") ? BOARDS_CRITIQUE_PROMPT : LECTURE_CRITIQUE_PROMPT,
+    prefix: prefix,
+    maxTok: (style === "boards") ? 6144 : 16384,
+    models: writeAllowedModels([MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC])
+  };
+}
+
 async function generate(){
   if(!S.topic.trim()||S.loading)return;
   // GUIDELINE-DATA GATE (JSON-source migration): never build a talk without guideline grounding. If the
@@ -6900,8 +6973,6 @@ async function generate(){
     // Step 2 setup: critique prompts (defined up here so the async submit can include them)
     // Split critique prompts (Jenni 2026-06-09 #3) — Lecture mode uses a focused review
     // prompt (~600 tokens instead of ~2500), Boards keeps the full UWorld verification.
-    var LECTURE_CRITIQUE_PROMPT = "You are a senior IM attending peer-reviewing a chalk talk. Review for substantive accuracy only — do NOT flag stylistic preferences. Work through this checklist explicitly before deciding:\n\n(1) NUMERIC AUDIT (highest priority — these errors are dangerous): find EVERY numeric threshold, dose, rate, target, and cutoff in the talk (e.g. sodium correction rates, potassium thresholds for starting/stopping drugs, BP targets, eGFR cutoffs, drug doses). Re-derive each from the GUIDELINE / SOURCE CONTEXT if provided, otherwise from first principles. Fix any number that is wrong OR that contradicts a table/another bullet elsewhere in the SAME talk.\n(2) INTERNAL CONSISTENCY: scan for two statements that contradict each other about the same drug, mechanism, indication, or number (e.g. a drug called both first-line and refractory-only, or a mechanism labeled two different ways). Reconcile to the single correct version and delete the wrong one.\n(3) GROUNDING: where the GUIDELINE / SOURCE CONTEXT states a specific tier list, regimen, threshold, or recommendation, verify the talk matches it in substance. If the talk paraphrased it wrong or omitted an agent the guideline lists, correct it to match the source.\n(4) COMPLETENESS / REQUIRED FIELDS: the talk MUST have a non-empty summary_points array (4-6 items) AND all four visual_memory_card quadrants (top_left, top_right, bottom_left, bottom_right) non-empty, AND a management/treatment section if the topic warrants one. If any required field is empty or the talk is missing its treatment/management content, WRITE the missing content — do not return it empty.\n(5) factual errors in physiology or pharmacology, (6) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/USPSTF/AAHPM), (7) wrong landmark trial attributions, (8) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug MUST be corrected. If unsure of generic spelling, replace with the brand name.\n(9) CITATION HONESTY (accuracy over coverage): an inline marker like [1] must appear ONLY where a source in the references array GENUINELY SUPPORTS that specific claim. Do NOT add citations just to make bullets look sourced. Your job here is the reverse: find markers that are MIS-ATTRIBUTED (the cited source does not actually substantiate that claim) and REMOVE those markers, or re-point them to a listed source that does support the claim. An uncited teaching bullet is acceptable and preferable to a wrongly-cited one. Do NOT flag a bullet as an issue merely for lacking a citation. Also delete any reference entry that no longer supports anything in the talk.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk passes every check above with no changes needed:\n{\"verdict\":\"clean\"}\n\nIF you find ANY issue (including an empty required field OR a mis-attributed citation), return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
-    var BOARDS_CRITIQUE_PROMPT = "You are a senior board-certified Internal Medicine attending acting as a peer reviewer for a chalk talk. Review for: (1) factual errors in physiology or pharmacology, (2) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/AAAAI/AAD/APA/AGS/ACOG/USPSTF/AAHPM), (3) internal contradictions, (4) wrong landmark trial attributions, (5) shallow physiology, (6) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug or known investigational compound MUST be corrected. If unsure of generic spelling, replace with the brand name. Do NOT flag stylistic preferences.\n\nBOARDS-MODE ANSWER VERIFICATION (when the input contains a 'question' field): EXPLICITLY re-derive the correct answer. (a) Restate the discriminating clinical features in the stem. (b) Identify the most relevant guideline and year (KDIGO, AHA/ACC, ADA, etc.) or landmark trial. (c) Confirm whether the marked correct_letter is truly best per that guideline. (d) If a different choice is better, fix correct_letter and rewrite explanation + wrong_explanations accordingly. Do not allow ambiguous or 'defensibly correct' answers to stand \u2014 the correct answer must be UNAMBIGUOUSLY best per current guidelines.\n\nSTEM STYLE VERIFICATION (boards mode): Also verify the stem follows UWorld / ABIM / MKSAP style. Check: (a) demographic + presentation opener \u2014 EITHER USMLE phrasing (A [age]-year-old [man/woman] comes to the physician because of...) OR MKSAP phrasing (...is evaluated in the office/emergency department for...) is acceptable; do not force one style, (b) quantitative symptom detail (frequency, duration, character, location, timing), (c) explicit pertinent positives AND key pertinent negatives stated together, (d) social/medical history quantified where relevant (e.g., 8-10 beers/week, 1 pack/day for 30 years), (e) specific vital signs with numbers and lab values with units, (f) imaging or diagnostic findings stated specifically, (g) ending phrase: Which of the following is the most [likely diagnosis / appropriate next step in management / appropriate initial test / likely cause]?, (h) 5 choices, parallel grammatical structure (all diagnoses OR all treatments OR all tests, not mixed), (i) each choice 2-8 words, no 'all of the above', no 'none of the above', no vague catch-alls, (j) distractors are plausible alternatives a less-prepared resident might pick \u2014 not throwaway, (k) CHOICE ORDER: the 5 choices MUST be sorted alphabetically by choice text (or ascending numeric/dose value) \u2014 if they are not, re-sort them, reassign letters A-E, and update correct_letter + wrong_explanations letters to match, (l) KEY POINT: a non-empty key_point field must exist (one standalone \u226430-word clinical-rule sentence) \u2014 if missing, write one. If the stem fails ANY criterion, REWRITE the stem and choices to match UWorld/MKSAP style while preserving the same correct answer and clinical scenario. Do not change the medical content; tighten the format.\n\nCITATION HONESTY (accuracy over coverage): an inline marker like [1] must appear ONLY where a source in the references array GENUINELY SUPPORTS that specific claim. Do NOT add citations just to make the key_point, board_pearls, or teaching_points look sourced. Instead, find MIS-ATTRIBUTED markers (cited source doesn't actually substantiate the claim) and remove or re-point them to a listed source that does. An uncited pearl is acceptable and preferable to a wrongly-cited one. Do NOT flag an item as an issue merely for lacking a citation.\n\nReturn ONLY ONE of these two JSON formats (no other text):\n\nIF the talk is accurate and needs no changes:\n{\"verdict\":\"clean\"}\n\nIF you find substantive accuracy issues, return the FULL corrected chalk talk in the EXACT same JSON schema as the draft, with all your fixes applied. Do NOT include a verdict field in this case — just return the corrected talk JSON directly.";
     // TARGETED SAFETY REVIEW for Concise (Jenni + Codex 2026-07-26) — the 2-minute wait was not the
     // *checking*, it was the re-emission: any single issue (including a merely-incomplete field) makes
     // the critic rewrite the WHOLE talk, thousands of output tokens. So for Concise we run a review
