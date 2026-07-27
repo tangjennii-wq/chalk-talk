@@ -63,6 +63,12 @@ const CLEAR = /S\.streamingTitle\s*=\s*""/;
   const win = html.slice(i, i + 900);
   ok(/if\s*\(_hasStreamPreview\)/.test(win), "the preview renders when there is preview data");
   ok(/if\(_reviewing\)/.test(win), "…and carries a REVIEWING label when the review is running");
+  // Provisional content must not wear the colour of an approval (Codex 2026-07-26)
+  ok(/Draft · under review/.test(win), "…labelled 'Draft · under review', not presented as finished");
+  ok(!/#2d6a2d/.test(win), "…in AMBER, not green — green reads as 'passed' and this has not passed yet");
+  ok(!/A second model checks/.test(html),
+     "the review copy no longer claims 'a second model' — drafting and review are both claude-opus-5 today");
+  ok(/A separate AI review pass checks/.test(html), "…it describes a separate PASS, which is what actually happens");
   // the whole point: this branch was dead because the data was gone before genPhase flipped
   ok(/S\.genPhase = .*reviewing/.test(html) || /genPhase = \(stage === "critique"\)/.test(html),
      "genPhase actually reaches 'reviewing' during a generation");
