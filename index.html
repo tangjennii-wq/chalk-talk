@@ -11351,6 +11351,13 @@ function renderMain(){
     // Order (Jenni 2026-06-11): Edit goes BEFORE the Save indicator so the pencil reads as "do
     // something" and Saved reads as a passive status next to it. New ordering: Edit · Saved · ⋮
     if(!S.sharedTalk){
+      var _ucBusy = !!(S.updateCheck && S.updateCheck.status === "running");
+      var _ucFast = talkIsFastMoving(t);
+      h+='<button class="checkUpdatesBtn"'+(_ucBusy?' disabled':'')
+        + ' title="'+(_ucBusy ? "Checking for newer guidelines, approvals and trials…" : "Search society sites and journals for anything published since this talk\'s sources")+'"'
+        + (_ucFast && !S.updateCheck ? ' style="color:#7a5b1a"' : '')
+        + '>'+(_ucBusy ? '<span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:-1px"></span>' : (_ucFast ? '⚠️' : '🔎'))
+        + ' <span class="hide-mobile-text">Updates</span></button>';
       h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit</span></button>';
     }
     // Save button — three modes:
@@ -11455,18 +11462,15 @@ function renderMain(){
     // Drafting is deliberately offline (curated guidelines + verified corpus), so recency lives here.
     var _uc = S.updateCheck, _fast = talkIsFastMoving(t);
     if(!_uc){
-      // COMPACT by default — a single inline pill. Fast-moving specialties get an amber tint and a
-      // reason, because on those a stale corpus is a clinical problem, not a cosmetic one. Everything
-      // else stays quiet. A full card here would push the teaching content down the page, which is the
-      // complaint that moved the provenance chips to the foot in the first place.
-      h+='<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:2px 0 10px">';
-      h+='<button id="checkUpdatesBtn" title="Search society sites and journals for anything published since this talk\'s sources" '
-        + 'style="display:inline-flex;align-items:center;gap:6px;background:'+(_fast ? "#fdf6ec" : "var(--cream)")+';color:'+(_fast ? "#7a5b1a" : "var(--plum)")+';'
-        + 'border:1px solid '+(_fast ? "#e8c9a0" : "var(--line)")+';border-radius:999px;padding:5px 12px;font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer">'
-        + (_fast ? "⚠️" : "🔎") + ' Check for updates</button>';
-      if(_fast) h+='<span style="font-size:11px;color:var(--ink-muted)">This topic changes often — worth checking before you teach it.</span>';
-      if(t._updateChecked) h+='<span style="font-size:11px;color:var(--ink-muted)">Last checked '+esc(t._updateChecked)+'</span>';
-      h+='</div>';
+      // The BUTTON now lives in the action row with Edit/Save — it is a talk-level action, and a second
+      // floating button would just compete with Refine. What stays here is the part that has to catch the
+      // eye: on fast-moving specialties, a one-line reason to go press it. Everything else is silent.
+      if(_fast || t._updateChecked){
+        h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px;font-size:11px">';
+        if(_fast) h+='<span style="background:#fdf6ec;border:1px solid #e8c9a0;color:#7a5b1a;border-radius:999px;padding:3px 10px;font-weight:600">⚠️ This topic changes often — check for updates before teaching it</span>';
+        if(t._updateChecked) h+='<span style="color:var(--ink-muted)">Last checked '+esc(t._updateChecked)+'</span>';
+        h+='</div>';
+      }
     } else {
     h+='<div style="margin:2px 0 12px;padding:12px 14px;background:var(--cream);border:1px solid var(--line);border-radius:12px">';
     if(_uc.status === "running"){
@@ -11475,7 +11479,7 @@ function renderMain(){
     } else if(_uc.status === "error"){
       h+='<div style="font-size:12.5px;font-weight:600;color:#c0392b">Couldn\'t complete the check</div>';
       h+='<div style="font-size:11.5px;color:var(--ink-muted);margin:3px 0 9px">'+esc(_uc.err)+'</div>';
-      h+='<button id="checkUpdatesBtn" style="background:none;border:1px solid var(--line);border-radius:10px;padding:7px 13px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;color:var(--ink)">Try again</button>';
+      h+='<button class="checkUpdatesBtn" style="background:none;border:1px solid var(--line);border-radius:10px;padding:7px 13px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;color:var(--ink)">Try again</button>';
     } else {
       var _verified = _uc.items.filter(function(x){ return x._verified; });
       var _rejected = _uc.items.filter(function(x){ return !x._verified; });
@@ -11509,7 +11513,7 @@ function renderMain(){
           h+='</div>';
         }
       }
-      h+='<button id="checkUpdatesBtn" style="margin-top:10px;background:none;border:none;color:var(--plum);font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;padding:0">Check again</button>';
+      h+='<button class="checkUpdatesBtn" style="margin-top:10px;background:none;border:none;color:var(--plum);font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;padding:0">Check again</button>';
     }
     h+='</div>';
     }   // end if(_uc)
@@ -12610,8 +12614,11 @@ function bindMain(){
   // Post-talk depth switch — expands/collapses the EXISTING talk. Never wipes it. (2026-07-26)
   document.querySelectorAll(".flipDepthBtn").forEach(function(b){ b.onclick=function(){ if(b.disabled) return; _flipDepthTo(b.dataset.d); }; });
   // ── Check for updates ──
-  var _cub=document.getElementById("checkUpdatesBtn");
-  if(_cub) _cub.onclick=function(){ S.updateCheck=null; checkForUpdates(); };
+  // CLASS, not id: the action-row button and the panel's "Check again" can both be on screen at once,
+  // and duplicate ids would leave all but the first one dead. (2026-07-26)
+  document.querySelectorAll(".checkUpdatesBtn").forEach(function(b){
+    b.onclick=function(){ if(b.disabled) return; S.updateCheck=null; checkForUpdates(); };
+  });
   document.querySelectorAll(".updatePick").forEach(function(cb){
     cb.onchange=function(){
       var i=parseInt(cb.dataset.i,10);
