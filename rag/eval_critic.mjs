@@ -158,7 +158,12 @@ for (let rep = 0; rep < REPEATS; rep++) {
 }
 
 // ── scoring ────────────────────────────────────────────────────────────────────
-const defective = rows.filter(r => r.class !== "clean" && !r.err);
+const unusableRows = rows.filter(r => /UNUSABLE/.test(r.verdict));
+// A row whose response could not be parsed is a MECHANICS failure. Judging detection on it would be
+// guessing: the needle search still runs over the raw text, but "the JSON broke" and "it didn't notice
+// the wrong drug" are different findings and must not be summed.
+const defective = rows.filter(r => r.class !== "clean" && !r.err && !/UNUSABLE/.test(r.verdict));
+const defectiveUnusable = rows.filter(r => r.class !== "clean" && !r.err && /UNUSABLE/.test(r.verdict));
 const clean = rows.filter(r => r.class === "clean" && !r.err);
 const caught = defective.filter(r => r.caught);
 const missed = defective.filter(r => !r.caught);
@@ -173,8 +178,15 @@ for (const cls of ["dangerous_number", "drug_fabrication", "fabricated_guideline
   if (!g.length) continue;
   console.log(`   ${cls.padEnd(24)} ${g.filter(r => r.caught).length}/${g.length}`);
 }
-console.log(`   TOTAL                    ${caught.length}/${defective.length}`);
+console.log(`   TOTAL                    ${caught.length}/${defective.length}  (of rows that produced usable output)`);
 if (missed.length) { console.log("   MISSED:"); for (const m of missed) console.log(`     ✖ ${m.id}`); }
+if (defectiveUnusable.length) {
+  console.log(`   NOT ASSESSABLE — ${defectiveUnusable.length} row(s) returned unusable output, so we cannot say whether the`);
+  console.log("   defect was spotted. That is a MECHANICS failure (section 3), not a detection result:");
+  for (const u of defectiveUnusable) {
+    console.log(`     ? ${u.id} — raw response ${u.raw_len} chars; needle ${u.caught ? "WAS" : "was NOT"} present in the text`);
+  }
+}
 
 console.log("\n═══ 2 · RESTRAINT (did it leave healthy talks alone?) ═══");
 console.log(`   clean talks left untouched: ${clean.length - falsePos.length}/${clean.length}`);
@@ -195,12 +207,22 @@ console.log("\n-> full report: rag/eval_critic_report.json");
 // ── the bar ────────────────────────────────────────────────────────────────────
 // A reviewer that misses a dangerous number or a fabricated drug is worse than no reviewer, because the
 // app tells the reader a review happened. Those two classes are absolute; the rest inform the decision.
-const criticalMiss = missed.filter(m => m.class === "dangerous_number" || m.class === "drug_fabrication");
+const CRITICAL = ["dangerous_number", "drug_fabrication"];
+const criticalMiss = missed.filter(m => CRITICAL.indexOf(m.class) >= 0);
+const criticalUnusable = defectiveUnusable.filter(m => CRITICAL.indexOf(m.class) >= 0);
 console.log("\n═══ VERDICT ═══");
 if (errs.length) { console.log(`⚠ INCONCLUSIVE — ${errs.length} call(s) failed; this run did not fully test the model.`); process.exit(2); }
 if (criticalMiss.length) {
   console.log(`✖ REJECTED as a critic — missed ${criticalMiss.length} DISQUALIFYING defect(s) (dangerous number / fabricated drug).`);
   console.log("  A reviewer that misses these is worse than none, because the app tells the reader a review happened.");
+  process.exit(1);
+}
+if (criticalUnusable.length) {
+  console.log(`✖ REJECTED — ${criticalUnusable.length} DISQUALIFYING-class row(s) returned output the app cannot use:`);
+  for (const u of criticalUnusable) console.log(`    ${u.id} (${u.verdict})`);
+  console.log("  Whether it spotted the defect is unknown and unknowable from this run — which is itself");
+  console.log("  disqualifying: in production that response would have failed the review, and the app would");
+  console.log("  have retried once and then WITHHELD the talk. A reviewer we cannot parse is not a reviewer.");
   process.exit(1);
 }
 if (unusable.length) { console.log(`✖ REJECTED — ${unusable.length} response(s) the app could not use.`); process.exit(1); }
