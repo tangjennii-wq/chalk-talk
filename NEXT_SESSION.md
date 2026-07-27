@@ -5,8 +5,8 @@ _Handoff from 2026-07-26. Long session; this replaces the 2026-07-17 handoff._
 ## One-line status
 
 The evidence foundation and the model decision are **done and verified**. Everything lives on
-`launch-integration` (build **2026-07-26-17**), **11 test suites / 443 assertions green**. **`main` is
-~49 commits behind and is what the live site still serves** — so none of it is user-visible yet. What
+`launch-integration` (build **2026-07-26-18**), **12 test suites / 499 assertions green**. **`main` is
+~52 commits behind and is what the live site still serves** — so none of it is user-visible yet. What
 remains is one benchmark run only you can do, your call on merging, plus launch UX.
 
 **Nothing is deployed.** Per Codex: don't ship the production routing until the rerun below is read.
@@ -98,7 +98,7 @@ instead of inventing a new test.
 - **DOIs are trust-but-verified** like PMIDs, with an identity check (a real DOI for an unrelated paper
   is dropped, not relabelled).
 
-**Never render partially parsed medical content** (builds -14 → -17). `parseTalkStrict()` now gates
+**Never render partially parsed medical content** (builds -14 → -18). `parseTalkStrict()` now gates
 *every* path that can assign `S.talk`, including the async/resume path most mobile generations use and
 critic-produced rewrites. The async review gate **retries once, then withholds** — it will no longer
 fall back to showing an unreviewed draft. And the prompt schemas now emit the big nested structure
@@ -110,6 +110,21 @@ parse gets exactly **one** bounded repair retry, then fails the generation.
 design, but "could not check" was printed as `fabricated citations 0 · ✔ GATE PASSED` — identical to a
 verified-clean run. An unmeasured run is now **GATE INCONCLUSIVE (exit 2)**. Worth remembering as a
 pattern: the instrument that grants clearances needs its own tests (`test_eval_harness.mjs`).
+
+**Retry paths were not preserving the evidence** (build -18, Codex). The draft repair retry did
+`uc + note` where `uc` is a content-parts ARRAY — it stringified to `[object Object]`, so the retry went
+out with no topic, no guidelines, no trials, no retrieved sources and none of your uploaded PDFs, while
+the result would still have been labelled "Grounded in guidelines + N sources". The resumed async review
+rebuilt its ground-truth context from `S.ragChunks`, which is empty after a reload, so the critic checked
+claims against less evidence than wrote them; the job record now persists a `{title,pmid}` digest. And the
+resume path stamped **no provenance at all** — no chips, and the unverified-model warning could never fire
+on the path most mobile generations use. All three now go through one `_stampProvenance()`.
+
+**Still open, and Codex is right about it:** the Anthropic request is *not* schema-constrained. The field
+reorder plus a free-text repair retry reduces the damage a brace slip can do; it does not make invalid
+JSON impossible. Run `node rag/probe_structured_output.mjs` (a few cents) before changing the request
+shape — and note `worker.js` currently forwards no `tool_choice`, so the free tier would silently keep the
+unconstrained shape.
 
 ---
 

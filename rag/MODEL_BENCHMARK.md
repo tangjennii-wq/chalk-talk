@@ -28,9 +28,11 @@ harness can clear one.**
 Codex's rule (2026-07-26): benchmark by **exact model id**, and benchmark every model that might write
 user-facing text — not every model that exists. Passing `claude-opus-5` clears `claude-opus-5` only.
 
-Auditing index.html for that surface turned up more than the obvious one:
+Auditing index.html for that surface turned up more than the obvious one. **The table below is the
+2026-07-26 audit as it stood BEFORE the writer gate landed** — kept because it is the reason the gate
+exists. See "Current state" underneath for what production actually does now.
 
-| Model | Where it writes | Benchmarked? |
+| Model | Where it wrote | Benchmarked? |
 |---|---|---|
 | `claude-opus-4-8` | `MODEL_MAIN` — draft primary | **NO** |
 | `claude-sonnet-4-20250514` | draft fallback **AND the LECTURE critic's first choice** | **NO** |
@@ -39,14 +41,28 @@ Auditing index.html for that surface turned up more than the obvious one:
 | `gpt-5` | ChatGPT BYOK default — live and ungated | **NO** (report lost; re-run) |
 | `claude-opus-5` | not in production; the benchmark's reference arm | **YES** — 4.67/5, 18/18 + 6/6 |
 
-**The critic is a writer.** The lecture critic chain is `[MODEL_SONNET_FALLBACK, MODEL_CRITIC]` —
-Opus is not in it. When a critique returns a corrected talk instead of `{"verdict":"clean"}`, that model
-has **rewritten the talk**. So the final text of a typical lecture is written by Sonnet 4 or Haiku 4.5,
-not by the draft model. Any claim that "talks are written by Opus" is wrong today.
+**The critic is a writer.** When a critique returns a corrected talk instead of `{"verdict":"clean"}`, that
+model has **rewritten the talk**. So the final text of a typical lecture used to be written by Sonnet 4 or
+Haiku 4.5, not by the draft model — any claim that "talks are written by Opus" was wrong.
 
-**A known gap in the tracking:** `talk._writerModel` records the model that wrote the **draft**. It does
-not record a critic that rewrote it, nor the `claude-sonnet-4-6` that writes every refine. So the warning
-banner currently under-reports which model produced the text on screen. Worth closing.
+### Current state (build 2026-07-26-18)
+
+Option (B) was chosen: **unbenchmarked models cannot write at all.** Every chain — draft, critic, refine,
+citation audit — is filtered through `writeAllowedModels()`, and `WRITER_BENCHMARK_CLEARED` currently lists
+only `claude-opus-5: true` (marked CLEARED, ON NOTICE, not proven) with `claude-sonnet-5: false` recorded as
+a FAIL. `refineWriterModel()` resolves through the same filter. The Worker fails closed independently
+(`WRITER_CLEARED`), so a client bug cannot smuggle an uncleared writer past it. Consequence, accepted
+deliberately: an Opus outage surfaces as an honest availability error rather than a quietly-worse talk.
+
+**The tracking gap is closed** (was: "`talk._writerModel` records only the draft model"). Provenance now
+runs through a single `_stampProvenance()` helper called by all three display paths, and
+`talkWriterModels()` records **every** model that produced displayed text — the drafter plus any critic
+that returned a rewrite. `talkHasUnverifiedWriter()` warns if *any* contributor is uncleared, and the
+banner names them. The Worker returns `critModelUsed` so the async path can report its reviewer too.
+Because both chains are already gate-filtered, this is belt-and-braces rather than a live exposure — the
+label should be correct by construction, not by luck. Behavioural coverage: `test_retry_evidence.mjs`.
+
+Still genuinely unbenchmarked and reachable by users: **`gpt-5.6-sol` via ChatGPT BYOK.** Run it.
 
 ### Priority order for benchmarking (highest user impact first)
 
