@@ -1284,7 +1284,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-26-23";
+var BUILD_ID = "2026-07-26-24";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3236,6 +3236,7 @@ var S = {
   // and fully auditable. Recency is handled AFTER the talk exists, by an explicit "Check for updates"
   // that shows proposed additions for review instead of silently rewriting.
   wantWebSearch:false, queueAudio:false, genId:0,
+  updateCheck:null,   // { status:"running"|"done"|"error", items:[], err:"", checkedAt:0 } — see checkForUpdates()
   // Showcase / portfolio view — Phase 2 sharing MVP (Jenni 2026-06-08)
   showcase:false, showcaseLoading:false, showcaseTalks:[], showcaseProfile:null, showcaseCuratorId:null,
   // Landing-page featured cache — populated by loadLandingFeatured() on app init
@@ -5602,6 +5603,130 @@ function _normalizeInlinePmids(talk, extraMeta){
 //   Option B: surviving PMIDs are verified against PubMed eutils; metadata is replaced with PubMed's
 //             own title/journal/year so a mangled citation can't survive either. Fails OPEN on a
 //             network blip (A is the floor, B is the upgrade).
+
+// ══ CHECK FOR UPDATES ═══════════════════════════════════════════════════════════════════════════
+// Drafting no longer searches the web (it sat on the critical path and its results were absorbed
+// invisibly). Recency is handled HERE instead, after the talk exists, as an explicit action the user
+// takes and reviews. Three rules, all of them the point of doing it this way:
+//   1. It only looks for evidence NEWER than what the talk already cites.
+//   2. Every proposal is verified against PubMed before it can be applied — a proposed PMID that does
+//      not exist, or whose real title doesn't match what the model claimed, is shown as UNVERIFIED and
+//      cannot be added. This is the same trust-but-verify rule the rest of the app runs on.
+//   3. Nothing is ever applied silently. The user picks. We append references and a note; we never
+//      rewrite the teaching text, because a background process editing medical prose is exactly the
+//      failure mode this app exists to avoid.
+var UPDATE_CHECK_PROMPT = "You are a medical librarian checking whether a teaching talk has fallen behind the evidence. "
+  + "Search ONLY for material published AFTER the sources the talk already cites: new or revised society guidelines, "
+  + "new drug approvals or label changes, and landmark trials that would change what a clinician teaches. "
+  + "Ignore anything already represented in the talk's reference list. Ignore incremental studies that do not change practice. "
+  + "It is CORRECT and expected to return an empty list — most talks on stable physiology have nothing newer worth adding. "
+  + "Do not invent identifiers. If you cannot find a real PMID or DOI for an item, omit the item entirely.\n\n"
+  + "Return ONLY this JSON:\n"
+  + '{"updates":[{"title":"","journal":"","year":2026,"pmid":"","doi":"","what_changed":"","why_it_matters":""}]}\n\n'
+  + "what_changed: one sentence on what is new. why_it_matters: one sentence on how it would change the talk. "
+  + "Return {\"updates\":[]} if there is nothing newer.";
+
+// Specialties where being six months stale is a clinical problem, not a cosmetic one. On these the check
+// is offered prominently rather than left as a button nobody notices. (Codex 2026-07-26)
+var FAST_MOVING_RE = /infect|\bid\b|antibiot|antimicrob|hiv|hepatitis|covid|influenza|vaccin|immuniz|oncol|cancer|carcinoma|lymphoma|leukemia|myeloma|melanoma|chemotherap|immunotherap|checkpoint|car-?t|transplant|anticoagul|doac|gene therapy|biologic/i;
+function talkIsFastMoving(t){
+  var hay = ((t && t.title) || "") + " " + ((t && t.subtitle) || "") + " " + (S.topic || "");
+  return FAST_MOVING_RE.test(hay);
+}
+
+// Verify each proposal against PubMed: the identifier must exist AND its real title must match what the
+// model claimed. Fails CLOSED — if we cannot check, the item is not offered for adding.
+async function _verifyProposedUpdates(items){
+  var withPmid = items.filter(function(x){ return /^\d{6,9}$/.test(String(x.pmid || "")); });
+  var map = withPmid.length ? await _esummaryBatch(withPmid.map(function(x){ return x.pmid; })) : {};
+  if(map === null){                       // lookup itself failed — do not offer anything unverified
+    items.forEach(function(x){ x._verified = false; x._why = "PubMed unreachable — cannot confirm this reference"; });
+    return items;
+  }
+  items.forEach(function(x){
+    var pm = String(x.pmid || "");
+    if(!/^\d{6,9}$/.test(pm)){ x._verified = false; x._why = "no PMID supplied"; return; }
+    var rec = map[pm];
+    if(!rec || !rec.ok){ x._verified = false; x._why = "PMID " + pm + " does not resolve on PubMed"; return; }
+    // identity, not just existence — the same check DOIs already get
+    if(!_titleRoughlyMatches(x.title, rec.title)){
+      x._verified = false;
+      x._why = "PMID " + pm + " is a different paper (" + String(rec.title || "").slice(0, 70) + "…)";
+      return;
+    }
+    x._verified = true;
+    x.title = rec.title || x.title;       // prefer PubMed's metadata over the model's
+    x.journal = rec.journal || x.journal;
+    x.year = rec.year || x.year;
+  });
+  return items;
+}
+function _titleRoughlyMatches(claimed, actual){
+  var norm = function(v){ return String(v || "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim(); };
+  var a = norm(claimed), b = norm(actual);
+  if(!a || !b) return false;
+  if(a === b) return true;
+  var aw = a.split(" ").filter(function(w){ return w.length > 3; });
+  var bw = b.split(" ").filter(function(w){ return w.length > 3; });
+  if(!aw.length || !bw.length) return false;
+  var hit = aw.filter(function(w){ return bw.indexOf(w) >= 0; }).length;
+  return (hit / Math.min(aw.length, bw.length)) >= 0.5;
+}
+
+async function checkForUpdates(){
+  var t = S.talk;
+  if(!t || (S.updateCheck && S.updateCheck.status === "running")) return;
+  var _uid = S.genId, _target = t;
+  S.updateCheck = { status: "running", items: [], err: "", checkedAt: 0 };
+  render();
+  try{
+    var refs = (t.references || []).filter(function(r){ return r && r.confidence !== "low"; });
+    var years = refs.map(function(r){ return parseInt(r.year, 10); }).filter(function(y){ return y > 1900; });
+    var newest = years.length ? Math.max.apply(null, years) : (new Date().getFullYear() - 3);
+    var listed = refs.map(function(r){
+      return "- " + (r.source || r.title || "source") + (r.year ? " (" + r.year + ")" : "") + (r.pmid ? " PMID " + r.pmid : "");
+    }).join("\n");
+    var user = "TOPIC: " + (t.title || S.topic || "") + "\n\n"
+             + "The talk already cites these — do NOT propose any of them again:\n" + (listed || "(none)") + "\n\n"
+             + "The newest source it cites is from " + newest + ". Find what has changed SINCE then.";
+    var res = await callAPIWithFallback(UPDATE_CHECK_PROMPT, user, 2048,
+      writeAllowedModels([MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]),
+      { meterKind: "talk", tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5, allowed_domains: ALLOWED_SEARCH_DOMAINS }] });
+    if(S.talk !== _target || _uid !== S.genId) return;    // user moved on — drop the result
+    var parsed = JSON.parse(fixJSON(res.txt || "{}"));
+    var items = Array.isArray(parsed.updates) ? parsed.updates.slice(0, 8) : [];
+    items = await _verifyProposedUpdates(items);
+    if(S.talk !== _target || _uid !== S.genId) return;
+    S.updateCheck = { status: "done", items: items, err: "", checkedAt: Date.now() };
+  }catch(e){
+    if(S.talk !== _target || _uid !== S.genId) return;
+    S.updateCheck = { status: "error", items: [], err: (e && e.message) || "check failed", checkedAt: 0 };
+  }
+  render();
+}
+
+// Apply the user's selections: APPEND verified references and a dated note. The teaching text is never
+// touched — a proposal is evidence the author may want, not an instruction to rewrite their talk.
+function applySelectedUpdates(){
+  var uc = S.updateCheck;
+  if(!uc || uc.status !== "done" || !S.talk) return;
+  var chosen = uc.items.filter(function(x){ return x._verified && x._selected; });
+  if(!chosen.length) return;
+  var t = S.talk;
+  t.references = (t.references || []).slice();
+  var nextId = t.references.reduce(function(m, r){ return Math.max(m, parseInt(r.id, 10) || 0); }, 0);
+  chosen.forEach(function(x){
+    t.references.push({ id: ++nextId, source: x.title, year: x.year, society: x.journal || "",
+      pmid: String(x.pmid), url: "https://pubmed.ncbi.nlm.nih.gov/" + x.pmid + "/",
+      type: "update", confidence: "pmid_verified", added_by_update_check: true });
+  });
+  t._updateChecked = new Date().toISOString().slice(0, 10);
+  t._updatesAdded = (t._updatesAdded || 0) + chosen.length;
+  S.updateCheck = null;
+  S.savedFlash = "\u2713 Added " + chosen.length + " newer reference" + (chosen.length === 1 ? "" : "s") + " — the teaching text was not changed";
+  render();
+  setTimeout(function(){ S.savedFlash = ""; render(); }, 4000);
+}
 
 // Batched PubMed esummary lookup (one call, comma-joined ids). Returns map pmid -> {ok, year, title,
 // journal}, or null when the LOOKUP ITSELF failed (offline/eutils down) so callers can fail open.
@@ -9053,6 +9178,7 @@ function rebuildLesson(){
   // Full rebuild, NOT a cache swap: drop the loaded talk's cached depth variants + re-arm web verify so
   // the new draft is retrieved and cited exactly like a fresh generation.
   S.depthVariantsCache=null; S._pendingDepthMerge=false; S.ragChunks=[];
+  S.updateCheck=null;   // update proposals are talk-scoped — never show one talk's results on another
   S.depth="concise";   // every new talk starts on the fast path; Detailed is a post-generation expansion
   S.wantWebSearch=false;
   generate();
@@ -9574,6 +9700,7 @@ function _clearTalkScoped(opts){
   S.citationAuditPending=false;                 // no phantom "checking citations" on the next talk
   S.proofreadArmed=false; S._applyProofreadMode=false;
   S.depthVariantsCache=null; S._pendingDepthMerge=false;
+  S.updateCheck=null;   // update proposals are talk-scoped — one talk's results must never show on another
   S.editSettings=false; S.overflowOpen=false; S.lightbox=false; S.gldOpen=false; S.ragOpen=false;
   try{ speechSynthesis.cancel(); }catch(_){}
 }
@@ -11292,7 +11419,9 @@ function renderMain(){
     h+='</div>';
     h+='</div>';
 
-    if(S.savedFlash)h+='<div style="margin-bottom:10px;padding:8px 12px;background:#f0f7f0;border:1px solid #b8d8b8;border-radius:8px;color:#2d6a2d;font-size:12px;font-weight:600;text-align:center">'+esc(S.savedFlash)+'</div>';
+    // (flash moved to the FOOT of the talk — see the provenance footer. A green bar announcing a
+    //  background citation audit was pushing the title down for something the reader didn't ask for.)
+    if(false)h+='<div style="margin-bottom:10px;padding:8px 12px;background:#f0f7f0;border:1px solid #b8d8b8;border-radius:8px;color:#2d6a2d;font-size:12px;font-weight:600;text-align:center">'+esc(S.savedFlash)+'</div>';
 
     // === Lesson title block ===
     // Title is clamped to a single line on both desktop and mobile (Jenni 2026-06-25): the text
@@ -11605,6 +11734,68 @@ function renderMain(){
         h+='</div>';
       }
       h+=renderRAGSources();
+
+      // ─── CHECK FOR UPDATES ───────────────────────────────────────────────
+      // Drafting is deliberately offline (curated guidelines + verified corpus), so recency lives here.
+      var _uc = S.updateCheck, _fast = talkIsFastMoving(t);
+      h+='<div style="margin:18px 0 4px;padding:12px 14px;background:'+(_fast && !_uc ? "#fdf6ec" : "var(--cream)")+';border:1px solid '+(_fast && !_uc ? "#e8c9a0" : "var(--line)")+';border-radius:12px">';
+      if(!_uc){
+        h+='<div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:3px">'+(_fast ? "⚠️ This topic moves fast" : "Check for newer evidence")+'</div>';
+        h+='<div style="font-size:11.5px;color:var(--ink-muted);line-height:1.5;margin-bottom:9px">'
+          + (_fast
+             ? "Approvals and guidance in this area change often, and this talk was written from stored sources. Worth checking before you teach it."
+             : "This talk was written from the curated guideline set and verified trial corpus. Search for guidelines, approvals and trials published since.")
+          + '</div>';
+        h+='<button id="checkUpdatesBtn" style="background:var(--plum);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer">🔎 Check for updates</button>';
+      } else if(_uc.status === "running"){
+        h+='<div style="font-size:12.5px;font-weight:600;color:var(--ink)">Searching society sites and journals…</div>';
+        h+='<div style="font-size:11.5px;color:var(--ink-muted);margin-top:3px">Looking only for material newer than this talk\'s sources.</div>';
+      } else if(_uc.status === "error"){
+        h+='<div style="font-size:12.5px;font-weight:600;color:#c0392b">Couldn\'t complete the check</div>';
+        h+='<div style="font-size:11.5px;color:var(--ink-muted);margin:3px 0 9px">'+esc(_uc.err)+'</div>';
+        h+='<button id="checkUpdatesBtn" style="background:none;border:1px solid var(--line);border-radius:10px;padding:7px 13px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;color:var(--ink)">Try again</button>';
+      } else {
+        var _verified = _uc.items.filter(function(x){ return x._verified; });
+        var _rejected = _uc.items.filter(function(x){ return !x._verified; });
+        if(!_uc.items.length){
+          h+='<div style="font-size:12.5px;font-weight:600;color:#2d6a2d">✓ Nothing newer found</div>';
+          h+='<div style="font-size:11.5px;color:var(--ink-muted);margin-top:3px">The sources this talk cites are still the current ones.</div>';
+        } else {
+          h+='<div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:8px">'+_verified.length+' newer source'+(_verified.length===1?"":"s")+' found — choose what to add</div>';
+          for(var _ui=0; _ui<_uc.items.length; _ui++){
+            var _it = _uc.items[_ui];
+            if(!_it._verified) continue;
+            h+='<label style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line-soft);cursor:pointer">';
+            h+='<input type="checkbox" class="updatePick" data-i="'+_ui+'"'+(_it._selected?" checked":"")+' style="margin-top:3px;flex-shrink:0">';
+            h+='<span style="min-width:0">';
+            h+='<span style="display:block;font-size:12px;font-weight:600;color:var(--ink);line-height:1.4">'+esc(_it.title||"")+'</span>';
+            h+='<span style="display:block;font-size:11px;color:var(--ink-muted);margin-top:2px">'+esc([_it.journal, _it.year].filter(Boolean).join(" · "))+' · PMID '+esc(String(_it.pmid))+' <span style="color:#2d6a2d">✓ verified</span></span>';
+            if(_it.what_changed) h+='<span style="display:block;font-size:11.5px;color:var(--ink);margin-top:4px;line-height:1.5">'+esc(_it.what_changed)+'</span>';
+            if(_it.why_it_matters) h+='<span style="display:block;font-size:11.5px;color:var(--ink-muted);margin-top:2px;line-height:1.5"><i>'+esc(_it.why_it_matters)+'</i></span>';
+            h+='</span></label>';
+          }
+          if(_verified.length){
+            h+='<button id="applyUpdatesBtn" style="margin-top:10px;background:var(--plum);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer">Add selected to references</button>';
+            h+='<div style="font-size:10.5px;color:var(--ink-muted);margin-top:6px;line-height:1.5">Adds them to the reference list only. Your teaching text is never rewritten — read the source and decide what to change yourself.</div>';
+          }
+          // Say out loud what was thrown away and why. A proposal we could not verify is a near-miss of
+          // a fabricated citation, and hiding it would hide how often that happens.
+          if(_rejected.length){
+            h+='<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-muted);line-height:1.6">';
+            h+='<b>'+_rejected.length+' proposal'+(_rejected.length===1?" was":"s were")+' discarded — could not be verified:</b><br>';
+            for(var _ri=0; _ri<_rejected.length; _ri++) h+='· '+esc(String(_rejected[_ri].title||"untitled").slice(0,64))+' — '+esc(_rejected[_ri]._why||"unverified")+'<br>';
+            h+='</div>';
+          }
+        }
+        h+='<button id="checkUpdatesBtn" style="margin-top:10px;background:none;border:none;color:var(--plum);font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;padding:0">Check again</button>';
+      }
+      h+='</div>';
+
+      // Citation-audit result belongs down here with the provenance, not as a green bar above the title.
+      if(S.savedFlash){
+        h+='<div style="margin:14px 0 0;padding:8px 12px;background:#f0f7f0;border:1px solid #b8d8b8;'
+         + 'border-radius:8px;color:#2d6a2d;font-size:11.5px;font-weight:600">'+esc(S.savedFlash)+'</div>';
+      }
 
       // ─── Provenance footer — one quiet line, the way a methods note reads ───
       var _pvFoot = _provenanceChips(t, S.citationAuditPending);
@@ -12389,6 +12580,18 @@ function bindMain(){
   }
   // Post-talk depth switch — expands/collapses the EXISTING talk. Never wipes it. (2026-07-26)
   document.querySelectorAll(".flipDepthBtn").forEach(function(b){ b.onclick=function(){ if(b.disabled) return; _flipDepthTo(b.dataset.d); }; });
+  // ── Check for updates ──
+  var _cub=document.getElementById("checkUpdatesBtn");
+  if(_cub) _cub.onclick=function(){ S.updateCheck=null; checkForUpdates(); };
+  document.querySelectorAll(".updatePick").forEach(function(cb){
+    cb.onchange=function(){
+      var i=parseInt(cb.dataset.i,10);
+      if(S.updateCheck && S.updateCheck.items[i]) S.updateCheck.items[i]._selected = cb.checked;
+    };
+  });
+  var _aub=document.getElementById("applyUpdatesBtn");
+  if(_aub) _aub.onclick=function(){ applySelectedUpdates(); };
+
   var dtbC=document.getElementById("depthToggleBtnConcise");if(dtbC)dtbC.onclick=function(){_flipDepthTo("concise")};
   var dtbD=document.getElementById("depthToggleBtnDetailed");if(dtbD)dtbD.onclick=function(){_flipDepthTo("detailed")};
   // Legacy capsule depth toggle (if it ever renders) — same handler

@@ -91,6 +91,10 @@ jobs:
       - name: Retry evidence preservation + provenance stamping
         run: node test_retry_evidence.mjs
 
+      # A proposed reference is a MODEL-SUPPLIED CITATION — the exact thing this app never trusts.
+      - name: Check for updates (verify before offering; never rewrite the talk)
+        run: node test_update_check.mjs
+
       # A patch cannot silently drop a field it never names — but only if the applier is airtight.
       - name: Patch-based review (all-or-nothing, re-gated, no rewrite in disguise)
         run: node test_patch_review.mjs
