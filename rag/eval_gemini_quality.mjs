@@ -58,6 +58,11 @@ const argVal = (k, d) => { const i = ARGV.indexOf(k); return i >= 0 && ARGV[i + 
 const N_TOPICS = parseInt(argVal("--topics", "10"), 10);
 const ONLY_STYLE = argVal("--style", "");
 const NO_JUDGE = ARGV.includes("--no-judge");
+// Reference-only mode: rerun the frozen 20 rows against the PRODUCTION writer (claude-opus-5) with no
+// candidate arm and no judge. Used to verify a change to the prompts/parser, not to evaluate a rival.
+// Codex: "the reference model cannot receive an automatic pass" — so in this mode the safety GATE is
+// applied to the reference arm itself, on the same absolute criteria a candidate would face.
+const NO_CANDIDATE = ARGV.includes("--no-candidate") || ARGV.includes("--reference-only");
 
 const DRY = ARGV.includes("--dry");
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
@@ -66,7 +71,7 @@ const _prov0 = argVal("--provider", "gemini");
 const _needOR = _prov0 === "openrouter";
 const _needOAI = _prov0 === "openai";
 const _needCla = _prov0 === "claude";
-if (!DRY && _needCla && !ARGV.includes("--claude-model")) {
+if (!DRY && !NO_CANDIDATE && _needCla && !ARGV.includes("--claude-model")) {
   console.error("✖ --provider claude also needs --claude-model <id>, e.g. claude-sonnet-4-20250514");
   console.error("  (claude-opus-5 stays the reference arm, so testing it against itself is pointless.)");
   process.exit(1);
@@ -79,7 +84,7 @@ if (!DRY && _needOAI && !process.env.OPENAI_API_KEY) {
   console.error("✖ OPENAI_API_KEY not set. Add it with: node rag/setkey.mjs OPENAI_API_KEY");
   process.exit(1);
 }
-if (!DRY && !_needOR && !_needOAI && !_needCla && !GEMINI_KEY) {
+if (!DRY && !NO_CANDIDATE && !_needOR && !_needOAI && !_needCla && !GEMINI_KEY) {
   console.error("✖ GEMINI_API_KEY not set. Add it with: node rag/setkey.mjs GEMINI_API_KEY");
   console.error("  Get one at https://aistudio.google.com/apikey  ·  never paste keys into chat.");
   process.exit(1);
@@ -90,7 +95,13 @@ if (!DRY && _needOR && !process.env.OPENROUTER_API_KEY) {
   process.exit(1);
 }
 const RUN_CLAUDE = !!CLAUDE_KEY;
-const RUN_JUDGE = RUN_CLAUDE && !NO_JUDGE;
+const RUN_CANDIDATE = !NO_CANDIDATE;
+// the judge grades A-vs-B; with one arm there is nothing to compare
+const RUN_JUDGE = RUN_CLAUDE && RUN_CANDIDATE && !NO_JUDGE;
+if (!DRY && NO_CANDIDATE && !CLAUDE_KEY) {
+  console.error("\u2716 --no-candidate benchmarks the reference arm (" + "claude-opus-5" + ") and needs ANTHROPIC_API_KEY.");
+  process.exit(1);
+}
 
 // The 10 golden topics (the pre-launch gate set).
 const TOPICS_GOLD = [
@@ -261,15 +272,23 @@ async function rxnormKnows(name) {
   } catch { rxCache.set(name, null); return null; }
 }
 
-// Returns only the flags that RxNorm confirms are NOT real drug names.
+// Returns only the flags that RxNorm confirms are NOT real drug names, PLUS a count of candidates it
+// could not adjudicate. Failing open is correct (a flaky NLM endpoint must not fail a good talk), but
+// the count has to travel with the result — otherwise "0 drug misspellings" reads identically whether
+// RxNorm cleared every name or was simply unreachable. (2026-07-26)
 async function verifyDrugFlags(cands) {
-  const confirmed = [];
+  const confirmed = []; let unverified = 0;
   for (const c of cands) {
     const known = await rxnormKnows(c.found);
     if (known === true) continue;                                     // real drug → not a misspelling
-    if (known === null) { if (!c.needsCheck) confirmed.push({ ...c, note: "RxNorm unreachable; flagged on local near-miss only" }); continue; }
+    if (known === null) {                                             // RxNorm down / unreachable
+      unverified++;
+      if (!c.needsCheck) confirmed.push({ ...c, note: "RxNorm unreachable; flagged on local near-miss only" });
+      continue;
+    }
     confirmed.push({ ...c, closest: c.needsCheck ? "(unknown to RxNorm — not a real drug name)" : c.closest });
   }
+  confirmed.unverified = unverified;
   return confirmed;
 }
 
@@ -496,6 +515,7 @@ async function grade(style, raw) {
   const bad = await verifyDrugFlags(cands);
   if (bad.length) for (const b of bad.slice(0, 6)) hard.push(`misspelled/fabricated drug: "${b.found}" → ${b.closest}${b.note ? " [" + b.note + "]" : ""}`);
   soft.drug_flags = bad.length;
+  if (bad.unverified) soft.unverified_drug_candidates = bad.unverified;
   soft.drug_candidates_prefiltered = cands.length;
 
   // guideline anchoring: did it name a society + year?
@@ -552,7 +572,7 @@ if (DRY) {
 
 const results = [];
 console.log(`Model benchmark (see rag/MODEL_BENCHMARK.md) — ${TOPICS_GOLD.length} topic(s) × ${STYLES.length} style(s)`);
-console.log(`  candidate: ${CANDIDATE_LABEL}   claude arm: ${RUN_CLAUDE ? CLAUDE_MODEL : "SKIPPED (no ANTHROPIC_API_KEY)"}   judge: ${RUN_JUDGE ? "on" : "off"}\n`);
+console.log(`  candidate: ${RUN_CANDIDATE ? CANDIDATE_LABEL : "NONE (reference-only rerun)"}   claude arm: ${RUN_CLAUDE ? CLAUDE_MODEL : "SKIPPED (no ANTHROPIC_API_KEY)"}   judge: ${RUN_JUDGE ? "on" : "off"}\n`);
 
 const TOTAL_ROWS = TOPICS_GOLD.length * STYLES.length;
 let rowNum = 0;
@@ -567,7 +587,7 @@ for (const topic of TOPICS_GOLD) {
     console.log(`\n[${rowNum}/${TOTAL_ROWS}] ${topic} [${style}]${eta}`);
 
     // Both arms in PARALLEL — they're independent, so serializing them doubled wall-clock for nothing.
-    const geminiP = (async () => {
+    const geminiP = !RUN_CANDIDATE ? Promise.resolve(null) : (async () => {
       const t0 = Date.now();
       try { const raw = await callCandidate(system, user); const g = await grade(style, raw);
             return { ms: Date.now() - t0, hard: g.hard, soft: g.soft, raw_len: raw.length, raw, talk: g.talk }; }
@@ -583,7 +603,7 @@ for (const topic of TOPICS_GOLD) {
     [row.gemini, row.claude] = await Promise.all([geminiP, claudeP]);
     const fmt = (r) => !r ? "" : r.error ? `ERR (${String(r.error).slice(0, 60)})`
       : `${r.hard.length ? "✖ " + r.hard.length + " hard-fail" + (r.hard.length > 1 ? "s" : "") : "✓ clean"} in ${Math.round(r.ms / 1000)}s`;
-    console.log(`        ${CANDIDATE_LABEL}: ${fmt(row.gemini)}`);
+    if (RUN_CANDIDATE) console.log(`        ${CANDIDATE_LABEL}: ${fmt(row.gemini)}`);
     if (row.gemini?.hard?.length) for (const h of row.gemini.hard) console.log(`           ✖ ${h}`);
     if (RUN_CLAUDE) {
       console.log(`        claude: ${fmt(row.claude)}`);
@@ -625,13 +645,18 @@ const sum = (arm) => {
   const fab = rows.reduce((a, r) => a + (r.soft?.fabricated_pmids || 0), 0);
   const drug = rows.reduce((a, r) => a + (r.soft?.drug_flags || 0), 0);
   const refs = rows.reduce((a, r) => a + (r.soft?.reference_count || 0), 0);
+  // A verifier that was unreachable produces the SAME zero as a verifier that found nothing wrong.
+  const unchkPmid = rows.reduce((a, r) => a + (r.soft?.uncheckable_pmids || 0), 0);
+  const unchkDrug = rows.reduce((a, r) => a + (r.soft?.unverified_drug_candidates || 0), 0);
   const errs = rows.filter(r => r.error).length;
   return { generations: rows.length, clean: rows.length - withHard.length, with_hard_fails: withHard.length,
-           call_errors: errs, fabricated_citations: fab, drug_misspellings: drug, total_references: refs };
+           call_errors: errs, fabricated_citations: fab, drug_misspellings: drug, total_references: refs,
+           uncheckable_pmids: unchkPmid, unverified_drug_candidates: unchkDrug };
 };
 const summary = { generated_at: new Date().toISOString(), candidate_model: CANDIDATE_LABEL, provider: PROVIDER, gemini_model: GEMINI_MODEL,
   claude_model: RUN_CLAUDE ? CLAUDE_MODEL : null, topics: TOPICS_GOLD, styles: STYLES,
-  gemini: sum("gemini"), claude: RUN_CLAUDE ? sum("claude") : null };
+  gemini: RUN_CANDIDATE ? sum("gemini") : null, claude: RUN_CLAUDE ? sum("claude") : null,
+  reference_only: NO_CANDIDATE };
 if (RUN_JUDGE) {
   const js = results.map(r => r.judge).filter(j => j && !j.error);
   summary.judge = { compared: js.length,
@@ -647,8 +672,10 @@ writeFileSync("rag/eval_gemini_report.json", JSON.stringify({ summary, results }
 
 console.log("\n═══ SUMMARY ═══");
 const p = (label, s) => { if (!s) return;
-  console.log(`  ${label}: ${s.clean}/${s.generations} clean · hard-fails ${s.with_hard_fails} · fabricated citations ${s.fabricated_citations} · drug misspellings ${s.drug_misspellings} · refs ${s.total_references}${s.call_errors ? ` · call errors ${s.call_errors}` : ""}`); };
-p(CANDIDATE_LABEL.toUpperCase(), summary.gemini);
+  console.log(`  ${label}: ${s.clean}/${s.generations} clean · hard-fails ${s.with_hard_fails} · fabricated citations ${s.fabricated_citations} · drug misspellings ${s.drug_misspellings} · refs ${s.total_references}${s.call_errors ? ` · call errors ${s.call_errors}` : ""}`);
+  if (s.uncheckable_pmids || s.unverified_drug_candidates)
+    console.log(`     \u26a0 NOT VERIFIED: ${s.uncheckable_pmids} PMID(s) unreachable, ${s.unverified_drug_candidates} drug name(s) unadjudicated — those zeros above are "unknown", not "clean".`); };
+if (RUN_CANDIDATE) p(CANDIDATE_LABEL.toUpperCase(), summary.gemini);
 p("CLAUDE", summary.claude);
 if (summary.judge) {
   const j = summary.judge;
@@ -656,18 +683,22 @@ if (summary.judge) {
   if (j.gemini_flagged_errors.length) { console.log("  judge-flagged CANDIDATE (" + CANDIDATE_LABEL + ") medical errors:"); for (const e of j.gemini_flagged_errors.slice(0, 10)) console.log("    - " + e); }
   if (j.claude_flagged_errors.length) { console.log("  judge-flagged REFERENCE (" + CLAUDE_MODEL + ") medical errors:"); for (const e of j.claude_flagged_errors.slice(0, 10)) console.log("    - " + e); }
 }
-const blocking = results.flatMap(r => (r.gemini?.hard || []).map(h => `${r.topic} [${r.style}]: ${h}`));
+// whichever arm is actually under test
+const GATED_ARM = RUN_CANDIDATE ? "gemini" : "claude";
+const GATED_LABEL = RUN_CANDIDATE ? CANDIDATE_LABEL : CLAUDE_MODEL;
+const blocking = results.flatMap(r => (r[GATED_ARM]?.hard || []).map(h => `${r.topic} [${r.style}]: ${h}`));
 if (blocking.length) {
-  console.log(`\n═══ GEMINI HARD FAILS (${blocking.length}) ═══`);
+  console.log(`\n═══ ${GATED_LABEL.toUpperCase()} HARD FAILS (${blocking.length}) ═══`);
   for (const b of blocking) console.log("  ✖ " + b);
 }
 console.log(`\n-> full report: rag/eval_gemini_report.json`);
 
 // GATE: any fabricated citation or misspelled drug is disqualifying for a medical teaching tool.
-const g = summary.gemini;
+const g = RUN_CANDIDATE ? summary.gemini : summary.claude;
 const disqualifying = g.fabricated_citations > 0 || g.drug_misspellings > 0;
 if (disqualifying) {
-  console.log("\n✖ GATE FAILED — fabricated citations and/or misspelled drugs are disqualifying. Do NOT expose the Gemini CTA.");
+  console.log(`\n✖ GATE FAILED — fabricated citations and/or misspelled drugs are disqualifying (${GATED_LABEL}).`
+    + (RUN_CANDIDATE ? " Do NOT expose the candidate CTA." : " The PRODUCTION writer failed the absolute bar — do not deploy."));
   process.exit(1);
 }
 if (g.with_hard_fails > 0) {
@@ -675,7 +706,18 @@ if (g.with_hard_fails > 0) {
   console.log("  Review the report: structural misses may be fixable with a prompt tweak; re-run after.");
   process.exit(2);
 }
-console.log(`\n✔ SAFETY GATE PASSED — ${g.clean}/${g.generations} ${CANDIDATE_LABEL} generations clean, 0 fabricated citations, 0 drug misspellings.`);
+// A "0 fabricated citations" that only means "Europe PMC was unreachable" is not evidence of safety.
+// Two of the six pass-bar items depend on live verifiers; if they could not run, the honest verdict is
+// INCONCLUSIVE, not PASSED. (Offline/sandboxed runs used to print a green gate here. 2026-07-26)
+if (g.uncheckable_pmids > 0 || g.unverified_drug_candidates > 0) {
+  console.log(`\n\u26a0 GATE INCONCLUSIVE — structural checks passed (${g.clean}/${g.generations} clean), but the CITATION and/or DRUG verifier could not be reached:`);
+  if (g.uncheckable_pmids > 0) console.log(`    ${g.uncheckable_pmids} cited PMID(s) were never confirmed to exist (Europe PMC unreachable).`);
+  if (g.unverified_drug_candidates > 0) console.log(`    ${g.unverified_drug_candidates} drug-shaped token(s) were never confirmed against RxNorm.`);
+  console.log("  Fabrication is the whole point of this gate, so this run CANNOT clear a writer. Re-run from a");
+  console.log("  network that can reach www.ebi.ac.uk and rxnav.nlm.nih.gov before treating the result as a pass.");
+  process.exit(2);
+}
+console.log(`\n✔ SAFETY GATE PASSED — ${g.clean}/${g.generations} ${GATED_LABEL} generations clean, 0 fabricated citations, 0 drug misspellings.`);
 // Safety and quality are separate questions. A model can invent nothing and still teach worse, and the
 // launch decision needs both numbers side by side — otherwise "GATE PASSED" reads as a verdict on
 // quality that this script never measured. (2026-07-26)
@@ -686,6 +728,6 @@ if (summary.judge && summary.judge.compared) {
   else if (delta > 0.25) console.log(`  → Modest gap; defensible to ship with honest labeling.`);
   else console.log(`  → No meaningful quality gap detected.`);
   if ((j.gemini_flagged_errors || []).length) console.log(`  ⚠ The judge flagged ${j.gemini_flagged_errors.length} specific medical error(s) in ${CANDIDATE_LABEL} output — read those in the report before deciding; a factual error matters more than the average score.`);
-} else if (RUN_CLAUDE) {
+} else if (RUN_CLAUDE && RUN_CANDIDATE) {
   console.log("\n  QUALITY: no judge comparisons succeeded — safety passed but relative teaching quality is UNMEASURED.");
 }

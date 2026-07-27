@@ -77,3 +77,8 @@ jobs:
 
       - name: Strict talk parsing (never render partial medical content)
         run: node test_parse_strict.mjs
+
+      # The benchmark harness decides which models may write medical content. If it can report a PASS
+      # when its verifiers were unreachable, every clearance it has ever granted is suspect.
+      - name: Benchmark harness (never pass on unverified evidence)
+        run: node test_eval_harness.mjs
