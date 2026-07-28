@@ -79,7 +79,7 @@ import { realpathSync as _realpathSync } from "fs";
  * generations are guideline-grounded but not RAG-grounded. Both arms get IDENTICAL context, so the
  * comparison stays fair; absolute citation counts will read lower than production.
  */
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import vm from "vm";
 import "./loadenv.mjs";
 
@@ -699,9 +699,21 @@ for (const topic of TOPICS_GOLD) {
     }
     results.push(row);
     // Incremental save — a Ctrl-C (or a crash 18 rows in) must never throw away completed work.
-    try { writeFileSync("rag/eval_gemini_report.json", JSON.stringify({ partial: rowNum < TOTAL_ROWS, rows_done: rowNum, of: TOTAL_ROWS, results }, null, 2) + "\n"); } catch {}
+    try {
+      const _payload = JSON.stringify({ partial: rowNum < TOTAL_ROWS, rows_done: rowNum, of: TOTAL_ROWS,
+                                        candidate_model: CANDIDATE_LABEL, run_started: RUN_STAMP, results }, null, 2) + "\n";
+      writeFileSync("rag/eval_gemini_report.json", _payload);          // convenient, and OVERWRITTEN every run
+      writeFileSync(RUN_ARCHIVE, _payload);                            // immutable: one file per run, never reused
+    } catch {}
   }
 }
+
+// A 20-row run costs ~50 minutes and real API spend. rag/eval_gemini_report.json is a CONVENIENCE path
+// that every run overwrites; the timestamped archive beside it is the record. On 2026-07-28 the only copy
+// of a completed run was destroyed by a single stray command, and the run had to be written off.
+const RUN_STAMP = new Date().toISOString().replace(/[:.]/g, "-");
+const RUN_ARCHIVE = `rag/runs/eval_${RUN_STAMP}.json`;
+try { mkdirSync("rag/runs", { recursive: true }); } catch {}
 
 // ── summarize ─────────────────────────────────────────────────────────────────
 const sum = (arm) => {

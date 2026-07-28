@@ -37,3 +37,4 @@ rag/eval_gemini_report.json
 
 # transient "most recent run" duplicate — the per-model eval_critic_<model>.json files are the durable record
 rag/eval_critic_report.json
+rag/runs/*.json
