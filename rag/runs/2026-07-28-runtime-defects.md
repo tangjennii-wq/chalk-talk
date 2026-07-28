@@ -117,13 +117,66 @@ phrasing, and was proven by reintroducing the bug.
 
 | # | path | result |
 |---|---|---|
-| 1 | Concise lecture, common topic | ✅ PASS (DKA, build -28-01) — renders, 4 sections, provenance at foot, no console errors. Defects D-1, D-3 logged. |
-| 2 | Boards question | ⬜ |
-| 3 | Detailed toggle on a finished talk | ⬜ |
-| 4 | Refine on a finished talk | ⬜ |
-| 5 | Check for updates | ⬜ |
-| 6 | Apply update, then Refine — reference survives | ⬜ |
-| 7 | Apply update → unsaved state + Undo | ⬜ |
-| 8 | Reload mid-generation → resume + provenance | ⬜ |
-| 9 | Open saved talk after generating → no bleed-through | ⬜ |
-| 10 | Signed out / free tier | ⬜ blocked — needs the Worker redeploy |
+| 1 | Concise lecture, common topic | ✅ **PASS** — DKA. Renders, 4 sections, provenance at foot, no console errors. D-1/D-3 logged. |
+| 2 | Boards question | ✅ **PASS** — Hyperkalemia, difficulty 4. 5 choices all with real text, one correct (C), explanation, 4 wrong-explanations, 5 pearls, stem 158 words (in range). ABIM breadcrumb correct; Slides/Visual tabs correctly hidden. |
+| 3 | Detailed toggle on a finished talk | ✅ **PASS** — 4→5 sections, 20→32 bullets, refs 2→3. Talk stayed on screen throughout ("Regenerating in background — you can keep reading"). The old wipe-on-toggle bug is gone. ~150 s. |
+| 4 | Refine on a finished talk | ✅ **PASS** — title unchanged, all 5 headings preserved, bullets 32→34, **all 3 prior refs intact**, 1 correct new ref added (Glaser, paediatric cerebral edema, NEJM). Talk marked unsaved. |
+| 5 | Check for updates | ✅ **PASS** — 4 newer sources proposed, not applied. Each PubMed-confirmed, each labelled "AI SUMMARY · NOT VERIFIED AGAINST THE PAPER", each with a rationale. Correctly spotted that PECARN 2018 supersedes the Glaser 2001 paper the talk cites. |
+| 6 | Apply update, then Refine — reference survives | ✅ **PASS** — both added PMIDs (39052901, 29897851) present after a full refine. Codex bug #2 confirmed fixed. |
+| 7 | Apply update → unsaved state + Undo | ✅ **PASS** — refs 4→6, each stamped `src_verified:"pubmed"`, `confidence:"high"`, `provenance:"pubmed_verified"`. `talkIsSaved:false`, undo history depth 2, Undo button rendered. |
+| 8 | Reload mid-generation → resume + provenance | ⛔ **NOT TESTABLE IN THIS CONFIG** — see note below. |
+| 9 | Open saved talk after generating → no bleed-through | ⚠️ **INCONCLUSIVE** — see D-4. Partial positive: zero contamination from any of the three talks generated this session. |
+| 10 | Signed out / free tier | ⛔ **BLOCKED** — needs the Worker redeploy. |
+
+### Why 8 and 10 could not be run
+
+The browser is in **BYOK mode**: `PROXY_CONFIG.enabled === false` and a personal key is set, so every call
+goes straight to `api.anthropic.com` and generation is **synchronous in the page**. There is no
+server-side JOBS_KV job to resume, so a mid-generation reload can only lose the work — the resume path
+does not exist in this configuration. Test 8 exercises the Worker's async path and Test 10 exercises the
+Worker's own key; both require the redeploy in `RELEASE.md` §C and must be run against the deployed site.
+
+**This matters more than a normal skipped test.** The resume path is what mobile generations actually
+use, and it is the path that silently stamped no provenance until it was fixed. It remains the least
+exercised code in the release.
+
+---
+
+## D-4 · Library "Open" — could not confirm it loads the talk you clicked
+
+**Severity: unknown. Needs a deliberate re-test.**
+
+Clicked **Open** on the "Atrial Fibrillation" row; a new tab opened showing a talk titled **"LDL Lowering
+in Coronary & Ischemic Heart Disease"**, which is not a visible card label in the library.
+
+What I could establish:
+- Each row's Open is a real per-talk link (`#t=<uuid>`), distinct per row — routing is by id, not index.
+- **The opened tab's `location.hash` was empty.** So that tab never received the `#t=` fragment; it is a
+  fresh load that restored a talk from storage, not an Open-by-id.
+
+So this may be nothing more than "a new tab restores your last session", and my click may simply not have
+driven that tab at all. **I am recording it as unresolved rather than as a defect** — asserting a bug I
+have not demonstrated is the exact error this log exists to avoid. Re-test deliberately: navigate a tab
+directly to `#t=<uuid>` for a known card and compare the loaded title against the card label.
+
+(Note: card labels and stored `title` fields may legitimately differ — "Statins, etc. in CAD" plausibly
+stores "LDL Lowering in Coronary & Ischemic Heart Disease". That alone would explain everything.)
+
+---
+
+## D-1 · third data point (Hyperkalemia, boards)
+
+| retrieved | on-topic? |
+|---|---|
+| EMPHASIS-HF (eplerenone) · FIDELIO · EPHESUS · ALLHAT · MERIT-HF · CONSENSUS · PARADIGM-HF | no (7) |
+| Sodium zirconium cyclosilicate in hyperkalemia | **yes (1)** |
+
+**1 of 8 on-topic** — better than 0/8, still 87% miss. These are drugs that *cause* hyperkalemia, so the
+corpus is returning disease-area landmark trials again rather than management evidence for the topic.
+
+**Three topics, three categories, same shape: 0/8, 0/8, 1/8.**
+
+Decisive contrast, same session: the **update check** — which uses web search plus PubMed rather than the
+local corpus — returned four precisely on-topic, PubMed-verified sources for the same DKA talk, including
+one that correctly supersedes a reference the talk was citing. **The query is fine. The corpus is the
+problem.**
