@@ -64,7 +64,7 @@ const CLEAR = /S\.streamingTitle\s*=\s*""/;
   ok(/if\s*\(_hasStreamPreview\)/.test(win), "the preview renders when there is preview data");
   ok(/if\(_reviewing\)/.test(win), "…and carries a REVIEWING label when the review is running");
   // Provisional content must not wear the colour of an approval (Codex 2026-07-26)
-  ok(/Draft · under review/.test(win), "…labelled 'Draft · under review', not presented as finished");
+  ok(/Draft — still checking/.test(win), "…labelled 'Draft — still checking' in plain words, not presented as finished");
   ok(!/#2d6a2d/.test(win), "…in AMBER, not green — green reads as 'passed' and this has not passed yet");
   // THE ORIGINAL FORM OF THIS TEST WAS USELESS. It searched for the exact string "A second model checks",
   // which appears nowhere in the file, so it passed green while FIVE user-visible places went on claiming
@@ -75,7 +75,11 @@ const CLEAR = /S\.streamingTitle\s*=\s*""/;
      "NOTHING in the app claims a second model reviews the draft — drafting and review are both claude-opus-5");
   ok((html.match(/separate AI review pass/g) || []).length >= 4,
      "…and the accurate phrasing appears everywhere the old claim did (meta, og, twitter, how-it-works, preview)");
-  ok(/A separate AI review pass checks/.test(html), "…it describes a separate PASS, which is what actually happens");
+  ok(/A second pass re-reads the draft/.test(html), "…it describes a second pass in plain words, which is what actually happens");
+  // The old copy said this pass was "the step that makes it safe to teach from". Nothing automated makes
+  // medical content safe to teach from — only a clinician reading it does. (Jenni 2026-07-28)
+  ok(!/makes it safe to teach from/.test(html), "…and does NOT claim the automated pass makes the talk safe to teach from");
+  ok(/Always read it yourself before you teach from it/.test(html), "…it tells the user to read it themselves");
   // the whole point: this branch was dead because the data was gone before genPhase flipped
   ok(/S\.genPhase = .*reviewing/.test(html) || /genPhase = \(stage === "critique"\)/.test(html),
      "genPhase actually reaches 'reviewing' during a generation");

@@ -39,21 +39,21 @@ ctx.S.geminiFreeFlow = false;
 // ---- 2) web-search label reflects an ACTUAL search, not the toggle ----------
 const claudeSearched = { _reviewStatus:"reviewed", _writtenBy:"claude", _webSearched:true, _guidelinesLoaded:true, _ragCount:2, _citationsVerified:true };
 const claudeNoSearch = { ...claudeSearched, _webSearched:false };
-ok(chips(claudeSearched, false).some(c => /Searched current sources/.test(c)), "web-search chip shown when a search actually ran");
-ok(!chips(claudeNoSearch, false).some(c => /Searched current sources/.test(c)), "NO web-search chip when no search ran (toggle-on but _webSearched false)");
+ok(chips(claudeSearched, false).some(c => /Also searched the web/.test(c)), "web-search chip shown when a search actually ran");
+ok(!chips(claudeNoSearch, false).some(c => /Also searched the web/.test(c)), "NO web-search chip when no search ran (toggle-on but _webSearched false)");
 const gemini = { _reviewStatus:"reviewed", _writtenBy:"gemini", _webSearched:false, _guidelinesLoaded:true, _ragCount:0 };
-ok(!chips(gemini, false).some(c => /Searched current sources/.test(c)), "Gemini never claims a web search");
+ok(!chips(gemini, false).some(c => /Also searched the web/.test(c)), "Gemini never claims a web search");
 ok(chips(gemini, false).some(c => /Gemini/.test(c)), "the writer label still names Gemini (chip text shortened 2026-07-26)");
 
 // ---- 3) grounding claimed ONLY when a guideline matched and/or RAG hit -------
 const noGrounding = { _reviewStatus:"reviewed", _writtenBy:"claude", _guidelinesLoaded:false, _ragCount:0 };
-ok(!chips(noGrounding, false).some(c => /Grounded/.test(c)), "NO grounding claim when no guideline matched and RAG returned nothing");
-ok(chips({ _reviewStatus:"reviewed", _guidelinesLoaded:true, _ragCount:0 }, false).some(c => /Grounded in society guidelines/.test(c)), "guideline-only grounding label");
-ok(chips({ _reviewStatus:"reviewed", _guidelinesLoaded:false, _ragCount:3 }, false).some(c => /Grounded in 3 retrieved sources/.test(c)), "RAG-only grounding label");
-ok(chips({ _reviewStatus:"reviewed", _guidelinesLoaded:true, _ragCount:2 }, false).some(c => /Grounded in guidelines \+ 2 retrieved sources/.test(c)), "guideline + RAG grounding label");
+ok(!chips(noGrounding, false).some(c => /\bpaper|guideline/i.test(c)), "NO grounding claim when no guideline matched and RAG returned nothing");
+ok(chips({ _reviewStatus:"reviewed", _guidelinesLoaded:true, _ragCount:0 }, false).some(c => /Society guidelines on hand/.test(c)), "guideline-only grounding label");
+ok(chips({ _reviewStatus:"reviewed", _guidelinesLoaded:false, _ragCount:3 }, false).some(c => /3 papers found to cite from/.test(c)), "RAG-only grounding label");
+ok(chips({ _reviewStatus:"reviewed", _guidelinesLoaded:true, _ragCount:2 }, false).some(c => /2 papers found to cite from/.test(c)), "guideline + RAG grounding label");
 
 // ---- citations distinct from review; legacy talks get no chips --------------
-ok(chips({ _reviewStatus:"reviewed", _citationsVerified:false }, true).some(c => /Checking citations/.test(c)), "citations 'checking' while audit pending");
+ok(chips({ _reviewStatus:"reviewed", _citationsVerified:false }, true).some(c => /Checking the references/.test(c)), "citations 'checking the references' while audit pending");
 ok(!chips({ _reviewStatus:"reviewed", _citationsVerified:false }, false).some(c => /Citations checked/.test(c)), "review-complete does NOT imply citations checked");
 ok(chips({}, false).length === 0, "legacy talk (no _reviewStatus) shows no provenance chips");
 // "AI-reviewed" chip REMOVED 2026-07-26 (Jenni). An unreviewed draft is WITHHELD and never reaches the
@@ -88,7 +88,7 @@ function clientWebSearchedFromResult(res, provider){ return (provider === "claud
 ok(clientWebSearchedFromResult({ draftText:"x", webSearched:true }, "claude") === true, "propagation: Worker webSearched:true → client flag true (Claude)");
 ok(clientWebSearchedFromResult({ draftText:"x", webSearched:false }, "claude") === false, "propagation: Worker webSearched:false → client flag false");
 const asyncChip = { _reviewStatus:"reviewed", _writtenBy:"claude", _webSearched: clientWebSearchedFromResult({ webSearched:true }, "claude"), _guidelinesLoaded:true, _ragCount:1 };
-ok(chips(asyncChip, false).some(c => /Searched current sources/.test(c)), "propagation: async web search surfaces the 'Searched current sources' chip");
+ok(chips(asyncChip, false).some(c => /Also searched the web/.test(c)), "propagation: async web search surfaces the 'Also searched the web' chip");
 
 console.log("\n" + (failures === 0 ? "✔ GEMINI/SAFETY TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

@@ -1293,7 +1293,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-28-01";
+var BUILD_ID = "2026-07-28-02";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -7024,10 +7024,10 @@ async function generate(){
     S.loadSec++;
     if(S.genPhase==="reviewing"){
       // Review phase — cycle messages so it never looks stuck; these describe the actual safety checks.
-      var rmsgs=["Cross-checking every number & dose…","Verifying drug-name spelling…","Matching claims to the guidelines…","Finalizing the reviewed talk…"];
+      var rmsgs=["Checking the numbers and doses…","Checking the drug names…","Checking claims against the guidelines…","Almost done…"];
       S.loadMsg=rmsgs[Math.floor(S.loadSec/3)%rmsgs.length];
     } else {
-      var dmsgs=S.wantWebSearch?["Reasoning through physiology…","Retrieving PubMed abstracts…","Searching society + journal sites…","Drafting the talk…"]:["Reasoning through physiology…","Retrieving PubMed abstracts…","Drafting the talk…"];
+      var dmsgs=S.wantWebSearch?["Working through the physiology…","Looking up papers on PubMed…","Checking society guidelines…","Writing the talk…"]:["Working through the physiology…","Looking up papers on PubMed…","Writing the talk…"];
       S.loadMsg=dmsgs[Math.min(Math.floor(S.loadSec/3),dmsgs.length-1)];
     }
     render();
@@ -9689,13 +9689,13 @@ function _provenanceChips(t, auditPending){
   // view, so the chip could only ever read "reviewed". A label with one possible value carries no
   // information — it was just noise above the title.
   var gl = !!t._guidelinesLoaded, rc = (t._ragCount || 0);
-  if (gl && rc > 0) chips.push("📚 Grounded in guidelines + " + rc + " retrieved source" + (rc === 1 ? "" : "s"));
-  else if (gl) chips.push("📚 Grounded in society guidelines");
-  else if (rc > 0) chips.push("📚 Grounded in " + rc + " retrieved source" + (rc === 1 ? "" : "s"));
+  if (gl && rc > 0) chips.push("📚 " + rc + " paper" + (rc === 1 ? "" : "s") + " found to cite from");
+  else if (gl) chips.push("📚 Society guidelines on hand");
+  else if (rc > 0) chips.push("📚 " + rc + " paper" + (rc === 1 ? "" : "s") + " found to cite from");
   // neither → NO grounding claim
-  if (t._webSearched) chips.push("🌐 Searched current sources");
-  if (t._citationsVerified) chips.push("✓ Citations checked");
-  else if (auditPending) chips.push("… Checking citations");
+  if (t._webSearched) chips.push("🌐 Also searched the web");
+  if (t._citationsVerified) chips.push("✓ References checked — they exist and match");
+  else if (auditPending) chips.push("… Checking the references");
   return chips;
 }
 async function switchProviderAndRetryReview(prov){
@@ -11078,7 +11078,7 @@ function renderMain(){
     var _rpProv = S.reviewPending.provider;
     h+='<div style="max-width:520px;margin:0 auto;background:var(--cream);border:1px solid #f0c489;border-left:4px solid #d97706;border-radius:16px;padding:20px 22px;box-shadow:var(--shadow-soft)">';
     h+='<div style="font-size:12px;font-weight:800;color:#b45309;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">⏳ Medical review couldn’t finish</div>';
-    h+='<div style="font-size:14px;color:var(--ink);line-height:1.55;margin-bottom:8px">Your draft was created, but the AI safety-review pass could not complete'+(_rpProv==="gemini"?" — Gemini’s free quota may be exhausted for now":"")+'. <b>Nothing has been lost.</b></div>';
+    h+='<div style="font-size:14px;color:var(--ink);line-height:1.55;margin-bottom:8px">Your draft was written, but the checking pass could not finish'+(_rpProv==="gemini"?" — Gemini’s free quota may be exhausted for now":"")+'. <b>Nothing has been lost.</b></div>';
     var _rpCredit = S.reviewPending.charged
       ? "This draft already used one credit (the draft itself succeeded); retrying the review won’t cost another."
       : "It isn’t counted against your credits.";
@@ -11177,7 +11177,7 @@ function renderMain(){
   if(S.loading){
     // Generating state — progress block + Cancel button (Jenni 2026-06-08)
     // Streaming preview (Jenni 2026-06-09 #3) — once Anthropic emits the title in the stream, we
-    // swap "Generating talk" for "Drafting: <Title>" and use char-count to feed the progress bar.
+    // swap "Writing your talk" for "Drafting: <Title>" and use char-count to feed the progress bar.
     // Jenni 2026-06-11: when an existing talk is already on screen (regen / radical refine),
     // render a TINY one-line banner instead of the giant block — user keeps reading the old version
     // until the new draft swaps in.
@@ -11185,10 +11185,10 @@ function renderMain(){
     // The regen banner now lives inside the talk view below.) (Jenni 2026-06-11)
     var _reviewing = (S.genPhase === "reviewing");
     h+='<div style="background:var(--cream);border:1px solid '+(_reviewing?"#e8c9a0":"var(--line)")+';border-radius:18px;padding:18px 16px;text-align:center;margin-bottom:8px;transition:border-color .3s ease">';
-    var _genLabel = _reviewing ? "🔎 AI safety-review" : (S.streamingTitle ? ("Drafting: "+S.streamingTitle) : "Generating talk");
+    var _genLabel = _reviewing ? "🔎 Checking it" : (S.streamingTitle ? ("Writing: "+S.streamingTitle) : "Writing your talk");
     h+='<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><span class="spinner" style="width:22px;height:22px;border-width:3px'+(_reviewing?';border-top-color:#2d8a2d':'')+'"></span><span style="font-size:14px;font-weight:700;color:'+(_reviewing?"#2d6a2d":"var(--plum-deep)")+'">'+esc(_genLabel)+'</span></div>';
     h+='<div style="font-size:12px;color:var(--ink);margin-bottom:6px">'+esc(S.loadMsg||"Working…")+'</div>';
-    if(_reviewing) h+='<div style="font-size:11px;color:var(--ink-muted);line-height:1.45;margin-bottom:6px;max-width:340px;margin-left:auto;margin-right:auto">A separate AI review pass checks every number, dose, drug name, and guideline against the sources — the step that makes it safe to teach from.</div>';
+    if(_reviewing) h+='<div style="font-size:11px;color:var(--ink-muted);line-height:1.45;margin-bottom:6px;max-width:340px;margin-left:auto;margin-right:auto">A second pass re-reads the draft and checks the numbers, doses, drug names and guideline claims. Always read it yourself before you teach from it.</div>';
     h+='<div style="font-size:10.5px;color:var(--ink-muted);letter-spacing:0.04em;text-transform:uppercase">'+S.loadSec+'s elapsed'+((!_reviewing&&S.streamingChars)?(' · ~'+Math.round(S.streamingChars/5)+' words drafted'):'')+'</div>';
     // Progress bar — uses streamed-char count when available (real activity); falls back to
     // wall-clock interpolation. Both cap at ~95% until response completes.
@@ -11216,7 +11216,7 @@ function renderMain(){
     var _hasStreamPreview = (S.streamingSections && S.streamingSections.length) || S.streamingStem;
     if (_hasStreamPreview) {
       h+='<div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:8px;text-align:left;animation:fadeIn .3s ease'+(_reviewing?';opacity:0.55;transition:opacity .3s ease':'')+'">';
-      if(_reviewing) h+='<div style="font-size:10px;font-weight:700;color:#7a5b1a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Draft · under review</div>';   // amber, NOT green — green reads as "passed" and this has not (Codex 2026-07-26)
+      if(_reviewing) h+='<div style="font-size:10px;font-weight:700;color:#7a5b1a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Draft — still checking</div>';   // amber, NOT green — green reads as "passed" and this has not (Codex 2026-07-26)
       if (S.streamingTitle) h+='<div style="font-size:15.5px;font-weight:700;color:var(--plum-deep);line-height:1.3;margin-bottom:'+(S.streamingSubtitle?"2px":"10px")+'">'+esc(S.streamingTitle)+'</div>';
       if (S.streamingSubtitle) h+='<div style="font-size:12px;color:var(--ink-muted);line-height:1.4;margin-bottom:12px">'+esc(S.streamingSubtitle)+'</div>';
       // Boards: stream the vignette stem as it forms.
@@ -11299,7 +11299,7 @@ function renderMain(){
     if(S.loading){
       h+='<div style="background:linear-gradient(90deg,var(--lavender-bg),#fff);border:1px solid #d4baea;border-radius:14px;padding:9px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--plum-deep)">';
       h+='<span class="spinner" style="width:14px;height:14px;border-width:2px;flex-shrink:0"></span>';
-      h+='<span style="flex:1;font-weight:500">'+(S.streamingTitle ? esc("Drafting: "+S.streamingTitle) : "Regenerating in background — you can keep reading")+' · '+S.loadSec+'s</span>';
+      h+='<span style="flex:1;font-weight:500">'+(S.streamingTitle ? esc("Writing: "+S.streamingTitle) : "Regenerating in background — you can keep reading")+' · '+S.loadSec+'s</span>';
       h+='<button id="cancelGenBtn" style="background:none;border:1px solid var(--line);border-radius:8px;padding:4px 10px;color:var(--ink-muted);font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0">✕ Cancel</button>';
       h+='</div>';
     }
@@ -11553,7 +11553,7 @@ function renderMain(){
     // Mode pill moved inline next to the title (Jenni 2026-07-03) — see tk-lessontitle h1 above.
     // Background citation audit indicator (Jenni 2026-06-09 #4)
     if(S.citationAuditPending){
-      h+='<span class="tk-pill" style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;display:inline-flex;align-items:center;gap:5px"><span class="spinner" style="width:9px;height:9px;border-width:1.5px"></span>Verifying citations…</span>';
+      h+='<span class="tk-pill" style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;display:inline-flex;align-items:center;gap:5px"><span class="spinner" style="width:9px;height:9px;border-width:1.5px"></span>Checking the references…</span>';
     }
     if(S.isSampleTalk)h+='<span class="tk-pill gray">📖 Sample</span>';
     h+='</div>';
