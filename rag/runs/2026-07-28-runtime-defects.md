@@ -283,3 +283,70 @@ topic rather than free text from the subtitle.
 
 Per Codex 2026-07-28: no more feature or UX changes before the staging deployment. D-6 and D-7 are
 recorded here and deliberately NOT fixed, so the deployed commit is the one that was tested.
+
+---
+
+# D-1 · ROOT CAUSE FOUND (2026-07-28, investigation only — build frozen)
+
+**Retrieval is not broken. The corpus does not contain the evidence being asked for.** Two separate
+causes, and only one of them is a fixable gap.
+
+### Cause 1 — the trial corpus is 559 LANDMARK TRIALS, which are chronic-outcome RCTs by definition
+
+| topic | papers in `rag/landmark_trials.json` |
+|---|---|
+| diabetic ketoacidosis | **0** |
+| hypercalcemia of malignancy | **0** |
+| spontaneous bacterial peritonitis | **0** |
+| adrenal crisis | **0** |
+| thyroid storm | **0** |
+| status epilepticus | **0** |
+| hyperkalemia | 3 |
+| heart failure | 18 · type 2 diabetes 8 · CKD 9 · hypertension 12 |
+
+This is structural, not a defect: **there is no landmark RCT for how to treat DKA.** Acute-management
+evidence lives in guidelines and consensus statements, not in outcome trials. So when the topic is acute,
+vector search returns the nearest thing it has — that disease area's chronic trials. Exactly what was
+observed: hypercalcemia → oncology administration papers; DKA → DCCT/UKPDS/ACCORD; hyperkalemia → RAAS
+and heart-failure trials.
+
+It also explains the one anomaly: hyperkalemia scored **1/8** rather than 0/8 because it is the only one
+of the three with any landmark trials at all (3).
+
+### Cause 2 — the guideline corpus has real, specific gaps
+
+`guidelines.json`: 84 entries across 21 specialties.
+
+| topic | guideline entry |
+|---|---|
+| DKA / hyperglycemic crises | **ABSENT** |
+| hypercalcemia of malignancy | **ABSENT** |
+| hyperkalemia · SBP/ascites · adrenal · thyroid storm · COPD · GCA | present |
+
+The two absences are precisely the two topics that returned `guidelines_matched: []` and scored 0/8.
+**This is the fixable half.** The ADA/EASD/AACE/DTS 2024 Hyperglycemic Crises consensus exists and the
+model named it correctly from its own knowledge — it simply is not in the corpus.
+
+### Why the talks were still good
+
+Both layers missing did not damage the teaching, because `LECTURE_PROMPT` instructs the model to teach
+from clinical knowledge and cite only what the retrieved set genuinely supports. It cited nothing and
+taught correctly. **The safety design absorbed a corpus gap** — which is the system working, and also the
+reason the gap stayed invisible until someone looked at the retrieved titles.
+
+### The fix list, now concrete
+
+1. **Add the missing guideline entries** — DKA/hyperglycemic crises and hypercalcemia of malignancy
+   first. `rag/audit_coverage.mjs` already exists and audits all **1003** ABIM topics in
+   `rag/abim_topics.json` against the corpus; run it to find every other gap systematically rather than
+   one screenshot at a time. (Needs SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY.)
+2. **Add a relevance floor.** If the best-matching chunk is below a similarity threshold, return nothing
+   rather than the nearest chronic trial. Better to cite nothing than to pad the pool with noise.
+3. **UI wording — already done** in build 2026-07-28-02: the chip now reads "N papers found to cite from"
+   rather than "Grounded in guidelines + N retrieved sources".
+4. **Consider whether the trial corpus should be told apart from the guideline corpus in the UI**, since
+   they answer different questions and fail in different ways.
+
+**Codex's bar for public launch — "D-1 understood and corrected" — is now half met: it is understood,
+and the correction is (1) plus (2).** Neither is required for Jenni's own use, and neither is a code
+change to the generation path.
