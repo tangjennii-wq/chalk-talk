@@ -199,3 +199,41 @@ Decisive contrast, same session: the **update check** — which uses web search 
 local corpus — returned four precisely on-topic, PubMed-verified sources for the same DKA talk, including
 one that correctly supersedes a reference the talk was citing. **The query is fine. The corpus is the
 problem.**
+
+---
+
+## D-5 · The correct answer never lands on A or B (candidate — needs n≈40 to confirm)
+
+Found mechanically, no clinician required, from the 2026-07-28 question set (build 2026-07-28-02,
+claude-opus-5, difficulty 4, 10 items) plus the hyperkalemia boards item from the click tests.
+
+| keyed letter | A | B | C | D | E |
+|---|---|---|---|---|---|
+| count (n=11) | **0** | **0** | 6 | 3 | 2 |
+
+P(zero A and zero B in 11 items | uniform 1/5) ≈ **0.36%**.
+
+**The alphabetical sort is NOT the problem — it is working perfectly.** All 10 items sorted their choices
+correctly by text (0 violations, checked programmatically, leading articles ignored). BOARDS_PROMPT
+requires that sort precisely to kill position bias, and it does.
+
+So the bias has moved upstream into DISTRACTOR WORDING: the model appears to be composing distractors
+whose text alphabetically precedes the correct answer. The mechanism intended to remove position bias is
+being routed around rather than defeated — which is why the internal consistency check (`correct_letter`
+matches the flagged choice, 10/10 clean) cannot see it.
+
+**Why it matters for a teaching product:** a test-wise resident who notices "never A or B on Chalk Talk"
+is rewarded for it. A question bank that trains letter-guessing instead of reasoning is working against
+its own purpose, and it is the kind of artefact a reviewer would find quickly.
+
+**Confirm before fixing.** n=11 is suggestive, not conclusive:
+
+```
+node rag/gen_question_set.mjs --n 15      # then repeat; pool to n≈40-50
+```
+
+If it holds, the fix is in BOARDS_PROMPT distractor design, not in the sort. NO CODE CHANGE YET —
+per the run rules, results are reported before anything is touched.
+
+**Independent of this:** internal key consistency was **10/10** — `correct_letter` agreed with the choice
+flagged `correct:true` in every item. That is a genuine mechanical pass.
