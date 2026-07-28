@@ -350,3 +350,73 @@ reason the gap stayed invisible until someone looked at the retrieved titles.
 **Codex's bar for public launch — "D-1 understood and corrected" — is now half met: it is understood,
 and the correction is (1) plus (2).** Neither is required for Jenni's own use, and neither is a code
 change to the generation path.
+
+---
+
+# D-1 · CORRECTIONS TO MY OWN ANALYSIS (Codex, 2026-07-28)
+
+Four errors, all mine, corrected here rather than quietly dropped.
+
+**1. "Add a similarity floor" — there already is one, and D-1 happened through it.**
+`worker.js:506` defaults `min_similarity` to **0.30**; `index.html:6780` sets `ABS_FLOOR = 0.30`, plus a
+relative-delta gate. So option B is CALIBRATION, not addition. The question is not whether to gate but
+why the gate admitted DCCT for a DKA query.
+
+**2. The "159 of 810" figure is not a coverage prevalence and I should not have presented it as one.**
+It came from generous word matching, which can mark a document covered for sharing one word and mark real
+coverage absent when terminology differs. The denominator is also an artifact of MY filtering, not the
+data: `abim_topics.json` holds ~1003 nested strings; my flattener deduplicated and dropped strings ≤3
+chars (855 unique), then scored only those with a word >4 chars outside a stoplist (810). Roughly 193
+topics were excluded by my own filter. **Withdrawn as a number.** The only coverage evidence that stands
+is the three observed retrievals: 0/8, 0/8 and 1/8.
+
+**3. "No society guideline is worth much either" / "for a fifth of the blueprint there's nothing to
+ingest" — wrong, and flippant.** Dermatology, allergy, arrhythmia and pericardial disease all have
+society guidelines, consensus statements, systematic reviews and authoritative practice reviews (AAD,
+AAAAI, HRS, ESC pericardial disease 2015, among others). **A topic does not need a landmark RCT to have
+usable evidence.** The missing corpus layer is broader practice evidence, not more trials.
+
+**4. PMID verification proves paper IDENTITY, not topic relevance or claim support.** My option C
+conflated the two. A live-search fallback must additionally judge relevance, article type and whether the
+abstract actually supports the claim — otherwise it trades a relevance problem for a fabrication problem.
+
+## The likely mechanism, now testable
+
+Production does not embed the bare topic. `retrieveRAG` fans out into facet sub-queries:
+
+    "<topic>"
+    "<topic> pathophysiology and mechanism"
+    "<topic> diagnosis, workup and diagnostic testing"
+    "<topic> treatment, management and guideline recommendations"
+
+For an acute topic inside a chronic disease area, the **treatment facet** is the suspect: *"diabetic
+ketoacidosis treatment, management and guideline recommendations"* is embedding-close to UKPDS and
+ACCORD, because those genuinely are diabetes treatment-and-management trials. Every off-topic chunk may
+be clearing 0.30 honestly, on a facet the user never asked about.
+
+If that is what the scores show, a higher global floor is the WRONG lever — it would starve legitimate
+topics, which is precisely why ABS_FLOOR is set low. The levers would be per-facet gating, metadata
+filtering on the `source_tier` / `is_landmark_trial` columns the table **already carries**, or reranking.
+
+`rag/diagnose_retrieval.mjs` captures the real scores per facet. Read-only. Needs SUPABASE_URL,
+SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY — both the Supabase service-role key and the OpenAI key are
+still flagged for rotation.
+
+## Agreed plan (B calibrated + conditional C)
+
+1. **Three guideline entries first** — 2024 ADA/EASD/AACE/JBDS/DTS Hyperglycemic Crises Consensus
+   (PMID 39052901, DOI 10.2337/dci24-0032); Endocrine Society hypercalcemia of malignancy
+   (PMID 36545746, DOI 10.1210/clinem/dgac621); Fifth International Workshop primary hyperparathyroidism
+   (PMID 36245251, DOI 10.1002/jbmr.4677). Codex is right that hypercalcemia is not one disease — without
+   the third, the commonest outpatient pathway stays uncovered.
+2. **Capture real scores, then calibrate the gate.** Not done by adding a floor that exists.
+3. **Live search only when local coverage is insufficient** — never on every generation.
+4. **Verify more than existence**: identity, topic relevance, article type/authority, and whether the
+   abstract supports the claim.
+5. **Log query, scores, identifiers and selected sources** so the result is auditable and publishable.
+6. **Keep expanding the local corpus selectively** for high-yield gaps. Do not abandon it.
+
+**Completion test for (1) is retrieval, not insertion.** Rows in `guidelines.json` prove nothing; the
+test is querying DKA, HHS, hypercalcemia of malignancy and primary hyperparathyroidism after ingestion
+and seeing the right guideline in the top results, then generating one talk of each and inspecting what
+actually reached the prompt.
