@@ -20,12 +20,42 @@
  * completeness and board structure are untouched and are carried over from the original run. It never
  * writes over the input report.
  */
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, readdirSync } from "fs";
+import { fileURLToPath } from "url";
 import vm from "vm";
 
 const ARGV = process.argv.slice(2);
 const argVal = (k, d) => { const i = ARGV.indexOf(k); return i >= 0 && ARGV[i + 1] ? ARGV[i + 1] : d; };
-const REPORT = argVal("--report", "rag/eval_gemini_report.json");
+
+// DO NOT DEFAULT TO A SINGLE HARDCODED PATH. rag/eval_gemini_report.json is gitignored and every run
+// overwrites it, so pointing there by default made a MISSING file look like an EMPTY one: the script
+// printed "NOTHING TO RESCORE" while a complete, git-tracked run sat beside it under another name.
+// (Codex, 2026-07-28.) When --report is omitted, find the candidates and say what was found.
+let REPORT = argVal("--report", "");
+if (!REPORT) {
+  const dir = fileURLToPath(new URL(".", import.meta.url));
+  const found = readdirSync(dir)
+    .filter(f => /\.json$/.test(f) && /(eval|paired|report|run)/i.test(f) && !/fixtures|rescored/i.test(f))
+    .map(f => {
+      try { const d = JSON.parse(readFileSync(dir + f, "utf8")); const rows = d.results || [];
+            return { f, rows: rows.length, talks: rows.filter(r => Object.values(r).some(v => v && v.talk)).length }; }
+      catch { return null; }
+    })
+    .filter(x => x && x.talks > 0)
+    .sort((a, b) => b.talks - a.talks);
+
+  if (!found.length) {
+    console.error("✖ No rescorable report found in rag/. Pass one explicitly:  --report <path>");
+    process.exit(1);
+  }
+  if (found.length > 1) {
+    console.error("✖ Several reports carry model output — name the one you mean with --report:");
+    for (const c of found) console.error(`     rag/${c.f}   (${c.rows} rows, ${c.talks} with parsed talks)`);
+    process.exit(1);
+  }
+  REPORT = "rag/" + found[0].f;
+  console.log(`(no --report given; using the only rescorable report found: ${REPORT})`);
+}
 
 // ── borrow the detector from the harness WITHOUT importing it ─────────────────
 // eval_gemini_quality.mjs self-executes a paid run on import and now refuses to be imported at all,
