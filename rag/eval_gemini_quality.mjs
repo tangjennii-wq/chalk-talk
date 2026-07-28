@@ -1,4 +1,34 @@
 #!/usr/bin/env node
+/* eslint-disable */
+// ── THIS FILE IS AN EXECUTABLE BENCHMARK, NOT A LIBRARY ───────────────────────────────────────────
+// There is no main() wrapper: everything below runs at module scope. So `import("./eval_gemini_quality.mjs")`
+// — even with a .catch() attached, even just to borrow one helper — launches a full 20-row PAID run and
+// overwrites rag/eval_gemini_report.json with its results.
+//
+// That is not hypothetical. On 2026-07-28 I did exactly that while trying to unit-test the drug detector,
+// and destroyed the saved outputs from a 50-minute run that Codex had explicitly said to rescore FROM
+// rather than repeat. The guard below turns that mistake into an immediate, legible error.
+//
+// To reuse a helper from here, either import it from a module that does not self-execute, or extract the
+// function source the way rag/test_drug_detector.mjs does.
+import { fileURLToPath as _fileURLToPath } from "url";
+import { realpathSync as _realpathSync } from "fs";
+{
+  const _self = _fileURLToPath(import.meta.url);
+  let _entry = "";
+  try { _entry = _realpathSync(process.argv[1] || ""); } catch { _entry = process.argv[1] || ""; }
+  let _selfReal = _self;
+  try { _selfReal = _realpathSync(_self); } catch {}
+  if (_entry !== _selfReal) {
+    throw new Error(
+      "REFUSING TO RUN: eval_gemini_quality.mjs was IMPORTED, not executed.\n" +
+      "  This module self-executes a full paid benchmark and overwrites rag/eval_gemini_report.json.\n" +
+      "  Importing it to borrow a helper will spend money and destroy saved results.\n" +
+      "  Run it directly:  node rag/eval_gemini_quality.mjs\n" +
+      "  Or extract the helper's source instead (see rag/test_drug_detector.mjs)."
+    );
+  }
+}
 /**
  * MODEL BENCHMARK — the gate for letting any model WRITE user-facing medical teaching content.
  * Pass bar, frozen topic list, and catalogued past failures: rag/MODEL_BENCHMARK.md
@@ -222,6 +252,26 @@ const NOT_DRUGS = new Set(("vaptan vaptans gliflozin gliflozins gliptin gliptins
 const DRUG_SUFFIX = /(aban|gliflozin|glutide|tinib|ciclib|mab|nacog|pril|prilat|sartan|statin|conazole|azole|mycin|micin|cillin|penem|floxacin|dipine|olol|parin|vaptan|prazole|setron|triptan|gliptin|glinide|sentan|ciguat|mustine|rubicin|platin|taxel|tecan|virine|vudine|tegravir|previr|buvir|asvir)$/;
 // Known non-drug words that legitimately end in a drug-ish stem and must not be flagged.
 const SUFFIX_OK = new Set(["control", "alcohol", "cortisol", "protocol", "phenol", "menthol", "sorbitol", "mannitol", "ethanol", "methanol", "glycerol", "cholesterol", "insulin"]);
+
+// WORD-LEVEL ANALYSIS MUST NEVER READ SERIALIZED JSON. (Codex, 2026-07-28)
+// findDrugMisspellings was being handed JSON.stringify(talk), so an escaped newline survived as the two
+// LITERAL characters \ and n. Lowercased, "vasoconstriction.\n\nTerlipressin" tokenizes under
+// /[a-z]{6,}/ as ... "n", "nterlipressin" — the escape's n welded onto the real drug name. That is
+// exactly how gpt-5.6-sol was charged with fabricating "nterlipressin" and "nargatroban" in the
+// 2026-07-27 paired run. Both drugs were spelled correctly; the INSTRUMENT was misreading them.
+//
+// Any detector that reasons about WORDS gets plainText(); only marker/acronym scans may use the raw
+// serialization, because [1] and "KDIGO" cannot be split or fused by an escape sequence.
+function plainText(v, out) {
+  out = out || [];
+  if (typeof v === "string") out.push(v);
+  else if (Array.isArray(v)) for (const x of v) plainText(x, out);
+  else if (v && typeof v === "object") for (const k of Object.keys(v)) plainText(v[k], out);
+  else if (typeof v === "number" || typeof v === "boolean") out.push(String(v));
+  // join on a separator that cannot fuse two tokens, and normalize real whitespace to spaces so a
+  // genuine newline inside a string cannot glue the words on either side of it either.
+  return out.join(" \n ").replace(/\s+/g, " ");
+}
 
 // Two independent detectors: (a) near-miss of a canonical name, (b) drug-shaped token that is not a
 // real drug. Either one indicates a name a reader could not safely prescribe from.
@@ -494,7 +544,8 @@ async function grade(style, raw) {
   const refs = Array.isArray(talk.references) ? talk.references : [];
   soft.reference_count = refs.length;
   const ids = new Set(refs.map(r => String(r.id)));
-  const bodyText = JSON.stringify(talk);
+  const bodyText = JSON.stringify(talk);   // markers + acronyms only — never word-level analysis
+  const proseText = plainText(talk);       // what a READER sees: no braces, quotes or escape sequences
   const markers = new Set();
   for (const m of bodyText.matchAll(/\[(\d+(?:\s*,\s*\d+)*)\]/g))
     for (const n of m[1].split(",")) markers.add(n.trim());
@@ -518,7 +569,7 @@ async function grade(style, raw) {
   soft.fabricated_pmids = fabricated;
   if (uncheckable) soft.uncheckable_pmids = uncheckable;
 
-  const cands = findDrugMisspellings(bodyText);
+  const cands = findDrugMisspellings(proseText);
   if (cands.length) process.stdout.write(`(RxNorm-checking ${cands.length} drug name${cands.length === 1 ? "" : "s"}) `);
   const bad = await verifyDrugFlags(cands);
   if (bad.length) for (const b of bad.slice(0, 6)) hard.push(`misspelled/fabricated drug: "${b.found}" → ${b.closest}${b.note ? " [" + b.note + "]" : ""}`);

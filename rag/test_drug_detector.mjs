@@ -26,13 +26,14 @@ function fnSrc(name) {
   return src.slice(i, i + e.index + 2);
 }
 
-const ctx = { console: { log() {}, warn() {} }, Set, String, Array, Math, RegExp, Infinity };
+const ctx = { console: { log() {}, warn() {} }, Set, String, Array, Object, JSON, Math, RegExp, Infinity };
 vm.createContext(ctx);
 vm.runInContext([
   decl("DRUGS"), decl("NOT_DRUGS"), decl("DRUGSET"), decl("SUFFIX_OK"), decl("DRUG_SUFFIX"),
-  fnSrc("editDistance"), fnSrc("findDrugMisspellings"),
+  fnSrc("editDistance"), fnSrc("plainText"), fnSrc("findDrugMisspellings"),
 ].join("\n"), ctx);
 const find = vm.runInContext("findDrugMisspellings", ctx);
+const plainText = vm.runInContext("plainText", ctx);
 const flags = (t) => find(t).map((x) => x.found);
 
 // ── TRUE POSITIVES must survive the false-positive fix ─────────────────────────
@@ -40,6 +41,38 @@ ok(flags("give nvancomycin 15 mg/kg IV q12h").includes("nvancomycin"),
    'a mangled real drug ("nvancomycin") is still FLAGGED — this was a genuine gpt-5.6-sol failure');
 ok(flags("start apixiban 5 mg BID").includes("apixiban"), 'a near-miss misspelling ("apixiban") is still flagged');
 ok(flags("rivarelbaxaban for stroke prevention").length > 0, "an invented anticoagulant is still flagged");
+
+// ── THE INSTRUMENT MUST READ PROSE, NOT SERIALIZED JSON (Codex, 2026-07-28) ────
+// The 2026-07-27 paired run disqualified gpt-5.6-sol for "fabricating" nterlipressin and nargatroban.
+// It had fabricated nothing. The detector was handed JSON.stringify(talk), so the escape sequence \n
+// survived as the two LITERAL characters backslash and n, and /[a-z]{6,}/ welded that n onto the drug
+// that followed the paragraph break. A false DISQUALIFICATION is the most expensive kind of bug this
+// harness can have: it retires a model on the strength of the instrument's own error.
+{
+  const hrs = { sections: [{ points: ["Terlipressin plus albumin reverses splanchnic vasoconstriction.\n\nTerlipressin is first-line for HRS-AKI."] }] };
+  const hit = { sections: [{ points: ["Stop all heparin and begin nonheparin anticoagulation.\n\nArgatroban is preferred in hepatic impairment."] }] };
+
+  // the raw-JSON path is what produced the false verdict — pin it, so the bug is legible in the test
+  ok(/nterlipressin/.test(JSON.stringify(hrs).toLowerCase().match(/[a-z]{6,}/g).join(" ")),
+     "raw JSON.stringify DOES manufacture the phantom token (this is the bug being fixed)");
+
+  ok(!flags(plainText(hrs)).includes("nterlipressin"),
+     'plainText: "…vasoconstriction.\\n\\nTerlipressin" no longer yields a phantom "nterlipressin"');
+  ok(flags(plainText(hrs)).length === 0, "…and that talk is clean overall — terlipressin is a real drug");
+  ok(!flags(plainText(hit)).includes("nargatroban"),
+     'plainText: "…anticoagulation.\\n\\nArgatroban" no longer yields a phantom "nargatroban"');
+  ok(flags(plainText(hit)).length === 0, "…and that talk is clean overall — argatroban is a real drug");
+
+  // THE POINT: this must not be a blanket weakening. A real fabrication sitting in the same position,
+  // immediately after a paragraph break, must still be caught.
+  const bad = { sections: [{ points: ["Empiric therapy is required.\n\nnvancomycin 15 mg/kg IV q12h covers MRSA."] }] };
+  ok(flags(plainText(bad)).includes("nvancomycin"),
+     "a REAL fabrication in the very same position is still flagged — the fix removed a false positive, not the detector");
+
+  // a genuine newline inside a string must not fuse the words on either side of it either
+  ok(!flags(plainText({ a: "the dose is\ncorrect" })).length,
+     "a real newline inside a string does not fuse its neighbours into a phantom token");
+}
 
 // ── FALSE POSITIVES the 2026-07-26 run produced ────────────────────────────────
 ok(!flags("a nonheparin anticoagulant such as argatroban is preferred").includes("nonheparin"),
