@@ -2,8 +2,12 @@
 /**
  * RESCORE A SAVED BENCHMARK RUN — no model calls, no spend.
  *
- *   node rag/rescore_drugs.mjs                          # rescores rag/eval_gemini_report.json
- *   node rag/rescore_drugs.mjs --report path/to.json
+ *   node rag/rescore_drugs.mjs --report rag/eval_paired_2026-07-27.json
+ *   node rag/rescore_drugs.mjs                          # only if exactly one rescorable report exists
+ *
+ * MUST BE RUN FROM A NETWORK THAT CAN REACH rxnav.nlm.nih.gov. A drug name is only a fabrication once
+ * an authority says it does not exist; where RxNorm is unreachable this script reports INCONCLUSIVE
+ * rather than converting "unknown" into "clean".
  *
  * WHY THIS EXISTS. On 2026-07-27 a 20-row paired run disqualified gpt-5.6-sol for "fabricating"
  * nterlipressin and nargatroban. It had fabricated nothing: findDrugMisspellings was reading
