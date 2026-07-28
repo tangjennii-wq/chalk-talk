@@ -1,0 +1,150 @@
+{
+  "note": "Jenni's 10 independently-written, UWorld-STYLE questions (2026-07-28). NOT copied from UWorld, ABIM or MKSAP. These are used ONLY by the grader in rag/eval_teaching_transfer.mjs. The talk generator never sees a question, an answer, or a key — it is given the `topic` field alone, so nothing about the item can leak into the teaching material. `key_terms` is used to score whether a retrieved source is topic-relevant.",
+  "created": "2026-07-28",
+  "author": "Jenni Tang, MD",
+  "questions": [
+    {
+      "id": 1,
+      "topic": "Atrial fibrillation: stroke prevention",
+      "key_terms": ["atrial fibrillation", "anticoagul", "CHA2DS2", "apixaban", "warfarin", "stroke"],
+      "stem": "A 68-year-old woman is evaluated after two episodes of palpitations. Ambulatory monitoring shows paroxysmal atrial fibrillation. She has hypertension and type 2 diabetes but no prior stroke, bleeding, valve replacement, or mitral stenosis. Her creatinine clearance is 72 mL/min.\n\nWhich of the following is the most appropriate therapy for prevention of thromboembolism?",
+      "choices": {
+        "A": "Aspirin",
+        "B": "Aspirin plus clopidogrel",
+        "C": "Apixaban",
+        "D": "No antithrombotic therapy",
+        "E": "Warfarin with a target INR of 2.5-3.5"
+      },
+      "key": "C"
+    },
+    {
+      "id": 2,
+      "topic": "HFrEF guideline-directed medical therapy",
+      "key_terms": ["heart failure", "reduced ejection fraction", "mineralocorticoid", "spironolactone", "MRA", "GDMT"],
+      "stem": "A 61-year-old man with ischemic cardiomyopathy has an ejection fraction of 28%. He has mild dyspnea when climbing stairs but no edema or orthopnea. His medications are sacubitril-valsartan, carvedilol, dapagliflozin, and furosemide. Blood pressure is 112/68 mm Hg, eGFR is 58 mL/min/1.73 m2, and potassium is 4.6 mEq/L.\n\nWhich medication should be added to reduce cardiovascular morbidity and mortality?",
+      "choices": {
+        "A": "Amlodipine",
+        "B": "Digoxin",
+        "C": "Hydrochlorothiazide",
+        "D": "Spironolactone",
+        "E": "Verapamil"
+      },
+      "key": "D"
+    },
+    {
+      "id": 3,
+      "topic": "Euglycemic diabetic ketoacidosis",
+      "key_terms": ["euglycemic", "ketoacidosis", "SGLT2", "empagliflozin", "anion gap", "beta-hydroxybutyrate"],
+      "stem": "A 57-year-old woman with type 2 diabetes takes empagliflozin. Two days after abdominal surgery, she develops nausea, abdominal discomfort, and tachypnea. Laboratory studies show glucose 184 mg/dL, bicarbonate 12 mEq/L, anion gap 24, and elevated serum beta-hydroxybutyrate.\n\nWhich is the most appropriate management?",
+      "choices": {
+        "A": "Continue empagliflozin and administer subcutaneous insulin",
+        "B": "Discontinue empagliflozin and begin intravenous fluids, insulin, dextrose, and electrolyte monitoring",
+        "C": "Administer sodium bicarbonate alone",
+        "D": "Begin metformin",
+        "E": "Observe because glucose is below 250 mg/dL"
+      },
+      "key": "B"
+    },
+    {
+      "id": 4,
+      "topic": "Pulmonary embolism risk stratification",
+      "key_terms": ["pulmonary embolism", "PESI", "right ventric", "troponin", "intermediate", "ESC"],
+      "stem": "A 46-year-old patient has an acute pulmonary embolism. Blood pressure is 126/74 mm Hg, oxygen saturation is 95%, and the simplified PESI score is 0. CT angiography shows right-ventricular dilation, and troponin is elevated.\n\nAccording to the 2019 ESC risk-stratification framework, which classification is most appropriate?",
+      "choices": {
+        "A": "High risk",
+        "B": "Intermediate-high risk",
+        "C": "Intermediate-low risk",
+        "D": "Low risk",
+        "E": "Chronic thromboembolic pulmonary hypertension"
+      },
+      "key": "C",
+      "note": "Jenni's key is C: sPESI 0 places the patient outside the intermediate-high category under the specified framework, even with both RV dilation and positive troponin. Graders should watch for the arm answering B."
+    },
+    {
+      "id": 5,
+      "topic": "Hyperkalemia: acute management",
+      "key_terms": ["hyperkalemia", "potassium", "calcium gluconate", "membrane", "ECG", "peaked T"],
+      "stem": "A 70-year-old patient with kidney failure develops weakness and palpitations. Potassium is 7.1 mEq/L. ECG shows peaked T waves and widening of the QRS complex.\n\nWhich intervention should be administered first?",
+      "choices": {
+        "A": "Intravenous calcium gluconate",
+        "B": "Intravenous furosemide",
+        "C": "Oral patiromer",
+        "D": "Sodium polystyrene sulfonate",
+        "E": "Dietary potassium restriction"
+      },
+      "key": "A"
+    },
+    {
+      "id": 6,
+      "topic": "Spontaneous bacterial peritonitis",
+      "key_terms": ["spontaneous bacterial peritonitis", "ascit", "neutrophil", "albumin", "cefotaxime", "ceftriaxone", "cirrhosis"],
+      "stem": "A 59-year-old patient with decompensated cirrhosis and ascites develops fever, diffuse abdominal discomfort, and confusion. Ascitic-fluid neutrophil count is 420/microL. Serum creatinine is 1.7 mg/dL and bilirubin is 4.2 mg/dL.\n\nWhich treatment is most appropriate?",
+      "choices": {
+        "A": "Albumin alone",
+        "B": "Ceftriaxone alone",
+        "C": "Ceftriaxone plus intravenous albumin",
+        "D": "Immediate TIPS placement",
+        "E": "Metronidazole plus vancomycin"
+      },
+      "key": "C"
+    },
+    {
+      "id": 7,
+      "topic": "COPD exacerbation with hypercapnic respiratory failure",
+      "key_terms": ["COPD", "noninvasive", "NIV", "hypercapnic", "respiratory acidosis", "BiPAP"],
+      "stem": "A 66-year-old patient with severe COPD presents with increasing dyspnea, cough, and sputum production. After controlled oxygen, bronchodilators, and systemic glucocorticoids, the patient remains alert and cooperative but has increased work of breathing. Arterial blood gas shows pH 7.28 and PaCO2 68 mm Hg.\n\nWhich intervention is most appropriate?",
+      "choices": {
+        "A": "Increase oxygen to achieve 100% saturation",
+        "B": "Initiate noninvasive positive-pressure ventilation",
+        "C": "Perform immediate bronchoscopy",
+        "D": "Administer oral acetazolamide",
+        "E": "Discharge with oral antibiotics"
+      },
+      "key": "B"
+    },
+    {
+      "id": 8,
+      "topic": "Giant cell arteritis",
+      "key_terms": ["giant cell arteritis", "temporal", "glucocorticoid", "vision", "ESR", "jaw claudication"],
+      "stem": "A 74-year-old woman develops a new unilateral headache, scalp tenderness, jaw claudication, and two episodes of transient monocular visual loss. ESR is 92 mm/h. Temporal-artery biopsy can be performed in four days.\n\nWhich is the most appropriate immediate management?",
+      "choices": {
+        "A": "Await biopsy before starting treatment",
+        "B": "Begin high-dose glucocorticoid treatment immediately",
+        "C": "Begin aspirin alone",
+        "D": "Begin methotrexate alone",
+        "E": "Repeat inflammatory markers in one week"
+      },
+      "key": "B"
+    },
+    {
+      "id": 9,
+      "topic": "Thrombotic thrombocytopenic purpura",
+      "key_terms": ["thrombotic thrombocytopenic purpura", "ADAMTS13", "plasma exchange", "schistocyte", "caplacizumab"],
+      "stem": "A 36-year-old woman develops confusion and petechiae. Laboratory studies show thrombocytopenia, anemia with schistocytes, elevated LDH, undetectable haptoglobin, and normal PT and aPTT. ADAMTS13 testing has been sent, but results will take several days.\n\nWhich is the best next step?",
+      "choices": {
+        "A": "Await the ADAMTS13 result",
+        "B": "Administer platelet transfusion alone",
+        "C": "Administer intravenous immunoglobulin",
+        "D": "Begin urgent plasma exchange and glucocorticoids",
+        "E": "Begin unfractionated heparin"
+      },
+      "key": "D",
+      "bonus_check": "caplacizumab",
+      "bonus_note": "Jenni: the explanation should also address the contemporary role of caplacizumab. Scored separately from correctness."
+    },
+    {
+      "id": 10,
+      "topic": "Adrenal crisis",
+      "key_terms": ["adrenal crisis", "hydrocortisone", "adrenal insufficiency", "cosyntropin", "hyponatremia"],
+      "stem": "A 44-year-old woman taking chronic glucocorticoids stopped them during a gastrointestinal illness. She presents with vomiting, confusion, and hypotension. Sodium is 126 mEq/L, potassium is 5.8 mEq/L, and glucose is 54 mg/dL.\n\nWhich is the most appropriate immediate treatment?",
+      "choices": {
+        "A": "Perform cosyntropin testing before treatment",
+        "B": "Administer fludrocortisone alone",
+        "C": "Administer intravenous hydrocortisone, rapid isotonic fluids, and treatment for hypoglycemia",
+        "D": "Administer intravenous insulin alone",
+        "E": "Wait until she tolerates oral prednisone"
+      },
+      "key": "C"
+    }
+  ]
+}
