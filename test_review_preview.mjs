@@ -66,8 +66,15 @@ const CLEAR = /S\.streamingTitle\s*=\s*""/;
   // Provisional content must not wear the colour of an approval (Codex 2026-07-26)
   ok(/Draft · under review/.test(win), "…labelled 'Draft · under review', not presented as finished");
   ok(!/#2d6a2d/.test(win), "…in AMBER, not green — green reads as 'passed' and this has not passed yet");
-  ok(!/A second model checks/.test(html),
-     "the review copy no longer claims 'a second model' — drafting and review are both claude-opus-5 today");
+  // THE ORIGINAL FORM OF THIS TEST WAS USELESS. It searched for the exact string "A second model checks",
+  // which appears nowhere in the file, so it passed green while FIVE user-visible places went on claiming
+  // a second model reviews the draft: the meta/og/twitter descriptions, the "How it works" panel, and the
+  // line under the streaming preview that a user stares at for the whole 30-second draft. A click test
+  // found it in the first minute. Match the CLAIM, not one guess at its phrasing. (2026-07-28)
+  ok(!/second\s+(AI\s+)?model/i.test(html),
+     "NOTHING in the app claims a second model reviews the draft — drafting and review are both claude-opus-5");
+  ok((html.match(/separate AI review pass/g) || []).length >= 4,
+     "…and the accurate phrasing appears everywhere the old claim did (meta, og, twitter, how-it-works, preview)");
   ok(/A separate AI review pass checks/.test(html), "…it describes a separate PASS, which is what actually happens");
   // the whole point: this branch was dead because the data was gone before genPhase flipped
   ok(/S\.genPhase = .*reviewing/.test(html) || /genPhase = \(stage === "critique"\)/.test(html),

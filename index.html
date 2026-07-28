@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <title>Chalk Talk \u00b7 10-minute teaching generator for IM educators</title>
-<meta name="description" content="Type any internal medicine topic, get a structured 10-minute chalk talk grounded in retrieved PubMed abstracts and society-guideline summaries, AI-checked by a second model. Free for educators.">
+<meta name="description" content="Type any internal medicine topic, get a structured 10-minute chalk talk grounded in retrieved PubMed abstracts and society-guideline summaries, checked by a separate AI review pass. Free for educators.">
 <meta name="author" content="Jennifer Tang, MD">
 <meta name="keywords" content="medical education, chalk talk, internal medicine, ABIM, KDIGO, AHA/ACC, residency teaching, AI medical education">
 <meta name="theme-color" content="#330662">
@@ -16,7 +16,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Chalk Talk">
 <meta property="og:title" content="Chalk Talk \u2014 10-minute teaching generator">
-<meta property="og:description" content="Type any IM topic, get a structured chalk talk grounded in retrieved PubMed abstracts and society-guideline summaries, AI-checked by a second model. Free for educators.">
+<meta property="og:description" content="Type any IM topic, get a structured chalk talk grounded in retrieved PubMed abstracts and society-guideline summaries, checked by a separate AI review pass. Free for educators.">
 <meta property="og:image" content="https://tangjennii-wq.github.io/chalk-talk/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -26,7 +26,7 @@
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Chalk Talk \u2014 10-minute teaching generator">
-<meta name="twitter:description" content="Type any IM topic, get a structured chalk talk grounded in retrieved PubMed abstracts and society-guideline summaries, AI-checked by a second model.">
+<meta name="twitter:description" content="Type any IM topic, get a structured chalk talk grounded in retrieved PubMed abstracts and society-guideline summaries, checked by a separate AI review pass.">
 <meta name="twitter:image" content="https://tangjennii-wq.github.io/chalk-talk/og-image.png">
 <meta name="twitter:image:alt" content="Chalk Talk \u2014 10-minute teaching generator">
 
@@ -1293,7 +1293,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-27-01";
+var BUILD_ID = "2026-07-28-01";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -10947,7 +10947,7 @@ function renderMain(){
     // Free-tier pitch — front and center (combines the "10 free talks" message; fix #1 + #4).
     h+='<div style="background:#fff6dd;border:1px solid #e6d49a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#7a5b1a;line-height:1.5;text-align:center"><b>✨ Free to try — 10 talks + 5 images.</b> Just sign in — after that, bring your own API key: Claude, ChatGPT, or Gemini (Gemini is free).</div>';
     h+='<div class="howit-step"><span class="howit-num">1</span><div><b>Enter a topic</b> — as a lecture or a boards question. Optional: upload your own reference materials.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>AI drafts it with retrieval</b> — grounded in PubMed abstracts retrieved for your topic plus condensed society-guideline summaries, with inline citations. A second AI model then reviews the draft for accuracy.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>AI drafts it with retrieval</b> — grounded in PubMed abstracts retrieved for your topic plus condensed society-guideline summaries, with inline citations. A separate AI review pass then re-reads the draft for accuracy.</div></div>';
     h+='<div class="howit-step"><span class="howit-num">3</span><div><b>View it</b> as an <i>Overview</i>, <i>📊 Slides</i>, or a <i>🎧 Audio</i> podcast.</div></div>';
     h+='<div class="howit-step"><span class="howit-num">4</span><div><b>Refine anytime</b> to make edits.</div></div>';
     h+='</div>';
@@ -11243,7 +11243,7 @@ function renderMain(){
         }
         h+='</div>';
       }
-      h+='<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:10.5px;color:var(--ink-muted);font-style:italic;display:flex;align-items:center;gap:6px"><span class="spinner" style="width:11px;height:11px;border-width:2px"></span>Drafting live · a second AI model checks it for accuracy before it finalizes</div>';
+      h+='<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:10.5px;color:var(--ink-muted);font-style:italic;display:flex;align-items:center;gap:6px"><span class="spinner" style="width:11px;height:11px;border-width:2px"></span>Drafting live · a separate AI review pass checks it for accuracy before it finalizes</div>';
       h+='</div>';
     }
 
