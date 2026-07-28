@@ -237,3 +237,49 @@ per the run rules, results are reported before anything is touched.
 
 **Independent of this:** internal key consistency was **10/10** — `correct_letter` agreed with the choice
 flagged `correct:true` in every item. That is a genuine mechanical pass.
+
+---
+
+## D-6 · The Updates button becomes an unlabelled ⚠️ and stops looking like a button
+
+**Found by Jenni, 2026-07-28, on a Boards question.** She asked "what am I supposed to do for boards?
+there's no button to double check anyway with search." There is one — she was looking straight at it.
+
+`checkUpdatesBtn` renders `⚠️` instead of `🔎` whenever `talkIsFastMoving(t)` is true, and the word
+"Updates" carries `hide-mobile-text`, so at narrower window widths the control collapses to a bare amber
+warning triangle sitting between Edit and Save. It reads as an error indicator, not an action.
+
+Meanwhile the banner directly below says **"check for updates before teaching it"** — an instruction to
+press a button the user cannot identify. A UI that tells someone to do something and then hides the way
+to do it is worse than saying nothing.
+
+Fix (deferred — build is frozen for staging): keep 🔎 as the icon and carry the amber in the LABEL or a
+dot, never by replacing the only affordance that identifies the control. Ensure the text label survives
+at the widths the action row actually gets used at.
+
+---
+
+## D-7 · The "topic changes often" banner fires on Boards questions
+
+Same screenshot. `talkIsFastMoving()` matches `FAST_MOVING_RE` against title + subtitle + topic; the
+subtitle "Recognizing lymphoma risk factors…" hit `lymphoma`, so a Sjögren parotid-mass question was
+labelled a fast-moving topic.
+
+Jenni: *"I don't think we need the topic changes often for the boards questions."* She is right about the
+framing. A lecture is teaching material that can drift out of date and should be re-checked before it is
+taught again. A board question is a fixed vignette with one keyed answer — "check for updates before
+teaching it" is not the right instruction for it, and the amber chip adds noise to an item that is
+supposed to read cleanly.
+
+The underlying match is also loose: the trigger was a risk factor *mentioned in the subtitle*, not the
+subject of the question.
+
+Fix (deferred): suppress the fast-moving banner in boards style, or match on the ABIM classification /
+topic rather than free text from the subtitle.
+
+---
+
+## FREEZE — build 2026-07-28-03
+
+Per Codex 2026-07-28: no more feature or UX changes before the staging deployment. D-6 and D-7 are
+recorded here and deliberately NOT fixed, so the deployed commit is the one that was tested.
