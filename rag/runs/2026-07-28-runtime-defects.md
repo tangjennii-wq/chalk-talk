@@ -5,9 +5,28 @@ further testing, so every path exercises the same build.
 
 ---
 
-## D-1 · Retrieval returned zero topic-relevant sources, and the talk still claimed grounding
+## D-1 · Retrieval returns off-topic sources, and the footer overstates what they contributed
 
-**Severity: high.** Not a rendering bug — an evidence-provenance bug.
+**Severity: MEDIUM — downgraded 2026-07-28 after Jenni asked the right question.**
+
+> **Correction.** I first wrote this up as "the talk claimed grounding it did not have", severity high.
+> That was wrong about the architecture. `LECTURE_PROMPT` sends the FULL abstracts, and then explicitly
+> instructs: *"Use your full clinical knowledge for teaching; the sources are for citation grounding, not
+> to replace your pedagogical voice"* and *"If no source here substantiates a claim, teach it normally
+> from your training and SKIP the citation."*
+>
+> **The retrieved papers are a citation pool, not the source material.** So on the DKA run the system did
+> exactly what it was designed to do: it received eight off-topic diabetes trials, cited none of them, and
+> taught from model knowledge. **That is the safety design working, not failing.**
+>
+> The real defects are narrower, and both are real:
+> 1. **The footer overstates the contribution.** "Grounded in guidelines + 8 retrieved sources" reads as
+>    "built from these eight". Accurate would be nearer "8 sources retrieved for citation · N cited".
+> 2. **The corpus wastes the retrieval.** Eight irrelevant abstracts are real tokens buying nothing, and
+>    the citation pool is empty precisely when citations would be most valuable.
+>
+> Everything below stands as evidence of (2). The framing of (1) has been corrected here rather than
+> silently edited. This is the third time today I stated a conclusion that outran what I had verified.
 
 - **Topic:** Hypercalcemia of Malignancy · lecture · Concise
 - **Writer:** claude-opus-5 · **Build:** 2026-07-27-01 (pre-refresh; re-test on -28-01 pending)
