@@ -66,34 +66,60 @@ if (!REPORT) {
 // so we lift the function source the same way rag/test_drug_detector.mjs does.
 const src = readFileSync(new URL("./eval_gemini_quality.mjs", import.meta.url), "utf8");
 const decl = (name) => { const i = src.indexOf("const " + name + " = "); const e = /;\n/.exec(src.slice(i)); return src.slice(i, i + e.index + 1); };
-const fnSrc = (name) => { const i = src.indexOf("function " + name + "("); const e = /\n\}/.exec(src.slice(i)); return src.slice(i, i + e.index + 2); };
+// NB: start from `async function` when that is how it is declared. Slicing at "function name(" silently
+// drops the `async` keyword and the extracted copy then throws on its first await. (2026-07-28)
+const fnSrc = (name) => {
+  let i = src.indexOf("async function " + name + "(");
+  if (i < 0) i = src.indexOf("function " + name + "(");
+  if (i < 0) throw new Error("fn not found: " + name);
+  const e = /\n\}/.exec(src.slice(i));
+  return src.slice(i, i + e.index + 2);
+};
 
-const ctx = { console: { log() {}, warn() {} }, Set, String, Array, Object, JSON, Math, RegExp, Infinity };
+// LIFT THE VERIFIER TOO — DO NOT REIMPLEMENT IT. (2026-07-28)
+// I first wrote a fresh RxNorm check here against approximateTerm.json with a score>=90 cutoff. That is
+// a FUZZY endpoint on a different scale, so it returned "unknown" for amlodipine, methicillin,
+// ciprofloxacin, cisplatin, atenolol, nebivolol, norfloxacin, conivaptan, moxifloxacin and vericiguat —
+// ten real, correctly-spelled drugs — and the rescore accused both models of fabricating all of them.
+// The harness's rxnormKnows uses rxcui.json?name=X&search=2, an EXACT normalized-name lookup, and was
+// already correct. A rescoring tool that reimplements the thing it is rescoring is not a check; it is a
+// second opinion from a worse instrument.
+const ctx = {
+  console: { log() {}, warn() {} }, Set, Map, String, Array, Object, JSON, Math, RegExp, Infinity,
+  fetch, Promise, setTimeout, Date, encodeURIComponent,
+};
 vm.createContext(ctx);
 vm.runInContext([
   decl("DRUGS"), decl("NOT_DRUGS"), decl("DRUGSET"), decl("SUFFIX_OK"), decl("DRUG_SUFFIX"),
   fnSrc("editDistance"), fnSrc("plainText"), fnSrc("findDrugMisspellings"),
+  "const rxCache = new Map(); let rxNext = 0;",
+  fnSrc("rxnormKnows"), fnSrc("verifyDrugFlags"),
 ].join("\n"), ctx);
 const findDrugMisspellings = vm.runInContext("findDrugMisspellings", ctx);
 const plainText = vm.runInContext("plainText", ctx);
+const verifyDrugFlags = vm.runInContext("verifyDrugFlags", ctx);
+const rxnormKnows = vm.runInContext("rxnormKnows", ctx);
 
-// ── RxNorm confirmation (same policy as the harness: a candidate is only a fabrication once an
-//    AUTHORITY says the name doesn't exist; unreachable means UNKNOWN, never "fabricated") ──────────
-const rxCache = new Map();
-async function rxKnows(name) {
-  const k = name.toLowerCase();
-  if (rxCache.has(k)) return rxCache.get(k);
-  let v = null;
-  try {
-    const r = await fetch(`https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=${encodeURIComponent(k)}&maxEntries=1`, { signal: AbortSignal.timeout(8000) });
-    if (r.ok) {
-      const j = await r.json();
-      const cand = j?.approximateGroup?.candidate?.[0];
-      v = !!(cand && Number(cand.score) >= 90);
-    }
-  } catch { v = null; }
-  rxCache.set(k, v);
-  return v;
+// ── CANARY: verify the verifier before trusting a single verdict ──────────────
+// The failure above was silent — a broken lookup and a genuine fabrication produce the identical
+// "unknown". Known-real drugs are checked FIRST; if the authority cannot recognize them, the fault is
+// in the instrument and no model may be judged by it.
+const CANARY = ["atenolol", "amlodipine", "ciprofloxacin", "vancomycin"];
+{
+  const results = await Promise.all(CANARY.map(async d => [d, await rxnormKnows(d)]));
+  const missed = results.filter(([, k]) => k !== true);
+  if (missed.length === CANARY.length && missed.every(([, k]) => k === null)) {
+    console.error("✖ RxNorm is unreachable from this network — every canary returned UNKNOWN.");
+    console.error("  Re-run from a network that can reach rxnav.nlm.nih.gov.");
+    process.exit(3);
+  }
+  if (missed.length) {
+    console.error("✖ INSTRUMENT FAILURE — RxNorm did not recognize known-real drug(s): " +
+                  missed.map(([d, k]) => `${d} (${k === null ? "unreachable" : "reported UNKNOWN"})`).join(", "));
+    console.error("  A verifier that cannot confirm amlodipine cannot be used to accuse a model of");
+    console.error("  fabrication. Refusing to score. Fix the lookup before rescoring anything.");
+    process.exit(3);
+  }
 }
 
 // ── load ──────────────────────────────────────────────────────────────────────
@@ -122,13 +148,9 @@ for (const arm of arms) {
 
     const oldDrugHard = (a.hard || []).filter(h => /drug/i.test(h));
     const cands = findDrugMisspellings(plainText(a.talk));
-    const confirmed = [];
-    let unverified = 0;
-    for (const c of cands) {
-      const known = await rxKnows(c.found);
-      if (known === false) confirmed.push(c);
-      else if (known === null) unverified++;
-    }
+    // the harness's own verifier, byte for byte — same endpoint, same rate limiting, same fail-open rule
+    const confirmed = await verifyDrugFlags(cands);
+    const unverified = confirmed.unverified || 0;
 
     const newDrugHard = confirmed.map(c => `misspelled/fabricated drug: "${c.found}"${c.closest && c.distance != null ? ` → ${c.closest}` : ""}`);
     a.hard = (a.hard || []).filter(h => !/drug/i.test(h)).concat(newDrugHard);
