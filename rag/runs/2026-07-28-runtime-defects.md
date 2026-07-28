@@ -420,3 +420,78 @@ still flagged for rotation.
 test is querying DKA, HHS, hypercalcemia of malignancy and primary hyperparathyroidism after ingestion
 and seeing the right guideline in the top results, then generating one talk of each and inspecting what
 actually reached the prompt.
+
+---
+
+# D-1 · REAL SCORES (2026-07-28) — my facet hypothesis is REFUTED, and a usable signal exists
+
+Ran `rag/diagnose_retrieval.mjs` against production Supabase at the production floor of 0.30.
+
+## My hypothesis was wrong
+
+I predicted the treatment/management facet was pulling the off-topic papers in. It is not. For DKA the
+**bare topic query alone** — the thing the user actually typed — already returns 1/12 on-topic. Every
+facet returns the same diabetes cluster. The facet expansion is not the cause; the corpus simply has no
+DKA content, exactly as the step-1 count showed (0 papers).
+
+## What the scores actually show: the BARE query separates coverage almost perfectly
+
+| topic | top similarity (bare query) | on-topic |
+|---|---|---|
+| diabetic ketoacidosis | **0.378** | 1/12 |
+| hypercalcemia of malignancy | **0.445** | 3/12 |
+| hyperkalemia | **0.495** | 8/12 |
+| heart failure, reduced EF (CONTROL) | **0.567** | 12/12 |
+
+Monotonic. Top similarity on the bare topic tracks real coverage across all four.
+
+## And the facet expansion DESTROYS that signal
+
+| topic | max similarity across ALL facets | is that top hit on-topic? |
+|---|---|---|
+| diabetic ketoacidosis | 0.569 | **NO** — AACE guideline |
+| hypercalcemia of malignancy | 0.553 | yes — AACE/ACE |
+| hyperkalemia | 0.515 | yes — sodium zirconium cyclosilicate |
+| heart failure, reduced EF | 0.612 | **NO** — 2020 ACC/AHA *valvular* guideline |
+
+The facets inflate every topic into the 0.51–0.61 band whether it is covered or not. Note the control:
+HFrEF's single highest-scoring chunk anywhere is an off-topic valvular heart disease guideline at 0.612 —
+**higher than anything DKA produces.** So no global absolute floor can separate covered from uncovered
+topics once facet scores are in the pool. Codex was right that calibration alone is not the answer, and
+right that the existing 0.30 floor is not the lever.
+
+## The calibrated gate this suggests
+
+Use the **bare-topic query's top similarity as the coverage test**, kept separate from retrieval itself:
+
+- retrieve with the facets as now (they do add section coverage on topics that ARE covered), but
+- decide "is this topic covered at all" from the bare query alone, where the signal survives.
+
+A cut somewhere in **0.45–0.50** separates the failures (0.378, 0.445) from the covered topics (0.495,
+0.567) in this sample. **Four points cannot set a threshold responsibly** — 0.445 vs 0.495 is a narrow
+gap, and one badly-placed topic would flip it. Calibrate on ~30 topics of known coverage before choosing
+a number.
+
+## Metadata filtering: helps DKA, does not help hypercalcemia
+
+Nearly all DKA noise is `is_landmark_trial=true`, tier 1 — a filter would clear it at no cost to chronic
+topics. But hypercalcemia's noise is largely **non-landmark tier-1 guidelines** (ASCO palliative care,
+brain metastases, chemo-induced neuropathy). A landmark filter would not touch those. Metadata filtering
+is worth doing and is not sufficient alone.
+
+## Bug in my own diagnostic
+
+The `sim X–Y` summary line assumes the rows come back sorted by similarity. They do not, so that range is
+wrong in the console output. The per-row scores and the saved JSON are correct. Fix before reusing.
+
+---
+
+# D-8 · A talk failed to parse — "Expected ',' or ']' after array element in JSON"
+
+Hyperkalemia: acute management, during the teaching-transfer run on build 2026-07-28-02, writer
+claude-opus-5. One of ten generations lost.
+
+This matters because the schema reorder plus bounded retry was supposed to have addressed exactly this
+class, and the 2026-07-27 paired benchmark showed 0 parse failures in 19 rows. So the rate is low but not
+zero. Note the harness has no retry — production does — so this is not evidence that a user would have
+seen a failure. Worth watching rather than acting on.
