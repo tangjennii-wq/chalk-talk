@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 /**
- * GENERATE A QUESTION SET FOR PHYSICIAN GRADING
+ * QUESTION-GENERATION EVALUATION (NOT an answer-accuracy evaluation)
+ *
+ * LABEL THIS CORRECTLY. Codex, 2026-07-28: this harness generates NEW questions and checks whether each
+ * question's `correct_letter` matches the option the SAME model flagged correct. That is JSON/key
+ * consistency — it is NOT independent clinical correctness, and it is NOT the ability to answer external
+ * questions. A model that confidently keys its own wrong answer scores 10/10 here. Only physician
+ * grading of Part 2 establishes correctness.
  *
  *   node rag/gen_question_set.mjs                    # 10 questions, difficulty 4
  *   node rag/gen_question_set.mjs --n 20 --difficulty 5
@@ -128,9 +134,12 @@ const mismatched = ok.filter(r => !r.key_consistent);
 
 let md = `# Chalk Talk question set — for physician grading\n\n`;
 md += `Generated ${new Date().toISOString().slice(0, 10)} · build **${BUILD}** · writer **${MODEL}** · difficulty **${DIFFICULTY}**\n\n`;
-md += `**What this measures:** whether the keyed answer on a Chalk Talk question is correct. It is NOT a test\n`;
-md += `of whether the app can answer questions — it has no answer mode, and that would measure the model,\n`;
-md += `not the product. All items are original, written from the ABIM blueprint. No copyrighted items used.\n\n`;
+md += `**What this measures:** QUESTION GENERATION, not answer accuracy. The automated part checks only\n`;
+md += `that correct_letter matches the option the SAME model flagged correct — JSON/key consistency, NOT\n`;
+md += `clinical correctness. A confidently wrong key scores 10/10. **Only your grading below establishes\n`;
+md += `whether the answers are right.** This is also not a test of whether the app can ANSWER questions:\n`;
+md += `it has no answer mode, and that would measure the model rather than the product.\n\n`;
+md += `All items are original, written from the ABIM blueprint. No copyrighted items used.\n\n`;
 md += `**How to grade:** answer Part 1 blind, then open Part 2. Two minutes of discipline buys a real result.\n\n`;
 if (mismatched.length) {
   md += `> ⚠ **${mismatched.length} question(s) have an internal key mismatch** — \`correct_letter\` disagrees with the\n`;

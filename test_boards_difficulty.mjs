@@ -48,7 +48,7 @@ vm.createContext(ctx);
 // _finalizeBoardQuestion now also calls _hoistMisplacedBoardFields (brace-drift repair, 2026-07-26),
 // so that function and its field list must be in the sandbox too.
 const _boardFieldsDecl = (html.match(/^var _BOARD_TOPLEVEL_FIELDS = .*$/m) || [""])[0];
-vm.runInContext(_boardFieldsDecl + "\n\n" + ["boardsDifficulty","validateBoardQuestion","_boardHardErrors","_repairBoardQuestionInPlace","_hoistMisplacedBoardFields","_finalizeBoardQuestion"].map(extractFn).join("\n\n"), ctx);
+vm.runInContext(_boardFieldsDecl + "\n\n" + ["boardsDifficulty","validateBoardQuestion","_boardHardErrors","_shuffleBoardChoicesInPlace","_repairBoardQuestionInPlace","_hoistMisplacedBoardFields","_finalizeBoardQuestion"].map(extractFn).join("\n\n"), ctx);
 const validateBoardQuestion = vm.runInContext("validateBoardQuestion", ctx);
 const _boardHardErrors      = vm.runInContext("_boardHardErrors", ctx);
 const _repair               = vm.runInContext("_repairBoardQuestionInPlace", ctx);
@@ -105,13 +105,15 @@ const scrambled = { stem:"s", choices:[
   {letter:"D",text:"three",correct:false},{letter:"C",text:"four",correct:false},{letter:"E",text:"five",correct:false}
 ], correct_letter:"A", wrong_explanations:[{letter:"B",why:"x"}], reasoning_steps:["a"] };
 _repair(scrambled, 4);
-ok(scrambled.choices.map(c=>c.letter).join("") === "ABCDE", "repair relabels choices A-E in order");
+ok(scrambled.choices.map(c=>c.letter).sort().join("") === "ABCDE", "repair assigns each choice exactly one of A-E (order is now shuffled in code)");
 const keyed = scrambled.choices.filter(c=>c.correct)[0];
 ok(scrambled.correct_letter === keyed.letter, "repair keeps correct_letter pointing at the keyed choice after relabel");
 ok(_boardHardErrors(scrambled).length === 0, "scrambled question is hard-clean after repair");
 // (b) correct flag set but correct_letter desynced -> repair fixes the letter
 const desync = { ...goodQ(), correct_letter:"A" }; _repair(desync, 4);
-ok(desync.correct_letter === "C", "repair syncs correct_letter to the flagged choice");
+const _flag = desync.choices.filter(c=>c.correct===true);
+ok(_flag.length === 1 && desync.correct_letter === _flag[0].letter,
+   "repair syncs correct_letter to the FLAGGED choice (by identity — its letter is now assigned by the shuffle, not fixed)");
 // (c) missing difficulty metadata -> backfilled from selected level
 const noMeta = goodQ(); delete noMeta.difficulty_level; delete noMeta.difficulty_label; _repair(noMeta, 3);
 ok(noMeta.difficulty_level === 3 && noMeta.difficulty_label === "Advanced", "repair backfills difficulty from selected level");
@@ -136,7 +138,12 @@ ok(/DIFFICULTY CALIBRATION REVIEW/.test(html), "critic system prompt gets the di
 ok(/TARGET DIFFICULTY FOR THIS QUESTION/.test(html), "critic prefix gets the selected target level");
 ok(!/Mirror UWorld\/MKSAP exactly/.test(BP), "prompt no longer says 'Mirror UWorld/MKSAP exactly'");
 ok(/ORIGINAL/.test(BP) && /structurally inspired/i.test(BP), "prompt frames questions as ORIGINAL / structurally inspired");
-ok(/ORDER THEM ALPHABETICALLY/.test(BP) && /NEVER default the answer to B/.test(BP), "alphabetical order + position-bias guards retained");
+// Position bias is no longer addressed in the PROMPT at all — alphabetizing merely relocated the bias
+// into distractor wording (0/11 answers on A or B, p~0.36%). Position is assigned in code now, and the
+// prompt must actively tell the model NOT to order the choices. (Codex 2026-07-28)
+ok(!/ORDER THEM ALPHABETICALLY/.test(BP), "prompt no longer mandates alphabetical order — it relocated the bias rather than removing it");
+ok(/DO NOT ORDER THEM AT ALL/.test(BP), "…the prompt tells the writer its ordering is discarded");
+ok(/mark exactly ONE choice correct:true/.test(BP), "…and that the correct:true FLAG is what carries the answer");
 ok(/DIFFICULTY SELF-CRITIQUE/.test(BP) && /Stem MUST be 120-170 words/.test(BP), "self-critique + stem cap retained");
 // hard-invalid board questions are genuinely non-renderable (banner + rebuild CTA replace the item)
 ok(/Question withheld/.test(html) && /boardRegenBtn/.test(html), "hard-invalid board question is withheld with a rebuild CTA");
