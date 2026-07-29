@@ -53,31 +53,33 @@ So the real choice is **apply to production, or don't calibrate yet.** Applying 
 unless a request sets `rerank:true` — which the deployed front end never does. But it must be a decision
 made on purpose, not a default that happens because there was nowhere else to put it.
 
-## 2 · Apply ONLY the candidate-scoring migration
+## 2 · DONE — migration applied to `chalktalk` (production), 2026-07-29
+
+Applied as migration `add_score_candidate_chunks`. Additive only: one new function, no table touched.
+
+## 3 · DONE — all three functional smoke tests pass, plus the boundary
+
+| test | expected | **actual** |
+|---|---|---|
+| 1 · signature | `vector, bigint[]` → `chunk_id bigint, similarity` | matches; `anon` / `authenticated` / `service_role` all hold EXECUTE |
+| 2 · **it runs** | 3 rows, `max_sim = 1` | `scored=3`, `max_sim=1.000000`, `min_sim=0.586371` |
+| 3 · cap raises at 501 | `ERROR … capped at 500, got 501` | `P0001` raised from the RAISE at line 10 |
+| 4 · boundary at 500 | accepted, not raised | accepted — 176 of ids 1–500 have embeddings |
+
+Test 2 is the one that mattered: `max_sim` is exactly `1.000000` for the probe chunk against itself, which
+is what proves it is scoring the ids asked for against the stored embedding, rather than installing under
+the right name and matching nothing.
+
+Test 4 was not in the original list. Test 3 only proves 501 fails; without it, a `>=` instead of a `>`
+would reject the largest legal input and look correct.
+
+## 4 · Start the Worker — **must run on your machine**
+
+The sandbox I work in has no outbound route to Supabase or OpenAI (both curl to `000`), so steps 4–7 are
+yours. The migration went in through a separate host-side channel; the calibration cannot.
 
 ```
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
-  -f supabase/migrations/add_score_candidate_chunks.sql
-```
-
-`ON_ERROR_STOP=1` is not optional: without it psql continues past a failed statement and exits 0, so an
-errored migration looks like a successful one.
-
-## 3 · Run all three functional smoke tests
-
-They are written out at the bottom of the migration file. Briefly:
-
-1. `\df+ public.score_candidate_chunks` — the signature exists
-2. **it RUNS** and returns one row per requested id, with `max_sim = 1` for a chunk against itself.
-   A count of 0 means it installed and matches nothing — which step 1 would have called a success
-3. the 500 cap **raises** rather than silently truncating
-
-Step 2 is the one that matters. A name is not a working function.
-
-## 4 · Start the Worker against that same database
-
-```
-SUPABASE_URL=<staging-url> SUPABASE_ANON_KEY=<staging-anon> npx wrangler dev
+npx wrangler dev            # .env already holds the credentials
 ```
 
 ## 5 · Run calibration only
@@ -86,8 +88,13 @@ SUPABASE_URL=<staging-url> SUPABASE_ANON_KEY=<staging-anon> npx wrangler dev
 node rag/eval_pipeline_arms.mjs --worker http://127.0.0.1:8787
 ```
 
+Embedding cost is trivial — 12 topics × 5 facets × 4 arms ≈ 240 `text-embedding-3-small` calls, well
+under a cent. There are no writer calls.
+
 It aborts rather than guessing if the Worker predates these stages, or if any arm reports a stage it did
-not actually apply. An abort here is the instrument working.
+not actually apply. An abort here is the instrument working. **Sanity check before labeling anything:**
+the run must report `rerank_applied: true` on the rerank and both arms. If it reports false, the Worker
+did not reach the new function and the whole run is measuring baseline four times.
 
 ## 6 · Complete the blinded D/A/I sheet
 
