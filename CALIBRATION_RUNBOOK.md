@@ -1,14 +1,21 @@
 # Calibration runbook — stages 1 & 2
 
-Verified ready at **HEAD `2025c3e`** (Codex, 2026-07-28). 21 suites, 805 assertions.
 Everything below needs database access or clinical judgment, so it is yours to run.
+
+> **2026-07-29 — calibration was halted and the instrument corrected.** Codex caught a ranking-policy
+> confound: the rerank sorted by raw cosine, while the order it replaced carried four authority boosts.
+> "Rerank ON" therefore meant *rerank plus authority policy OFF* — two changes under one name, which no
+> four-arm design can attribute. Fixed via option 1 (isolated rerank): `score_candidate_chunks` now
+> applies the identical production formula with bare-topic similarity substituted, so exactly one thing
+> varies. Details in `RETRIEVAL_ARCHITECTURE.md`. **The halt was correct** — the run was one command away,
+> and ~130 physician judgements would have measured a contrast that did not mean what its label said.
 
 **Do not build Stage 3.** The calibration result decides whether a model call per generation is
 justified. Deciding first and measuring afterwards is how you get a number that agrees with you.
 
 ---
 
-## 0 · RESOLVED — the deployed `match_chunks` is NOT the checked-in one
+## 0 · RESOLVED — the deployed `match_chunks` was NOT the checked-in one
 
 Checked 2026-07-29 against the live catalog. There is drift, and it is wider than the landmark question.
 
@@ -32,11 +39,15 @@ Three consequences:
    `chunk_id bigint` assertion happens to still hold — I verified `bigint` against the live catalog — but
    the premise "the repo is the reference" is false, so it holds by luck rather than by construction.
 
-Not a calibration blocker: the evaluator reads neither `is_landmark_trial` nor those weights, and all four
-arms run against the same deployed function, so the drift is constant across arms. Fix it after.
+**I called this "not a calibration blocker, the drift is constant across arms". That was wrong**, and
+Codex corrected it. The drift is constant in *candidate generation*, but the rerank arms then **replaced**
+that ordering with raw cosine — so the boosts survived in two arms and vanished in the other two. Fixed;
+see the banner above and §3a.
 
-**To fix:** dump the live definition into a migration so the repo describes reality —
-`select pg_get_functiondef(oid) from pg_proc ...` — rather than editing the repo to guess at it.
+**Now fixed:** `supabase/migrations/canonical_match_chunks.sql` is the live definition, exported with
+`pg_get_functiondef` rather than hand-edited to guess at the difference. `test_schema_types.mjs` reads it
+as ground truth, and the stale copy in `migration_v2_rag.sql` is marked SUPERSEDED with a test enforcing
+the marker.
 
 ---
 
@@ -72,6 +83,29 @@ the right name and matching nothing.
 
 Test 4 was not in the original list. Test 3 only proves 501 fails; without it, a `>=` instead of a `>`
 would reject the largest legal input and look correct.
+
+## 3a · DONE — authority parity, applied and verified live
+
+`score_candidate_chunks` was replaced (migration `score_candidate_chunks_authority_parity`). It now
+returns `similarity` **and** `ranked_score`, the latter using production's exact formula and weights.
+
+| check | **result** |
+|---|---|
+| `match_chunks` vs `score_candidate_chunks` on one embedding, 25 chunks | `ranked_score_agrees = true`, worst delta **0.000000000000** |
+| every boost term non-negative | true |
+| largest boost observed | **0.36** — on a scale where cosine sits near 0.3–0.9, this decides orderings, it does not break ties |
+
+That last row is why the confound mattered. Discarding a term worth up to 0.36 is not a rounding
+difference; it would have dominated the very ordering the experiment was measuring.
+
+Guards added so it cannot silently return:
+
+- `test_ranking_formula.mjs` — 31 assertions binding the two SQL files' expressions and default weights.
+  Mutation-tested: sorting on `bare_similarity`, tuning one boost in one file, or dropping the RCR term
+  each turn the suite red.
+- The Worker **throws** if `ranked_score` is missing, rather than ranking on nulls and still reporting
+  `rerank_applied: true`.
+- The evaluator **aborts** (exit 8) if a rerank arm returns no `bare_ranked_score`.
 
 ## 4 · Start the Worker — **must run on your machine**
 

@@ -22,6 +22,11 @@ let failures = 0;
 const ok = (c, m) => { console.log((c ? "✓" : "✗ FAIL") + " — " + m); if (!c) failures++; };
 
 const base = readFileSync(new URL("./supabase/migration_v2_rag.sql", import.meta.url), "utf8");
+// THE REFERENCE FOR match_chunks IS THE EXPORT, NOT THE BOOTSTRAP (Codex, 2026-07-29).
+// migration_v2_rag.sql was four parameters and four return columns behind the live function, so deriving
+// anything about match_chunks from it was reading a file that had not described production for some time.
+// Table DDL still comes from the bootstrap — the tables have not drifted — but the function does not.
+const canonical = readFileSync(new URL("./supabase/migrations/canonical_match_chunks.sql", import.meta.url), "utf8");
 
 // ── the ground truth: what type is document_chunks.id? ────────────────────────
 const chunkTable = base.slice(base.indexOf("create table if not exists public.document_chunks"));
@@ -35,10 +40,15 @@ const ID_SQL_TYPE = /bigserial|bigint/i.test(idDecl || "") ? "bigint"
 ok(ID_SQL_TYPE !== "unknown", `document_chunks.id resolves to SQL type "${ID_SQL_TYPE}"`);
 
 // ── match_chunks must already agree (it is the incumbent, so it is the reference) ──
-const mc = base.slice(base.indexOf("create or replace function public.match_chunks"));
-const mcChunkId = (mc.match(/\n\s*chunk_id\s+(\w+)/) || [])[1];
+const mc = canonical.slice(canonical.search(/CREATE OR REPLACE FUNCTION public\.match_chunks/i));
+const mcChunkId = (mc.match(/chunk_id\s+(\w+)/) || [])[1];
 ok((mcChunkId || "").toLowerCase() === ID_SQL_TYPE,
-   `match_chunks returns chunk_id ${mcChunkId} — agrees with document_chunks.id`);
+   `canonical match_chunks returns chunk_id ${mcChunkId} — agrees with document_chunks.id`);
+
+// The stale bootstrap definition must stay labeled as stale, so nobody reads it for ranking behaviour.
+ok(/SUPERSEDED/.test(base.slice(0, base.indexOf("create or replace function public.match_chunks"))
+     .split("\n").slice(-14).join("\n")),
+   "the superseded match_chunks in migration_v2_rag.sql is marked as such");
 
 // ── every migration that mentions chunk ids must use the SAME type ────────────
 const migDir = new URL("./supabase/migrations/", import.meta.url);
@@ -63,7 +73,17 @@ for (const f of mig) {
   // applies to a function that does not exist
   const defArgs = [...sql.matchAll(/create or replace function public\.(\w+)\(([\s\S]*?)\)\s*returns/g)];
   for (const [, fname, args] of defArgs) {
-    const argTypes = args.split(",").map(a => a.trim().split(/\s+/).slice(1).join(" ").trim()).filter(Boolean);
+    // A GRANT names the function's IDENTITY arguments: types only, no parameter names and no DEFAULT
+    // clauses. So strip -- comments (which can carry commas and prose that the split would read as an
+    // argument) and strip `default <expr>` before comparing. Both of those appeared the moment the
+    // scorer gained boost parameters, and produced three failures against a GRANT that was correct.
+    const argTypes = args
+      .split("\n").map(l => l.replace(/--.*$/, "")).join("\n")
+      .split(",")
+      .map(a => a.replace(/\bdefault\b[\s\S]*$/i, "").trim())
+      .filter(Boolean)
+      .map(a => a.split(/\s+/).slice(1).join(" ").trim())
+      .filter(Boolean);
     const sig = argTypes.join(", ").replace(/\s+/g, " ");
     // NB: greedy to the last ")" before " to ", because vector(1536) contains a paren — a lazy
     // [^)]* match stops inside it and compares "vector(1536" against the real signature.

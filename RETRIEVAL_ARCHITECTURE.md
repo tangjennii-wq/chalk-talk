@@ -29,6 +29,7 @@ Verified relevant sources → Opus
 | Topic | ✅ | user string |
 | Facet queries | ✅ | 4 facets, `index.html` `retrieveRAG` |
 | Vector search | ✅ | Supabase pgvector, `match_chunks`, `text-embedding-3-small` @ 1536 |
+| **Authority ranking** | ✅ **live, and was undocumented** | `ranked_score` = similarity + tier + landmark + elite-journal + capped RCR. See below. |
 | **Exact keyword / entity search** | ❌ **absent** | no `tsvector`, no `to_tsquery`, no GIN index, no BM25 — verified by grep |
 | **Rank fusion** | ❌ **absent** | nothing to fuse |
 | **Rerank against original topic** | ❌ **absent** | facet scores are pooled directly |
@@ -44,6 +45,44 @@ how this is supposed to go.
 
 **Correction:** Postgres provides native **full-text search** (`tsvector`, `tsquery`, `ts_rank`) — it does
 **not** provide BM25. An earlier version of this file said otherwise.
+
+---
+
+## The ranking function is not what the repo said it was (2026-07-29)
+
+Checked against the live catalog while preparing the four-arm calibration. The deployed `match_chunks`
+had **10 parameters and 24 return columns**; the checked-in definition had 6 and 20, and no migration
+explained the difference. It had been altered in production and never committed.
+
+The canonical export now lives at `supabase/migrations/canonical_match_chunks.sql`. The ordering key is:
+
+```
+ranked_score = similarity
+             + (4 - source_tier) * tier_boost_weight     -- 0.05
+             + landmark_boost      when is_landmark_trial -- 0.05
+             + elite_journal_boost when journal_rank = 1  -- 0.06
+             + least(rcr_weight * ln(1 + rcr), 0.10)      -- 0.02, only when rcr > 1
+```
+
+**`ranked_score` is not similarity.** Measured on a live probe, the boost reaches **0.36** on a scale
+where cosine similarities sit around 0.3–0.9. It is not a tiebreak; it frequently decides the ordering.
+
+Two things followed, one of which nearly cost a calibration:
+
+1. **The stage-1 rerank was sorting by raw cosine.** So "rerank ON" was reranking *and* repealing the
+   authority policy — two changes under one name. Baseline and metadata arms kept the boosts; rerank and
+   both discarded them; no measured difference could have been attributed to either stage. Codex caught
+   this one command before ~130 physician judgements would have been spent on it.
+   `score_candidate_chunks` now applies the identical formula with identical weights, substituting
+   bare-topic similarity for facet similarity, so a rerank changes exactly one thing.
+   `test_ranking_formula.mjs` parses both files and fails if the expressions or the default weights
+   diverge; live agreement was verified at 25 chunks, worst delta `0.000000000000`.
+
+2. **`journal_rank <= max_journal_rank` is a hard filter, not a boost.** At the default of 2, the **156
+   documents at rank > 2 are unreachable by any retrieval the app performs** — 6% of a 2,593-document
+   corpus, excluded by a parameter named nowhere in the codebase. Nothing overrides it. No document
+   currently has a NULL `journal_rank`; if an ingester ever admitted one, `null <= 2` is null and the row
+   would drop silently. Worth a decision, separately from calibration.
 
 ---
 

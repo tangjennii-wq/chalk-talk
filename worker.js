@@ -624,20 +624,42 @@ async function handleRetrieve(request, env, origin) {
         // only a facet could surface is exactly the chunk that sits outside a global top-N.
         // score_candidate_chunks scores ONLY these ids, so every candidate gets a real number.
         // (Codex, 2026-07-28)
+        //
+        // ── SORT ON bare_ranked_score, NOT bare_similarity (Codex, 2026-07-29) ────────────────────
+        // THE BUG THIS REPLACES. This block used to sort by raw cosine. But the order it was replacing —
+        // match_chunks.ranked_score — is similarity PLUS four authority boosts: tier, landmark,
+        // elite-journal and a capped RCR term. Sorting by raw cosine therefore did two things at once:
+        // it reranked against the bare topic AND it repealed the authority policy. "Rerank ON" and
+        // "rerank OFF" differed by two changes, so the four-arm experiment could not attribute a
+        // difference to either, and would have reported the sum under the name of one of them.
+        //
+        // score_candidate_chunks now returns ranked_score computed with the IDENTICAL formula and
+        // weights as production, substituting bare-topic similarity for facet similarity. The only
+        // difference between arms is which query supplies the semantic term — which is what a rerank
+        // is. bare_similarity is still carried, for diagnostics, but it does NOT drive the order.
         const ids = union.map(c => c.chunk_id).filter(Boolean);
         const bareRows = await callScoreCandidateChunks(env, embeddings[0], ids);
         const bare = new Map();
-        (bareRows || []).forEach(r => bare.set(r.chunk_id, r.similarity));
+        (bareRows || []).forEach(r => bare.set(r.chunk_id, r));
         union.forEach(c => {
-          const v = bare.get(c.chunk_id);
-          c.bare_similarity = (typeof v === "number") ? v : null;
+          const r = bare.get(c.chunk_id);
+          c.bare_similarity   = (r && typeof r.similarity   === "number") ? r.similarity   : null;
+          c.bare_ranked_score = (r && typeof r.ranked_score === "number") ? r.ranked_score : null;
         });
+        // REFUSE TO RANK ON A MISSING COLUMN. If the deployed function is the older two-column version,
+        // every bare_ranked_score is null and sorting on it would quietly reproduce the arrival order
+        // while still reporting rerank_applied:true — the confound back again, now invisible. Treat it
+        // as a failure and fall back loudly.
+        if (union.some(c => c.bare_similarity != null && c.bare_ranked_score == null)) {
+          throw new Error("score_candidate_chunks returned no ranked_score — deployed function predates "
+                        + "the 2026-07-29 authority-parity fix; apply add_score_candidate_chunks.sql");
+        }
         // A null here now means the row genuinely has no stored embedding — not "outside a top-N".
         // It still ranks last, but that is a data problem, and it is COUNTED so it cannot hide.
-        const unscored = union.filter(c => c.bare_similarity == null).length;
+        const unscored = union.filter(c => c.bare_ranked_score == null).length;
         if (unscored) console.warn(`rerank: ${unscored}/${union.length} candidates had no stored embedding`);
-        union.sort((a, b) => (b.bare_similarity == null ? -1 : b.bare_similarity)
-                           - (a.bare_similarity == null ? -1 : a.bare_similarity));
+        union.sort((a, b) => (b.bare_ranked_score == null ? -Infinity : b.bare_ranked_score)
+                           - (a.bare_ranked_score == null ? -Infinity : a.bare_ranked_score));
         rerankApplied = true;
       } catch (err) {
         // Fail OPEN to current behaviour rather than returning nothing — but say so, so a silent
@@ -858,6 +880,9 @@ async function callScoreCandidateChunks(env, queryEmbedding, chunkIds) {
       "Authorization": `Bearer ${env.SUPABASE_ANON_KEY}`,
       "Content-Type": "application/json",
     },
+    // Boost weights are NOT sent: the function's defaults are pinned to canonical match_chunks and
+    // test_ranking_formula.mjs fails if they drift. Sending them from here would create a second place
+    // for them to disagree with production.
     body: JSON.stringify({ query_embedding: queryEmbedding, candidate_chunk_ids: chunkIds }),
   });
   if (!res.ok) throw new Error(`Supabase ${res.status}: ${(await res.text()).slice(0, 300)}`);

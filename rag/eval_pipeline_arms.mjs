@@ -340,6 +340,26 @@ for (const [topic, specialty, expect] of SET) {
       }
     }
 
+    // ── THE ARMS MUST DIFFER BY ONE THING (Codex, 2026-07-29) ────────────────────────────────────
+    // rerank_applied:true only proves the stage ran, not that it ranked the way production ranks. The
+    // first implementation sorted by raw cosine, which ALSO repealed the tier / landmark / elite-journal
+    // / RCR boosts that baseline and metadata keep — so "rerank" meant two changes wearing one name and
+    // no difference could be attributed. If bare_ranked_score is missing, the Worker is talking to a
+    // pre-parity score_candidate_chunks and this run would measure a ranking-policy change instead.
+    // Abort: ~130 physician judgements is far too expensive to spend on a mislabeled contrast.
+    if (r.rerank_applied === true) {
+      const chunks = r.chunks || [];
+      if (chunks.length && chunks.every(c => c.bare_ranked_score == null)) {
+        console.log("");
+        console.error(`✖ ABORTING: arm "${a.name}" reranked but returned no bare_ranked_score.`);
+        console.error("  The deployed score_candidate_chunks predates the 2026-07-29 authority-parity fix,");
+        console.error("  so this arm would be ranking on raw cosine while baseline/metadata keep the");
+        console.error("  deployed authority boosts. That is a ranking-policy change, not a rerank, and the");
+        console.error("  four-arm design cannot attribute it. Re-apply add_score_candidate_chunks.sql.");
+        process.exit(8);
+      }
+    }
+
     // Apply production's SPLIT selection, not a generic top-N.
     const all = r.chunks || [];
     const guidelines = all.filter(c => c.source === "guideline").slice(0, MAX_GUIDELINES);
@@ -363,6 +383,10 @@ for (const [topic, specialty, expect] of SET) {
       excerpt: String(c.text || "").replace(/\s+/g, " ").trim().slice(0, EXCERPT_CHARS),
       matched_facet: c.matched_query || null,
       facet_score: c.ranked_score ?? null, bare_similarity: c.bare_similarity ?? null,
+      // Recorded so the arms stay auditable after the 2026-07-29 parity fix: this is the key the rerank
+      // arms actually sort on, and it is the same authority formula the baseline arms rank by — only the
+      // query supplying similarity differs. bare_similarity is kept alongside it for diagnostics.
+      bare_ranked_score: c.bare_ranked_score ?? null,
     }));
     if (items.some(i => i.chunk_id == null)) {
       console.log("");

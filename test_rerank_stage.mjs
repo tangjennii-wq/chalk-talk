@@ -28,8 +28,14 @@ ok(/rerank_applied: !!merged\._rerankApplied/.test(worker),
    "rerank_applied is reported from what ACTUALLY RAN, never inferred from the request");
 ok(/candidate_chunk_ids: chunkIds/.test(worker),
    "…and passes the union's chunk ids explicitly, so scoring is EXACT rather than approximate");
-ok(!/tier_boost/.test(readFileSync(new URL("./supabase/migrations/add_score_candidate_chunks.sql", import.meta.url), "utf8")),
-   "…and the RPC applies NO tier boost — the rerank ranks on topic similarity alone");
+// INVERTED 2026-07-29. This assertion used to demand the RPC apply NO tier boost, on the reasoning that
+// "the rerank should rank on topic similarity alone". That reasoning was wrong, and it is what created
+// the confound Codex caught: the order being replaced was match_chunks.ranked_score, which is similarity
+// PLUS tier, landmark, elite-journal and RCR boosts. Ranking on bare similarity therefore repealed the
+// authority policy at the same time it reranked — two changes under one name, which no four-arm design
+// can attribute. The RPC must apply the SAME boosts; only the query supplying similarity may differ.
+ok(/tier_boost_weight/.test(readFileSync(new URL("./supabase/migrations/add_score_candidate_chunks.sql", import.meta.url), "utf8")),
+   "…and the RPC applies the SAME authority boosts as production — a rerank must not silently repeal them");
 ok(!/c\.text\.slice\(0, ?\d+\)/.test(worker.slice(worker.indexOf("STAGE 1"), worker.indexOf("STAGE 1") + 3000)),
    "the rerank never re-embeds a truncated copy — it scores the STORED representation");
 
@@ -69,10 +75,12 @@ const ROWS = [
 // what the BARE topic "diabetic ketoacidosis" actually thinks of them
 // An EXACT scorer returns a number for every id it is handed — including UKPDS, which a global top-N
 // lookup would have silently omitted.
+// Each row carries BOTH columns, as the real RPC now does: raw bare cosine, and that cosine run through
+// production's authority formula. The Worker must order on ranked_score.
 const BARE = [
-  { chunk_id: "ada2024", similarity: 0.72 },
-  { chunk_id: "dcct",    similarity: 0.31 },
-  { chunk_id: "ukpds",   similarity: 0.28 },
+  { chunk_id: "ada2024", similarity: 0.72, ranked_score: 0.87 },  // guideline, tier 1 → +0.15
+  { chunk_id: "dcct",    similarity: 0.31, ranked_score: 0.51 },  // landmark + tier 2
+  { chunk_id: "ukpds",   similarity: 0.28, ranked_score: 0.48 },
 ];
 
 {
@@ -124,15 +132,59 @@ const BARE = [
     { chunk_id: "niche", title: "Fluid protocols in DKA (2023)", ranked_score: 0.35 },
   ];
   const bare = [
-    { chunk_id: "niche", similarity: 0.81 },   // genuinely the best match for the bare topic
-    { chunk_id: "dcct",  similarity: 0.30 },
+    { chunk_id: "niche", similarity: 0.81, ranked_score: 0.91 },  // genuinely the best match for the topic
+    { chunk_id: "dcct",  similarity: 0.30, ranked_score: 0.50 },
   ];
   const order = (await run({ rows, bare, rerank: true })).map(r => r.chunk_id);
   ok(order[0] === "niche",
      "a niche facet-discovered paper is scored and ranked FIRST — the global-top-N version buried it at null");
   const scored = await run({ rows, bare, rerank: true });
-  ok(scored.every(c => typeof c.bare_similarity === "number"),
+  ok(scored.every(c => typeof c.bare_ranked_score === "number"),
      "EVERY union candidate receives a real number — no candidate is null merely for being outside a top-N");
+}
+
+// ── 6 · THE CONFOUND CODEX CAUGHT ON 2026-07-29 ──────────────────────────────
+// Reranking must change WHICH QUERY supplies semantic similarity, and nothing else. If it also drops the
+// authority boosts, then "rerank ON" vs "rerank OFF" differs by two things and the four-arm experiment
+// cannot attribute a difference to either — it would report the sum under the name of one.
+//
+// Constructed so the two possible sort keys disagree: `authoritative` has the LOWER bare cosine but wins
+// once production's boosts are applied. Sorting on bare_similarity puts `plain` first; sorting on
+// bare_ranked_score puts `authoritative` first. Only the second preserves deployed policy.
+{
+  const rows = [
+    { chunk_id: "authoritative", title: "Landmark trial, NEJM", ranked_score: 0.60 },
+    { chunk_id: "plain",         title: "Small cohort study",   ranked_score: 0.62 },
+  ];
+  const bare = [
+    { chunk_id: "authoritative", similarity: 0.58, ranked_score: 0.78 },  // +tier +landmark +elite
+    { chunk_id: "plain",         similarity: 0.62, ranked_score: 0.62 },  // no boosts
+  ];
+  const order = (await run({ rows, bare, rerank: true })).map(r => r.chunk_id);
+  ok(order[0] === "authoritative",
+     "RERANK preserves the authority policy: the boosted source outranks a higher RAW cosine");
+  ok(order[0] !== "plain",
+     "…so the rerank is not silently repealing tier/landmark/elite ranking while calling itself a rerank");
+}
+
+// ── 7 · AN OLD DEPLOYED RPC MUST FAIL LOUDLY, NOT RANK ON NULLS ──────────────
+// If the database still has the two-column version, every bare_ranked_score is null. Sorting on null
+// yields a constant comparator, which silently reproduces arrival order — while rerank_applied still
+// reports true. That is the confound again, now invisible. It must be treated as a failure.
+{
+  const rows = [
+    { chunk_id: "dcct",    title: "DCCT",            ranked_score: 0.90 },
+    { chunk_id: "ada2024", title: "ADA 2024 crises", ranked_score: 0.40 },
+  ];
+  const stale = [   // what the PRE-2026-07-29 function returns: no ranked_score column
+    { chunk_id: "ada2024", similarity: 0.72 },
+    { chunk_id: "dcct",    similarity: 0.31 },
+  ];
+  const order = (await run({ rows, bare: stale, rerank: true })).map(r => r.chunk_id);
+  ok(order[0] === "dcct",
+     "a ranked_score-less RPC response falls back to facet order rather than ranking on nulls");
+  ok(/predates the 2026-07-29 authority-parity fix|no ranked_score/.test(worker),
+     "…and the Worker names the cause, so the fallback cannot be mistaken for a working rerank");
 }
 
 // ═══ STAGE 2 · METADATA FILTER ═══════════════════════════════════════════════
