@@ -13,7 +13,14 @@
  * and index.html:6780 sets ABS_FLOOR = 0.30. **D-1 happened through that gate**, so the question is not
  * whether to have one but why the gate admitted DCCT for a DKA query.
  *
- * THE HYPOTHESIS THIS TESTS. Production does not embed the bare topic. retrieveRAG fans out into facet
+ * RESULT, 2026-07-28: THE HYPOTHESIS BELOW WAS REFUTED. For DKA the BARE topic query alone already
+ * returns 1/12 on-topic — every facet returns the same diabetes cluster, so the expansion is not the
+ * cause. What the run DID find is that bare-query top similarity tracks coverage (DKA 0.378 · hyperCa
+ * 0.445 · hyperK 0.495 · HFrEF 0.567) while facet scores inflate every topic into 0.51-0.61 regardless.
+ * The HFrEF control's highest-scoring chunk anywhere was an OFF-topic valvular guideline at 0.612, which
+ * is why no global cosine threshold can work. See rag/eval_rerank.mjs for the follow-up.
+ *
+ * THE HYPOTHESIS THIS TESTED (kept for the record). Production does not embed the bare topic. retrieveRAG fans out into facet
  * sub-queries (Jenni 2026-07-10) so that mechanism / diagnosis / treatment / outcomes sections each get
  * grounding:
  *
@@ -113,14 +120,23 @@ for (const topic of TOPICS) {
       tier: c.source_tier ?? null,
       landmark: !!c.is_landmark_trial,
       onTopic: re.test(String(c.title || "") + " " + String(c.text || "")),
+      // preserved so a surprising hit can become a regression fixture without re-querying
+      // (Codex 2026-07-28: keep title, text, source type, matched facet and scores)
+      document_id: c.document_id ?? null,
+      source: c.source ?? null,
+      matched_facet: q,
+      full_title: c.title || null,
+      text: (c.text || "").slice(0, 1200),
     }));
     report.topics[topic].facets[q] = rows;
 
     const rel = rows.filter(r => r.onTopic).length;
+    const sims = rows.map(r => r.sim);
     console.log(`\n  FACET: "${q}"`);
     console.log(`    returned ${rows.length} · plausibly on-topic ${rel}/${rows.length}` +
-                (rows.length ? ` · sim ${rows[rows.length-1].sim}–${rows[0].sim}` : ""));
-    for (const r of rows.slice(0, 8)) {
+                (rows.length ? ` · sim ${Math.min(...sims).toFixed(3)}–${Math.max(...sims).toFixed(3)}` : ""));
+    // print HIGHEST first — the rows arrive unsorted, which is what made the old range line wrong
+    for (const r of [...rows].sort((a, b) => b.sim - a.sim).slice(0, 8)) {
       console.log(`      ${r.onTopic ? "✓" : "✗"} ${String(r.sim).padEnd(6)} ${r.landmark ? "[LMK]" : "     "} ${r.tier != null ? "t"+r.tier : "  "} ${r.title}`);
     }
   }
