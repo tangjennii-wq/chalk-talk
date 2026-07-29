@@ -63,9 +63,9 @@ const MODEL_PRICES = {
 };
 const IMAGE_FLAT_CENTS = 8;   // gpt-image-1.5 high quality ≈ $0.08/image
 const EMBEDDING_MODEL = "text-embedding-3-small";
-// How deep to look when scoring the union against the bare topic. Large enough that a candidate found
-// only by a facet still gets a real bare score rather than a null. (Stage 1 rerank, 2026-07-28)
-const RERANK_POOL = 300;
+// (RERANK_POOL removed 2026-07-28. It encoded the assumption that a global top-N lookup could score the
+// facet union; it cannot. score_candidate_chunks scores the union exactly, so there is no pool depth to
+// choose and no arbitrary constant to get wrong.)
 
 // ── STAGE 2 · METADATA FILTERING (2026-07-28) ────────────────────────────────────────────────────
 // Publication types that cannot serve as teaching evidence regardless of how well they score. A
@@ -596,20 +596,27 @@ async function handleRetrieve(request, env, origin) {
     let rerankApplied = false;
     if (wantRerank && union.length) {
       try {
-        // min_similarity 0 so every union member gets a bare score, including ones only a facet found.
-        const bareRows = await callMatchChunks(env, {
-          query_embedding: embeddings[0],
-          match_count: RERANK_POOL,
-          min_similarity: 0,
-          max_age_years: maxAgeYears,
-          allowed_sources: allowedSources,
-          tier_boost_weight: 0,          // rank on raw topic similarity, not on a tier thumb
-        });
+        // EXACT scoring of the union — not a global top-N lookup.
+        //
+        // The first version of this called match_chunks with match_count 300, believing that scored
+        // "every union member". It did not: match_chunks ranks the WHOLE TABLE and returns a global
+        // top-N, so a facet-discovered candidate outside the bare topic's global top 300 came back
+        // absent, scored null, and ranked LAST. That is precisely backwards — a niche treatment paper
+        // only a facet could surface is exactly the chunk that sits outside a global top-N.
+        // score_candidate_chunks scores ONLY these ids, so every candidate gets a real number.
+        // (Codex, 2026-07-28)
+        const ids = union.map(c => c.chunk_id).filter(Boolean);
+        const bareRows = await callScoreCandidateChunks(env, embeddings[0], ids);
         const bare = new Map();
-        (bareRows || []).forEach(r => bare.set(r.chunk_id, r.similarity || 0));
-        union.forEach(c => { c.bare_similarity = bare.has(c.chunk_id) ? bare.get(c.chunk_id) : null; });
-        // A candidate the bare topic cannot see at all ranks last — it was found only by a facet, which
-        // is exactly the DCCT-for-DKA case. It is kept (recall) but never preferred (precision).
+        (bareRows || []).forEach(r => bare.set(r.chunk_id, r.similarity));
+        union.forEach(c => {
+          const v = bare.get(c.chunk_id);
+          c.bare_similarity = (typeof v === "number") ? v : null;
+        });
+        // A null here now means the row genuinely has no stored embedding — not "outside a top-N".
+        // It still ranks last, but that is a data problem, and it is COUNTED so it cannot hide.
+        const unscored = union.filter(c => c.bare_similarity == null).length;
+        if (unscored) console.warn(`rerank: ${unscored}/${union.length} candidates had no stored embedding`);
         union.sort((a, b) => (b.bare_similarity == null ? -1 : b.bare_similarity)
                            - (a.bare_similarity == null ? -1 : a.bare_similarity));
         rerankApplied = true;
@@ -791,6 +798,24 @@ async function callMatchChunks(env, params) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`Supabase ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  return await res.json();
+}
+
+// EXACT scoring for a KNOWN candidate set — see supabase/migrations/add_score_candidate_chunks.sql.
+// Distinct from callMatchChunks, which ranks the whole table and returns a global top-N. That difference
+// is the entire point: a facet-discovered niche paper outside the bare topic's global top-N must still
+// receive a real score. (Codex, 2026-07-28)
+async function callScoreCandidateChunks(env, queryEmbedding, chunkIds) {
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/score_candidate_chunks`, {
+    method: "POST",
+    headers: {
+      "apikey": env.SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${env.SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query_embedding: queryEmbedding, candidate_chunk_ids: chunkIds }),
   });
   if (!res.ok) throw new Error(`Supabase ${res.status}: ${(await res.text()).slice(0, 300)}`);
   return await res.json();

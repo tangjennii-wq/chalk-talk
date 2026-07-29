@@ -18,15 +18,18 @@ let failures = 0;
 const ok = (c, m) => { console.log((c ? "✓" : "✗ FAIL") + " — " + m); if (!c) failures++; };
 
 // ── 1 · the contract, read off the source ─────────────────────────────────────
-ok(/const RERANK_POOL = \d+;/.test(worker), "RERANK_POOL is a named constant, not a magic number");
+ok(!/const RERANK_POOL = \d+;/.test(worker),
+   "RERANK_POOL is GONE — it encoded the false assumption that a global top-N can score the facet union");
+ok(/score_candidate_chunks/.test(worker),
+   "the rerank uses a candidate-restricted RPC, not a global top-N lookup");
 ok(/const wantRerank = body\.rerank === true;/.test(worker),
    "rerank is OPT-IN and strictly === true — no truthy coercion, so a stray string cannot enable it");
 ok(/rerank_applied: !!merged\._rerankApplied/.test(worker),
    "rerank_applied is reported from what ACTUALLY RAN, never inferred from the request");
-ok(/min_similarity: 0,/.test(worker),
-   "the bare-topic pass uses min_similarity 0 so a facet-only candidate still gets a real score");
-ok(/tier_boost_weight: 0,/.test(worker),
-   "…and tier_boost_weight 0, so the rerank ranks on topic similarity rather than a tier thumb");
+ok(/candidate_chunk_ids: chunkIds/.test(worker),
+   "…and passes the union's chunk ids explicitly, so scoring is EXACT rather than approximate");
+ok(!/tier_boost/.test(readFileSync(new URL("./supabase/migrations/add_score_candidate_chunks.sql", import.meta.url), "utf8")),
+   "…and the RPC applies NO tier boost — the rerank ranks on topic similarity alone");
 ok(!/c\.text\.slice\(0, ?\d+\)/.test(worker.slice(worker.indexOf("STAGE 1"), worker.indexOf("STAGE 1") + 3000)),
    "the rerank never re-embeds a truncated copy — it scores the STORED representation");
 
@@ -44,10 +47,12 @@ function run({ rows, bare, rerank, throwOnBare = false }) {
     best: new Map(rows.map(r => [r.chunk_id, r])),
     body: { rerank },
     embeddings: [[0.1]], maxAgeYears: null, allowedSources: null,
-    RERANK_POOL: 300, matchCount: 8,
-    callMatchChunks: async () => {
+    matchCount: 8,
+    callMatchChunks: async () => { throw new Error("match_chunks must NOT be used for reranking"); },
+    // Models the REAL RPC: scores exactly the ids it is given, and nothing else.
+    callScoreCandidateChunks: async (_env, _emb, ids) => {
       if (throwOnBare) throw new Error("simulated RPC failure");
-      return bare;
+      return bare.filter(r => ids.includes(r.chunk_id));
     },
   };
   vm.createContext(ctx);
@@ -62,10 +67,12 @@ const ROWS = [
   { chunk_id: "ukpds",    title: "UKPDS 33",        ranked_score: 0.85 },
 ];
 // what the BARE topic "diabetic ketoacidosis" actually thinks of them
+// An EXACT scorer returns a number for every id it is handed — including UKPDS, which a global top-N
+// lookup would have silently omitted.
 const BARE = [
   { chunk_id: "ada2024", similarity: 0.72 },
   { chunk_id: "dcct",    similarity: 0.31 },
-  // ukpds absent entirely — the bare topic cannot see it at all
+  { chunk_id: "ukpds",   similarity: 0.28 },
 ];
 
 {
@@ -73,7 +80,7 @@ const BARE = [
   ok(order[0] === "ada2024",
      "RERANK ON: the on-topic guideline is ranked FIRST despite the lowest pooled facet score (0.40 vs 0.90)");
   ok(order[order.length - 1] === "ukpds",
-     "…a candidate the bare topic cannot see at all ranks LAST — kept for recall, never preferred");
+     "…and the weakest bare score ranks LAST — kept for recall, never preferred");
 }
 {
   const order = (await run({ rows: ROWS, bare: BARE, rerank: false })).map(r => r.chunk_id);
@@ -102,6 +109,31 @@ const BARE = [
      "reranking REORDERS the union, it does not filter it — dropping candidates is a later stage's job");
 }
 
+
+// ── 5 · THE BUG CODEX CAUGHT: a niche candidate outside any global top-N ──────
+// The old implementation called match_chunks(match_count: 300) and treated its result as "scores for
+// the union". A facet-discovered paper outside the bare topic's GLOBAL top 300 came back absent, was
+// scored null, and ranked LAST — which is exactly backwards, since a niche treatment paper only a facet
+// could surface is precisely the chunk that sits outside a global top-N.
+//
+// Here "niche" is in the union and IS scored by the candidate-restricted RPC. Under the old code it
+// would have been null and last; under exact scoring it ranks on its real merit.
+{
+  const rows = [
+    { chunk_id: "dcct",  title: "DCCT",                         ranked_score: 0.95 },
+    { chunk_id: "niche", title: "Fluid protocols in DKA (2023)", ranked_score: 0.35 },
+  ];
+  const bare = [
+    { chunk_id: "niche", similarity: 0.81 },   // genuinely the best match for the bare topic
+    { chunk_id: "dcct",  similarity: 0.30 },
+  ];
+  const order = (await run({ rows, bare, rerank: true })).map(r => r.chunk_id);
+  ok(order[0] === "niche",
+     "a niche facet-discovered paper is scored and ranked FIRST — the global-top-N version buried it at null");
+  const scored = await run({ rows, bare, rerank: true });
+  ok(scored.every(c => typeof c.bare_similarity === "number"),
+     "EVERY union candidate receives a real number — no candidate is null merely for being outside a top-N");
+}
 
 // ═══ STAGE 2 · METADATA FILTER ═══════════════════════════════════════════════
 // Drops sources that cannot be teaching evidence at all. Does NOT drop on tier, and does NOT drop
