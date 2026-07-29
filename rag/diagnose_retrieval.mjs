@@ -68,12 +68,17 @@ const TOPICS = argVal("--topic", "") ? [argVal("--topic", "")] : [
   "heart failure with reduced ejection fraction",  // CONTROL: should be well covered
 ];
 
-// the exact facet expansion production uses
+// the exact facet expansion production uses — FIVE facets, verified against index.html.
+// The 2026-07-28 run used only FOUR: it omitted the outcomes facet, which is the one that explicitly
+// asks for LANDMARK TRIALS and is therefore the single query most biased toward the papers that polluted
+// D-1. That run's numbers (DKA 1/12, hyperCa 3/12, hyperK 8/12, HFrEF 12/12) most likely UNDERSTATE the
+// problem, and should be re-run before being cited anywhere. (Codex, 2026-07-28)
 const facets = (t) => [
   t,
   t + " pathophysiology and mechanism",
   t + " diagnosis, workup and diagnostic testing",
   t + " treatment, management and guideline recommendations",
+  t + " outcomes, prognosis, mortality and landmark trials",
 ];
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -111,7 +116,7 @@ for (const topic of TOPICS) {
     let emb;
     try { emb = await embed(q); } catch (e) { console.log(`  [embed failed] ${q}: ${e.message}`); continue; }
     const { data, error } = await sb.rpc("match_chunks", {
-      query_embedding: emb, match_count: 12, min_similarity: ABS_FLOOR,
+      query_embedding: emb, match_count: 24, min_similarity: ABS_FLOOR,   // production value
     });
     if (error) { console.log(`  [rpc failed] ${q}: ${error.message}`); continue; }
     const rows = (data || []).map(c => ({
