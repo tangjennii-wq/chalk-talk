@@ -37,8 +37,13 @@ Verified relevant sources → Opus
 | **Live PubMed fallback** | ⚠️ built elsewhere | the update-check does exactly this well; not wired into generation |
 | Verified sources → Opus | ⚠️ | PMIDs verified for *identity*; nothing checks topic relevance |
 
-**Six of ten stages are missing or unused.** The two that are absent AND cheap — keyword search and rank
-fusion — are the ones Postgres provides natively.
+**This is a capability inventory, not a list of mandatory stages.** Codex, 2026-07-28: Chalk Talk has a
+valid, functioning RAG system. It is missing safeguards that a *broad medical scope* needs — which is a
+different statement from "built wrong". The design worked well enough to expose its own limits, which is
+how this is supposed to go.
+
+**Correction:** Postgres provides native **full-text search** (`tsvector`, `tsquery`, `ts_rank`) — it does
+**not** provide BM25. An earlier version of this file said otherwise.
 
 ---
 
@@ -50,12 +55,16 @@ fusion — are the ones Postgres provides natively.
 | guidelines (84) | the whole summary — **one vector per entry** |
 | PMC full-text | genuinely chunked by JATS section, ≤20/doc |
 
-The two corpora responsible for D-1 are **one vector per document**. A whole-abstract embedding is an
-average of everything the paper discusses: DCCT's vector averages type 1 diabetes, intensive insulin,
-retinopathy, nephropathy and neuropathy into a single point that sits near anything diabetes-shaped and
-near nothing in particular. **A single averaged vector has no way to express that "ketoacidosis" is
-absent.** This sits upstream of every stage above, and re-chunking would change every measurement — so it
-must not be done in the same change as anything else.
+The two corpora responsible for D-1 are **one vector per document**.
+
+**This is NOT established as a defect** (Codex, 2026-07-28 — I over-claimed it as one). A PubMed abstract
+is a short, coherent retrieval unit; splitting it can strip context and produce noisier fragments than it
+removes. The plausible mechanism — that a whole-abstract vector averages everything the paper covers, so
+DCCT sits near anything diabetes-shaped and near nothing in particular — is a **hypothesis**, and today's
+record is that two of my confident retrieval hypotheses were refuted by the first measurement.
+
+**Re-chunk only if candidate-level evaluation demonstrates an advantage.** Not before, and never in the
+same change as a ranking stage, since it would move every measurement at once.
 
 ---
 
@@ -75,59 +84,61 @@ Same symptom, two independent causes. Fixing one will not fix the other.
 
 ---
 
-## Implementation order
+## Build order (Codex, 2026-07-28)
 
-**One stage at a time, each measured against `rag/eval_rerank.mjs` on the calibration split.** Landing
-two together makes attribution impossible, and this project has already spent a day distinguishing real
-findings from instrument artifacts.
+**Build each separately. Measure candidate-level precision AND recall after every addition.** Do not merge
+several into one opaque "advanced RAG" change — that is how you end up unable to say which part helped,
+and this project has already spent a day separating real findings from instrument artifacts.
 
-1. **Rerank against the bare topic.** No schema change, no ingestion. Biggest expected precision win.
-   *Done when:* on `absent` topics the kept set shrinks toward zero, and `covered` topics are unharmed.
-2. **Entity/alias gate.** Requires the condition or a recognised synonym in title/text. Blocks a general
-   diabetes paper from passing on a DKA topic. Alias table already drafted in `rag/eval_rerank.mjs`.
-   *Done when:* DKA keeps nothing from the diabetes cluster, HFrEF keeps its trials.
-3. **Metadata filter.** Prefer guidelines, consensus statements, systematic reviews, primary trials.
-   Exclude editorials, letters, protocols, corrections. **Do not auto-exclude non-landmark papers** —
-   acute topics depend on them. Columns already exist.
-4. **Keyword index + rank fusion — use BM25, not plain TF-IDF** (Jenni, 2026-07-28).
+### Before public launch — these fix "irrelevant sources presented as grounding"
 
-   **Why BM25 specifically, for this corpus.** Two BM25 parameters address the exact pathology measured:
-   - **`k1` — term-frequency saturation.** TF-IDF rewards repetition close to linearly. The DCCT abstract
-     is long and says "diabetes" many times, so under TF-IDF it scores strongly on any diabetes query.
-     BM25 saturates: the fifth mention adds almost nothing over the second.
-   - **`b` — length normalization.** This corpus mixes short guideline summaries with long trial
-     abstracts. TF-IDF lets a long document accumulate score by being long; BM25 corrects for it.
+1. **Rerank against the original topic.** Stops facet scores being pooled as though they were comparable.
+   *Done when:* on `absent`/`thin` topics the kept set shrinks, and `covered` topics are unharmed.
+2. **Metadata filtering.** Remove letters, editorials, protocols, corrections and other weak source types;
+   prefer guidelines, consensus documents, systematic reviews, primary studies. **Do not auto-exclude
+   non-landmark papers** — acute topics depend on them. `source_tier` / `is_landmark_trial` already exist.
+3. **Clinical-relevance gate.** Candidate-level: `directly relevant` / `adjacent-contextual` / `irrelevant`.
+   Only *directly relevant* counts as topic grounding.
+4. **Honest provenance.** Count only sources that passed relevance, entered the prompt, were cited in the
+   final talk, and survived citation verification. *(Partly done in build 2026-07-28-02: the chip now reads
+   "N papers found to cite from" rather than "Grounded in guidelines + N retrieved sources".)*
 
-   **Fuse with Reciprocal Rank Fusion, and note WHY it fits here.** RRF combines by RANK, not score.
-   The diagnostic proved scores from different facet queries are not comparable — RRF is immune to that
-   by construction, because it never looks at a score. It also removes the need to normalize a cosine
-   against a BM25 score, which have no shared scale.
+### Strongly recommended soon — this one fixes *missing coverage*, a different problem
 
-   **Caveat to verify before planning around it: Postgres does not ship BM25.** Built-in `ts_rank` and
-   `ts_rank_cd` are TF-IDF-family, not BM25 — no `k1`, no `b`. Real options, in order of preference:
-   1. the `pg_search` / ParadeDB extension (true BM25 in Postgres) — **check whether Supabase permits it
-      on this plan before designing around it**;
-   2. compute BM25 in the Worker over `ts_vector` candidates — full control, modest code;
-   3. `ts_rank_cd` as a first approximation — still adds the missing lexical rail, and still catches
-      "ketoacidosis appears zero times", just without saturation or length correction.
+5. **Conditional live PubMed fallback.** Only after local retrieval fails the relevance gate — never every
+   generation. Verify identifier, metadata, relevance and claim support. **Identity is not relevance.**
+6. **Exact keyword / entity search.** For acronyms, diseases, trials and drug names that vector search
+   blurs. Start with Postgres `ts_rank`; BM25 can wait.
+7. **Rank fusion.** Required once both rails exist. Reciprocal Rank Fusion combines by RANK, not score —
+   which matters here specifically, because the diagnostic proved scores from different facet queries are
+   not comparable, and RRF is immune to that by construction.
 
-   Option 3 is a legitimate first step: most of the win here is *having* a lexical signal at all.
-5. **Clinical-relevance classifier.** One narrow question — *does this source directly support diagnosis,
-   treatment, mechanism, prognosis or a guideline recommendation for this topic?* Returns only
-   `relevant` / `possibly relevant` / `irrelevant` plus the facet. Small and safe; it never writes content.
-6. **Conditional live PubMed fallback.** Only when too few candidates survive — never every generation.
-   Verify PMID/DOI identity, then run the same relevance classifier. **Identity is not relevance**, and
-   conflating them trades a relevance problem for a fabrication problem.
-7. **Diversity/authority selection.** 1–2 current guidelines, 1 systematic review, 2–4 primary studies;
-   separate diagnostic / treatment / outcome coverage. Not eight variants of the same evidence.
-8. **Fail honestly.** If nothing survives, return no papers and say so: *"No topic-specific sources were
-   retrieved; verify clinical details independently."* The model may still teach from general knowledge.
-9. **Accurate provenance.** Count only sources that entered the prompt, passed relevance, were cited in
-   the final talk, and survived citation verification. *(Partly done: build 2026-07-28-02 already
-   replaced "Grounded in guidelines + N retrieved sources" with "N papers found to cite from".)*
+```
+rerank → metadata filter → relevance gate → verify on labeled topics
+      → conditional PubMed fallback → keyword search → rank fusion
+```
 
-Re-chunking the abstracts is a **separate track**, sequenced after 1–4 so it can be measured against a
-stable pipeline.
+Keyword search and fusion could move ahead of the fallback, but **they cannot retrieve evidence that does
+not exist locally.** Steps 1–3 fix irrelevant sources being presented as grounding; step 5 fixes absent
+coverage. Different problems, different fixes.
+
+### Not yet
+
+- Re-chunking every abstract (see above — unproven)
+- Automatic expansion to hundreds of guidelines
+- A BM25 extension
+- Any single change containing several of the stages above
+
+---
+
+## BM25 vs Postgres full-text — accurate terminology
+
+Postgres ships `tsvector`/`tsquery`/`ts_rank`, which is TF-IDF-family. **True BM25 needs an extension**
+(`pg_search`/ParadeDB) **or a separate implementation.** BM25 would be better eventually for two reasons
+specific to this corpus — `k1` saturates term frequency, so DCCT's long abstract repeating "diabetes"
+stops accumulating score; `b` normalizes length, which matters when short guideline summaries sit beside
+long trial abstracts. But `ts_rank` first: most of the win is having *any* lexical signal, and the
+extension question (does Supabase permit it on this plan?) can be answered later.
 
 ---
 
