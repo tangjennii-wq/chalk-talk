@@ -12,7 +12,7 @@ the live database on 2026-07-29 rather than carried forward.
 | | |
 |---|---|
 | branch | **`main`** — `launch-integration` is fully merged and is history now |
-| `BUILD_ID` / `build.txt` | `2026-07-29-01` |
+| `BUILD_ID` / `build.txt` | `2026-07-29-02` |
 | front end | **changed** — `pollAsyncGeneration` gained a `stalled` branch, so this one *does* need deploying |
 | database | production `chalktalk` (`hrcvcjiefndvytlcbmpa`); there is no staging project |
 | tests | 27 suites, all green, all wired into `.github/workflows/tests.yml` |
@@ -134,8 +134,13 @@ making them unsupervised risked breaking generation for every user. Full detail 
    explanation. **The first attempt shipped only the server half** — the client ignored the field and
    spun for the full nine-minute timeout, which is the bug this list exists to catch. A critique
    heartbeat was added at the same time, because critique is one long non-streaming call and a
-   legitimate 90s review was otherwise indistinguishable from a terminated Worker. **This makes the
-   failure visible and honest; it does not fix it.**
+   legitimate 90s review was otherwise indistinguishable from a terminated Worker. **The first heartbeat
+   was itself dangerous** — an uninterruptible sleep that delayed finalization by 0–20s and could push a
+   critique that finished inside the 30s budget past it, i.e. the diagnostic causing the failure it
+   diagnoses. It is a cancellable interval now. **This makes the failure visible and honest; it does not
+   fix it.** A stall is treated as *suspected*, not confirmed: the reconnect key is retained, and the
+   advice is reload-then-cancel rather than "just try again", because a merely-slow job that is
+   restarted means two generations and potentially two charges.
 2. **`/v1/messages` never verifies that `/consume` happened.** A signed-in caller can skip the frontend
    and generate with zero talks remaining. Needs a server-issued reservation, not a client convention.
 3. **`WRITER_CLEARED` is enforced only on the async route.** The sync route accepts any member of

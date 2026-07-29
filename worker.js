@@ -1265,20 +1265,32 @@ async function runGeneration(jobId, body, env) {
       // touch makes updatedAt an actual liveness signal. If the Worker is killed the heartbeat dies with
       // it, which is exactly the evidence the stall check needs. updateJob returns false on a landed
       // cancel and writes nothing, so this cannot resurrect a cancelled job.
+      // CANCELLABLE TIMER, AND NOTHING AWAITED ON THE WAY OUT (Codex, 2026-07-29 — my first version of
+      // this heartbeat could cause the very termination it exists to diagnose).
+      //
+      // It was `while (alive) { await sleep(20s); ... }` with `await beat` in the finally. A sleeping
+      // promise cannot be interrupted, so a critique finishing at 25s while the beat was 5s into its
+      // second sleep held finalization until ~40s — past Cloudflare's ~30s post-response budget. The
+      // diagnostic would have killed a generation that had completed inside the window, and added
+      // 0–20s (about 10s on average) of latency to every talk that survived.
+      //
+      // setInterval + clearInterval is synchronous to cancel and adds nothing to the exit path. The KV
+      // write inside the tick is deliberately NOT awaited: a heartbeat is best-effort liveness, and
+      // making finalization wait on it is exactly the mistake above in miniature.
       let critAlive = true;
-      const beat = (async () => {
-        while (critAlive) {
-          await new Promise(r => setTimeout(r, CRITIQUE_HEARTBEAT_MS));
-          if (!critAlive) break;
-          try { await updateJob({ heartbeatAt: new Date().toISOString() }); } catch (_) {}
-        }
-      })();
+      const beatTimer = setInterval(() => {
+        if (!critAlive) return;
+        // Fire-and-forget. updateJob re-reads the record and returns false on a landed cancel, so this
+        // cannot resurrect a cancelled job. It may still lose a race with the final `done` write; that
+        // would only re-add heartbeatAt to an otherwise complete record, which is harmless.
+        updateJob({ heartbeatAt: new Date().toISOString() }).catch(() => {});
+      }, CRITIQUE_HEARTBEAT_MS);
       let crit;
       try {
         crit = await callAnthropicText(env, body.critique.sys, [{ type: "text", text: critInput }], body.critique.maxTok || 16384, body.critique.models);
       } finally {
-        critAlive = false;          // stop the loop even if the critique threw
-        try { await beat; } catch (_) {}
+        critAlive = false;          // checked by any tick already queued
+        clearInterval(beatTimer);   // synchronous — adds zero latency to finalization
       }
       critText = crit.text; critUsage = crit.usage; critModel = crit.modelUsed;
     }
@@ -1401,11 +1413,21 @@ async function handleGenerateStatus(request, jobId, env, origin) {
         // refunded". Neither is established from a status read: the runner might still be alive, and
         // the refund path might yet run. What IS observed is the silence. Say that, name the likely
         // cause, and do not promise the user a loss that may not have happened.
-        stall_detail: "This generation hasn't reported progress for " + secs + "s. The most likely "
-          + "cause is a known limitation of our background path — work scheduled after a response is "
-          + "cut off at about 30 seconds — in which case it won't finish on its own. It may also be "
-          + "unusually slow. Starting again is safe; if a talk credit looks wrong afterwards, that's "
-          + "this defect and not something you did.",
+        // ADVICE MUST MATCH THE CONFIDENCE (Codex, 2026-07-29). The previous message allowed that the
+        // job "may also be unusually slow" and then told the user "starting again is safe" — advice
+        // that is only safe if the job is definitely dead. A suspected stall is not a confirmed one:
+        // the heartbeat write is best-effort and its failure is swallowed, so a live job can look
+        // silent. Starting again on that assumption means two generations and potentially two charges.
+        //
+        // So: reload to reconnect (the client keeps the job key for exactly this reason), and cancel
+        // explicitly before restarting. Cancel is now truthful — it returns cancelled:false if it did
+        // not stick — so "cancel, then restart" is a sequence the user can actually rely on.
+        stall_detail: "This generation hasn't reported progress for " + secs + "s. The likely cause is a "
+          + "known limitation of our background path — work scheduled after a response is cut off at "
+          + "about 30 seconds — but it may simply be slow, so we can't be certain it has stopped. "
+          + "Reload the page first: if it is still running, it will reconnect. If nothing comes back, "
+          + "cancel this generation before starting another, so you aren't charged for two. This is a "
+          + "known problem on our side, not something you did.",
       }), origin);
     }
   }
