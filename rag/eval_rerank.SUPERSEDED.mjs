@@ -1,5 +1,14 @@
 #!/usr/bin/env node
 /**
+ * SUPERSEDED 2026-07-28 — use rag/eval_pipeline_arms.mjs.
+ *
+ * This version did its OWN embedding and its OWN ranking, so it measured a reimplementation rather
+ * than the code that ships. Whatever it concluded would have been a fact about this file. It also
+ * used four facets instead of production's five and match_count 20 instead of 24.
+ *
+ * Kept only for the labeled set and alias table it originated. Do not run it.
+ */
+/**
  * RERANK COMPARISON — facet recall, bare-topic precision.
  *
  *   node rag/eval_rerank.mjs --dry            # show the labeled set, spend nothing
