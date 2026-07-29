@@ -275,6 +275,35 @@ export default {
     }
 
     // ── Legacy / demo path (per-IP daily limit on Jenni's key) ──────────────
+    //
+    // PUT IT UNDER THE SAME CAP AND LEDGER AS EVERY OTHER PATH (2026-07-29 audit).
+    // This branch spends ANTHROPIC_API_KEY and, until now, checked no monthly cap and wrote no ledger
+    // row — so its spend was both uncapped and invisible to the cap every other path respects. Its only
+    // stated guard was the per-IP daily counter, and that counter does nothing: RATE_LIMIT_KV is not
+    // bound in wrangler.toml, so readDailyCount always returns 0 while /health reports the limit as
+    // enforced with full headroom.
+    //
+    // Reaching it only requires OMITTING the X-Supabase-Auth header. Origin is checked, but Origin is a
+    // client-supplied header and trivially set by any non-browser client.
+    //
+    // I did NOT close this path, deliberately. No shipped frontend uses it — PROXY_CONFIG.enabled is
+    // false on both main and launch-integration, verified — but "no caller I can find" is not "no
+    // caller", and silently 403-ing an unknown client while Jenni is away is the worse failure. Metering
+    // it is strictly additive: every existing caller keeps working, the spend becomes visible, and it
+    // stops at the same $250 backstop as everything else.
+    // Recomputed rather than reused: meterKind and monthKey above are const-scoped to the free-tier
+    // branch, so referencing them here is a ReferenceError at runtime — which `node --check` does not
+    // catch, because it is a scope error and not a syntax error. Caught by reading, not by the check.
+    const legacyMeterKind = request.headers.get("X-CT-Meter") || "aux";
+    const legacyMonthKey = new Date().toISOString().slice(0, 7);
+    const legacyCapCents = freeCapCents(env);
+    const legacySpent = await getMonthlySpendCents(env, legacyMonthKey);
+    if (legacySpent >= legacyCapCents) {
+      return jsonError(503, "free_tier_paused",
+        "Chalk Talk's free tier is paused for this month. Add your own Anthropic key to keep going.",
+        origin, { resumes_on: nextMonthFirstDayUTC() });
+    }
+
     let upstream;
     try {
       upstream = await fetch("https://api.anthropic.com/v1/messages", {
@@ -290,7 +319,13 @@ export default {
       return jsonError(502, "upstream_unreachable", "Could not reach Anthropic API: " + err.message, origin);
     }
 
-    if (upstream.ok) ctx.waitUntil(incrementDailyCount(env, ip));
+    if (upstream.ok) {
+      ctx.waitUntil(incrementDailyCount(env, ip));
+      // Same metering as the free-tier branch, so this path's spend lands in spend_ledger and counts
+      // toward the cap checked above rather than accruing off the books.
+      ctx.waitUntil(meterCost(env, upstream.clone(), body.model,
+                              legacyMeterKind === "talk" ? "talk" : "aux", legacyMonthKey));
+    }
 
     const respHeaders = new Headers(upstream.headers);
     respHeaders.set("Access-Control-Allow-Origin", origin || "*");

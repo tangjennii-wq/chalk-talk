@@ -75,6 +75,10 @@ guard off. `/health` then renders `NaN` as `null`, which reads as "not configure
 **Fix:** an `intEnv()` helper that rejects `NaN` and negatives and falls back to the compiled-in default,
 with a warning. Strictly safer: a typo now yields the default limit, never no limit.
 
+### F7 · The legacy path now respects the cap and writes to the ledger — HIGH
+
+See the former N3 below for the full reasoning, including why the path was metered rather than closed.
+
 ### F6 · A locator bug in my own audit test — LOW
 
 `worker.indexOf("STAGE 2")` matched the file's header comment at offset ~3.9k rather than the code at
@@ -107,13 +111,36 @@ backend is sick.** Also `rows[0].total_cents || 0`, so schema drift reads as zer
 means a Supabase hiccup stops all generation. That trade is yours, and it's not one to make while you're
 unreachable.
 
-### N3 · The legacy path bypasses the cap and the ledger entirely — HIGH
+### ~~N3~~ → **FIXED (F7): the legacy path now respects the cap and writes to the ledger**
 
-Omit the `X-Supabase-Auth` header and you fall through to a branch with no `getMonthlySpendCents` check
-and no `meterCost`. Spend on your key, invisible to `spend_ledger`. Combined with N4, the only remaining
-gate is a per-IP counter that doesn't work.
+Omit the `X-Supabase-Auth` header and you fell through to a branch with no `getMonthlySpendCents` check
+and no `meterCost` — spend on your key, invisible to `spend_ledger`, with the only remaining gate being
+the per-IP counter that doesn't work (N4).
 
-### N4 · The daily rate limit doesn't work, and reports that it does — HIGH
+I moved this out of "not fixed" after verifying two things:
+
+1. **`RATE_LIMIT_KV` is genuinely unbound** — `wrangler.toml` declares only `JOBS_KV`. So the guard named
+   in the code comment provides nothing, and `/health` advertises it as enforced with full headroom.
+2. **No shipped frontend uses the path** — `PROXY_CONFIG.enabled` is `false` on both `main` and
+   `launch-integration`. (Also: `launch-integration` is now fully merged into `main`, which is 18 ahead,
+   so the old "main is 34 behind" note is stale.)
+
+**I did not close the path**, deliberately — "no caller I can find" is not "no caller", and silently
+403-ing an unknown client while you're away is the worse failure. I metered it instead, which is strictly
+additive: every existing caller keeps working, the spend becomes visible, and it stops at the same $250
+backstop as everything else. Closing it entirely is still available to you and is now a one-line change.
+
+*A note on how this nearly went wrong:* my first version referenced `meterKind` and `monthKey`, both
+`const`-scoped to the free-tier branch. That is a **ReferenceError at runtime, not a syntax error** —
+`node --check` passed it, and so did importing the module, because the handler body never runs. Only
+calling the handler catches it. `test_legacy_path_metering.mjs` now does, and I mutation-tested it by
+reintroducing the exact error: `--check` still says OK, the suite goes red.
+
+### N4 · The daily rate limit doesn't work, and reports that it does — HIGH, **confirmed live**
+
+**`RATE_LIMIT_KV` is not bound in `wrangler.toml`** — verified, not inferred. So this is not a latent
+risk; the per-IP daily limit is doing nothing in production right now, while `/health` returns
+`{used: 0, limit: 10, remaining: 10}`.
 
 Two defects. Without `RATE_LIMIT_KV` bound, both functions early-return and `used` is always `0` — yet
 `/health` returns `{used: 0, limit: 10, remaining: 10}`, which reads as an enforced limit with full
