@@ -348,10 +348,25 @@ export default {
 // so `used >= limit` and `spentCents >= capCents` both stop tripping. A typo in a dashboard variable
 // silently switched the guard off, and /health rendered it as `null` (NaN serializes to null), which
 // reads as "not configured" rather than "misconfigured". Fall back to the compiled-in default instead.
+// parseInt IS NOT VALIDATION — it is a prefix parser (corrected 2026-07-29, second pass).
+// My first version used parseInt and its own comment cited "250usd" as an example it rejects. It does
+// not. parseInt stops at the first non-digit and returns what it got:
+//
+//   "250usd" -> 250     the exact example the comment claimed was caught
+//   "1e3"    -> 1       someone writing 1000 in exponent form gets a $1 cap
+//   "0x10"   -> 0       a $0 cap: every request blocked, looking like an exhausted budget
+//   "250.7"  -> 250     silently truncated
+//
+// Two of those are worse than the NaN case they replaced, because NaN at least disabled the comparison
+// visibly. A $1 cap looks exactly like a working cap. The suite passed because it only tested
+// "unlimited", which happens to be the one malformed value parseInt does reject.
+//
+// Validate the WHOLE string, then convert.
 function intEnv(raw, fallback, name) {
   if (raw == null || raw === "") return fallback;
-  const n = parseInt(raw, 10);
-  if (!Number.isFinite(n) || n < 0) {
+  const s = String(raw).trim();
+  const n = Number(s);
+  if (!/^\d+$/.test(s) || !Number.isInteger(n) || n < 0) {
     console.warn(`config: ${name}="${raw}" is not a non-negative integer; using default ${fallback}`);
     return fallback;
   }
@@ -737,6 +752,22 @@ async function handleRetrieve(request, env, origin) {
         if (unscored) console.warn(`rerank: ${unscored}/${union.length} candidates had no stored embedding`);
         rerankUnscored = unscored;
         rerankScored = bare.size;
+        // PARTIAL COVERAGE IS NOT A RERANK (Codex, 2026-07-29, third pass).
+        // The previous guard only rejected scoring ZERO candidates. Score 20 of 24 and it reported
+        // rerank_applied:true with rerank_unscored:4 — but those four were forced to the bottom
+        // regardless of merit, which is the exact global-top-N failure this stage was built to remove,
+        // just smaller. Telemetry is not a substitute for a verdict: an experiment reading
+        // rerank_applied:true has no reason to discard the topic, so a partial rerank would enter the
+        // calibration as if it were a clean one.
+        //
+        // STRICT ONLY WHEN ASKED. Production tolerates a stale chunk missing an embedding — dropping a
+        // whole talk's retrieval over one row would be worse for the user than a slightly imperfect
+        // ordering. The evaluator sets strict_rerank:true so any incompleteness fails the arm loudly.
+        if (unscored > 0 && body.strict_rerank === true) {
+          throw new Error(`strict_rerank: ${unscored}/${union.length} candidates unscored — a partial `
+                        + "rerank forces the remainder to the bottom regardless of merit, which is the "
+                        + "failure this stage exists to remove");
+        }
         // -Number.MAX_VALUE, not -Infinity: two unscored candidates must compare EQUAL (a finite
         // difference of 0), not NaN. NaN is falsy, so under `||` chaining it silently hands the decision
         // to the next comparator — see the authority tie-break below, where that made publication type
@@ -903,6 +934,32 @@ async function handleImageGeneration(request, env, ctx, origin) {
     if (!ok) return jsonError(429, "image_quota_exceeded", "You've used your free images. Add your own key to keep generating illustrations.", origin);
   }
 
+  // ── UNAUTHENTICATED IMAGE GENERATION SPENT THE OPENAI KEY WITH NO WORKING LIMIT ──────────────────
+  // (Codex, 2026-07-29 — CRITICAL, and my own omission: I metered the sibling hole on /v1/messages the
+  // same day and did not check whether this endpoint had it too. It did.)
+  //
+  // Without X-Supabase-Auth, isFreeTier is false, so the cap check, the quota consume and the ledger
+  // write above are ALL skipped — yet the request still runs on env.OPENAI_API_KEY below. The only
+  // remaining guard was the per-IP daily counter, and RATE_LIMIT_KV is not bound in wrangler.toml, so
+  // readDailyCount returns 0 forever and incrementDailyCount is a no-op. Origin is checked, but Origin
+  // is client-supplied and trivially set by any non-browser client.
+  //
+  // Net effect before this: unlimited high-quality image generation on Jenni's key, uncapped and absent
+  // from spend_ledger. At the 8c flat rate booked below, a few thousand requests is real money.
+  //
+  // Same remedy as the legacy /v1/messages path, for the same reason: cap and meter rather than close.
+  // Closing it would break any caller I have not found, and I have been wrong about that kind of claim
+  // before. Metering is strictly additive and makes the spend visible immediately.
+  const anonMonthKey = monthKey || new Date().toISOString().slice(0, 7);
+  if (!isFreeTier) {
+    const spentCents = await getMonthlySpendCents(env, anonMonthKey);
+    if (spentCents >= freeCapCents(env)) {
+      return jsonError(503, "free_tier_paused",
+        "Image generation is paused for this month. Add your own key to continue.",
+        origin, { resumes_on: nextMonthFirstDayUTC() });
+    }
+  }
+
   let upstream;
   try {
     upstream = await fetch("https://api.openai.com/v1/images/generations", {
@@ -923,13 +980,15 @@ async function handleImageGeneration(request, env, ctx, origin) {
   // failed generation doesn't cost the user one of their 5. (Audit fix)
   if (!upstream.ok && isFreeTier && freeUser) ctx.waitUntil(refundQuota(env, freeUser.email, "image"));
 
-  if (upstream.ok && isFreeTier) {
-    // Flat image cost into the same monthly spend ledger.
+  if (upstream.ok) {
+    // LEDGER THE SPEND WHOEVER ASKED FOR IT. This used to be an if/else: free-tier requests were
+    // metered, and everyone else got only incrementDailyCount — a counter backed by an unbound KV
+    // namespace, so in practice nothing at all. The key is the same key either way, so the ledger entry
+    // must be too, or the cap is computed from a number that omits an entire class of traffic.
     ctx.waitUntil(supaServiceRPC(env, "ledger_add", {
-      p_month: monthKey, p_kind: "image", p_cost_cents: IMAGE_FLAT_CENTS, p_cap_cents: freeCapCents(env),
+      p_month: anonMonthKey, p_kind: "image", p_cost_cents: IMAGE_FLAT_CENTS, p_cap_cents: freeCapCents(env),
     }).catch(() => {}));
-  } else if (upstream.ok) {
-    ctx.waitUntil(incrementDailyCount(env, ip));
+    if (!isFreeTier) ctx.waitUntil(incrementDailyCount(env, ip));
   }
 
   const text = await upstream.text();
@@ -1285,22 +1344,60 @@ async function handleGenerateStatus(request, jobId, env, origin) {
   return jsonOK(obj, origin);
 }
 
+// CANCEL MUST NOT CLAIM AN OUTCOME IT DID NOT ACHIEVE (Codex, 2026-07-29).
+// This used to wrap the whole thing in `catch (_) {}` and return {status:"cancelled"} unconditionally.
+// If the KV write failed, the job was never marked cancelled: generation continued, completed, and was
+// billed — while the UI said "cancelled" and the user reasonably stopped worrying about it. That is the
+// swallow-the-error-and-report-success pattern in its most expensive form, because the user's whole
+// reason for pressing cancel is to stop spending.
+//
+// Now: the write is verified by reading it back, and a failure returns 502 with cancelled:false so the
+// client can retry or warn. A cancel that did not happen is not a cancel.
 async function handleGenerateCancel(request, jobId, env, origin) {
-  if (!env.JOBS_KV) return jsonOK({ status: "cancelled" }, origin);
+  // No job store means nothing is running server-side, so there is genuinely nothing to cancel — that
+  // is a true "cancelled", not a swallowed failure.
+  if (!env.JOBS_KV) return jsonOK({ status: "cancelled", cancelled: true, note: "no server-side job store" }, origin);
   const token = request.headers.get("X-Supabase-Auth");
   const user = token ? await verifySupabaseUser(env, token) : null;
   if (!user) return jsonError(401, "auth_required", "Sign in to cancel generation.", origin);
+
+  let raw;
   try {
-    const raw = await env.JOBS_KV.get("job:" + jobId);
-    if (!raw) return jsonOK({ status: "cancelled" }, origin);   // nothing to cancel — don't CREATE an ownerless record
-    let cur; try { cur = JSON.parse(raw); } catch { return jsonError(500, "bad_job", "Corrupt job record.", origin); }
-    if (cur.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
-    cur.cancelled = true;
-    if (cur.status !== "done") cur.status = "cancelled";
-    cur.updatedAt = new Date().toISOString();
+    raw = await env.JOBS_KV.get("job:" + jobId);
+  } catch (err) {
+    return jsonError(502, "cancel_failed",
+      "Could not reach the job store to cancel this generation. It may still be running — try again.",
+      origin, { cancelled: false, reason: "kv_read_failed" });
+  }
+  if (!raw) return jsonOK({ status: "cancelled", cancelled: true, note: "no such job" }, origin);
+
+  let cur; try { cur = JSON.parse(raw); } catch { return jsonError(500, "bad_job", "Corrupt job record.", origin); }
+  if (cur.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
+
+  cur.cancelled = true;
+  if (cur.status !== "done") cur.status = "cancelled";
+  cur.updatedAt = new Date().toISOString();
+  try {
     await env.JOBS_KV.put("job:" + jobId, JSON.stringify(cur), { expirationTtl: 600 });
-  } catch (_) {}
-  return jsonOK({ status: "cancelled" }, origin);
+  } catch (err) {
+    return jsonError(502, "cancel_failed",
+      "Could not record the cancellation. The generation may still be running and may still be billed.",
+      origin, { cancelled: false, reason: "kv_write_failed" });
+  }
+  // READ BACK. A KV put that resolves without throwing has still not necessarily produced a record the
+  // runner will observe, and the runner is what decides whether to stop. Confirm the flag is actually
+  // there before telling the user it is. (Note: KV is eventually consistent, so this is a best-effort
+  // confirmation, not a guarantee — hence the honest `cancelled` field rather than a bare status string.)
+  try {
+    const back = await env.JOBS_KV.get("job:" + jobId);
+    const okFlag = back ? (JSON.parse(back).cancelled === true) : false;
+    if (!okFlag) {
+      return jsonError(502, "cancel_failed",
+        "The cancellation did not stick. The generation may still be running — try again.",
+        origin, { cancelled: false, reason: "readback_mismatch" });
+    }
+  } catch (_) { /* read-back is advisory; the write above already succeeded */ }
+  return jsonOK({ status: "cancelled", cancelled: true }, origin);
 }
 
 function corsPreflight(origin, allowedOrigins) {

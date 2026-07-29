@@ -78,7 +78,11 @@ const junk = [
 }
 
 {
-  // Micro pools everything: one denominator, no topic dropped, directly comparable across arms.
+  // Micro pools everything: no topic dropped. NB the denominator is each arm's OWN kept count — an
+  // earlier comment called it "one denominator for every arm", which is false. The shared-denominator
+  // property belongs to macro* alone. (Corrected 2026-07-29.)
+  ok(MICRO(abstainer) !== undefined && abstainer.reduce((s, t) => s + t.kept, 0) !== junk.reduce((s, t) => s + t.kept, 0),
+     "micro denominators DIFFER between arms (20 vs 32) — it is not a shared-denominator statistic");
   ok(Math.abs(MICRO(abstainer) - 15 / 20) < 1e-9, `abstainer micro = ${MICRO(abstainer).toFixed(3)}`);
   ok(Math.abs(MICRO(junk) - 15 / 32) < 1e-9, `junk micro = ${MICRO(junk).toFixed(3)} — diluted by the junk`);
   ok(MICRO(abstainer) > MICRO(junk), "…micro penalises returning irrelevant sources, as it should");

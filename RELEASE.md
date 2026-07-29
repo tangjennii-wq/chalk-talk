@@ -15,15 +15,21 @@ the live database on 2026-07-29 rather than carried forward.
 | `BUILD_ID` / `build.txt` | `2026-07-28-03` (tagged `staging-2026-07-28-03`) |
 | front end | **unchanged since `2026-07-28-03`** — the recent work is Worker, SQL and tests only |
 | database | production `chalktalk` (`hrcvcjiefndvytlcbmpa`); there is no staging project |
-| tests | 25 suites, all green, all wired into `.github/workflows/tests.yml` |
+| tests | 26 suites, all green, all wired into `.github/workflows/tests.yml` |
 
-## Two things that surprised me, so they are written down
+## Two things worth knowing before you deploy
 
-**Commits to `main` are being pushed automatically.** `git reflog show origin/main` records
-`update by push` for commits I only ever committed locally — almost certainly GitHub Desktop auto-sync,
-which has caused trouble here before (it once committed a half-resolved merge with literal conflict
-markers). **Treat every commit on `main` as immediately public.** If you want a change staged rather than
-published, work on a branch.
+**Unexpected pushes to `main` were observed; the source is unknown.** `git reflog show origin/main`
+records `update by push` for several commits that were only ever committed locally in a session. That
+proves pushes happened — it does **not** prove what initiated them, and a later commit (`a0d0b97`) did
+*not* auto-push, so whatever it is does not fire every time. GitHub Desktop auto-sync is the obvious
+suspect given this repo's history with it, but that is a hypothesis, not a finding.
+
+*(Corrected 2026-07-29: an earlier version of this file stated flatly that commits are pushed
+automatically. The reflog does not support that, and I should not have written it as established.)*
+
+Practical consequence either way: **check `git log origin/main..main` before assuming a commit is
+private**, and work on a branch if you want something staged rather than published.
 
 **Pages serves `main`, but nothing deploys the Worker on push.** `.github/workflows/tests.yml` is the only
 workflow and it has no deploy step — verified. So:
@@ -42,12 +48,23 @@ Run `npx wrangler deploy` to make these live. All are Worker-side.
 - **Rerank coverage guard** — refuses to report `rerank_applied: true` when the scorer matched nothing.
 - **`no_eligible_local_sources`** no longer fires when the union was empty *before* the filter ran.
 - **`match_count` clamped at both ends** — a negative value used to slice the best chunks off the tail.
-- **`intEnv()` config validation** — `MAX_MONTHLY_SPEND_USD="250usd"` used to silently disable the cap.
-- **The legacy `/v1/messages` path is now capped and metered** — it was an unledgered relay on the
-  Anthropic key, reachable by omitting one header.
+- **`intEnv()` config validation** — a malformed `MAX_MONTHLY_SPEND_USD` no longer silently weakens or
+  disables the cap. (The first attempt used `parseInt`, which turned `"1e3"` into a **$1** cap and
+  `"0x10"` into **$0**; it now validates the whole string.)
+- **The legacy `/v1/messages` path is capped and metered** — it was an unledgered relay on the Anthropic
+  key, reachable by omitting one header.
+- **Unauthenticated image generation is capped and metered** — the same hole on the OpenAI key, with a
+  per-IP counter that does nothing because `RATE_LIMIT_KV` is unbound.
+- **Cancellation tells the truth** — a failed KV write now returns 502 with `cancelled:false` instead of
+  reporting success while generation continued and billed.
+- **`strict_rerank`** — opt-in mode where a *partially* scored rerank fails rather than reporting
+  `rerank_applied:true`. The evaluator sets it; production stays lenient deliberately.
 
 Already applied to the database (nothing to deploy): `canonical_match_chunks`,
 `score_candidate_chunks_authority_parity`.
+
+> **This list is not a readiness statement.** These are the fixes that were safe to make unsupervised.
+> The largest risks are still open — see *Still outstanding*.
 
 ## Deploying
 
@@ -73,8 +90,8 @@ together — the update banner compares them.
 
 ## Rolling back
 
-**Do not `reset --hard` and force-push.** The old instructions did, which destroys history that is already
-public — and since pushes here happen automatically, "already public" is the normal case.
+**Do not `reset --hard` and force-push.** The old instructions did, which destroys history that may
+already be public — and given the unexplained pushes noted above, you cannot assume a commit is private.
 
 ```bash
 # Worker: redeploy the previous version. Cloudflare keeps them.
@@ -93,12 +110,35 @@ so there is nothing to undo in an emergency. Every migration containing `DROP` o
 `BEGIN`/`COMMIT`, enforced by `test_migration_atomicity.mjs`, so a failed apply leaves the database as it
 was rather than half-migrated.
 
-## Still outstanding
+## Still outstanding — read this before calling anything ready
 
-- **Rotate the exposed OpenAI and Supabase service-role keys.** Carried across several sessions.
-- **Eleven Worker findings** left for a decision — `rag/runs/2026-07-29-worker-audit.md`. Start with
-  `WRITER_CLEARED`: it fails closed only on the async route, so the sync route will write medical content
-  with an unbenchmarked model.
-- **`RATE_LIMIT_KV` is not bound** in `wrangler.toml`, so the per-IP daily limit does nothing while
-  `/health` reports it enforcing.
-- **Calibration has not been run** — see `CALIBRATION_RUNBOOK.md`.
+None of the fixes above touches the largest risks. They are architectural, they need decisions, and
+making them unsupervised risked breaking generation for every user. Full detail in
+`rag/runs/2026-07-29-worker-audit.md`. In priority order:
+
+1. **Background generation can be killed at ~30 seconds.** `ctx.waitUntil()` extends execution for **up
+   to 30 seconds** after the response is sent — verified in Cloudflare's own limits page, which states it
+   three times, and **nothing there indicates the Paid plan lifts it**. (`wrangler.toml`'s comment
+   claiming JOBS_KV "requires the Workers Paid plan (for the longer `ctx.waitUntil` budget)" is
+   mistaken.) A 50–100s draft+critique can stall at `running`, never write `done`, and never reach its
+   refund path. Needs Workflows, Queues, or Durable Objects — the two constructs Cloudflare documents as
+   having unlimited wall time are Workflows per-step and Durable Objects while a caller is connected.
+2. **`/v1/messages` never verifies that `/consume` happened.** A signed-in caller can skip the frontend
+   and generate with zero talks remaining. Needs a server-issued reservation, not a client convention.
+3. **`WRITER_CLEARED` is enforced only on the async route.** The sync route accepts any member of
+   `ALLOWED_MODELS`, which includes Sonnet and Haiku — so a tampered client can have unbenchmarked models
+   write medical teaching content. **This is a content-safety guarantee, not a spend one.**
+4. **`getMonthlySpendCents` fails open** — every error returns `0`, so the cap disengages exactly when
+   Supabase is unhealthy, and `/status` simultaneously reports healthy remaining capacity.
+5. **The cap is a soft backstop, not a hard cap.** Spend is read before work and recorded after, so
+   concurrent requests can all observe `$249` and proceed. Overshoot is bounded only by in-flight cost.
+   The UI copy should say "backstop" unless reservations are added.
+6. **Async idempotency is non-atomic** — two requests with the same `clientJobId` can both see no record,
+   both reserve quota, and both start provider work. KV has no compare-and-set; this needs a Durable
+   Object or a database unique constraint.
+7. **`cache_creation_input_tokens` is never priced** (1.25×–2× input), so the ledger runs below the
+   Anthropic invoice and the cap trips later than intended.
+8. **`RATE_LIMIT_KV` is not bound** in `wrangler.toml`, so the per-IP daily limit does nothing while
+   `/health` reports it enforcing with full headroom.
+9. **Rotate the exposed OpenAI and Supabase service-role keys.** Carried across several sessions.
+10. **Calibration has not been run** — see `CALIBRATION_RUNBOOK.md`.

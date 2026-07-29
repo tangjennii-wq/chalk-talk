@@ -100,11 +100,90 @@ const workerCode = worker.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).joi
   ok(JSON.stringify({ limit: NaN }) === '{"limit":null}',
      "…and NaN serializes to null, so the misconfiguration reads as absence");
   ok(/function intEnv\(/.test(worker), "config integers go through a validating helper");
-  ok(/Number\.isFinite\(n\) \|\| n < 0/.test(worker), "…which rejects NaN and negatives");
+
+  // ── parseInt IS NOT VALIDATION (Codex, 2026-07-29, second pass) ─────────────
+  // My first fix used parseInt and its comment cited "250usd" as an example it REJECTED. It did not:
+  // parseInt is a prefix parser. Worse than the NaN case it replaced, because NaN at least disabled the
+  // comparison visibly, whereas "1e3" meant as 1000 silently becomes a $1 cap and "0x10" becomes $0.
+  // This section originally tested only "unlimited" — the one malformed value parseInt happens to
+  // reject — so the suite passed while the fix was wrong. Exercise the helper, over a table.
+  const intEnvSrc = worker.match(/function intEnv\([\s\S]*?\n\}/)[0];
+  const intEnv = new Function("console", intEnvSrc + "; return intEnv;")({ warn() {} });
+  const FALLBACK = 99;
+  for (const [input, expected, why] of [
+    ["250",       250,      "a clean integer passes through"],
+    ["  250  ",   250,      "surrounding whitespace is tolerated"],
+    ["250usd",    FALLBACK, "the exact example the old comment wrongly claimed was rejected"],
+    ["1e3",       FALLBACK, "exponent notation — parseInt gave 1, i.e. a $1 cap"],
+    ["0x10",      FALLBACK, "hex — parseInt gave 0, i.e. a $0 cap blocking every request"],
+    ["250.7",     FALLBACK, "a decimal is not an integer"],
+    ["unlimited", FALLBACK, "non-numeric"],
+    ["-5",        FALLBACK, "negative"],
+    ["",          FALLBACK, "empty"],
+    [null,        FALLBACK, "unset"],
+  ]) {
+    const got = intEnv(input, FALLBACK, "TEST");
+    ok(got === expected, `intEnv(${JSON.stringify(input)}) -> ${got} — ${why}`);
+  }
+  ok(!/const n = parseInt\(raw, 10\);[\s\S]{0,80}Number\.isFinite/.test(worker),
+     "…and intEnv no longer validates by parseInt, which accepts any numeric PREFIX");
   ok(!/parseInt\(env\./.test(worker), "no raw parseInt(env.*) remains for a limit or a cap");
   for (const v of ["FREE_TALKS", "FREE_IMAGES", "MAX_MONTHLY_SPEND_USD", "DAILY_LIMIT_PER_IP"]) {
     ok(new RegExp(`intEnv\\(env\\.${v}`).test(worker), `${v} is validated`);
   }
+}
+
+// ── 7 · A PARTIAL RERANK IS NOT A RERANK ─────────────────────────────────────
+// The coverage guard rejected scoring ZERO candidates but allowed scoring 20 of 24 — reporting
+// rerank_applied:true with rerank_unscored:4, while those four were forced to the bottom regardless of
+// merit. That is the global-top-N failure this stage was built to remove, just smaller, and an
+// experiment reading rerank_applied:true has no reason to discard the topic.
+{
+  ok(/strict_rerank/.test(workerCode), "a strict_rerank mode exists");
+  ok(/unscored > 0 && body\.strict_rerank === true/.test(workerCode),
+     "…which throws when ANY candidate went unscored, rather than only when all did");
+  ok(/strict_rerank: true/.test(readFileSync(new URL("./rag/eval_pipeline_arms.mjs", import.meta.url), "utf8")),
+     "…and the evaluator sets it, so a partial rerank fails the arm instead of entering calibration");
+  // Production stays lenient on purpose: dropping a whole talk's retrieval because one stale chunk
+  // lacks an embedding is worse for the user than a slightly imperfect ordering.
+  ok(/STRICT ONLY WHEN ASKED/.test(worker),
+     "…while production tolerates it, and the asymmetry is stated rather than implied");
+}
+
+// ── 8 · CANCEL MUST NOT CLAIM AN OUTCOME IT DID NOT ACHIEVE ──────────────────
+// It wrapped everything in catch(_){} and returned {status:"cancelled"} regardless. A failed KV write
+// meant generation continued, completed and was billed — while the UI said cancelled and the user
+// stopped worrying. The user's whole reason for cancelling is to stop spending.
+{
+  const cancel = worker.slice(worker.indexOf("async function handleGenerateCancel"),
+                              worker.indexOf("function corsPreflight"));
+  ok(cancel.length > 0, "found handleGenerateCancel");
+  ok(!/catch \(_\) \{\}\s*\n\s*return jsonOK\(\{ status: "cancelled" \}/.test(cancel),
+     "the unconditional success return after a swallowed error is gone");
+  ok(/cancel_failed/.test(cancel), "a failed cancel returns an error code");
+  ok(/cancelled: false/.test(cancel), "…and says cancelled:false explicitly, rather than omitting it");
+  ok(/kv_write_failed/.test(cancel) && /kv_read_failed/.test(cancel),
+     "…distinguishing a read failure from a write failure");
+  ok(/readback_mismatch/.test(cancel),
+     "…and reads the record back, because a resolved put is not proof the runner will see it");
+}
+
+// ── 9 · UNAUTHENTICATED IMAGE GENERATION IS CAPPED AND LEDGERED ──────────────
+// Without X-Supabase-Auth, isFreeTier was false, so the cap check, quota consume and ledger write were
+// all skipped while the request still ran on env.OPENAI_API_KEY. The only guard was a per-IP counter
+// backed by an unbound KV namespace. My own omission: I metered the sibling hole on /v1/messages the
+// same day and did not check whether this endpoint had it too.
+{
+  const img = worker.slice(worker.indexOf("async function handleImageGeneration"),
+                           worker.indexOf("// cancel MUST verify"));
+  ok(img.length > 0, "found handleImageGeneration");
+  ok(/if \(!isFreeTier\) \{[\s\S]{0,400}getMonthlySpendCents/.test(img),
+     "the monthly cap is checked on the unauthenticated path too");
+  ok(!/\} else if \(upstream\.ok\) \{\s*\n\s*ctx\.waitUntil\(incrementDailyCount/.test(img),
+     "the if/else that metered ONLY free-tier requests is gone");
+  ok(/if \(upstream\.ok\) \{[\s\S]{0,500}ledger_add/.test(img),
+     "…every successful image is written to the ledger, whoever asked for it");
+  ok(/anonMonthKey/.test(img), "…using a month key that exists on both paths");
 }
 
 console.log("\n" + (failures === 0 ? "✔ RETRIEVAL GUARD TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));

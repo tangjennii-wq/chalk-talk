@@ -145,11 +145,17 @@ const MATCH_COUNT = 24;   // production value — asserted against index.html be
 // so "rerank only" silently meant "rerank + authority ranking". It is a separate flag now, and this
 // experiment holds it OFF in all four arms so a difference is attributable to ONE named stage.
 // (Codex, 2026-07-28)
+// strict_rerank:true on both reranking arms. Production tolerates a candidate the scorer could not
+// score (a stale chunk missing an embedding) because dropping a whole talk's retrieval over one row is
+// worse for the user than a slightly imperfect ordering. A MEASUREMENT cannot be lenient about it: a
+// partially scored union forces the unscored remainder to the bottom regardless of merit, which is the
+// very global-top-N failure stage 1 exists to remove — and the arm would still report
+// rerank_applied:true, so nothing downstream would know to discard the topic. (Codex, 2026-07-29)
 const ARMS = [
   { name: "baseline", body: {},                                      expect: { rerank_applied: false, metadata_filter_applied: false, authority_tiebreak_applied: false } },
-  { name: "rerank",   body: { rerank: true },                        expect: { rerank_applied: true,  metadata_filter_applied: false, authority_tiebreak_applied: false } },
+  { name: "rerank",   body: { rerank: true, strict_rerank: true },   expect: { rerank_applied: true,  metadata_filter_applied: false, authority_tiebreak_applied: false } },
   { name: "metadata", body: { metadata_filter: true },               expect: { rerank_applied: false, metadata_filter_applied: true,  authority_tiebreak_applied: false } },
-  { name: "both",     body: { rerank: true, metadata_filter: true }, expect: { rerank_applied: true,  metadata_filter_applied: true,  authority_tiebreak_applied: false } },
+  { name: "both",     body: { rerank: true, metadata_filter: true, strict_rerank: true }, expect: { rerank_applied: true,  metadata_filter_applied: true,  authority_tiebreak_applied: false } },
 ];
 
 const SET = LABELED[SPLIT];
@@ -361,7 +367,10 @@ if (SCORE_SHEET) {
     arms: Object.fromEntries(ARMS.map(a => {
       const x = tally[a.name];
       return [a.name, {
-        // Pooled: total direct / total returned. One denominator, no topic excluded.
+        // Pooled: total direct / total returned. No topic is excluded for returning nothing — but the
+        // denominator is this arm's OWN kept count, not one shared across arms. (Corrected 2026-07-29:
+        // an earlier comment claimed "one denominator for every arm", which is false and would have
+        // encouraged reading small differences as more meaningful than they are.)
         micro_precision: x.kept ? +(x.direct / x.kept).toFixed(4) : null,
         // Averaged over EVERY topic. Abstention scores 1.0 on `absent`, 0.0 otherwise, so all arms share
         // a denominator and correct silence is rewarded rather than dropped from the average.
@@ -390,8 +399,10 @@ if (SCORE_SHEET) {
     console.log(`\n-> ${DECISION}  ← record your chosen arm here before opening held-out`);
   }
   console.log(`-> ${scoredPath}`);
-  console.log("\n  micro  = total direct / total returned, pooled across topics. One denominator for every");
-  console.log("           arm, so the four numbers are directly comparable.");
+  console.log("\n  micro  = total direct / total returned, pooled across topics. Every topic contributes —");
+  console.log("           none is dropped for returning nothing. NB each arm's denominator is its OWN");
+  console.log("           kept count, so these are not a shared denominator; that property belongs to");
+  console.log("           macro* below. An arm returning fewer, better sources scores higher here.");
   console.log("  macro* = averaged over EVERY topic. An arm that returns nothing scores 1.0 when the topic");
   console.log("           is `absent` (correct silence) and 0.0 otherwise (a failure to retrieve). The");
   console.log("           earlier statistic skipped zero-return topics, which excluded exactly the");
