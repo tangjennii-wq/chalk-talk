@@ -137,6 +137,14 @@ comment on table public.document_chunks is 'Chunked text with embeddings for sim
 -- =========================================================
 
 drop function if exists public.match_chunks(vector, int, float, int, text[], float);
+-- ⚠ SUPERSEDED — DO NOT READ THIS TO LEARN HOW RANKING WORKS.
+-- The live function has ten parameters and twenty-four return columns; this one has six and twenty. It
+-- was altered in production and never committed, so this definition described a ranker that had not run
+-- for some time. Kept only as the historical bootstrap.
+--
+-- The reference is supabase/migrations/canonical_match_chunks.sql, exported from the live catalog on
+-- 2026-07-29. Applying THIS file to a fresh database gives you a different, quieter ranker: no landmark
+-- boost, no elite-journal boost, no RCR term, and no journal_rank filter.
 create or replace function public.match_chunks(
   query_embedding vector(1536),
   match_count int default 10,
