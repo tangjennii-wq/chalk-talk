@@ -1221,10 +1221,22 @@ async function runGeneration(jobId, body, env) {
   // empty-draft refunds, then its updateJob throws into the catch which would refund again). (Codex fix)
   let _refunded = false;
   async function refundOnce() { if (_refunded) return; _refunded = true; await refundQuotaTalk(env, body.userEmail); }
+  // TERMINAL STATES ARE FINAL — no patch without its own status may follow one (Codex, 2026-07-29).
+  // updateJob is a read-modify-write, so ANY writer holding a stale copy can resurrect it. That is not
+  // hypothetical: the critique heartbeat could read `running`, be delayed, and land AFTER the `done`
+  // write — restoring status:"running" over a finished job. The user then loses the completed talk AND
+  // sees it reported as stalled, having already been charged. I had called that race "harmless" in a
+  // comment without checking; it is the opposite.
+  //
+  // The heartbeat is now drained before finalization, which closes the known path. This guard is the
+  // backstop for the unknown ones: a patch that does not itself carry a status can never overwrite a
+  // terminal record.
+  const TERMINAL = new Set(["done", "error", "cancelled"]);
   async function updateJob(patch) {
     let cur = {};
     try { cur = JSON.parse((await env.JOBS_KV.get("job:" + jobId)) || "{}"); } catch (_) {}
     if (cur.cancelled) return false;
+    if (TERMINAL.has(cur.status) && !("status" in patch)) return false;
     await env.JOBS_KV.put("job:" + jobId, JSON.stringify(Object.assign({}, cur, patch, { updatedAt: new Date().toISOString() })), { expirationTtl: 600 });
     return true;
   }
@@ -1277,20 +1289,34 @@ async function runGeneration(jobId, body, env) {
       // setInterval + clearInterval is synchronous to cancel and adds nothing to the exit path. The KV
       // write inside the tick is deliberately NOT awaited: a heartbeat is best-effort liveness, and
       // making finalization wait on it is exactly the mistake above in miniature.
+      // FIRE-AND-FORGET WAS WRONG TOO (Codex, 2026-07-29 — my second mistake in this same block).
+      // I wrote that an in-flight heartbeat losing the race with `done` "would only re-add heartbeatAt
+      // to an otherwise complete record, which is harmless." I never checked. updateJob is a
+      // read-modify-write: a heartbeat that READ `running`, then had its write delayed past
+      // finalization, puts the whole stale object back — status:"running" over a finished job. The
+      // completed talk is destroyed, the job then looks stalled, and the user has already been charged.
+      // Untracked promises cannot be drained, so nothing could prevent it.
+      //
+      // Writes are CHAINED so the tail represents all of them (two could otherwise overlap if a write
+      // ever outlasted the interval), and the tail is awaited once on the way out. That costs at most a
+      // single KV round-trip — not the 0–20s of the version before it.
       let critAlive = true;
+      let beatChain = Promise.resolve();
       const beatTimer = setInterval(() => {
         if (!critAlive) return;
-        // Fire-and-forget. updateJob re-reads the record and returns false on a landed cancel, so this
-        // cannot resurrect a cancelled job. It may still lose a race with the final `done` write; that
-        // would only re-add heartbeatAt to an otherwise complete record, which is harmless.
-        updateJob({ heartbeatAt: new Date().toISOString() }).catch(() => {});
+        beatChain = beatChain
+          .then(() => (critAlive ? updateJob({ heartbeatAt: new Date().toISOString() }) : null))
+          .catch(() => {});
       }, CRITIQUE_HEARTBEAT_MS);
       let crit;
       try {
         crit = await callAnthropicText(env, body.critique.sys, [{ type: "text", text: critInput }], body.critique.maxTok || 16384, body.critique.models);
       } finally {
-        critAlive = false;          // checked by any tick already queued
-        clearInterval(beatTimer);   // synchronous — adds zero latency to finalization
+        critAlive = false;          // checked by any tick already queued, and inside the chain
+        clearInterval(beatTimer);   // synchronous — schedules nothing further
+        // Drain ONLY the outstanding write, never a pending sleep. After this the heartbeat cannot
+        // write again, so every later write — including `done` — is strictly last.
+        try { await beatChain; } catch (_) {}
       }
       critText = crit.text; critUsage = crit.usage; critModel = crit.modelUsed;
     }

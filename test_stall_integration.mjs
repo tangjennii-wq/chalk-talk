@@ -213,6 +213,106 @@ const NOW = new Date().toISOString();
   ok(/\.catch\(\(\) => \{\}\)/.test(critBlock), "…and the KV write inside the tick is fire-and-forget");
 }
 
+// ── 6b · THE HEARTBEAT MUST NOT RESURRECT A FINISHED JOB ─────────────────────
+// I called this race "harmless" in a comment, without checking. It is the opposite. updateJob is a
+// read-modify-write, so a heartbeat that READ `running` and had its write DELAYED past finalization
+// puts the whole stale object back: status:"running" over a completed job. The finished talk is
+// destroyed, the job then looks stalled, and the user has already been charged for it.
+//
+// Section 6 could not catch this — it pushed to an array, which has no read-modify-write and no
+// latency. This models the real thing: a KV whose writes can be held open, so the interleaving is
+// forced rather than hoped for.
+{
+  // A KV stub whose put() can be delayed on demand.
+  function makeKV(initial) {
+    const store = new Map([["job:j", JSON.stringify(initial)]]);
+    let hold = null;
+    return {
+      store,
+      holdNextPut() { let release; hold = new Promise(r => { release = r; }); return release; },
+      get: async (k) => store.get(k) ?? null,
+      put: async (k, v) => { if (hold) { const h = hold; hold = null; await h; } store.set(k, v); },
+      status: () => JSON.parse(store.get("job:j")).status,
+    };
+  }
+
+  // The real updateJob semantics, including the terminal guard now in worker.js.
+  const TERMINAL = new Set(["done", "error", "cancelled"]);
+  function makeUpdateJob(kv, { guard }) {
+    return async (patch) => {
+      let cur = {};
+      try { cur = JSON.parse((await kv.get("job:j")) || "{}"); } catch (_) {}
+      if (cur.cancelled) return false;
+      if (guard && TERMINAL.has(cur.status) && !("status" in patch)) return false;
+      await kv.put("job:j", JSON.stringify(Object.assign({}, cur, patch, { updatedAt: "t" })));
+      return true;
+    };
+  }
+
+  // (a) UNDRAINED + UNGUARDED — the bug, reproduced.
+  {
+    const kv = makeKV({ status: "running" });
+    const updateJob = makeUpdateJob(kv, { guard: false });
+    const release = kv.holdNextPut();
+    const beat = updateJob({ heartbeatAt: "hb" }).catch(() => {});   // reads "running", write held
+    await new Promise(r => setTimeout(r, 5));
+    await updateJob({ status: "done", result: { ok: true } });        // finalization lands first
+    ok(kv.status() === "done", "…the done write lands while the heartbeat is still in flight");
+    release(); await beat;                                            // stale write resolves last
+    ok(kv.status() === "running",
+       "UNDRAINED: the stale heartbeat overwrote a COMPLETED job back to running — the bug is real");
+  }
+
+  // (b) DRAINED, as worker.js now does: await the outstanding write before finalizing.
+  {
+    const kv = makeKV({ status: "running" });
+    const updateJob = makeUpdateJob(kv, { guard: true });
+    const release = kv.holdNextPut();
+    let chain = Promise.resolve();
+    chain = chain.then(() => updateJob({ heartbeatAt: "hb" })).catch(() => {});
+    await new Promise(r => setTimeout(r, 5));
+    release();
+    await chain;                                                      // drain, then finalize
+    await updateJob({ status: "done", result: { ok: true } });
+    ok(kv.status() === "done", "DRAINED: finalization is strictly last, so the job stays done");
+    ok(JSON.parse(kv.store.get("job:j")).result.ok === true, "…and the result survives");
+  }
+
+  // (c) WHAT THE TERMINAL GUARD ACTUALLY COVERS — and what it does not.
+  //
+  // I first asserted the guard was a backstop for the race in (a). It is not, and the test said so:
+  // the guard inspects the status THAT WRITER READ, and in (a) the heartbeat read "running" before
+  // `done` existed. A late WRITE from an early READ sails straight through it.
+  //
+  // So the two defences cover different halves and neither is redundant:
+  //   drain  → a writer that read early and writes late   (the race in (a))
+  //   guard  → a writer that reads late, after a terminal state exists (a stray tick, a retry, any
+  //            future caller that appears after finalization)
+  // Recording the distinction because assuming the guard covered both is exactly the unchecked
+  // "harmless" assumption that produced this bug in the first place.
+  {
+    const kv = makeKV({ status: "running" });
+    const updateJob = makeUpdateJob(kv, { guard: true });
+    await updateJob({ status: "done", result: { ok: true } });
+    const accepted = await updateJob({ heartbeatAt: "late" });          // reads AFTER done
+    ok(accepted === false, "GUARDED: a status-less patch reading a terminal record is REFUSED");
+    ok(kv.status() === "done", "…so the finished job is untouched");
+    ok(JSON.parse(kv.store.get("job:j")).heartbeatAt === undefined, "…and nothing was written");
+
+    // And it must not block legitimate terminal transitions, e.g. cancel arriving after done.
+    const cancelOk = await updateJob({ status: "cancelled" });
+    ok(cancelOk === true, "…while a patch that CARRIES a status is still allowed through");
+  }
+
+  // The source must carry both defences.
+  const w2 = codeOnly(readFileSync(new URL("./worker.js", import.meta.url), "utf8"));
+  ok(/await beatChain/.test(w2), "worker.js drains the outstanding heartbeat before finalizing");
+  ok(/TERMINAL\.has\(cur\.status\) && !\("status" in patch\)/.test(w2),
+     "…and updateJob refuses status-less patches over a terminal record");
+  ok(!/heartbeatAt: new Date\(\)\.toISOString\(\) \}\)\.catch\(\(\) => \{\}\);/.test(w2),
+     "…and the untracked fire-and-forget write is gone");
+}
+
 // ── 7 · THE ADVICE MUST MATCH THE CONFIDENCE ─────────────────────────────────
 // The message allowed the job "may also be unusually slow" and then said "starting again is safe".
 // That is only safe if the job is definitely dead — and a suspected stall is not a confirmed one, since
