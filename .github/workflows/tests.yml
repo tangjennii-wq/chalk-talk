@@ -170,6 +170,11 @@ jobs:
       - name: Stall detection reaches the browser poller
         run: node test_stall_integration.mjs
 
+      # step.do() retries FIVE times by default. Wrapping a paid Anthropic call without overriding that
+      # would bill up to five drafts per talk. This executes the real step logic under Node.
+      - name: Durable generation workflow (paid steps never inherit the 5x retry default)
+        run: node test_generation_workflow.mjs
+
       # THE GUARD ON THE GUARDS. Writing a suite and forgetting to wire it here has happened twice.
       # A test that never runs is worse than no test: it reads as coverage.
       - name: Every test suite on disk is wired into this workflow

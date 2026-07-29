@@ -450,6 +450,70 @@ async function refundQuota(env, email, kind) {
 }
 async function refundQuotaTalk(env, email) { return refundQuota(env, email, "talk"); }
 
+// ── DEPENDENCIES FOR THE DURABLE GENERATION WORKFLOW ─────────────────────────────────────────────────
+// Everything generation_workflow.js needs to touch the outside world, in one injectable object. Built
+// here rather than there so the step logic keeps no Cloudflare imports and stays runnable under Node.
+// `NonRetryableError` is passed in by worker_entry.js, which is the only file allowed to import it.
+export function makeWorkflowDeps(env, { NonRetryableError }) {
+  const jk = (jobId) => "job:" + jobId;
+  return {
+    NonRetryableError,
+    now: () => new Date().toISOString(),
+
+    kvGet: async (k) => (env.JOBS_KV ? env.JOBS_KV.get(k) : null),
+    kvPut: async (k, v, ttl) => { if (env.JOBS_KV) await env.JOBS_KV.put(k, v, { expirationTtl: ttl || 600 }); },
+    kvDelete: async (k) => { if (env.JOBS_KV) await env.JOBS_KV.delete(k); },
+
+    // Same read-modify-write plus terminal guard as the legacy runner: a status-less patch can never
+    // overwrite a finished record, and a landed cancel stops every further write.
+    updateJob: async (jobId, patch) => {
+      if (!env.JOBS_KV) return false;
+      let cur = {};
+      try { cur = JSON.parse((await env.JOBS_KV.get(jk(jobId))) || "{}"); } catch (_) {}
+      if (cur.cancelled) return false;
+      if (["done", "error", "cancelled"].includes(cur.status) && !("status" in patch)) return false;
+      await env.JOBS_KV.put(jk(jobId),
+        JSON.stringify(Object.assign({}, cur, patch, { updatedAt: new Date().toISOString() })),
+        { expirationTtl: 600 });
+      return true;
+    },
+
+    // The body is loaded from KV INSIDE the step that needs it. It can be up to MAX_REQUEST_BYTES
+    // (5 MB) — far past the 1 MiB ceiling on both a Workflow event payload and a step return value —
+    // so it must never travel through either.
+    loadBody: async (jobId) => {
+      const raw = env.JOBS_KV ? await env.JOBS_KV.get("jobbody:" + jobId) : null;
+      if (!raw) throw new Error("job body missing or expired for " + jobId);
+      return JSON.parse(raw);
+    },
+    callDraft: async function (jobId) {
+      const p = await this.loadBody(jobId);
+      return callAnthropicText(env, p.draft.sys, p.draft.content, p.draft.maxTok || 16384, p.draft.models, p.draft.tools);
+    },
+    callCritique: async function (jobId, draftText) {
+      const p = await this.loadBody(jobId);
+      return callAnthropicText(env, p.critique.sys,
+        [{ type: "text", text: (p.critique.prefix || "") + "\n\nDraft chalk talk to review:\n" + draftText }],
+        p.critique.maxTok || 16384, p.critique.models);
+    },
+
+    // Idempotent at the ledger: the marker means a retry of the meter step cannot bill a second time.
+    meterSpend: async ({ jobId, draftModel, draftUsage, critModel, critUsage }) => {
+      const key = "metered:" + jobId;
+      if (env.JOBS_KV && await env.JOBS_KV.get(key)) return;
+      let cents = estimateCostCents(draftModel, draftUsage || {});
+      if (critUsage) cents += estimateCostCents(critModel, critUsage);
+      if (cents > 0) {
+        await supaServiceRPC(env, "ledger_add", {
+          p_month: new Date().toISOString().slice(0, 7), p_kind: "talk",
+          p_cost_cents: cents, p_cap_cents: freeCapCents(env),
+        });
+      }
+      if (env.JOBS_KV) await env.JOBS_KV.put(key, "1", { expirationTtl: 3600 });
+    },
+  };
+}
+
 function estimateCostCents(model, usage) {
   const p = MODEL_PRICES[model] || MODEL_PRICES["claude-sonnet-4-6"];
   const inTok = usage.input_tokens || 0;
@@ -1390,8 +1454,39 @@ async function handleGenerateAsync(request, env, ctx, origin) {
     await refundQuotaTalk(env, body.userEmail);
     return jsonError(503, "job_create_failed", "Couldn't start background generation. Please try again.", origin);
   }
+  // ── DURABLE EXECUTION WHEN AVAILABLE, waitUntil ONLY AS A FALLBACK ─────────────────────────────────
+  // ctx.waitUntil is terminated ~30s after the response, on either plan, and a draft+critique needs
+  // 50–100s — so the legacy path below reliably loses long generations along with the user's credit.
+  // A Workflow instance survives that: unlimited wall time per step, state persisted between steps, and
+  // the draft is never re-bought when the critique fails.
+  //
+  // The instance id IS the jobId, which makes submission idempotent at the platform: create() throws if
+  // the id is live. NB the docs do not specify the error thrown for a duplicate id, so we do not branch
+  // on it — the KV existence check above is the discriminator, and this is defence in depth.
+  if (env.GEN_WORKFLOW) {
+    try {
+      // The body lives in KV, NOT in the event payload: payloads cap at 1 MiB and a talk may carry a
+      // 5 MB reference upload. The workflow loads it inside the step that needs it.
+      await env.JOBS_KV.put("jobbody:" + jobId, JSON.stringify(body), { expirationTtl: 3600 });
+      await env.GEN_WORKFLOW.create({
+        id: jobId,
+        params: { jobId, userEmail: body.userEmail || null, wantCritique: !!(body.critique && body.critique.sys) },
+      });
+      return jsonOK({ jobId, createdAt: now, durable: true }, origin);
+    } catch (err) {
+      // Do NOT fall through to waitUntil on an unknown failure: that would silently downgrade to the
+      // path we are trying to retire, and the response would claim success either way. Refund and say so.
+      await refundQuotaTalk(env, body.userEmail);
+      try { await env.JOBS_KV.delete("job:" + jobId); } catch (_) {}
+      return jsonError(503, "workflow_start_failed",
+        "Couldn't start background generation. Please try again.", origin);
+    }
+  }
+
+  // LEGACY PATH — retained only until the Workflow is deployed and verified. See RELEASE.md; this is the
+  // one that dies at ~30s.
   ctx.waitUntil(runGeneration(jobId, body, env));
-  return jsonOK({ jobId, createdAt: now }, origin);
+  return jsonOK({ jobId, createdAt: now, durable: false }, origin);
 }
 
 // Owner-only: the job record holds the full talk text (and any uploaded reference content), so status +
@@ -1489,6 +1584,20 @@ async function handleGenerateCancel(request, jobId, env, origin) {
 
   let cur; try { cur = JSON.parse(raw); } catch { return jsonError(500, "bad_job", "Corrupt job record.", origin); }
   if (cur.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
+
+  // TERMINATE THE WORKFLOW FIRST, then record it. Order matters: marking the record cancelled while the
+  // instance keeps running would leave a job the user believes is stopped still spending. terminate() is
+  // irreversible and safe to call on an already-finished instance, so a best-effort attempt is correct
+  // here; the refund is handled separately and idempotently so it cannot double-credit.
+  if (env.GEN_WORKFLOW) {
+    try {
+      const inst = await env.GEN_WORKFLOW.get(jobId);
+      await inst.terminate();
+    } catch (_) {
+      // get() throws when the id is unknown (legacy waitUntil job, or already expired past retention).
+      // Not an error: the cancelled flag below still stops the legacy runner at its next checkpoint.
+    }
+  }
 
   cur.cancelled = true;
   if (cur.status !== "done") cur.status = "cancelled";

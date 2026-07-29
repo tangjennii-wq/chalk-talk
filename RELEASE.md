@@ -15,7 +15,8 @@ the live database on 2026-07-29 rather than carried forward.
 | `BUILD_ID` / `build.txt` | `2026-07-29-02` |
 | front end | **changed** — `pollAsyncGeneration` gained a `stalled` branch, so this one *does* need deploying |
 | database | production `chalktalk` (`hrcvcjiefndvytlcbmpa`); there is no staging project |
-| tests | 27 suites, all green, all wired into `.github/workflows/tests.yml` |
+| tests | 28 suites, all green, all wired into `.github/workflows/tests.yml` |
+| wrangler `main` | **`worker_entry.js`** (was `worker.js`) — it exports the Workflow class as well as the fetch handler |
 
 ## Two things worth knowing before you deploy
 
@@ -120,27 +121,18 @@ None of the fixes above touches the largest risks. They are architectural, they 
 making them unsupervised risked breaking generation for every user. Full detail in
 `rag/runs/2026-07-29-worker-audit.md`. In priority order:
 
-1. **Background generation can be killed at ~30 seconds.** `ctx.waitUntil()` extends execution for **up
-   to 30 seconds** after the response is sent — verified in Cloudflare's own limits page, which states it
-   three times, and **nothing there indicates the Paid plan lifts it**. Independently confirmed by Codex.
-   A 50–100s draft+critique stalls at `running`, never writes `done`, and never reaches its refund path,
-   so the user watches a spinner forever *and* loses a talk. The `wrangler.toml` comment claiming JOBS_KV
-   "requires the Workers Paid plan (for the longer `ctx.waitUntil` budget)" was the false premise this
-   shipped on — Paid raises **CPU** time, a different limit that shares the number 30, and generation is
-   almost all *waiting*, which consumes no CPU at all. Comment corrected in place.
-   **Full analysis and the three options: `rag/runs/2026-07-29-background-execution.md`.**
-   Interim only, and it now works end to end: `/generate-status` reports `stalled: true` after several
-   missed heartbeats, `pollAsyncGeneration` throws on it, and `generate()` renders the server's
-   explanation. **The first attempt shipped only the server half** — the client ignored the field and
-   spun for the full nine-minute timeout, which is the bug this list exists to catch. A critique
-   heartbeat was added at the same time, because critique is one long non-streaming call and a
-   legitimate 90s review was otherwise indistinguishable from a terminated Worker. **The first heartbeat
-   was itself dangerous** — an uninterruptible sleep that delayed finalization by 0–20s and could push a
-   critique that finished inside the 30s budget past it, i.e. the diagnostic causing the failure it
-   diagnoses. It is a cancellable interval now. **This makes the failure visible and honest; it does not
-   fix it.** A stall is treated as *suspected*, not confirmed: the reconnect key is retained, and the
-   advice is reload-then-cancel rather than "just try again", because a merely-slow job that is
-   restarted means two generations and potentially two charges.
+1. **Background generation — DURABLE PATH BUILT, NOT YET PROVEN ON CLOUDFLARE.** `ctx.waitUntil()` is
+   cut off ~30s after the response on either plan while a draft+critique needs 50–100s, so the legacy
+   path loses long generations *and* the user's credit. A Cloudflare Workflow now replaces it:
+   draft / critique / meter / finalize as separate durable steps, unlimited wall time per step, and the
+   draft is never re-bought when the critique fails. **`step.do()` retries 5× by default** — wrapping a
+   paid call without overriding that would bill five drafts per talk — so every paid step passes an
+   explicit conservative config plus an attempt-marker guard that refuses to re-issue.
+   `/generate-async` reports `durable: true|false`, so which path ran is never a guess.
+   **The code is unit-tested and has never run on Cloudflare.** Until the 8-point checklist in
+   `rag/runs/2026-07-29-workflow-migration.md` passes, treat this defect as live — on any deploy where
+   the binding is missing, it is. Delete the `waitUntil` path once it does.
+
 2. **`/v1/messages` never verifies that `/consume` happened.** A signed-in caller can skip the frontend
    and generate with zero talks remaining. Needs a server-issued reservation, not a client convention.
 3. **`WRITER_CLEARED` is enforced only on the async route.** The sync route accepts any member of
