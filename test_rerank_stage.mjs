@@ -140,7 +140,12 @@ const BARE = [
 // non-landmark papers — Codex, 2026-07-28: "acute topics often depend on them."
 
 const worker2 = worker;   // same file, clearer intent below
-ok(/const WEAK_PUB_TYPES = new Set/.test(worker2), "weak publication types are an explicit named set");
+ok(/const WEAK_PUB_PATTERNS = \[/.test(worker2),
+   "ineligible publication types are an explicit named list of NORMALIZED substring patterns");
+ok(/const normalizePubType =/.test(worker2),
+   "…and publication_type is normalized before any comparison — PubMed emits 'Published Erratum', not 'erratum'");
+ok(!/const WEAK_PUB_TYPES/.test(worker2),
+   "…with the old exact-match set deleted, so there is one source of truth rather than two");
 ok(!/is_landmark_trial\s*===?\s*false/.test(worker2.slice(worker2.indexOf("STAGE 2"), worker2.indexOf("STAGE 2") + 2500)),
    "the metadata filter NEVER excludes on is_landmark_trial — acute topics depend on non-landmark papers");
 ok(/PUB_TYPE_RANK/.test(worker2) && /ORDERING preference, never a filter/.test(worker2),
@@ -157,14 +162,15 @@ function runMeta(rows, on) {
     console: { warn() {} }, Array, Object, String,
     union: rows.slice(), body: { metadata_filter: on },
     rerankApplied: false,
-    WEAK_PUB_TYPES: new Set(["letter","editorial","comment","protocol","erratum","correction","retraction","news","biography"]),
+    WEAK_PUB_PATTERNS: ["erratum","correction","retracted","retraction","withdrawn","editorial","letter","comment","news","biography","obituary","protocol","published erratum","retracted publication"],
+    normalizePubType: (t) => String(t == null ? "" : t).toLowerCase().replace(/[^a-z]+/g, " ").trim(),
     WEAK_TITLE_RE: /^\s*(correction|erratum|retraction|withdrawn|comment on|reply to|author reply|editorial|letter to the editor)\b/i,
     PUB_TYPE_RANK: { guideline:0, systematic_review:1, meta_analysis:1, rct:2, review:3, drug_label:4, other:5 },
   };
-  ctx.pubRank = (t) => (t && ctx.PUB_TYPE_RANK[t] != null) ? ctx.PUB_TYPE_RANK[t] : 5;
+  ctx.pubRank = (t) => { const k = ctx.normalizePubType(t).replace(/ /g, "_"); return ctx.PUB_TYPE_RANK[k] != null ? ctx.PUB_TYPE_RANK[k] : 5; };
   ctx.isWeakSource = (c) => {
-    const t = String(c.publication_type || "").toLowerCase().trim();
-    if (ctx.WEAK_PUB_TYPES.has(t)) return t;
+    const t = ctx.normalizePubType(c.publication_type);
+    if (t) for (const pat of ctx.WEAK_PUB_PATTERNS) if (t.includes(pat)) return "pub_type:" + t;
     if (ctx.WEAK_TITLE_RE.test(String(c.title || ""))) return "title";
     return null;
   };
@@ -197,14 +203,51 @@ const META_ROWS = [
   ok(r.union.length === META_ROWS.length && r.applied !== true,
      "OFF by default: nothing dropped, nothing reordered, behaviour unchanged");
 }
+// ── FAIL CLOSED on confidently-ineligible sources (Codex, 2026-07-28) ────────
+// The first version restored everything rather than return zero. That means deliberately handing a
+// medical writer a set consisting entirely of errata. Zero eligible sources is the HONEST result.
 {
-  // everything weak → keep the originals rather than starve the prompt, and say it did not apply
-  const allWeak = [{ chunk_id: "a", title: "Erratum: something", publication_type: "erratum", ranked_score: 0.5 }];
+  const allWeak = [
+    { chunk_id: "a", title: "Erratum: something",  publication_type: "Published Erratum",     ranked_score: 0.5 },
+    { chunk_id: "b", title: "A retracted study",   publication_type: "Retracted Publication", ranked_score: 0.9 },
+  ];
   const r = runMeta(allWeak, true);
-  ok(r.union.length === 1 && r.applied !== true,
-     "if the filter would empty the union it is SKIPPED and reported as not applied — never return nothing");
-  ok(r.dropped.length === 0, "…and no phantom exclusions are reported for a filter that did not run");
+  ok(r.union.length === 0,
+     "when EVERY candidate is confidently ineligible the result is ZERO — known non-evidence is never restored");
+  ok(r.applied === true, "…and the filter reports that it DID apply, so the empty set is attributable");
+  ok(r.dropped.length === 2, "…with both exclusions still itemized");
 }
+
+// ── REAL PubMed publication_type strings, not tidy tokens ────────────────────
+{
+  const real = [
+    { chunk_id: "e", title: "Something",            publication_type: "Published Erratum",      ranked_score: 0.9 },
+    { chunk_id: "r", title: "Something else",       publication_type: "Retracted Publication",  ranked_score: 0.9 },
+    { chunk_id: "p", title: "A trial protocol",     publication_type: "Clinical Trial Protocol", ranked_score: 0.9 },
+    { chunk_id: "g", title: "ADA Standards 2025",   publication_type: "Guideline",              ranked_score: 0.5 },
+    { chunk_id: "u", title: "Practice review",      publication_type: null,                     ranked_score: 0.4 },
+  ];
+  const ids = runMeta(real, true).union.map(x => x.chunk_id);
+  ok(!ids.includes("e"), '"Published Erratum" is caught — an exact lowercase set would have missed it');
+  ok(!ids.includes("r"), '"Retracted Publication" is caught');
+  ok(!ids.includes("p"), '"Clinical Trial Protocol" is caught');
+  ok(ids.includes("g"), '"Guideline" (capitalised) survives — normalization is case-insensitive');
+  ok(ids.includes("u"), "a NULL publication_type survives — uncertainty is not disqualification");
+}
+
+// ── pubRank normalizes too ───────────────────────────────────────────────────
+{
+  const ctx = {
+    PUB_TYPE_RANK: { guideline:0, systematic_review:1, meta_analysis:1, rct:2, review:3, drug_label:4, other:5 },
+    normalizePubType: (t) => String(t == null ? "" : t).toLowerCase().replace(/[^a-z]+/g, " ").trim(),
+  };
+  const pubRank = (t) => { const k = ctx.normalizePubType(t).replace(/ /g, "_"); return ctx.PUB_TYPE_RANK[k] != null ? ctx.PUB_TYPE_RANK[k] : 5; };
+  ok(pubRank("Systematic Review") === 1, '"Systematic Review" ranks like systematic_review — case and spacing normalized');
+  ok(pubRank("guideline") === 0 && pubRank("Guideline") === 0, "capitalisation does not change a guideline's rank");
+  ok(pubRank(null) === 5 && pubRank("something novel") === 5, "unknown types fall to the bottom of the ORDERING — never dropped");
+}
+ok(/no_eligible_local_sources/.test(worker),
+   "the response carries an explicit no_eligible_local_sources flag — the caller never infers 'no evidence'");
 
 console.log("\n" + (failures === 0 ? "✔ RERANK + METADATA STAGE TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

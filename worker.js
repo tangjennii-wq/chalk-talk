@@ -71,7 +71,21 @@ const EMBEDDING_MODEL = "text-embedding-3-small";
 // Publication types that cannot serve as teaching evidence regardless of how well they score. A
 // correction notice about a diabetes trial embeds close to "diabetes" and carries no teaching content
 // at all — precisely the kind of high-similarity, zero-value hit the D-1 investigation kept surfacing.
-const WEAK_PUB_TYPES = new Set(["letter", "editorial", "comment", "protocol", "erratum", "correction", "retraction", "news", "biography"]);
+// PubMed does not emit tidy lowercase tokens. Real values include "Published Erratum", "Retracted
+// Publication", "Clinical Trial Protocol", "Comment", "Letter", "Editorial". Normalize to canonical
+// categories BEFORE any comparison, or an exact-set membership test silently misses most of them.
+// (Codex, 2026-07-28)
+const normalizePubType = (t) => String(t == null ? "" : t).toLowerCase().replace(/[^a-z]+/g, " ").trim();
+
+// Substring probes against the NORMALIZED string, so "published erratum" and "retracted publication"
+// both land. Matching on substrings is deliberate here: these labels appear with prefixes and suffixes
+// that an equality test cannot anticipate.
+const WEAK_PUB_PATTERNS = [
+  "erratum", "correction", "retracted", "retraction", "withdrawn",
+  "editorial", "letter", "comment", "news", "biography", "obituary",
+  "protocol",              // covers "clinical trial protocol", "study protocol"
+  "published erratum", "retracted publication",
+];
 
 // Titles announce these unambiguously even when publication_type was ingested as the catch-all "other",
 // which is the common case. Anchored to the START of the title so a paper merely DISCUSSING a retraction
@@ -82,11 +96,16 @@ const WEAK_TITLE_RE = /^\s*(correction|erratum|retraction|withdrawn|comment on|r
 // this list. Codex, 2026-07-28: "Do not automatically exclude non-landmark papers — acute topics often
 // depend on them." An "other"-typed paper may be exactly the practice review an acute topic needs.
 const PUB_TYPE_RANK = { guideline: 0, systematic_review: 1, meta_analysis: 1, rct: 2, review: 3, drug_label: 4, other: 5 };
-const pubRank = (t) => (t && PUB_TYPE_RANK[t] != null) ? PUB_TYPE_RANK[t] : 5;
+// normalized, so "Systematic Review" and "systematic_review" rank identically
+const pubRank = (t) => { const k = normalizePubType(t).replace(/ /g, "_"); return PUB_TYPE_RANK[k] != null ? PUB_TYPE_RANK[k] : 5; };
 
+// Returns a reason string when the source is CONFIDENTLY ineligible, else null.
+// "other" and unknown values are NOT ineligible — uncertainty is not disqualification.
 function isWeakSource(c) {
-  const t = String(c.publication_type || "").toLowerCase().trim();
-  if (WEAK_PUB_TYPES.has(t)) return t;
+  const t = normalizePubType(c.publication_type);
+  if (t) {
+    for (const pat of WEAK_PUB_PATTERNS) if (t.includes(pat)) return "pub_type:" + t;
+  }
   if (WEAK_TITLE_RE.test(String(c.title || ""))) return "title:" + String(c.title || "").slice(0, 40);
   return null;
 }
@@ -641,11 +660,19 @@ async function handleRetrieve(request, env, origin) {
         if (why) dropped.push({ title: String(c.title || "").slice(0, 80), reason: why });
         else kept.push(c);
       }
-      // NEVER return an empty set because of this filter. If everything looks weak, that is far more
-      // likely a metadata problem than a corpus with nothing usable in it — so keep the originals and
-      // say the filter did not apply, rather than silently starving the prompt.
-      if (kept.length) { union = kept; metadataFilterApplied = true; }
-      else { dropped = []; console.warn("metadata filter would have emptied the union — skipped"); }
+      // FAIL CLOSED on sources confidently classified as ineligible. (Codex, 2026-07-28)
+      //
+      // The first version restored everything when the filter would have emptied the union, reasoning
+      // that an empty result was probably a metadata problem. That is unsafe: if every candidate is
+      // positively identified as an erratum, a correction, an editorial or a retraction, restoring them
+      // means deliberately handing known NON-EVIDENCE to a medical writer.
+      //
+      // Zero eligible local sources is not a system failure — it is the honest result. Later it triggers
+      // the live fallback; absent that, the model teaches from knowledge and the response reports that
+      // there was no eligible evidence. Note the asymmetry: we fail OPEN on an execution error (the
+      // catch below) and fail CLOSED on a confident classification.
+      union = kept;
+      metadataFilterApplied = true;
     }
 
     // Stable tie-break on publication type: a guideline outranks an "other" at equal relevance. This is
@@ -675,6 +702,9 @@ async function handleRetrieve(request, env, origin) {
     // Every exclusion is reported with its reason. A filter that quietly removes sources is
     // indistinguishable from a corpus that never had them. (2026-07-28)
     dropped_by_metadata: merged._dropped || [],
+    // An explicit signal so the caller never has to infer "no evidence" from an empty array — and so a
+    // talk built with no local grounding can say so rather than implying it had some.
+    no_eligible_local_sources: !!merged._metadataFilterApplied && merged.length === 0,
     chunks: merged,
   }, origin);
 }
