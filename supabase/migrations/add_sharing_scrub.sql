@@ -11,6 +11,14 @@
 -- Run via: Supabase dashboard → SQL Editor → paste + execute. Safe to re-run (idempotent).
 
 -- ── Scrub function ──────────────────────────────────────────────────────────
+-- ONE TRANSACTION (added 2026-07-29). psql autocommits each statement unless told otherwise, and
+-- `-v ON_ERROR_STOP=1` stops on error WITHOUT undoing what already committed. Unwrapped, a failure
+-- partway through this file leaves the database in the half-migrated state — for a file containing
+-- DROP or ALTER, that can mean a dropped object that never got recreated. Verified on a live database:
+-- a DROP followed by a failure inside a transaction rolls back and the original object survives; the
+-- same DROP unwrapped commits on its own and the object is gone.
+begin;
+
 CREATE OR REPLACE FUNCTION scrub_on_publish()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -59,3 +67,5 @@ EXECUTE FUNCTION scrub_on_publish();
 -- And confirm a test publish scrubs as expected:
 --   UPDATE talks SET is_public=true WHERE id='<some-test-id>';
 --   SELECT id, is_public, share_token, refine_context, talk_json->'savedVisuals' FROM talks WHERE id='<some-test-id>';
+
+commit;

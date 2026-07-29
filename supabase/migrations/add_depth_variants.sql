@@ -9,6 +9,14 @@
 -- talk_json column is preserved as the "current depth" snapshot for backwards compatibility with
 -- existing readers (Worker /share/:token, RAG indexers, etc). New code prefers depth_variants[depth].
 
+-- ONE TRANSACTION (added 2026-07-29). psql autocommits each statement unless told otherwise, and
+-- `-v ON_ERROR_STOP=1` stops on error WITHOUT undoing what already committed. Unwrapped, a failure
+-- partway through this file leaves the database in the half-migrated state — for a file containing
+-- DROP or ALTER, that can mean a dropped object that never got recreated. Verified on a live database:
+-- a DROP followed by a failure inside a transaction rolls back and the original object survives; the
+-- same DROP unwrapped commits on its own and the object is gone.
+begin;
+
 ALTER TABLE talks ADD COLUMN IF NOT EXISTS depth_variants JSONB;
 
 -- Optional: backfill — wrap existing single-talk_json rows into a depth_variants shape using their
@@ -21,3 +29,5 @@ ALTER TABLE talks ADD COLUMN IF NOT EXISTS depth_variants JSONB;
 --        depth_variants ? 'concise' AS has_concise,
 --        depth_variants ? 'detailed' AS has_detailed
 -- FROM talks WHERE user_id = auth.uid() LIMIT 5;
+
+commit;

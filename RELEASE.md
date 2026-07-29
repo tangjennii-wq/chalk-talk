@@ -1,110 +1,104 @@
-# Release sequence — shipping `launch-integration`
+# Release sequence
 
-(First-time Worker setup lives in `DEPLOY.md`. This is the procedure for shipping a branch.)
+Rewritten 2026-07-29. The previous version described shipping `launch-integration` into `main` — a merge
+that already happened — and quoted SHAs and build IDs that no longer exist. Following it would have meant
+force-pushing `main` back to a July 21 commit. Every number below was verified against the repository and
+the live database on 2026-07-29 rather than carried forward.
 
-State 2026-07-28: `origin/launch-integration` = `058b9ac`, **92 commits ahead of `main`**, all pushed.
-`main` = `676fa81` (2026-07-21). **GitHub Pages serves `main`, so the live site is still the old code.**
+(First-time Worker setup lives in `DEPLOY.md`.)
 
----
+## State
 
-## A · Use the new build TODAY without deploying anything
+| | |
+|---|---|
+| branch | **`main`** — `launch-integration` is fully merged and is history now |
+| `BUILD_ID` / `build.txt` | `2026-07-28-03` (tagged `staging-2026-07-28-03`) |
+| front end | **unchanged since `2026-07-28-03`** — the recent work is Worker, SQL and tests only |
+| database | production `chalktalk` (`hrcvcjiefndvytlcbmpa`); there is no staging project |
+| tests | 25 suites, all green, all wired into `.github/workflows/tests.yml` |
 
-You do not need to deploy to start writing talks. With your own key the app calls Anthropic directly
-(`anthropic-dangerous-direct-browser-access`) and never touches the Worker:
+## Two things that surprised me, so they are written down
 
+**Commits to `main` are being pushed automatically.** `git reflog show origin/main` records
+`update by push` for commits I only ever committed locally — almost certainly GitHub Desktop auto-sync,
+which has caused trouble here before (it once committed a half-resolved merge with literal conflict
+markers). **Treat every commit on `main` as immediately public.** If you want a change staged rather than
+published, work on a branch.
+
+**Pages serves `main`, but nothing deploys the Worker on push.** `.github/workflows/tests.yml` is the only
+workflow and it has no deploy step — verified. So:
+
+- an `index.html` change is **live as soon as it is pushed**
+- a `worker.js` change is **inert until you run `npx wrangler deploy`**
+
+That asymmetry is the trap: the Worker fixes committed on 2026-07-29 are **not running in production yet**.
+
+## What is committed but not deployed
+
+Run `npx wrangler deploy` to make these live. All are Worker-side.
+
+- **Authority parity in the rerank** — sorts on `bare_ranked_score`, so a rerank no longer silently
+  repeals the tier / landmark / elite-journal / RCR boosts. Opt-in, default off.
+- **Rerank coverage guard** — refuses to report `rerank_applied: true` when the scorer matched nothing.
+- **`no_eligible_local_sources`** no longer fires when the union was empty *before* the filter ran.
+- **`match_count` clamped at both ends** — a negative value used to slice the best chunks off the tail.
+- **`intEnv()` config validation** — `MAX_MONTHLY_SPEND_USD="250usd"` used to silently disable the cap.
+- **The legacy `/v1/messages` path is now capped and metered** — it was an unledgered relay on the
+  Anthropic key, reachable by omitting one header.
+
+Already applied to the database (nothing to deploy): `canonical_match_chunks`,
+`score_candidate_chunks_authority_parity`.
+
+## Deploying
+
+```bash
+# 1. everything green, from a clean tree
+for f in test_*.mjs rag/test_*.mjs; do node "$f" >/dev/null || echo "FAILED: $f"; done
+git status --porcelain          # expect empty
+
+# 2. Worker
+npx wrangler deploy
+
+# 3. prove the deployed Worker is the new one — not that it responded, that it has the new behaviour
+curl -s -X POST "$WORKER_URL/retrieve" \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"diabetic ketoacidosis","rerank":true}' | jq '{rerank_applied, rerank_scored, rerank_unscored}'
+# EXPECT rerank_applied:true and rerank_scored > 0.
+# rerank_applied:false means score_candidate_chunks is missing or threw.
+# rerank_scored:null means an OLD Worker is still serving — the field does not exist there.
 ```
-cd ~/Developer/chalk-talk
-git checkout launch-integration
-python3 -m http.server 8000        # "address already in use" just means it's already running
-```
 
-Open <http://localhost:8000> → **Set key** in the header → paste your Anthropic key.
+The front end needs no deploy unless `index.html` changed; if it did, bump `BUILD_ID` **and** `build.txt`
+together — the update banner compares them.
 
-- Writes and reviews with `claude-opus-5`, the only model the frozen benchmark has cleared.
-- Bypasses the Worker entirely, so none of the coupling in §B applies.
-- Billed to your own key; the Worker's $250 cap is not involved.
+## Rolling back
 
-This is the recommended way to use the new build while the stabilization gate is still open.
+**Do not `reset --hard` and force-push.** The old instructions did, which destroys history that is already
+public — and since pushes here happen automatically, "already public" is the normal case.
 
----
+```bash
+# Worker: redeploy the previous version. Cloudflare keeps them.
+npx wrangler deployments list
+npx wrangler rollback --message "reverting <what> — <why>"
 
-## B · The coupling — read this before deploying either half
-
-| | writes with | Worker side |
-|---|---|---|
-| **live site** (`main`, build 2026-07-21-08) | `claude-opus-4-8` | deployed Worker: opus-4-8 ✓, **opus-5 ✗** |
-| **new build** (`launch-integration`, 2026-07-27-01) | `claude-opus-5` | new Worker: **only `claude-opus-5` may write** |
-
-- Deploy the **Worker alone** → the live site still asks for `claude-opus-4-8` to write, the
-  fail-closed `WRITER_CLEARED` gate refuses it, **generation breaks for everyone**.
-- Deploy the **front-end alone** → the new site asks for `claude-opus-5`, the deployed Worker's
-  `ALLOWED_MODELS` rejects it, **generation breaks for everyone**.
-
-They ship together. A few seconds of gap is unavoidable; the order in §C minimises it.
-
-> **Do not "fix" the window by adding `claude-opus-4-8` to `WRITER_CLEARED`.** That list is the
-> fail-closed gate keeping unbenchmarked models from writing medical teaching content. Widening it for
-> deployment convenience defeats the only thing it does.
-
-BYOK users are unaffected by any of this — they never hit the Worker.
-
----
-
-## C · Full deploy
-
-**Prerequisite — confirm the Worker secret is set** (this was missing once before):
-
-```
-cd ~/Developer/chalk-talk
-npx wrangler secret list          # expect ANTHROPIC_API_KEY
-```
-If missing: `npx wrangler secret put ANTHROPIC_API_KEY`
-
-**1 · Merge and push the front-end**
-
-```
-git checkout main
-git merge --ff-only launch-integration     # refuses rather than making a surprise merge commit
+# Front end / repo: revert forward, never rewrite.
+git revert <sha>        # or: git revert <oldest>..<newest>
 git push origin main
 ```
 
-**2 · Wait for Pages to go green** in the Actions tab. Do not proceed while it is still building.
+Rolling back a migration is a **separate, deliberate act** — reverting the SQL file changes nothing in the
+database. Both current migrations are additive (`canonical_match_chunks` replaces a function with its own
+exported definition; `score_candidate_chunks` is new and unreachable unless a request sets `rerank:true`),
+so there is nothing to undo in an emergency. Every migration containing `DROP` or `ALTER` is wrapped in
+`BEGIN`/`COMMIT`, enforced by `test_migration_atomicity.mjs`, so a failed apply leaves the database as it
+was rather than half-migrated.
 
-**3 · Deploy the Worker immediately after** — ~10 s, and it closes the window:
+## Still outstanding
 
-```
-npx wrangler deploy
-```
-
-**4 · Smoke test on the LIVE site, not localhost**
-
-- [ ] Hard-reload; footer build reads **2026-07-27-01**
-- [ ] Concise lecture → renders, provenance line at the **foot**, no console errors
-- [ ] Boards question → 5 choices, exactly one correct, explanation present
-- [ ] Detailed toggle on a finished talk → expands in place, does **not** wipe the talk
-- [ ] Check for updates → amber prompt, proposals verified, refusals listed with reasons
-- [ ] Apply an update, then Refine → **the added reference survives**
-- [ ] Signed-out / free tier → returns a talk (exercises the Worker's own key)
-
-**5 · Roll back BOTH halves together if anything fails**
-
-```
-git checkout main && git reset --hard 676fa81 && git push --force-with-lease origin main
-npx wrangler rollback
-```
-
----
-
-## D · Still open before this is ready for other people
-
-The stabilization gate in `NEXT_SESSION.md` is not finished:
-
-1. **Runtime click tests** — the 10 paths above, against localhost first.
-2. **Independent diff review** by Codex across all 92 commits.
-3. **Twenty judge-flagged medical claims unreviewed** — `rag/runs/2026-07-27-gpt-5.6-sol-paired.md`.
-   No automated check in this repo can see any of them.
-4. **No drug-name guard in production.** The RxNorm check exists only in the benchmark harness. Opus
-   produced zero misspellings across 19 rows — that is the model behaving, not a check catching.
-
-§A (local, your own key, you reading your own talks before teaching from them) is a reasonable risk
-today. Serving this to residents is not, until at least 1–3 are done.
+- **Rotate the exposed OpenAI and Supabase service-role keys.** Carried across several sessions.
+- **Eleven Worker findings** left for a decision — `rag/runs/2026-07-29-worker-audit.md`. Start with
+  `WRITER_CLEARED`: it fails closed only on the async route, so the sync route will write medical content
+  with an unbenchmarked model.
+- **`RATE_LIMIT_KV` is not bound** in `wrangler.toml`, so the per-IP daily limit does nothing while
+  `/health` reports it enforcing.
+- **Calibration has not been run** — see `CALIBRATION_RUNBOOK.md`.

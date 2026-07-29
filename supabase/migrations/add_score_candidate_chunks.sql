@@ -51,6 +51,14 @@
 -- does nothing. The JS stub used string ids, so no unit test could have caught it; test_schema_types.mjs
 -- asserts it against the schema directly.
 
+-- ONE TRANSACTION, for the same reason as canonical_match_chunks.sql: psql autocommits each statement
+-- unless told otherwise, and ON_ERROR_STOP=1 stops without undoing. Unwrapped, a failure between the
+-- DROP and the CREATE leaves the database with no score_candidate_chunks, and every rerank request then
+-- falls back — reporting rerank_applied:false, which is at least honest, but for no reason anyone would
+-- be able to see. Proven on a live database that a failure inside a transaction leaves the prior
+-- function intact, while the same DROP unwrapped removes it for good. (2026-07-29)
+begin;
+
 -- DROP FIRST: the return TABLE gained a column, and `create or replace` cannot change a function's
 -- return type. Safe — nothing calls this unless a request sets rerank:true, and no shipped front end does.
 drop function if exists public.score_candidate_chunks(vector(1536), bigint[]);
@@ -114,6 +122,8 @@ comment on function public.score_candidate_chunks is
 grant execute on function public.score_candidate_chunks(vector(1536), bigint[], double precision, double precision, double precision, double precision) to service_role;
 grant execute on function public.score_candidate_chunks(vector(1536), bigint[], double precision, double precision, double precision, double precision) to authenticated;
 grant execute on function public.score_candidate_chunks(vector(1536), bigint[], double precision, double precision, double precision, double precision) to anon;
+
+commit;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────

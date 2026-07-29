@@ -96,16 +96,50 @@ const LABELED = {
   ],
 };
 
-// production's five facets, read from the app so this cannot drift
+// ── THE FACETS ARE HARDCODED, AND NOW VERIFIED (Codex, 2026-07-29) ───────────
+// This block used to be captioned "read from the app so this cannot drift" while doing nothing of the
+// kind: it read index.html into `html` and never referenced it again, then hardcoded the strings below.
+// The caption was the only thing preventing drift, and captions do not prevent anything. If someone
+// retunes a facet in the app, this evaluator would keep measuring the OLD pipeline and report the
+// result as production's.
+//
+// Reading them out of index.html by regex would couple the evaluator to the app's exact formatting.
+// Asserting instead: the strings stay here, and the run ABORTS if index.html no longer contains them.
+// Drift becomes a loud failure at startup rather than a quiet wrong answer at the end.
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const facets = (t) => [
-  t,
-  t + " pathophysiology and mechanism",
-  t + " diagnosis, workup and diagnostic testing",
-  t + " treatment, management and guideline recommendations",
-  t + " outcomes, prognosis, mortality and landmark trials",
+const FACET_SUFFIXES = [
+  " pathophysiology and mechanism",
+  " diagnosis, workup and diagnostic testing",
+  " treatment, management and guideline recommendations",
+  " outcomes, prognosis, mortality and landmark trials",
 ];
-const MATCH_COUNT = 24;   // production value
+const facets = (t) => [t, ...FACET_SUFFIXES.map(s => t + s)];
+const MATCH_COUNT = 24;   // production value — asserted against index.html below
+
+{
+  const missing = FACET_SUFFIXES.filter(s => !html.includes(s));
+  if (missing.length) {
+    console.error("✖ ABORTING: the evaluator's facets no longer match index.html.");
+    missing.forEach(s => console.error(`    not found in the app: "${s.trim()}"`));
+    console.error("  The app's facet queries were changed without updating this evaluator, so a run would");
+    console.error("  measure a pipeline that is no longer shipping — and report it as production's.");
+    console.error("  Update FACET_SUFFIXES here to match retrieveRAG in index.html, then re-run.");
+    process.exit(9);
+  }
+  // The app sends `match_count: opts.match_count || 24`. If that default moves, the evaluator's pooling
+  // width no longer matches production's and every arm sees a different candidate pool than users do.
+  const m = html.match(/match_count:\s*opts\.match_count\s*\|\|\s*(\d+)/);
+  if (!m) {
+    console.error("✖ ABORTING: could not find the match_count default in index.html (retrieveRAG).");
+    console.error("  The evaluator cannot confirm it is pooling the same width production does.");
+    process.exit(9);
+  }
+  if (parseInt(m[1], 10) !== MATCH_COUNT) {
+    console.error(`✖ ABORTING: index.html uses match_count ${m[1]}, this evaluator uses ${MATCH_COUNT}.`);
+    console.error("  Every arm would see a different candidate pool than users do.");
+    process.exit(9);
+  }
+}
 
 // EVERY arm asserts authority_tiebreak_applied === false. It used to fire whenever either stage was on,
 // so "rerank only" silently meant "rerank + authority ranking". It is a separate flag now, and this
@@ -223,8 +257,34 @@ if (SCORE_SHEET) {
   }
   console.log(`Loaded ${labels.size} labels — every candidate is labelled.\n`);
 
+  // ── MACRO PRECISION ALONE PUNISHES THE BEHAVIOUR WE WANT (Codex, 2026-07-29) ────────────────────────
+  // The first version pushed a per-topic ratio only `if (items.length)`. But returning ZERO sources on a
+  // topic the corpus does not cover is the CORRECT answer — it is the success this experiment is partly
+  // looking for. Skipping those topics meant:
+  //
+  //   * the headline number excluded precisely the successful abstentions, and
+  //   * each arm was averaged over a DIFFERENT set of topics, so the four numbers were not comparable —
+  //     an arm that abstained more looked identical to one that never faced the hard topics.
+  //
+  // Both are fatal for choosing an arm. Reported now:
+  //   micro precision   total direct / total returned, pooled — one denominator, no topic dropped
+  //   macro precision   averaged over a FIXED denominator: every topic, with an abstention scoring 1.0
+  //                     when the topic is `absent` (correct silence) and 0.0 otherwise (a miss)
+  //   abstentions       how many topics each arm returned nothing on
+  //   irrelevant_on_absent   I-labelled sources returned on topics known to be uncovered — the number
+  //                     that most directly measures the D-1 complaint
+  //   per stratum       covered / thin / absent reported separately, because they ask different questions
+  const STRATA = ["covered", "thin", "absent"];
+  const stratumOf = (topic) => {
+    const row = (LABELED[run.split] || []).find(r => r[0] === topic);
+    return row ? row[2] : "unknown";
+  };
   const tally = {};
-  for (const a of ARMS) tally[a.name] = { p_at_n: [], direct: 0, kept: 0, papers: 0, guidelines: 0 };
+  for (const a of ARMS) tally[a.name] = {
+    p_at_n: [], direct: 0, kept: 0, papers: 0, guidelines: 0,
+    abstained: 0, irrelevantOnAbsent: 0, adjusted: [],
+    byStratum: Object.fromEntries([...STRATA, "unknown"].map(s => [s, { direct: 0, kept: 0, topics: 0, abstained: 0 }])),
+  };
   // Recall denominator is over (topic, source) PAIRS — a paper that is D for hyperkalemia does not make
   // the same paper a hit for DKA.
   const unionDirect = new Set();
@@ -241,20 +301,56 @@ if (SCORE_SHEET) {
       tally[a.name].papers += items.filter(i => i.kind === "paper").length;
       tally[a.name].guidelines += items.filter(i => i.kind === "guideline").length;
       if (items.length) tally[a.name].p_at_n.push(direct / items.length);
+
+      const stratum = stratumOf(t.topic);
+      const S = tally[a.name].byStratum[stratum] || tally[a.name].byStratum.unknown;
+      S.topics += 1; S.direct += direct; S.kept += items.length;
+
+      if (items.length === 0) {
+        tally[a.name].abstained += 1;
+        S.abstained += 1;
+        // FIXED DENOMINATOR: every topic scores, so all four arms are averaged over the same set.
+        // Silence on an `absent` topic is a correct answer and scores 1.0; silence on a topic the corpus
+        // DOES cover is a failure to retrieve and scores 0.0.
+        tally[a.name].adjusted.push(stratum === "absent" ? 1 : 0);
+      } else {
+        tally[a.name].adjusted.push(direct / items.length);
+        if (stratum === "absent") {
+          tally[a.name].irrelevantOnAbsent +=
+            items.filter(it => labels.get(pairKey(t.topic, it.chunk_id)) === "I").length;
+        }
+      }
     }
   }
+  const mean = (xs) => xs.length ? xs.reduce((s, v) => s + v, 0) / xs.length : NaN;
 
   console.log("═".repeat(78));
   console.log(`RESULT · ${run.split} split · top-${run.top_n} · ${run.topics.length} topics`);
   console.log("═".repeat(78));
-  console.log("arm".padEnd(11), "precision".padEnd(11), "direct".padEnd(8), "kept".padEnd(7), "pap/gl".padEnd(9), "recall");
+  console.log("arm".padEnd(11), "micro".padEnd(8), "macro*".padEnd(8), "recall".padEnd(8),
+              "direct".padEnd(8), "kept".padEnd(7), "abst".padEnd(6), "I@absent".padEnd(9), "pap/gl");
   const U = unionDirect.size;
   for (const a of ARMS) {
     const x = tally[a.name];
-    const p = x.p_at_n.length ? (x.p_at_n.reduce((s, v) => s + v, 0) / x.p_at_n.length) : NaN;
-    console.log(a.name.padEnd(11), (isNaN(p) ? "—" : p.toFixed(3)).padEnd(11),
+    const micro = x.kept ? x.direct / x.kept : NaN;         // pooled — one denominator for every arm
+    const macro = mean(x.adjusted);                          // fixed denominator — every topic counts
+    console.log(a.name.padEnd(11),
+                (isNaN(micro) ? "—" : micro.toFixed(3)).padEnd(8),
+                (isNaN(macro) ? "—" : macro.toFixed(3)).padEnd(8),
+                (U ? (x.direct / U).toFixed(3) : "—").padEnd(8),
                 String(x.direct).padEnd(8), String(x.kept).padEnd(7),
-                `${x.papers}/${x.guidelines}`.padEnd(9), U ? (x.direct / U).toFixed(3) : "—");
+                String(x.abstained).padEnd(6), String(x.irrelevantOnAbsent).padEnd(9),
+                `${x.papers}/${x.guidelines}`);
+  }
+  console.log("\nBY STRATUM  (covered/thin ask 'did it find the good sources'; absent asks 'did it stay quiet')");
+  console.log("arm".padEnd(11), ...STRATA.map(s => (s + " p/abst").padEnd(16)));
+  for (const a of ARMS) {
+    const x = tally[a.name];
+    console.log(a.name.padEnd(11), ...STRATA.map(s => {
+      const S = x.byStratum[s];
+      const p = S.kept ? (S.direct / S.kept).toFixed(3) : "—";
+      return `${p} / ${S.abstained}of${S.topics}`.padEnd(16);
+    }));
   }
   // Machine-readable artifacts. The SCORED file is what unseals held-out; the decision file is written
   // as a STUB with selected_strategy null, so opening held-out requires a human to choose deliberately.
@@ -265,9 +361,22 @@ if (SCORE_SHEET) {
     arms: Object.fromEntries(ARMS.map(a => {
       const x = tally[a.name];
       return [a.name, {
-        precision: x.p_at_n.length ? +(x.p_at_n.reduce((s2, v) => s2 + v, 0) / x.p_at_n.length).toFixed(4) : null,
+        // Pooled: total direct / total returned. One denominator, no topic excluded.
+        micro_precision: x.kept ? +(x.direct / x.kept).toFixed(4) : null,
+        // Averaged over EVERY topic. Abstention scores 1.0 on `absent`, 0.0 otherwise, so all arms share
+        // a denominator and correct silence is rewarded rather than dropped from the average.
+        macro_precision_fixed_denominator: +mean(x.adjusted).toFixed(4),
+        // The ORIGINAL statistic, kept only so the change is auditable. It skips topics where the arm
+        // returned nothing, so each arm is averaged over a different topic set. DO NOT choose an arm on
+        // it. (Codex, 2026-07-29)
+        macro_precision_excluding_abstentions_DEPRECATED:
+          x.p_at_n.length ? +mean(x.p_at_n).toFixed(4) : null,
+        topics_scored: x.adjusted.length,
+        abstained_topics: x.abstained,
+        irrelevant_on_absent_topics: x.irrelevantOnAbsent,
         direct: x.direct, kept: x.kept, papers: x.papers, guidelines: x.guidelines,
         recall: unionDirect.size ? +(x.direct / unionDirect.size).toFixed(4) : null,
+        by_stratum: x.byStratum,
       }];
     })),
   }, null, 2) + "\n");
@@ -281,10 +390,23 @@ if (SCORE_SHEET) {
     console.log(`\n-> ${DECISION}  ← record your chosen arm here before opening held-out`);
   }
   console.log(`-> ${scoredPath}`);
-  console.log("\n  precision@N counts DIRECTLY RELEVANT over labelled items in each arm's kept set.");
-  console.log("  recall is against the union of directly-relevant sources ANY arm found — so an arm that");
-  console.log("  raises precision by discarding good sources shows it here as lost recall.");
-  console.log("\n  A LOWER kept count on an `absent` topic is a SUCCESS, not a regression.");
+  console.log("\n  micro  = total direct / total returned, pooled across topics. One denominator for every");
+  console.log("           arm, so the four numbers are directly comparable.");
+  console.log("  macro* = averaged over EVERY topic. An arm that returns nothing scores 1.0 when the topic");
+  console.log("           is `absent` (correct silence) and 0.0 otherwise (a failure to retrieve). The");
+  console.log("           earlier statistic skipped zero-return topics, which excluded exactly the");
+  console.log("           successful abstentions and averaged each arm over a different topic set.");
+  console.log("  recall = against the union of directly-relevant sources ANY arm found, so an arm that");
+  console.log("           raises precision by discarding good sources shows it here as lost recall.");
+  console.log("  abst   = topics returning nothing.  I@absent = irrelevant sources on uncovered topics,");
+  console.log("           which is the number that speaks most directly to the D-1 complaint.");
+  console.log("\n  DO NOT choose an arm on a single number. Read micro, macro*, recall and the stratum table");
+  console.log("  together: on `absent` topics a LOWER kept count is a SUCCESS, and on `covered` topics the");
+  console.log("  same movement is a regression.");
+  console.log("\n  SCOPE: every arm starts from candidates the same match_chunks returned, and that applies");
+  console.log("  journal_rank <= 2 as a HARD FILTER. This measures ranking and filtering INSIDE the");
+  console.log("  already-eligible corpus. It cannot establish overall recall, and cannot show whether any");
+  console.log("  of the 156 excluded documents would fix D-1.");
   process.exit(0);
 }
 

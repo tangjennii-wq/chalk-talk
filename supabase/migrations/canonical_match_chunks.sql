@@ -42,16 +42,38 @@
 -- six-argument match_chunks; this file declares ten. On a fresh database built from the repo, "replace"
 -- would therefore CREATE A SECOND OVERLOAD and leave the six-argument version in place.
 --
--- That is worse than untidy. The Worker calls this RPC by NAME with six named arguments, and the
--- ten-argument version has defaults for the other four — so both candidates match the call and PostgREST
--- resolution becomes ambiguous. Depending on which one wins, retrieval either applies the landmark,
--- elite-journal and RCR boosts or silently does not, with nothing in the response distinguishing the two.
--- Production is currently clean (verified 2026-07-29: exactly one overload, the ten-argument one), so
--- this is purely a reproducibility defect — it bites whoever rebuilds from the repository, which is the
--- entire point of committing a canonical definition. test_schema_types.mjs asserts the drop is here.
+-- WHAT THAT ACTUALLY BREAKS — corrected 2026-07-29, my first note here was wrong.
+-- I wrote that resolution "becomes ambiguous" and that retrieval would "silently" either apply the
+-- boosts or not. It is not silent. Both layers reject an ambiguous call loudly, and I verified this
+-- rather than reasoning about it:
+--
+--   * PostgreSQL, tested with throwaway two-/four-argument probes in a scratch schema:
+--       ERROR 42725: function ct_probe.f(integer, integer) is not unique
+--       HINT: Could not choose a best candidate function.
+--   * PostgREST returns PGRST203 with HTTP 300 for overloaded functions it cannot disambiguate.
+--     https://docs.postgrest.org/en/latest/references/errors.html
+--
+-- So the real failure is TOTAL RETRIEVAL FAILURE on a freshly built database, not a quietly different
+-- ranking. That is a less insidious bug and an equally blocking one, and the distinction matters: a
+-- loud failure is caught by the first request, whereas the "silent" version I described would have
+-- required someone to notice a ranking change. Correcting it here so nobody plans around the wrong
+-- failure mode. Production is clean either way — verified 2026-07-29, exactly one overload.
 --
 -- Grants are re-issued because DROP takes the ACL with it. Production's ACL is reproduced exactly:
 -- PUBLIC holds EXECUTE by PostgreSQL default, and anon / authenticated / service_role are explicit.
+--
+-- ── WHY THE WHOLE THING IS ONE TRANSACTION (Codex, 2026-07-29) ────────────────────────────────────────
+-- BLOCKING defect in the first version of this file. DDL in PostgreSQL is transactional, but psql
+-- autocommits each statement when there is no explicit transaction block — and `-v ON_ERROR_STOP=1`
+-- only STOPS on error, it does not UNDO what already committed. So: both DROPs commit, then CREATE
+-- FUNCTION fails (a syntax slip, a missing pgvector extension, a permissions problem) or a GRANT fails,
+-- and psql exits non-zero having left production with NO match_chunks at all. Every retrieval request
+-- then 404s with PGRST202.
+--
+-- BEGIN/COMMIT makes the sequence atomic: either the canonical function is installed with its grants,
+-- or the database is exactly as it was. Tested by forcing a failure mid-file, not only by watching a
+-- successful install — see test_migration_atomicity.mjs.
+begin;
 
 -- The obsolete six-argument signature from supabase/migration_v2_rag.sql. Harmless if absent.
 drop function if exists public.match_chunks(vector(1536), int, float, int, text[], float);
@@ -127,11 +149,14 @@ grant execute on function public.match_chunks(vector(1536), int, float, int, tex
 grant execute on function public.match_chunks(vector(1536), int, float, int, text[], float, float, float, smallint, float) to authenticated;
 grant execute on function public.match_chunks(vector(1536), int, float, int, text[], float, float, float, smallint, float) to anon;
 
+commit;
+
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- AFTER APPLYING, PROVE THERE IS EXACTLY ONE OVERLOAD.
--- A second match_chunks makes the Worker's six-named-argument call ambiguous, and the failure is silent:
--- retrieval either applies the authority boosts or does not, and the response looks identical either way.
+-- A second match_chunks makes the Worker's six-named-argument call ambiguous, and BOTH layers then fail
+-- the request outright — PostgreSQL 42725 "function is not unique", PostgREST PGRST203 / HTTP 300. So
+-- the symptom is total retrieval failure on every request, not a quietly different ranking.
 --
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c \
 --     "select count(*) as overloads, string_agg(oid::regprocedure::text, E'\n') as signatures

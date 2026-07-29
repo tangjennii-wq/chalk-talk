@@ -148,6 +148,22 @@ jobs:
       - name: Legacy /v1/messages path is capped and metered
         run: node test_legacy_path_metering.mjs
 
+      # Syntax gates for the two files CI never executes. Cheap, and they catch a broken commit
+      # before it reaches a deploy or a calibration run.
+      - name: Syntax check the Worker and the evaluator
+        run: |
+          node --check worker.js
+          node --check rag/eval_pipeline_arms.mjs
+
+      # DDL that drops before it creates must be atomic: psql -v ON_ERROR_STOP=1 stops on error but does
+      # NOT undo what already autocommitted, so an unwrapped file can leave production with no function.
+      - name: Migrations containing DROP/ALTER are transactional
+        run: node test_migration_atomicity.mjs
+
+      # A precision number that silently excludes successful abstentions would pick the wrong arm.
+      - name: Calibration scoring (abstention is scored, not skipped)
+        run: node test_calibration_scoring.mjs
+
       # THE GUARD ON THE GUARDS. Writing a suite and forgetting to wire it here has happened twice.
       # A test that never runs is worse than no test: it reads as coverage.
       - name: Every test suite on disk is wired into this workflow

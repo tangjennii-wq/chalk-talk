@@ -48,10 +48,14 @@ ok((mcChunkId || "").toLowerCase() === ID_SQL_TYPE,
 // ── ONLY ONE match_chunks MAY SURVIVE A FRESH BUILD (Codex, 2026-07-29) ───────
 // CREATE OR REPLACE replaces a function with the SAME argument list. The bootstrap creates a
 // six-argument match_chunks and the canonical file declares ten, so on a fresh database "replace" would
-// create a SECOND OVERLOAD rather than supersede it. The Worker then calls the RPC by name with six
-// named arguments, both candidates match (the ten-argument version defaults the other four), and
-// resolution is ambiguous — retrieval either applies the landmark / elite-journal / RCR boosts or
-// silently does not, with an identical-looking response either way.
+// create a SECOND OVERLOAD rather than supersede it.
+//
+// WHAT THAT BREAKS — corrected; my first note claimed retrieval would "silently" apply or not apply the
+// boosts. It is not silent. Verified rather than reasoned about: PostgreSQL raises 42725 "function is
+// not unique" (tested with throwaway probes in a scratch schema), and PostgREST returns PGRST203 with
+// HTTP 300 for overloads it cannot disambiguate. The symptom is TOTAL retrieval failure on a freshly
+// built database — blocking, but loud, and caught by the first request rather than by noticing a subtle
+// ranking change. Planning around the wrong failure mode is its own hazard.
 //
 // Production is clean (verified 2026-07-29: one overload). This is a REPRODUCIBILITY defect, which is
 // precisely what committing a canonical definition was supposed to fix.
