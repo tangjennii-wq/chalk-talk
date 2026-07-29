@@ -63,6 +63,9 @@ const MODEL_PRICES = {
 };
 const IMAGE_FLAT_CENTS = 8;   // gpt-image-1.5 high quality ≈ $0.08/image
 const EMBEDDING_MODEL = "text-embedding-3-small";
+// How deep to look when scoring the union against the bare topic. Large enough that a candidate found
+// only by a facet still gets a real bare score rather than a null. (Stage 1 rerank, 2026-07-28)
+const RERANK_POOL = 300;
 const EMBEDDING_DIM = 1536;
 const RETRIEVE_DEFAULT_MATCH_COUNT = 12;
 const RETRIEVE_MAX_MATCH_COUNT = 50;
@@ -546,14 +549,67 @@ async function handleRetrieve(request, env, origin) {
         }
       });
     });
-    merged = Array.from(best.values())
-      .sort((a, b) => (b.ranked_score || 0) - (a.ranked_score || 0))
-      .slice(0, matchCount);
+    let union = Array.from(best.values());
+
+    // ── STAGE 1 · RERANK AGAINST THE ORIGINAL TOPIC (opt-in, default OFF) ──────────────────────
+    // The 2026-07-28 diagnostic showed facet scores are NOT comparable across queries: cosine against
+    // "<topic> treatment, management and guideline recommendations" is a different quantity from cosine
+    // against "<topic>". Pooling them by ranked_score is what let an off-topic valvular guideline score
+    // 0.612 for HFrEF — higher than any chunk the DKA topic produced from any facet.
+    //
+    // The fix is to let the FACETS DISCOVER candidates (recall) and let the BARE TOPIC RANK them
+    // (precision). queries[0] is guaranteed to be the bare topic — see the unshift above.
+    //
+    // This costs ONE extra match_chunks call and ZERO extra embedding calls, because every candidate
+    // already has a stored embedding. It therefore ranks the SAME representation that was ingested,
+    // rather than re-embedding a truncated copy — which would silently change the document
+    // representation and could do the work the rerank is being credited for. (Codex, 2026-07-28)
+    //
+    // OFF BY DEFAULT. Production behaviour is unchanged until candidate-level precision/recall on the
+    // labeled set says this helps. Build one stage, measure it, keep it only if it earns its place.
+    const wantRerank = body.rerank === true;
+    let rerankApplied = false;
+    if (wantRerank && union.length) {
+      try {
+        // min_similarity 0 so every union member gets a bare score, including ones only a facet found.
+        const bareRows = await callMatchChunks(env, {
+          query_embedding: embeddings[0],
+          match_count: RERANK_POOL,
+          min_similarity: 0,
+          max_age_years: maxAgeYears,
+          allowed_sources: allowedSources,
+          tier_boost_weight: 0,          // rank on raw topic similarity, not on a tier thumb
+        });
+        const bare = new Map();
+        (bareRows || []).forEach(r => bare.set(r.chunk_id, r.similarity || 0));
+        union.forEach(c => { c.bare_similarity = bare.has(c.chunk_id) ? bare.get(c.chunk_id) : null; });
+        // A candidate the bare topic cannot see at all ranks last — it was found only by a facet, which
+        // is exactly the DCCT-for-DKA case. It is kept (recall) but never preferred (precision).
+        union.sort((a, b) => (b.bare_similarity == null ? -1 : b.bare_similarity)
+                           - (a.bare_similarity == null ? -1 : a.bare_similarity));
+        rerankApplied = true;
+      } catch (err) {
+        // Fail OPEN to current behaviour rather than returning nothing — but say so, so a silent
+        // fallback can never be mistaken for a successful rerank.
+        console.warn("rerank failed, falling back to pooled facet order: " + err.message);
+        union.sort((a, b) => (b.ranked_score || 0) - (a.ranked_score || 0));
+      }
+    } else {
+      union.sort((a, b) => (b.ranked_score || 0) - (a.ranked_score || 0));
+    }
+    merged = union.slice(0, matchCount);
+    merged._rerankApplied = rerankApplied;
   } catch (err) {
     return jsonError(502, "retrieval_failed", "Failed to retrieve chunks: " + err.message, origin);
   }
 
-  return jsonOK({ query, queries, count: merged.length, chunks: merged }, origin);
+  return jsonOK({
+    query, queries, count: merged.length,
+    rerank_requested: body.rerank === true,
+    rerank_applied: !!merged._rerankApplied,   // NEVER infer this from the request — a rerank that threw
+                                               // must not be reported as one that ran
+    chunks: merged,
+  }, origin);
 }
 
 async function handleImageGeneration(request, env, ctx, origin) {
