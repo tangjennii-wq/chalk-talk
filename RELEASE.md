@@ -12,10 +12,10 @@ the live database on 2026-07-29 rather than carried forward.
 | | |
 |---|---|
 | branch | **`main`** — `launch-integration` is fully merged and is history now |
-| `BUILD_ID` / `build.txt` | `2026-07-28-03` (tagged `staging-2026-07-28-03`) |
-| front end | **unchanged since `2026-07-28-03`** — the recent work is Worker, SQL and tests only |
+| `BUILD_ID` / `build.txt` | `2026-07-29-01` |
+| front end | **changed** — `pollAsyncGeneration` gained a `stalled` branch, so this one *does* need deploying |
 | database | production `chalktalk` (`hrcvcjiefndvytlcbmpa`); there is no staging project |
-| tests | 26 suites, all green, all wired into `.github/workflows/tests.yml` |
+| tests | 27 suites, all green, all wired into `.github/workflows/tests.yml` |
 
 ## Two things worth knowing before you deploy
 
@@ -67,6 +67,10 @@ Already applied to the database (nothing to deploy): `canonical_match_chunks`,
 > The largest risks are still open — see *Still outstanding*.
 
 ## Deploying
+
+**This release changes `index.html`**, which Pages serves — so it goes live on push, before the Worker is
+deployed. Between those two moments the client has a `stalled` branch and the Worker never sets the flag:
+harmless (the branch simply never fires), but deploy the Worker promptly so the two halves match.
 
 ```bash
 # 1. everything green, from a clean tree
@@ -125,8 +129,13 @@ making them unsupervised risked breaking generation for every user. Full detail 
    shipped on — Paid raises **CPU** time, a different limit that shares the number 30, and generation is
    almost all *waiting*, which consumes no CPU at all. Comment corrected in place.
    **Full analysis and the three options: `rag/runs/2026-07-29-background-execution.md`.**
-   Interim only: `/generate-status` now reports `stalled: true` after 90s idle instead of a status the
-   client polls forever. That makes the failure visible; it does not fix it.
+   Interim only, and it now works end to end: `/generate-status` reports `stalled: true` after several
+   missed heartbeats, `pollAsyncGeneration` throws on it, and `generate()` renders the server's
+   explanation. **The first attempt shipped only the server half** — the client ignored the field and
+   spun for the full nine-minute timeout, which is the bug this list exists to catch. A critique
+   heartbeat was added at the same time, because critique is one long non-streaming call and a
+   legitimate 90s review was otherwise indistinguishable from a terminated Worker. **This makes the
+   failure visible and honest; it does not fix it.**
 2. **`/v1/messages` never verifies that `/consume` happened.** A signed-in caller can skip the frontend
    and generate with zero talks remaining. Needs a server-issued reservation, not a client convention.
 3. **`WRITER_CLEARED` is enforced only on the async route.** The sync route accepts any member of

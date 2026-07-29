@@ -62,6 +62,11 @@ const MODEL_PRICES = {
   "claude-haiku-4-5-20251001":  { in: 1.0,  out: 5.0,  cache: 0.1 },
 };
 const IMAGE_FLAT_CENTS = 8;   // gpt-image-1.5 high quality ≈ $0.08/image
+// Liveness for the background job record. The critique is one long non-streaming call, so without a
+// periodic touch `updatedAt` cannot distinguish "still reviewing" from "the Worker was terminated".
+// STALL_AFTER_MS is deliberately several missed beats, so one slow write or a clock skew is not a stall.
+const CRITIQUE_HEARTBEAT_MS = 20_000;
+const STALL_AFTER_MS = 90_000;
 const EMBEDDING_MODEL = "text-embedding-3-small";
 // (RERANK_POOL removed 2026-07-28. It encoded the assumption that a global top-N lookup could score the
 // facet union; it cannot. score_candidate_chunks scores the union exactly, so there is no pool depth to
@@ -1249,7 +1254,32 @@ async function runGeneration(jobId, body, env) {
     if (body.critique && body.critique.sys) {
       if (!(await updateJob({ stage: "critique" }))) { await refundOnce(); return; }
       const critInput = (body.critique.prefix || "") + "\n\nDraft chalk talk to review:\n" + draft.text;
-      const crit = await callAnthropicText(env, body.critique.sys, [{ type: "text", text: critInput }], body.critique.maxTok || 16384, body.critique.models);
+      // ── HEARTBEAT, so `updatedAt` means "alive" (Codex, 2026-07-29) ──────────────────────────────
+      // The drafting phase writes partial text as it streams, so updatedAt advances naturally. Critique
+      // is ONE long non-streaming call: stage was written once, then nothing until it returned. So a
+      // legitimate 90s+ review looked identical to a job Cloudflare had terminated, and the stall
+      // detector in handleGenerateStatus would have called a healthy generation dead — telling the user
+      // their credit was lost while the review was still running.
+      //
+      // Fixing the false positive at its source rather than hedging the wording downstream: a periodic
+      // touch makes updatedAt an actual liveness signal. If the Worker is killed the heartbeat dies with
+      // it, which is exactly the evidence the stall check needs. updateJob returns false on a landed
+      // cancel and writes nothing, so this cannot resurrect a cancelled job.
+      let critAlive = true;
+      const beat = (async () => {
+        while (critAlive) {
+          await new Promise(r => setTimeout(r, CRITIQUE_HEARTBEAT_MS));
+          if (!critAlive) break;
+          try { await updateJob({ heartbeatAt: new Date().toISOString() }); } catch (_) {}
+        }
+      })();
+      let crit;
+      try {
+        crit = await callAnthropicText(env, body.critique.sys, [{ type: "text", text: critInput }], body.critique.maxTok || 16384, body.critique.models);
+      } finally {
+        critAlive = false;          // stop the loop even if the critique threw
+        try { await beat; } catch (_) {}
+      }
       critText = crit.text; critUsage = crit.usage; critModel = crit.modelUsed;
     }
     // Final cancel check before we finalize — a cancel that landed during critique refunds + bails.
@@ -1354,19 +1384,28 @@ async function handleGenerateStatus(request, jobId, env, origin) {
   // Read-only on purpose. It classifies, it does not mutate, and it does not refund: the runner may still
   // be alive and about to write, and racing it from a polling endpoint would risk double-refunding or
   // clobbering a real result. Diagnosis here, remediation where the state is owned.
-  const STALL_AFTER_MS = 90_000;
+  // Threshold is several missed heartbeats, not a guess: runGeneration touches the record every
+  // CRITIQUE_HEARTBEAT_MS during the critique (the only phase that does not write progress naturally),
+  // so silence this long means the writer is gone rather than merely slow.
   if (obj.status === "running" || obj.status === "critique") {
-    const last = Date.parse(obj.updatedAt || obj.createdAt || "");
+    const last = Date.parse(obj.heartbeatAt || obj.updatedAt || obj.createdAt || "");
     const idleMs = Number.isFinite(last) ? Date.now() - last : 0;
     if (idleMs > STALL_AFTER_MS) {
+      const secs = Math.round(idleMs / 1000);
       return jsonOK(Object.assign({}, obj, {
         stalled: true,
-        idle_seconds: Math.round(idleMs / 1000),
+        idle_seconds: secs,
         stall_reason: "no_progress",
-        stall_detail: "Background generation has not progressed for " + Math.round(idleMs / 1000)
-          + "s. Cloudflare terminates post-response work at ~30s, so this job was most likely killed "
-          + "mid-generation and will never finish. Your talk credit was reserved and not refunded — "
-          + "this is a known defect in the background path, not something you did.",
+        // STATE WHAT IS OBSERVED, THEN WHAT IS LIKELY (Codex, 2026-07-29).
+        // The first version asserted the job "will never finish" and that the credit "was not
+        // refunded". Neither is established from a status read: the runner might still be alive, and
+        // the refund path might yet run. What IS observed is the silence. Say that, name the likely
+        // cause, and do not promise the user a loss that may not have happened.
+        stall_detail: "This generation hasn't reported progress for " + secs + "s. The most likely "
+          + "cause is a known limitation of our background path — work scheduled after a response is "
+          + "cut off at about 30 seconds — in which case it won't finish on its own. It may also be "
+          + "unusually slow. Starting again is safe; if a talk credit looks wrong afterwards, that's "
+          + "this defect and not something you did.",
       }), origin);
     }
   }

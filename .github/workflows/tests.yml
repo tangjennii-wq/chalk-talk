@@ -164,6 +164,12 @@ jobs:
       - name: Calibration scoring (abstention is scored, not skipped)
         run: node test_calibration_scoring.mjs
 
+      # EXECUTES BOTH SIDES of the stall contract: the real Worker handler produces a real response,
+      # which is fed to the real pollAsyncGeneration lifted from index.html. A test that pattern-matched
+      # only worker.js certified a field no client read, and the spinner still ran for nine minutes.
+      - name: Stall detection reaches the browser poller
+        run: node test_stall_integration.mjs
+
       # THE GUARD ON THE GUARDS. Writing a suite and forgetting to wire it here has happened twice.
       # A test that never runs is worse than no test: it reads as coverage.
       - name: Every test suite on disk is wired into this workflow

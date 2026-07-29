@@ -1333,7 +1333,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-28-03";
+var BUILD_ID = "2026-07-29-01";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1516,6 +1516,16 @@ async function pollAsyncGeneration(jobId, onStage, checkAbort, onPartial){
     }
     if(job.status === "error"){ throw new Error((job.error && job.error.message) || "Background generation failed."); }
     if(job.status === "cancelled"){ var xe = new Error("Generation cancelled"); xe.code = "cancelled"; throw xe; }
+    // STALLED: the server has seen no progress for well over a minute. Without this branch the loop
+    // treats "stalled" as "still running" and spins until maxPollMs (nine minutes) — which is what
+    // happened when the server-side flag was added without a consumer. The Worker only sets this after
+    // several missed heartbeats, so it is a real signal, not a slow tick. (Codex, 2026-07-29)
+    if(job.stalled === true){
+      var se = new Error(job.stall_detail || "This generation stopped reporting progress. Please try again.");
+      se.code = "stalled";
+      se.idleSeconds = job.idle_seconds;
+      throw se;
+    }
     // else still running — loop
   }
 }
@@ -7534,6 +7544,12 @@ async function generate(){
       } else if(e && e.code === "timeout"){
         // Server job is still running — show its own message (reload to reconnect), NOT the generic
         // "tap Generate again" that humanizeError would produce (which would double-generate).
+        S.error = e.message;
+      } else if(e && e.code === "stalled"){
+        // The server reported no progress for well over a minute. Unlike "timeout" the job is NOT
+        // expected to be still working, so surface the server's own explanation rather than the
+        // reconnect advice — and let the reconnect key be cleared above, since there is nothing to
+        // reconnect to. (Codex, 2026-07-29)
         S.error = e.message;
       } else {
         S.error = humanizeError(e);
