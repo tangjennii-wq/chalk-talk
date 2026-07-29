@@ -1474,6 +1474,19 @@ async function handleGenerateAsync(request, env, ctx, origin) {
       });
       return jsonOK({ jobId, createdAt: now, durable: true }, origin);
     } catch (err) {
+      // DISTINGUISH "ALREADY RUNNING" FROM "FAILED TO START" BY ASKING, NOT BY READING THE MESSAGE.
+      // create() throws when the id is already live, and Cloudflare documents no stable error class or
+      // code for that case — so string-matching the message would be guesswork that breaks silently
+      // when they reword it. Ask the platform instead: if an instance with this id exists, the earlier
+      // submit succeeded and this is a duplicate, so return it rather than refunding a reservation that
+      // belongs to a job which is still running.
+      try {
+        const existingInstance = await env.GEN_WORKFLOW.get(jobId);
+        if (existingInstance) {
+          return jsonOK({ jobId, createdAt: now, durable: true, resumed: true }, origin);
+        }
+      } catch (_) { /* get() throws when the id is unknown — a genuine start failure. Fall through. */ }
+
       // Do NOT fall through to waitUntil on an unknown failure: that would silently downgrade to the
       // path we are trying to retire, and the response would claim success either way. Refund and say so.
       await refundQuotaTalk(env, body.userEmail);

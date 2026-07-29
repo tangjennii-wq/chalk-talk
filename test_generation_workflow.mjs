@@ -13,6 +13,7 @@
 // THE RISK THIS SUITE EXISTS FOR: step.do() retries FIVE times by default with exponential backoff
 // (Cloudflare's documented default when no config is passed). Wrapping a paid Anthropic call in a naive
 // step.do would bill up to five drafts for one talk. Everything below is ultimately about that.
+import { readFileSync } from "fs";
 import {
   runGenerationWorkflow, paidModelStep, refundOnce, isTransient, PAID_RETRY, CHEAP_RETRY,
 } from "./generation_workflow.js";
@@ -207,6 +208,22 @@ const PAYLOAD = { jobId: "j1", userEmail: "a@b.c", wantCritique: true };
   try { await runGenerationWorkflow({ step, payload: PAYLOAD, deps }); } catch (e) { err = e; }
   ok(err && err.__nonRetryable, "an empty draft raises NonRetryableError rather than retrying");
   ok(err && err.name === "EmptyDraft", "…named EmptyDraft");
+}
+
+// ── 10 · THE DESIGN MUST NOT DEPEND ON UNDOCUMENTED BEHAVIOUR ────────────────
+// Codex flagged that `retries: { limit: 0 }` is not confirmed by the docs and must not be assumed. It
+// is not used anywhere here — `limit: 1` plus NonRetryableError plus the attempt marker is the whole
+// mechanism, and none of it depends on how Cloudflare interprets a zero. Asserted rather than trusted,
+// because "we don't use that" is the kind of claim that quietly stops being true.
+{
+  const src = readFileSync(new URL("./generation_workflow.js", import.meta.url), "utf8")
+    .split("\n").map(l => l.replace(/^\s*(\/\/|\*).*$/, "")).join("\n");
+  ok(!/limit:\s*0/.test(src), "no step is configured with the undocumented `limit: 0`");
+  ok(/limit:\s*1/.test(src), "…paid steps use limit: 1, which the type signature plainly supports");
+  ok(/NonRetryableError/.test(src), "…and NonRetryableError, the documented way to stop retries");
+  // The attempt marker is what actually protects the user, independent of retry semantics.
+  ok(/claimAttempt/.test(src) && /DuplicatePaidAttempt/.test(src),
+     "…while the attempt marker holds even if `limit` means something other than we think");
 }
 
 console.log("\n" + (failures === 0 ? "✔ GENERATION WORKFLOW TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
