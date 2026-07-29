@@ -33,8 +33,16 @@
  *
  * Read-only against the corpus. Writes only its own report files.
  */
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from "fs";
 import "./loadenv.mjs";
+
+// ── RELEVANCE IS TOPIC-SPECIFIC (Codex, 2026-07-28) ─────────────────────────
+// The same paper is legitimately D for one topic, A for another and I for a third: a patiromer trial is
+// directly relevant to hyperkalemia, contextual for HFrEF, irrelevant to DKA. Keying labels on chunk_id
+// alone meant one judgement overwrote the others and the survivor was applied everywhere — including in
+// the recall denominator. EVERY evaluation identity is the PAIR.
+const slug = (t) => String(t).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const pairKey = (topic, chunkId) => `${slug(topic)}::${chunkId}`;
 
 const ARGV = process.argv.slice(2);
 const argVal = (k, d) => { const i = ARGV.indexOf(k); return i >= 0 && ARGV[i + 1] ? ARGV[i + 1] : d; };
@@ -112,26 +120,44 @@ if (!SET) { console.error(`✖ unknown split "${SPLIT}"`); process.exit(1); }
 // report. Looking at held-out early spends the only unbiased check available, and the cost of that is
 // invisible afterwards.
 const SEAL = "rag/runs/HELD_OUT_UNSEALED.txt";
+const DECISION = "rag/runs/SELECTED_STRATEGY.json";
 if (SPLIT === "held_out") {
-  const unsealReason = argVal("--unseal", "");
-  const priorCalibration = (() => {
-    try { return readdirSync("rag/runs").some(f => /^arms-calibration-.*\.json$/.test(f)); }
-    catch { return false; }
+  // A seal that any unlabelled JSON plus arbitrary free text can open is ceremonial. Held-out may only
+  // be opened once calibration has been SCORED and a strategy RECORDED — because held-out confirms a
+  // decision, and a decision has to exist first. (Codex, 2026-07-28)
+  const scored = (() => {
+    try { return readdirSync("rag/runs").filter(f => /^arms-calibration-.*-SCORED\.json$/.test(f)); }
+    catch { return []; }
   })();
-  if (!priorCalibration) {
-    console.error("✖ SEALED: no calibration run exists yet. Choose a strategy on calibration first —");
-    console.error("  held-out confirms a decision, it does not help you make one.");
+  if (!scored.length) {
+    console.error("✖ SEALED: no SCORED calibration artifact exists.");
+    console.error("  Run calibration, label the sheet completely, and score it. An unlabelled run is not");
+    console.error("  a result, and held-out cannot confirm a decision that has not been made.");
     process.exit(5);
   }
-  if (!unsealReason) {
-    console.error("✖ SEALED: --unseal \"<the decision this confirms>\" is required to open held-out.");
-    console.error("  Naming the decision first is what makes this a confirmation rather than a second");
-    console.error("  bite at the calibration apple.");
+  if (!existsSync(DECISION)) {
+    console.error(`✖ SEALED: ${DECISION} is missing.`);
+    console.error("  Scoring writes it with the arm you selected. Recording the choice BEFORE seeing");
+    console.error("  held-out is the whole mechanism — otherwise held-out becomes a second calibration.");
+    process.exit(5);
+  }
+  let decision;
+  try { decision = JSON.parse(readFileSync(DECISION, "utf8")); } catch { decision = null; }
+  const validArms = ARMS.map(a => a.name);
+  if (!decision || !validArms.includes(decision.selected_strategy)) {
+    console.error(`✖ SEALED: ${DECISION} must contain {"selected_strategy": one of ${validArms.join("|")}}`);
+    console.error(`  Found: ${JSON.stringify(decision)}`);
+    process.exit(5);
+  }
+  const unsealReason = argVal("--unseal", "");
+  if (unsealReason !== decision.selected_strategy) {
+    console.error(`✖ SEALED: --unseal must NAME the recorded strategy ("${decision.selected_strategy}").`);
+    console.error("  Free text would let the seal be opened without committing to anything.");
     process.exit(5);
   }
   try { mkdirSync("rag/runs", { recursive: true }); } catch {}
-  writeFileSync(SEAL, `${new Date().toISOString()}  ${unsealReason}\n`, { flag: "a" });
-  console.log(`⚠ HELD-OUT UNSEALED — recorded in ${SEAL}\n  decision under test: ${unsealReason}\n`);
+  writeFileSync(SEAL, `${new Date().toISOString()}  confirming "${decision.selected_strategy}" (from ${decision.from || "?"})\n`, { flag: "a" });
+  console.log(`⚠ HELD-OUT UNSEALED — confirming "${decision.selected_strategy}", recorded in ${SEAL}\n`);
 }
 
 // ══ SCORING MODE ═════════════════════════════════════════════════════════════
@@ -146,11 +172,12 @@ if (SCORE_SHEET) {
   const labels = new Map();
   const malformed = [];
   for (const line of sheet.split("\n")) {
-    const m = line.match(/^\s*\d+\.\s+`([^`]*)`\s+\[#(\d+)\]/);
+    // [#<topic-slug>::<chunk_id>] — the PAIR, because relevance is topic-specific
+    const m = line.match(/^\s*\d+\.\s+`([^`]*)`\s+\[#([a-z0-9-]+::\d+)\]/);
     if (!m) continue;
     const v = m[1].trim().toUpperCase();
-    if (v === "D" || v === "A" || v === "I") labels.set(Number(m[2]), v);
-    else malformed.push({ id: Number(m[2]), got: m[1] });
+    if (v === "D" || v === "A" || v === "I") labels.set(m[2], v);
+    else malformed.push({ key: m[2], got: m[1] });
   }
 
   // ── EVERY candidate must carry a label, or there is no result ──────────────
@@ -160,18 +187,19 @@ if (SCORE_SHEET) {
   // easier question than the one asked.
   const required = new Map();
   for (const t of run.topics) for (const a of ARMS)
-    for (const it of (t.arms[a.name] || {}).items || []) required.set(it.chunk_id, { topic: t.topic, title: it.title });
-  const missing = [...required.keys()].filter(id => !labels.has(id));
+    for (const it of (t.arms[a.name] || {}).items || [])
+      required.set(pairKey(t.topic, it.chunk_id), { topic: t.topic, title: it.title });
+  const missing = [...required.keys()].filter(k => !labels.has(k));
   if (missing.length || malformed.length) {
     console.error(`✖ INCOMPLETE LABELLING — refusing to score.`);
     if (missing.length) {
       console.error(`\n  ${missing.length}/${required.size} candidate(s) have no D/A/I label:`);
-      for (const id of missing.slice(0, 12)) console.error(`    [#${id}] ${required.get(id).topic} — ${required.get(id).title.slice(0, 66)}`);
+      for (const k of missing.slice(0, 12)) console.error(`    [#${k}] ${required.get(k).topic} — ${required.get(k).title.slice(0, 60)}`);
       if (missing.length > 12) console.error(`    …and ${missing.length - 12} more`);
     }
     if (malformed.length) {
       console.error(`\n  ${malformed.length} label(s) are not D, A or I:`);
-      for (const x of malformed.slice(0, 8)) console.error(`    [#${x.id}] got "${x.got}"`);
+      for (const x of malformed.slice(0, 8)) console.error(`    [#${x.key}] got "${x.got}"`);
     }
     console.error(`\n  Partial labelling would compute precision over whatever was easy to judge.`);
     process.exit(7);
@@ -180,14 +208,17 @@ if (SCORE_SHEET) {
 
   const tally = {};
   for (const a of ARMS) tally[a.name] = { p_at_n: [], direct: 0, kept: 0, papers: 0, guidelines: 0 };
+  // Recall denominator is over (topic, source) PAIRS — a paper that is D for hyperkalemia does not make
+  // the same paper a hit for DKA.
   const unionDirect = new Set();
   for (const t of run.topics) for (const a of ARMS)
-    for (const it of (t.arms[a.name] || {}).items || []) if (labels.get(it.chunk_id) === "D") unionDirect.add(it.chunk_id);
+    for (const it of (t.arms[a.name] || {}).items || [])
+      if (labels.get(pairKey(t.topic, it.chunk_id)) === "D") unionDirect.add(pairKey(t.topic, it.chunk_id));
 
   for (const t of run.topics) {
     for (const a of ARMS) {
       const items = (t.arms[a.name] || {}).items || [];
-      const direct = items.filter(it => labels.get(it.chunk_id) === "D").length;
+      const direct = items.filter(it => labels.get(pairKey(t.topic, it.chunk_id)) === "D").length;
       tally[a.name].kept += items.length;
       tally[a.name].direct += direct;
       tally[a.name].papers += items.filter(i => i.kind === "paper").length;
@@ -208,6 +239,31 @@ if (SCORE_SHEET) {
                 String(x.direct).padEnd(8), String(x.kept).padEnd(7),
                 `${x.papers}/${x.guidelines}`.padEnd(9), U ? (x.direct / U).toFixed(3) : "—");
   }
+  // Machine-readable artifacts. The SCORED file is what unseals held-out; the decision file is written
+  // as a STUB with selected_strategy null, so opening held-out requires a human to choose deliberately.
+  const scoredPath = runFile.replace(/\.json$/, "-SCORED.json");
+  writeFileSync(scoredPath, JSON.stringify({
+    from: runFile, when: new Date().toISOString(), split: run.split,
+    labelled_pairs: labels.size, union_direct_pairs: unionDirect.size,
+    arms: Object.fromEntries(ARMS.map(a => {
+      const x = tally[a.name];
+      return [a.name, {
+        precision: x.p_at_n.length ? +(x.p_at_n.reduce((s2, v) => s2 + v, 0) / x.p_at_n.length).toFixed(4) : null,
+        direct: x.direct, kept: x.kept, papers: x.papers, guidelines: x.guidelines,
+        recall: unionDirect.size ? +(x.direct / unionDirect.size).toFixed(4) : null,
+      }];
+    })),
+  }, null, 2) + "\n");
+  if (!existsSync(DECISION)) {
+    writeFileSync(DECISION, JSON.stringify({
+      selected_strategy: null,
+      note: "Set selected_strategy to one of: " + ARMS.map(a => a.name).join(", ") +
+            ". Held-out will not open until this names an arm, and --unseal must repeat it.",
+      from: scoredPath,
+    }, null, 2) + "\n");
+    console.log(`\n-> ${DECISION}  ← record your chosen arm here before opening held-out`);
+  }
+  console.log(`-> ${scoredPath}`);
   console.log("\n  precision@N counts DIRECTLY RELEVANT over labelled items in each arm's kept set.");
   console.log("  recall is against the union of directly-relevant sources ANY arm found — so an arm that");
   console.log("  raises precision by discarding good sources shows it here as lost recall.");
@@ -276,13 +332,18 @@ for (const [topic, specialty, expect] of SET) {
       // share a title, and a title can be reformatted between runs. (Codex, 2026-07-28)
       chunk_id: c.chunk_id,
       kind: c.source === "guideline" ? "guideline" : "paper",
-      title: String(c.title || c.source || "(untitled)").slice(0, 110),
+      title: String(c.title || c.source || "(untitled)"),   // FULL title — not truncated
       pmid: c.pmid || null, doi: c.doi || null,
       publication_type: c.publication_type || null, source: c.source || null,
       source_tier: c.source_tier ?? null,
       // is_landmark_trial is NOT in match_chunks' RETURNS TABLE in the checked-in migration, so it is
       // not reported here. If the deployed function does return it, that is schema drift worth fixing
       // before anyone relies on the field. (Codex, 2026-07-28)
+      journal: c.journal || null, year: c.year ?? null,
+      // The excerpt a physician needs to judge "does this support diagnosis / treatment / mechanism /
+      // prognosis for THIS topic". A 110-character title cannot answer that. Identical wherever the same
+      // (topic, source) pair appears, because it comes from the same stored chunk. (Codex, 2026-07-28)
+      excerpt: String(c.text || "").replace(/\s+/g, " ").trim().slice(0, 420),
       matched_facet: c.matched_query || null,
       facet_score: c.ranked_score ?? null, bare_similarity: c.bare_similarity ?? null,
     }));
@@ -329,10 +390,20 @@ for (const t of report.topics) {
   const items = [...seen.values()];
   for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }
   sheet += `## ${t.topic}\n\n`;
-  // [#id] is how the label finds its way home. Do not edit or reorder those tags.
+  // FULL record per candidate. A truncated title cannot answer "does this support diagnosis, treatment,
+  // mechanism or prognosis for THIS topic" — which is the question being asked. Arm and every score stay
+  // hidden. (Codex, 2026-07-28)
   items.forEach((it, i) => {
-    sheet += `${String(i + 1).padStart(2)}. \`___\`  [#${it.chunk_id}] ${it.title}` +
-             `${it.pmid ? `  (PMID ${it.pmid})` : ""}${it.kind === "guideline" ? "  ·guideline" : ""}\n`;
+    const meta = [
+      it.kind === "guideline" ? "guideline" : (it.publication_type || "type unknown"),
+      [it.journal, it.year].filter(Boolean).join(" "),
+      it.pmid ? `PMID ${it.pmid}` : (it.doi ? `DOI ${it.doi}` : null),
+    ].filter(Boolean).join(" · ");
+    sheet += `${String(i + 1).padStart(2)}. \`___\`  [#${pairKey(t.topic, it.chunk_id)}]\n`;
+    sheet += `    **${it.title}**\n`;
+    sheet += `    ${meta}\n`;
+    if (it.excerpt) sheet += `    > ${it.excerpt}\n`;
+    sheet += `\n`;
   });
   sheet += `\n`;
 }

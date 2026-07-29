@@ -81,19 +81,48 @@ grant execute on function public.score_candidate_chunks(vector(1536), bigint[]) 
 -- APPLYING THIS, TO A SPECIFIC DATABASE
 --
 -- `supabase db push` applies to whatever project is currently linked, which is easy to get wrong and
--- impossible to notice afterwards. Name the target explicitly instead.
+-- impossible to notice afterwards. Name the target explicitly.
 --
---   STAGING (preferred):
---     supabase link --project-ref <STAGING_PROJECT_REF>
---     supabase db push
---     # or, without linking:
---     psql "$STAGING_DATABASE_URL" -f supabase/migrations/add_score_candidate_chunks.sql
+--   psql "$STAGING_DATABASE_URL" \
+--     -v ON_ERROR_STOP=1 \
+--     -f supabase/migrations/add_score_candidate_chunks.sql
 --
---   Confirm it landed on the database you meant:
---     psql "$STAGING_DATABASE_URL" -c "\df+ public.score_candidate_chunks"
+-- ON_ERROR_STOP=1 IS NOT OPTIONAL. Without it psql keeps going after a failed statement and exits 0, so
+-- a migration that errored looks like one that succeeded — and the Worker then falls back on every
+-- rerank request while reporting rerank_applied:false. That is the quiet failure this whole stage has
+-- been trying not to have. (Codex, 2026-07-28)
 --
---   Then point the Worker at that database for the run:
---     SUPABASE_URL=<staging-url> SUPABASE_ANON_KEY=<staging-anon> npx wrangler dev
+-- THEN SMOKE-TEST THE FUNCTION, not its name. `\df+` only proves something with that signature exists;
+-- it does not prove it runs, returns rows, or scores the ids you asked about.
+--
+--   -- 1. it exists with the right signature
+--   psql "$STAGING_DATABASE_URL" -c "\df+ public.score_candidate_chunks"
+--
+--   -- 2. it RUNS and returns one row per requested id, for real ids from this database
+--   psql "$STAGING_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+--     with ids as (
+--       select array_agg(id) as a from (select id from public.document_chunks where embedding is not null limit 3) s
+--     ),
+--     probe as (
+--       select embedding from public.document_chunks where embedding is not null limit 1
+--     )
+--     select count(*) as scored,
+--            min(similarity) as min_sim,
+--            max(similarity) as max_sim
+--     from ids, probe, score_candidate_chunks(probe.embedding, ids.a);
+--   SQL
+--   -- EXPECT scored = 3, and max_sim = 1 (the probe chunk scores 1.0 against itself). A count of 0 means
+--   -- the function installed but matches nothing — which \df+ would have called a success.
+--
+--   -- 3. the cap raises rather than silently truncating
+--   psql "$STAGING_DATABASE_URL" -c \
+--     "select count(*) from score_candidate_chunks(
+--        (select embedding from public.document_chunks where embedding is not null limit 1),
+--        (select array_agg(g) from generate_series(1, 501) g));"
+--   -- EXPECT: ERROR ... candidate_chunk_ids capped at 500, got 501
+--
+-- Then point the Worker at that same database:
+--   SUPABASE_URL=<staging-url> SUPABASE_ANON_KEY=<staging-anon> npx wrangler dev
 --
 -- Applying to PRODUCTION is defensible — nothing calls this unless a request sets rerank:true — but it
 -- should be a decision, not a default that happens because `db push` used the linked project.
