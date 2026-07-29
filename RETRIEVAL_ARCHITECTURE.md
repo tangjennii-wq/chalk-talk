@@ -89,8 +89,29 @@ findings from instrument artifacts.
 3. **Metadata filter.** Prefer guidelines, consensus statements, systematic reviews, primary trials.
    Exclude editorials, letters, protocols, corrections. **Do not auto-exclude non-landmark papers** —
    acute topics depend on them. Columns already exist.
-4. **Keyword index + rank fusion.** Postgres `tsvector` + GIN, fused with the vector rail (RRF).
-   Migration plus a fusion step; no new infrastructure.
+4. **Keyword index + rank fusion — use BM25, not plain TF-IDF** (Jenni, 2026-07-28).
+
+   **Why BM25 specifically, for this corpus.** Two BM25 parameters address the exact pathology measured:
+   - **`k1` — term-frequency saturation.** TF-IDF rewards repetition close to linearly. The DCCT abstract
+     is long and says "diabetes" many times, so under TF-IDF it scores strongly on any diabetes query.
+     BM25 saturates: the fifth mention adds almost nothing over the second.
+   - **`b` — length normalization.** This corpus mixes short guideline summaries with long trial
+     abstracts. TF-IDF lets a long document accumulate score by being long; BM25 corrects for it.
+
+   **Fuse with Reciprocal Rank Fusion, and note WHY it fits here.** RRF combines by RANK, not score.
+   The diagnostic proved scores from different facet queries are not comparable — RRF is immune to that
+   by construction, because it never looks at a score. It also removes the need to normalize a cosine
+   against a BM25 score, which have no shared scale.
+
+   **Caveat to verify before planning around it: Postgres does not ship BM25.** Built-in `ts_rank` and
+   `ts_rank_cd` are TF-IDF-family, not BM25 — no `k1`, no `b`. Real options, in order of preference:
+   1. the `pg_search` / ParadeDB extension (true BM25 in Postgres) — **check whether Supabase permits it
+      on this plan before designing around it**;
+   2. compute BM25 in the Worker over `ts_vector` candidates — full control, modest code;
+   3. `ts_rank_cd` as a first approximation — still adds the missing lexical rail, and still catches
+      "ketoacidosis appears zero times", just without saturation or length correction.
+
+   Option 3 is a legitimate first step: most of the win here is *having* a lexical signal at all.
 5. **Clinical-relevance classifier.** One narrow question — *does this source directly support diagnosis,
    treatment, mechanism, prognosis or a guideline recommendation for this topic?* Returns only
    `relevant` / `possibly relevant` / `irrelevant` plus the facet. Small and safe; it never writes content.
