@@ -148,8 +148,19 @@ ok(!/const WEAK_PUB_TYPES/.test(worker2),
    "…with the old exact-match set deleted, so there is one source of truth rather than two");
 ok(!/is_landmark_trial\s*===?\s*false/.test(worker2.slice(worker2.indexOf("STAGE 2"), worker2.indexOf("STAGE 2") + 2500)),
    "the metadata filter NEVER excludes on is_landmark_trial — acute topics depend on non-landmark papers");
-ok(/PUB_TYPE_RANK/.test(worker2) && /ORDERING preference, never a filter/.test(worker2),
-   "publication type is a tie-break ordering, not a second filter");
+// The real property: pubRank appears ONLY inside a sort comparator, never in a filter/exclusion.
+ok(/PUB_TYPE_RANK/.test(worker2), "publication-type ranking exists as a named table");
+ok(!/filter\([^)]*pubRank/.test(worker2) && !/if\s*\(\s*pubRank/.test(worker2),
+   "…and pubRank is never used to EXCLUDE — it only ever appears in a sort comparator");
+// EXPERIMENTAL ISOLATION: the authority tie-break used to fire whenever EITHER stage was enabled, which
+// made "rerank only" mean "rerank + authority ranking". Four arms exist to attribute a difference to one
+// named stage. (Codex, 2026-07-28)
+ok(/const wantAuthority = body\.authority_tiebreak === true;/.test(worker2),
+   "the authority tie-break is its OWN opt-in flag, strictly === true");
+ok(!/if \(metadataFilterApplied \|\| rerankApplied\)/.test(worker2),
+   "…it no longer rides along whenever either stage is on — that confounded two of the four arms");
+ok(/authority_tiebreak_applied: !!merged\._authorityApplied/.test(worker2),
+   "…and is reported from what actually ran, like the other two stages");
 ok(/dropped_by_metadata: merged\._dropped/.test(worker2),
    "every exclusion is returned with its reason — a silent filter is indistinguishable from an empty corpus");
 

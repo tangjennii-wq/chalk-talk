@@ -675,18 +675,29 @@ async function handleRetrieve(request, env, origin) {
       metadataFilterApplied = true;
     }
 
-    // Stable tie-break on publication type: a guideline outranks an "other" at equal relevance. This is
-    // an ORDERING preference, never a filter — nothing is dropped for ranking low here.
-    if (metadataFilterApplied || rerankApplied) {
+    // ── AUTHORITY TIE-BREAK — ITS OWN FLAG, default OFF (Codex, 2026-07-28) ───────────────────
+    // This used to fire whenever EITHER rerank or metadata filtering was on, which quietly made
+    // "rerank only" mean "rerank + authority ranking" and "metadata only" mean "filter + authority
+    // ranking". Four arms exist to attribute a difference to ONE named stage; a hidden third
+    // intervention riding along in two of them defeats the entire design.
+    //
+    // It is a third intervention on its own terms — a guideline outranking an "other" at equal
+    // relevance is a real ranking opinion, not a formatting detail — so it gets a real flag and can be
+    // measured as its own arm when someone wants to know whether it helps.
+    const wantAuthority = body.authority_tiebreak === true;
+    let authorityApplied = false;
+    if (wantAuthority && union.length) {
       const primary = rerankApplied
         ? (x) => (x.bare_similarity == null ? -1 : x.bare_similarity)
         : (x) => (x.ranked_score || 0);
       union.sort((a, b) => (primary(b) - primary(a)) || (pubRank(a.publication_type) - pubRank(b.publication_type)));
+      authorityApplied = true;
     }
 
     merged = union.slice(0, matchCount);
     merged._rerankApplied = rerankApplied;
     merged._metadataFilterApplied = metadataFilterApplied;
+    merged._authorityApplied = authorityApplied;
     merged._dropped = dropped;
   } catch (err) {
     return jsonError(502, "retrieval_failed", "Failed to retrieve chunks: " + err.message, origin);
@@ -699,6 +710,8 @@ async function handleRetrieve(request, env, origin) {
                                                // must not be reported as one that ran
     metadata_filter_requested: body.metadata_filter === true,
     metadata_filter_applied: !!merged._metadataFilterApplied,
+    authority_tiebreak_requested: body.authority_tiebreak === true,
+    authority_tiebreak_applied: !!merged._authorityApplied,
     // Every exclusion is reported with its reason. A filter that quietly removes sources is
     // indistinguishable from a corpus that never had them. (2026-07-28)
     dropped_by_metadata: merged._dropped || [],

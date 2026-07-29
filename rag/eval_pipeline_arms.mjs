@@ -58,6 +58,9 @@ const MAX_PAPERS = parseInt(argVal("--papers", "8"), 10);
 const MAX_GUIDELINES = parseInt(argVal("--guidelines", "4"), 10);
 const TOP_N = MAX_PAPERS + MAX_GUIDELINES;
 const SCORE_SHEET = argVal("--score", "");
+// A short excerpt forces guesses, and a complete sheet of guesses is worse than an incomplete one — it
+// looks like data. Default generous; --excerpt raises it further. (Codex, 2026-07-28)
+const EXCERPT_CHARS = parseInt(argVal("--excerpt", "1200"), 10);
 
 if (!WORKER && !SCORE_SHEET) {
   console.error("✖ --worker <url> is required. Use a LOCAL worker (`npx wrangler dev`) or a dedicated");
@@ -104,11 +107,15 @@ const facets = (t) => [
 ];
 const MATCH_COUNT = 24;   // production value
 
+// EVERY arm asserts authority_tiebreak_applied === false. It used to fire whenever either stage was on,
+// so "rerank only" silently meant "rerank + authority ranking". It is a separate flag now, and this
+// experiment holds it OFF in all four arms so a difference is attributable to ONE named stage.
+// (Codex, 2026-07-28)
 const ARMS = [
-  { name: "baseline", body: {},                                          expect: { rerank_applied: false, metadata_filter_applied: false } },
-  { name: "rerank",   body: { rerank: true },                            expect: { rerank_applied: true } },
-  { name: "metadata", body: { metadata_filter: true },                   expect: { metadata_filter_applied: true } },
-  { name: "both",     body: { rerank: true, metadata_filter: true },     expect: { rerank_applied: true, metadata_filter_applied: true } },
+  { name: "baseline", body: {},                                      expect: { rerank_applied: false, metadata_filter_applied: false, authority_tiebreak_applied: false } },
+  { name: "rerank",   body: { rerank: true },                        expect: { rerank_applied: true,  metadata_filter_applied: false, authority_tiebreak_applied: false } },
+  { name: "metadata", body: { metadata_filter: true },               expect: { rerank_applied: false, metadata_filter_applied: true,  authority_tiebreak_applied: false } },
+  { name: "both",     body: { rerank: true, metadata_filter: true }, expect: { rerank_applied: true,  metadata_filter_applied: true,  authority_tiebreak_applied: false } },
 ];
 
 const SET = LABELED[SPLIT];
@@ -147,6 +154,16 @@ if (SPLIT === "held_out") {
   if (!decision || !validArms.includes(decision.selected_strategy)) {
     console.error(`✖ SEALED: ${DECISION} must contain {"selected_strategy": one of ${validArms.join("|")}}`);
     console.error(`  Found: ${JSON.stringify(decision)}`);
+    process.exit(5);
+  }
+  // The decision must be traceable to a scored artifact that EXISTS. Otherwise a stale or unrelated
+  // SCORED file left in rag/runs unlocks held-out for a decision it never informed. (Codex, 2026-07-28)
+  const fromBase = String(decision.from || "").split("/").pop();
+  if (!decision.from || !scored.includes(fromBase)) {
+    console.error(`✖ SEALED: ${DECISION}.from must name a scored calibration artifact that exists.`);
+    console.error(`  from      : ${decision.from || "(absent)"}`);
+    console.error(`  available : ${scored.length ? scored.join(", ") : "(none)"}`);
+    console.error("  Without this link, a stale SCORED file unlocks held-out for a decision it never informed.");
     process.exit(5);
   }
   const unsealReason = argVal("--unseal", "");
@@ -301,7 +318,7 @@ for (const [topic, specialty, expect] of SET) {
     catch (e) { console.log(`\n✖ ${a.name}: ${e.message}`); process.exit(2); }
 
     // ── PROVE the Worker actually has these stages ──────────────────────────
-    if (!("rerank_applied" in r) || !("metadata_filter_applied" in r)) {
+    if (!("rerank_applied" in r) || !("metadata_filter_applied" in r) || !("authority_tiebreak_applied" in r)) {
       console.log("");
       console.error("✖ ABORTING: the response has no rerank_applied / metadata_filter_applied fields.");
       console.error("  This Worker predates the pipeline stages — you are almost certainly pointed at the");
@@ -343,7 +360,7 @@ for (const [topic, specialty, expect] of SET) {
       // The excerpt a physician needs to judge "does this support diagnosis / treatment / mechanism /
       // prognosis for THIS topic". A 110-character title cannot answer that. Identical wherever the same
       // (topic, source) pair appears, because it comes from the same stored chunk. (Codex, 2026-07-28)
-      excerpt: String(c.text || "").replace(/\s+/g, " ").trim().slice(0, 420),
+      excerpt: String(c.text || "").replace(/\s+/g, " ").trim().slice(0, EXCERPT_CHARS),
       matched_facet: c.matched_query || null,
       facet_score: c.ranked_score ?? null, bare_similarity: c.bare_similarity ?? null,
     }));
@@ -380,8 +397,11 @@ sheet += `- **A** adjacent/contextual — same disease area, does not address th
 sheet += `- **I** irrelevant\n\n`;
 sheet += `Replace each \`___\` with D, A or I. **Every line must be labelled** — scoring refuses a\n`;
 sheet += `partial sheet, because the unlabelled items would be the hard ones and precision over "whatever\n`;
-sheet += `was easy to judge" is not a result. The \`[#id]\` tags are how labels find their source: do not\n`;
-sheet += `edit or reorder them.\n\nThen:\n\n`;
+sheet += `was easy to judge" is not a result.\n\n`;
+sheet += `**Do not guess.** A complete sheet of guesses is worse than an incomplete one, because it looks\n`;
+sheet += `like data. Where the excerpt below is not enough to decide, open the PMID/DOI and read the\n`;
+sheet += `abstract. That is slower and it is the point — every label should rest on evidence.\n\n`;
+sheet += `The \`[#topic::id]\` tags are how labels find their source. Do not edit or reorder them.\n\nThen:\n\n`;
 sheet += `    node rag/eval_pipeline_arms.mjs --score ${out.replace(/\.json$/, "-LABELS.md")}\n\n---\n\n`;
 for (const t of report.topics) {
   // dedupe by chunk_id — stable, unlike a title
