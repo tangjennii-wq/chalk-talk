@@ -41,7 +41,14 @@ const argVal = (k, d) => { const i = ARGV.indexOf(k); return i >= 0 && ARGV[i + 
 const DRY = ARGV.includes("--dry");
 const WORKER = argVal("--worker", "");
 const SPLIT = argVal("--split", "calibration");
-const TOP_N = parseInt(argVal("--top", "8"), 10);
+// PRODUCTION SELECTION, read off index.html retrieveRAG (Codex, 2026-07-28):
+//   var glChunks = chunks.filter(c => c.source === "guideline").slice(0, 4);
+//   chunks      = chunks.filter(c => c.source !== "guideline").slice(0, MAX_KEEP /* 8 */);
+// SEPARATE caps, so guidelines cannot crowd out literature or vice versa. Grading a generic top-8 would
+// have measured a selection the app never makes.
+const MAX_PAPERS = parseInt(argVal("--papers", "8"), 10);
+const MAX_GUIDELINES = parseInt(argVal("--guidelines", "4"), 10);
+const TOP_N = MAX_PAPERS + MAX_GUIDELINES;
 const SCORE_SHEET = argVal("--score", "");
 
 if (!WORKER && !SCORE_SHEET) {
@@ -99,59 +106,107 @@ const ARMS = [
 const SET = LABELED[SPLIT];
 if (!SET) { console.error(`✖ unknown split "${SPLIT}"`); process.exit(1); }
 
+// ── HELD-OUT LOCK, enforced rather than requested (Codex, 2026-07-28) ────────
+// A comment saying "keep held_out sealed" is not a seal. Running held_out requires a calibration run to
+// exist AND an explicit --unseal flag naming the decision it is confirming, which is recorded in the
+// report. Looking at held-out early spends the only unbiased check available, and the cost of that is
+// invisible afterwards.
+const SEAL = "rag/runs/HELD_OUT_UNSEALED.txt";
+if (SPLIT === "held_out") {
+  const unsealReason = argVal("--unseal", "");
+  const priorCalibration = (() => {
+    try { return readdirSync("rag/runs").some(f => /^arms-calibration-.*\.json$/.test(f)); }
+    catch { return false; }
+  })();
+  if (!priorCalibration) {
+    console.error("✖ SEALED: no calibration run exists yet. Choose a strategy on calibration first —");
+    console.error("  held-out confirms a decision, it does not help you make one.");
+    process.exit(5);
+  }
+  if (!unsealReason) {
+    console.error("✖ SEALED: --unseal \"<the decision this confirms>\" is required to open held-out.");
+    console.error("  Naming the decision first is what makes this a confirmation rather than a second");
+    console.error("  bite at the calibration apple.");
+    process.exit(5);
+  }
+  try { mkdirSync("rag/runs", { recursive: true }); } catch {}
+  writeFileSync(SEAL, `${new Date().toISOString()}  ${unsealReason}\n`, { flag: "a" });
+  console.log(`⚠ HELD-OUT UNSEALED — recorded in ${SEAL}\n  decision under test: ${unsealReason}\n`);
+}
+
 // ══ SCORING MODE ═════════════════════════════════════════════════════════════
 if (SCORE_SHEET) {
   const sheet = readFileSync(SCORE_SHEET, "utf8");
   const runFile = SCORE_SHEET.replace(/-LABELS(-FILLED)?\.md$/, ".json");
   const run = JSON.parse(readFileSync(runFile, "utf8"));
 
-  // labels: lines like "12. `D`  Some title"
+  // LABELS KEY ON chunk_id, NOT TITLE. Two chunks can share a title, and a title can be reformatted
+  // between runs — either way a title-keyed label lands on the wrong source, silently. The sheet carries
+  // the id in a [#id] tag. (Codex, 2026-07-28)
   const labels = new Map();
-  let topic = null;
+  const malformed = [];
   for (const line of sheet.split("\n")) {
-    const h = line.match(/^##\s+(.+)$/); if (h) { topic = h[1].trim(); continue; }
-    const m = line.match(/^\s*\d+\.\s+`([DAI_ ]*)`\s+(.+?)(?:\s+\(PMID.*)?$/);
-    if (m && topic) {
-      const v = m[1].trim().toUpperCase();
-      if (v === "D" || v === "A" || v === "I") labels.set(topic + "||" + m[2].trim(), v);
-    }
+    const m = line.match(/^\s*\d+\.\s+`([^`]*)`\s+\[#(\d+)\]/);
+    if (!m) continue;
+    const v = m[1].trim().toUpperCase();
+    if (v === "D" || v === "A" || v === "I") labels.set(Number(m[2]), v);
+    else malformed.push({ id: Number(m[2]), got: m[1] });
   }
-  if (!labels.size) { console.error("✖ no labels found — fill the ___ slots with D, A or I"); process.exit(1); }
-  console.log(`Loaded ${labels.size} labels from ${SCORE_SHEET}\n`);
+
+  // ── EVERY candidate must carry a label, or there is no result ──────────────
+  // Scoring a partially-labelled sheet silently computes precision over whichever subset happened to be
+  // filled in, and the missing items are not missing at random — they are the ones that were hard to
+  // judge. That is the same shape as every instrument failure on this project: a number that answers an
+  // easier question than the one asked.
+  const required = new Map();
+  for (const t of run.topics) for (const a of ARMS)
+    for (const it of (t.arms[a.name] || {}).items || []) required.set(it.chunk_id, { topic: t.topic, title: it.title });
+  const missing = [...required.keys()].filter(id => !labels.has(id));
+  if (missing.length || malformed.length) {
+    console.error(`✖ INCOMPLETE LABELLING — refusing to score.`);
+    if (missing.length) {
+      console.error(`\n  ${missing.length}/${required.size} candidate(s) have no D/A/I label:`);
+      for (const id of missing.slice(0, 12)) console.error(`    [#${id}] ${required.get(id).topic} — ${required.get(id).title.slice(0, 66)}`);
+      if (missing.length > 12) console.error(`    …and ${missing.length - 12} more`);
+    }
+    if (malformed.length) {
+      console.error(`\n  ${malformed.length} label(s) are not D, A or I:`);
+      for (const x of malformed.slice(0, 8)) console.error(`    [#${x.id}] got "${x.got}"`);
+    }
+    console.error(`\n  Partial labelling would compute precision over whatever was easy to judge.`);
+    process.exit(7);
+  }
+  console.log(`Loaded ${labels.size} labels — every candidate is labelled.\n`);
 
   const tally = {};
-  for (const a of ARMS) tally[a.name] = { p_at_n: [], direct: 0, kept: 0, unlabelled: 0 };
-  let unionDirect = 0;
+  for (const a of ARMS) tally[a.name] = { p_at_n: [], direct: 0, kept: 0, papers: 0, guidelines: 0 };
+  const unionDirect = new Set();
+  for (const t of run.topics) for (const a of ARMS)
+    for (const it of (t.arms[a.name] || {}).items || []) if (labels.get(it.chunk_id) === "D") unionDirect.add(it.chunk_id);
 
   for (const t of run.topics) {
-    const seen = new Set();
     for (const a of ARMS) {
       const items = (t.arms[a.name] || {}).items || [];
-      let direct = 0, labelled = 0;
-      for (const it of items) {
-        const L = labels.get(t.topic + "||" + it.title);
-        if (!L) { tally[a.name].unlabelled++; continue; }
-        labelled++;
-        if (L === "D") direct++;
-        if (!seen.has(it.title)) { seen.add(it.title); if (L === "D") unionDirect++; }
-      }
+      const direct = items.filter(it => labels.get(it.chunk_id) === "D").length;
       tally[a.name].kept += items.length;
       tally[a.name].direct += direct;
-      if (labelled) tally[a.name].p_at_n.push(direct / labelled);
+      tally[a.name].papers += items.filter(i => i.kind === "paper").length;
+      tally[a.name].guidelines += items.filter(i => i.kind === "guideline").length;
+      if (items.length) tally[a.name].p_at_n.push(direct / items.length);
     }
   }
 
   console.log("═".repeat(78));
   console.log(`RESULT · ${run.split} split · top-${run.top_n} · ${run.topics.length} topics`);
   console.log("═".repeat(78));
-  console.log("arm".padEnd(12), "precision@N".padEnd(14), "direct".padEnd(9), "kept".padEnd(7), "recall vs union");
+  console.log("arm".padEnd(11), "precision".padEnd(11), "direct".padEnd(8), "kept".padEnd(7), "pap/gl".padEnd(9), "recall");
+  const U = unionDirect.size;
   for (const a of ARMS) {
     const x = tally[a.name];
     const p = x.p_at_n.length ? (x.p_at_n.reduce((s, v) => s + v, 0) / x.p_at_n.length) : NaN;
-    const recall = unionDirect ? (x.direct / unionDirect) : NaN;
-    console.log(a.name.padEnd(12), (isNaN(p) ? "—" : p.toFixed(3)).padEnd(14),
-                String(x.direct).padEnd(9), String(x.kept).padEnd(7), isNaN(recall) ? "—" : recall.toFixed(3));
-    if (x.unlabelled) console.log(`  ⚠ ${x.unlabelled} item(s) had no label — precision is over the LABELLED subset only`);
+    console.log(a.name.padEnd(11), (isNaN(p) ? "—" : p.toFixed(3)).padEnd(11),
+                String(x.direct).padEnd(8), String(x.kept).padEnd(7),
+                `${x.papers}/${x.guidelines}`.padEnd(9), U ? (x.direct / U).toFixed(3) : "—");
   }
   console.log("\n  precision@N counts DIRECTLY RELEVANT over labelled items in each arm's kept set.");
   console.log("  recall is against the union of directly-relevant sources ANY arm found — so an arm that");
@@ -162,7 +217,7 @@ if (SCORE_SHEET) {
 
 // ══ MEASUREMENT MODE ═════════════════════════════════════════════════════════
 console.log(`Worker : ${WORKER}`);
-console.log(`Split  : ${SPLIT} (${SET.length} topics) · top-${TOP_N} · ${ARMS.length} arms\n`);
+console.log(`Split  : ${SPLIT} (${SET.length} topics) · ${MAX_PAPERS} papers + ${MAX_GUIDELINES} guidelines (production split) · ${ARMS.length} arms\n`);
 if (DRY) {
   for (const [t, s, e] of SET) console.log(`  ${e.padEnd(8)} ${s.padEnd(14)} ${t}`);
   console.log("\n✔ DRY RUN — nothing sent. Re-run without --dry.");
@@ -212,14 +267,31 @@ for (const [topic, specialty, expect] of SET) {
       }
     }
 
-    const items = (r.chunks || []).slice(0, TOP_N).map(c => ({
+    // Apply production's SPLIT selection, not a generic top-N.
+    const all = r.chunks || [];
+    const guidelines = all.filter(c => c.source === "guideline").slice(0, MAX_GUIDELINES);
+    const papers     = all.filter(c => c.source !== "guideline").slice(0, MAX_PAPERS);
+    const items = [...papers, ...guidelines].map(c => ({
+      // STABLE ID. Deduplication and label restoration key on chunk_id, never on title — two chunks can
+      // share a title, and a title can be reformatted between runs. (Codex, 2026-07-28)
+      chunk_id: c.chunk_id,
+      kind: c.source === "guideline" ? "guideline" : "paper",
       title: String(c.title || c.source || "(untitled)").slice(0, 110),
       pmid: c.pmid || null, doi: c.doi || null,
       publication_type: c.publication_type || null, source: c.source || null,
-      source_tier: c.source_tier ?? null, is_landmark_trial: !!c.is_landmark_trial,
+      source_tier: c.source_tier ?? null,
+      // is_landmark_trial is NOT in match_chunks' RETURNS TABLE in the checked-in migration, so it is
+      // not reported here. If the deployed function does return it, that is schema drift worth fixing
+      // before anyone relies on the field. (Codex, 2026-07-28)
       matched_facet: c.matched_query || null,
       facet_score: c.ranked_score ?? null, bare_similarity: c.bare_similarity ?? null,
     }));
+    if (items.some(i => i.chunk_id == null)) {
+      console.log("");
+      console.error("✖ ABORTING: a returned chunk has no chunk_id. Dedup and label restoration depend on");
+      console.error("  stable ids; falling back to titles is how labels get attached to the wrong source.");
+      process.exit(6);
+    }
     arms[a.name] = {
       kept: items.length, items,
       rerank_applied: r.rerank_applied, metadata_filter_applied: r.metadata_filter_applied,
@@ -245,15 +317,23 @@ sheet += `- **D** directly relevant — supports diagnosis, treatment, mechanism
 sheet += `  recommendation **for this topic**. Only D counts as topic grounding.\n`;
 sheet += `- **A** adjacent/contextual — same disease area, does not address this topic\n`;
 sheet += `- **I** irrelevant\n\n`;
-sheet += `Replace each \`___\` with D, A or I, then:\n\n`;
+sheet += `Replace each \`___\` with D, A or I. **Every line must be labelled** — scoring refuses a\n`;
+sheet += `partial sheet, because the unlabelled items would be the hard ones and precision over "whatever\n`;
+sheet += `was easy to judge" is not a result. The \`[#id]\` tags are how labels find their source: do not\n`;
+sheet += `edit or reorder them.\n\nThen:\n\n`;
 sheet += `    node rag/eval_pipeline_arms.mjs --score ${out.replace(/\.json$/, "-LABELS.md")}\n\n---\n\n`;
 for (const t of report.topics) {
+  // dedupe by chunk_id — stable, unlike a title
   const seen = new Map();
-  for (const a of ARMS) for (const it of t.arms[a.name].items) if (!seen.has(it.title)) seen.set(it.title, it);
+  for (const a of ARMS) for (const it of t.arms[a.name].items) if (!seen.has(it.chunk_id)) seen.set(it.chunk_id, it);
   const items = [...seen.values()];
   for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }
   sheet += `## ${t.topic}\n\n`;
-  items.forEach((it, i) => { sheet += `${String(i + 1).padStart(2)}. \`___\`  ${it.title}${it.pmid ? `  (PMID ${it.pmid})` : ""}\n`; });
+  // [#id] is how the label finds its way home. Do not edit or reorder those tags.
+  items.forEach((it, i) => {
+    sheet += `${String(i + 1).padStart(2)}. \`___\`  [#${it.chunk_id}] ${it.title}` +
+             `${it.pmid ? `  (PMID ${it.pmid})` : ""}${it.kind === "guideline" ? "  ·guideline" : ""}\n`;
+  });
   sheet += `\n`;
 }
 const sheetPath = out.replace(/\.json$/, "-LABELS.md");

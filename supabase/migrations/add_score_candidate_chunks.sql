@@ -41,15 +41,30 @@ returns table (
   chunk_id bigint,
   similarity float
 )
-language sql
+language plpgsql
 stable
 as $$
-  select
-    c.id as chunk_id,
-    1 - (c.embedding <=> query_embedding) as similarity
-  from public.document_chunks c
-  where c.id = any(candidate_chunk_ids)
-    and c.embedding is not null;
+begin
+  -- BOUND THE INPUT. This function is callable with the ANON key (the Worker uses it), so an unbounded
+  -- id array is a cheap way for anyone to make the database do arbitrary work. The Worker never sends
+  -- more than a facet union — 5 facets x 24 = 120 before dedupe — so 500 is generous and still finite.
+  -- (Codex, 2026-07-28)
+  if candidate_chunk_ids is null or array_length(candidate_chunk_ids, 1) is null then
+    return;                                   -- empty input, empty result; not an error
+  end if;
+  if array_length(candidate_chunk_ids, 1) > 500 then
+    raise exception 'score_candidate_chunks: candidate_chunk_ids capped at 500, got %',
+      array_length(candidate_chunk_ids, 1);
+  end if;
+
+  return query
+    select
+      c.id as chunk_id,
+      1 - (c.embedding <=> query_embedding) as similarity
+    from public.document_chunks c
+    where c.id = any(candidate_chunk_ids)
+      and c.embedding is not null;
+end;
 $$;
 
 comment on function public.score_candidate_chunks is
@@ -60,3 +75,25 @@ comment on function public.score_candidate_chunks is
 grant execute on function public.score_candidate_chunks(vector(1536), bigint[]) to service_role;
 grant execute on function public.score_candidate_chunks(vector(1536), bigint[]) to authenticated;
 grant execute on function public.score_candidate_chunks(vector(1536), bigint[]) to anon;
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- APPLYING THIS, TO A SPECIFIC DATABASE
+--
+-- `supabase db push` applies to whatever project is currently linked, which is easy to get wrong and
+-- impossible to notice afterwards. Name the target explicitly instead.
+--
+--   STAGING (preferred):
+--     supabase link --project-ref <STAGING_PROJECT_REF>
+--     supabase db push
+--     # or, without linking:
+--     psql "$STAGING_DATABASE_URL" -f supabase/migrations/add_score_candidate_chunks.sql
+--
+--   Confirm it landed on the database you meant:
+--     psql "$STAGING_DATABASE_URL" -c "\df+ public.score_candidate_chunks"
+--
+--   Then point the Worker at that database for the run:
+--     SUPABASE_URL=<staging-url> SUPABASE_ANON_KEY=<staging-anon> npx wrangler dev
+--
+-- Applying to PRODUCTION is defensible — nothing calls this unless a request sets rerank:true — but it
+-- should be a decision, not a default that happens because `db push` used the linked project.
