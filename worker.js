@@ -709,9 +709,19 @@ async function handleRetrieve(request, env, origin) {
     const wantAuthority = body.authority_tiebreak === true;
     let authorityApplied = false;
     if (wantAuthority && union.length) {
+      // PRIMARY KEY MUST BE THE SCORE THE ARM ACTUALLY RANKS BY (Codex, 2026-07-29).
+      // This read bare_similarity in the reranked path, which is the same confound as the main sort:
+      // enabling a "tie-break" would have re-sorted the whole union by raw cosine and discarded the
+      // authority boosts, rather than merely ordering candidates whose scores are equal. It was never
+      // enabled — all four calibration arms hold it OFF — so it corrupted no measurement. It was a
+      // latent one, waiting for whoever turned the flag on and got a silently different ranking policy.
+      //
+      // pubRank is a TIE-BREAK, so it may only speak when the primary scores are equal.
       const primary = rerankApplied
-        ? (x) => (x.bare_similarity == null ? -1 : x.bare_similarity)
+        ? (x) => (x.bare_ranked_score == null ? -Infinity : x.bare_ranked_score)
         : (x) => (x.ranked_score || 0);
+      // Exact float equality is the right test here: a tie means the same number, and treating
+      // near-misses as ties would let pubRank quietly outrank a genuine score difference.
       union.sort((a, b) => (primary(b) - primary(a)) || (pubRank(a.publication_type) - pubRank(b.publication_type)));
       authorityApplied = true;
     }

@@ -45,6 +45,30 @@ const mcChunkId = (mc.match(/chunk_id\s+(\w+)/) || [])[1];
 ok((mcChunkId || "").toLowerCase() === ID_SQL_TYPE,
    `canonical match_chunks returns chunk_id ${mcChunkId} — agrees with document_chunks.id`);
 
+// ── ONLY ONE match_chunks MAY SURVIVE A FRESH BUILD (Codex, 2026-07-29) ───────
+// CREATE OR REPLACE replaces a function with the SAME argument list. The bootstrap creates a
+// six-argument match_chunks and the canonical file declares ten, so on a fresh database "replace" would
+// create a SECOND OVERLOAD rather than supersede it. The Worker then calls the RPC by name with six
+// named arguments, both candidates match (the ten-argument version defaults the other four), and
+// resolution is ambiguous — retrieval either applies the landmark / elite-journal / RCR boosts or
+// silently does not, with an identical-looking response either way.
+//
+// Production is clean (verified 2026-07-29: one overload). This is a REPRODUCIBILITY defect, which is
+// precisely what committing a canonical definition was supposed to fix.
+const bootstrapArgs = (base.match(/create or replace function public\.match_chunks\(([\s\S]*?)\)\s*returns/i)?.[1] || "")
+  .split(",").filter(s => s.trim()).length;
+ok(bootstrapArgs === 6, `the bootstrap declares a ${bootstrapArgs}-argument match_chunks`);
+ok(/drop function if exists public\.match_chunks\(vector\(1536\), int, float, int, text\[\], float\)\s*;/i.test(canonical),
+   "canonical DROPS the obsolete six-argument signature before creating the ten-argument one");
+ok(/drop function if exists public\.match_chunks\(vector\(1536\), int, float, int, text\[\], float, float, float, smallint, float\)/i.test(canonical),
+   "…and drops its OWN signature too, so re-applying the file is idempotent rather than additive");
+const canonGrants = [...canonical.matchAll(/grant execute on function public\.match_chunks\(([^)]*\([^)]*\)[^)]*)\)\s+to\s+(\w+)/gi)];
+ok(canonGrants.length >= 3,
+   `canonical re-issues grants after the DROP (found ${canonGrants.length}) — DROP discards the ACL`);
+for (const role of ["anon", "authenticated", "service_role"]) {
+  ok(canonGrants.some(g => g[2] === role), `…including ${role}, matching production's ACL`);
+}
+
 // The stale bootstrap definition must stay labeled as stale, so nobody reads it for ranking behaviour.
 ok(/SUPERSEDED/.test(base.slice(0, base.indexOf("create or replace function public.match_chunks"))
      .split("\n").slice(-14).join("\n")),

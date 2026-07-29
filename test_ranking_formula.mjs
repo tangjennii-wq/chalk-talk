@@ -11,15 +11,20 @@
 // from spending ~130 physician judgments measuring a difference that could not be attributed to either
 // stage. Nothing in the flags would have looked wrong — rerank_applied would have said true.
 //
-// WHAT THIS ASSERTS. Not that the code "looks right": that the ranking EXPRESSION and the DEFAULT WEIGHTS
-// in score_candidate_chunks are token-for-token the ones in canonical match_chunks. If someone tunes a
-// boost in one file and not the other, the confound returns silently and every flag still reports
-// success. This makes that a red suite instead.
+// WHAT THIS ASSERTS, STATED NARROWLY (corrected 2026-07-29 — the first version of this header overclaimed).
+// It extracts the COMPLETE ranked_score expression from each .sql file, normalizes whitespace, and
+// requires the two strings to be equal. It also requires the four boost DEFAULTS to be equal.
 //
-// WHY IT PARSES SQL TEXT. No JS test can catch this — the divergence lives in two .sql files that never
-// execute in this process. Comparing them as text is crude and it is the only thing that actually binds
-// them. The live database is checked separately by smoke test 3 in the migration header, which runs both
-// functions on one embedding and asserts the scores agree to 1e-9.
+// WHAT IT DOES NOT PROVE. That either file matches the DEPLOYED function. Both could be edited into
+// agreement with each other and disagree with the database. An earlier draft checked only that four
+// expected terms appeared in both files, and claimed "token-for-token" — under that check an extra term,
+// a duplicated term, or a flipped sign outside the four regexes would have passed while the header said
+// otherwise. That is the same species of defect this suite exists to catch, so it is worth naming.
+//
+// THE DECISIVE CHECK IS AGAINST THE LIVE DATABASE, not this file: smoke test 3 in the migration header
+// runs match_chunks and score_candidate_chunks on the same embedding and requires the ranked_scores to
+// agree to 1e-9. Verified 2026-07-29 over 25 chunks, worst delta 0.000000000000. This suite is the cheap
+// guard that runs on every commit; that one is the guard that is actually authoritative.
 import { readFileSync } from "fs";
 
 let failures = 0;
@@ -49,6 +54,40 @@ for (const [name, re] of TERMS) {
   ok(re.test(cCode), `canonical match_chunks contains the ${name} term`);
   ok(re.test(sCode), `score_candidate_chunks contains the SAME ${name} term`);
 }
+
+// ── 1b. THE WHOLE EXPRESSION, not just the terms we thought to look for ───────
+// Presence checks are open-ended: an EXTRA term, a DUPLICATED term, a flipped sign or a restructured
+// expression all satisfy "contains the four terms" while changing the ranking. Extract the complete
+// ranked_score expression from each file and require string equality after whitespace normalization.
+const rankedExpr = (sql) => {
+  const c = code(sql);
+  const end = c.indexOf("as ranked_score");
+  if (end < 0) return null;
+  const start = c.lastIndexOf("(1 - (c.embedding", end);
+  if (start < 0 || start > end) return null;
+  return norm(c.slice(start, end));
+};
+const cExpr = rankedExpr(canonical), sExpr = rankedExpr(scorer);
+ok(!!cExpr, "extracted the complete ranked_score expression from canonical match_chunks");
+ok(!!sExpr, "extracted the complete ranked_score expression from score_candidate_chunks");
+ok(!!cExpr && cExpr === sExpr,
+   "the COMPLETE ranked_score expressions are identical — not merely both containing the expected terms");
+if (cExpr && sExpr && cExpr !== sExpr) {
+  console.log("    canonical: " + cExpr);
+  console.log("    scorer   : " + sExpr);
+}
+// Exactly four additive boost terms. Guards the specific case string equality would miss only if BOTH
+// files were changed together — a duplicated term added to each.
+// Count only the top-level additions that OPEN a boost term (`+ (` or `+ least(`). A naive count of "+"
+// reads 5, because ln(1 + d.rcr) contains one inside the RCR term — caught by this test failing.
+const plusCount = (s) => (s.match(/\+\s*(\(|least\()/g) || []).length;
+ok(cExpr !== null && plusCount(cExpr) === 4,
+   `canonical ranked_score adds exactly 4 boost terms (found ${cExpr === null ? "n/a" : plusCount(cExpr)})`);
+ok(sExpr !== null && plusCount(sExpr) === 4,
+   `scorer ranked_score adds exactly 4 boost terms (found ${sExpr === null ? "n/a" : plusCount(sExpr)})`);
+// No subtraction: every boost is additive, so a minus in this expression is a sign error.
+ok(cExpr !== null && !/\s-\s(?!\(?\s*\()/.test(cExpr.replace(/\(1 - \(c\.embedding <=> query_embedding\)\)/g, "").replace(/\(4 - d\.source_tier\)/g, "")),
+   "no stray subtraction in the canonical boost chain — every boost term is additive");
 
 // ── 2. the similarity term is identical in form ───────────────────────────────
 const SIM = /\(\s*1\s*-\s*\(\s*c\.embedding\s*<=>\s*query_embedding\s*\)\s*\)/;
@@ -90,6 +129,21 @@ ok(sortLine.every(s => s.includes("bare_ranked_score")),
    "the rerank sorts on bare_ranked_score — sorting on bare_similarity is the confound");
 ok(/bare_ranked_score == null/.test(worker),
    "worker throws or guards when ranked_score is missing, rather than ranking on nulls");
+
+// ── 6b. authority_tiebreak must TIE-BREAK, not re-sort (Codex, 2026-07-29) ────
+// Its primary comparator read bare_similarity in the reranked path — so enabling the "tie-break" would
+// have re-sorted the whole union by raw cosine and discarded the authority boosts, exactly the confound
+// fixed in the main sort. It was never enabled, so it corrupted no measurement; it was latent, waiting
+// for whoever turned the flag on. pubRank may only speak when the primary scores are equal.
+const authBlock = worker.slice(worker.indexOf("const wantAuthority"),
+                               worker.indexOf("merged = union.slice(0, matchCount);"));
+ok(authBlock.length > 0, "found the authority_tiebreak block in worker.js");
+ok(/bare_ranked_score/.test(authBlock),
+   "authority_tiebreak's primary key is bare_ranked_score in the reranked path");
+ok(!/x\.bare_similarity/.test(authBlock),
+   "…and NOT bare_similarity — that would repeal the boosts under the name of a tie-break");
+ok(/\|\|\s*\(pubRank/.test(authBlock),
+   "pubRank is applied only via || — it speaks when the primary scores tie, never overrides them");
 
 // ── 7. canonical must match what is actually deployed ─────────────────────────
 // This file is an export, not a design document. If someone hand-edits it, the repo starts lying again

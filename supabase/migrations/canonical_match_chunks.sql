@@ -36,6 +36,27 @@
 --
 -- The RCR term is capped: least(rcr_weight * ln(1 + rcr), 0.10), and applies only when rcr > 1. At the
 -- default weight a paper needs an RCR near 150 to reach that cap, so in practice the term is small.
+--
+-- ── WHY THIS DROPS BEFORE IT CREATES (Codex, 2026-07-29) ─────────────────────────────────────────────
+-- CREATE OR REPLACE only replaces a function with the SAME argument list. The bootstrap creates a
+-- six-argument match_chunks; this file declares ten. On a fresh database built from the repo, "replace"
+-- would therefore CREATE A SECOND OVERLOAD and leave the six-argument version in place.
+--
+-- That is worse than untidy. The Worker calls this RPC by NAME with six named arguments, and the
+-- ten-argument version has defaults for the other four — so both candidates match the call and PostgREST
+-- resolution becomes ambiguous. Depending on which one wins, retrieval either applies the landmark,
+-- elite-journal and RCR boosts or silently does not, with nothing in the response distinguishing the two.
+-- Production is currently clean (verified 2026-07-29: exactly one overload, the ten-argument one), so
+-- this is purely a reproducibility defect — it bites whoever rebuilds from the repository, which is the
+-- entire point of committing a canonical definition. test_schema_types.mjs asserts the drop is here.
+--
+-- Grants are re-issued because DROP takes the ACL with it. Production's ACL is reproduced exactly:
+-- PUBLIC holds EXECUTE by PostgreSQL default, and anon / authenticated / service_role are explicit.
+
+-- The obsolete six-argument signature from supabase/migration_v2_rag.sql. Harmless if absent.
+drop function if exists public.match_chunks(vector(1536), int, float, int, text[], float);
+-- The canonical signature itself, so re-applying this file is idempotent rather than additive.
+drop function if exists public.match_chunks(vector(1536), int, float, int, text[], float, float, float, smallint, float);
 
 CREATE OR REPLACE FUNCTION public.match_chunks(
   query_embedding vector,
@@ -100,3 +121,20 @@ AS $function$
   order by ranked_score desc
   limit match_count;
 $function$;
+
+-- Re-issued after the DROP above, which discards the ACL. Matches production exactly.
+grant execute on function public.match_chunks(vector(1536), int, float, int, text[], float, float, float, smallint, float) to service_role;
+grant execute on function public.match_chunks(vector(1536), int, float, int, text[], float, float, float, smallint, float) to authenticated;
+grant execute on function public.match_chunks(vector(1536), int, float, int, text[], float, float, float, smallint, float) to anon;
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- AFTER APPLYING, PROVE THERE IS EXACTLY ONE OVERLOAD.
+-- A second match_chunks makes the Worker's six-named-argument call ambiguous, and the failure is silent:
+-- retrieval either applies the authority boosts or does not, and the response looks identical either way.
+--
+--   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c \
+--     "select count(*) as overloads, string_agg(oid::regprocedure::text, E'\n') as signatures
+--        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+--       where n.nspname='public' and p.proname='match_chunks';"
+--   -- EXPECT overloads = 1, with ten argument types.

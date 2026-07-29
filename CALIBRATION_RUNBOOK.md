@@ -130,6 +130,23 @@ not actually apply. An abort here is the instrument working. **Sanity check befo
 the run must report `rerank_applied: true` on the rerank and both arms. If it reports false, the Worker
 did not reach the new function and the whole run is measuring baseline four times.
 
+## 5a · WHAT THIS CALIBRATION CANNOT TELL YOU
+
+State this alongside any result. Every arm starts from candidates returned by the same `match_chunks`,
+which applies `journal_rank <= 2` as a **hard filter**. So the experiment measures ranking and filtering
+**within the already-eligible corpus** — nothing else.
+
+It therefore **cannot**:
+
+- establish overall retrieval recall — the denominator is "directly-relevant sources *some arm returned*",
+  not "directly-relevant sources that exist";
+- show whether any of the **156 excluded documents** (6% of 2,593) would have helped;
+- conclude that the pipeline solves coverage. Precision and coverage are different problems, and stages 1
+  and 2 only address the first.
+
+If D-1 turns out to be a coverage problem rather than a ranking problem, a clean sweep here would be
+consistent with that and would not refute it. Audit those 156 documents separately — see task #15.
+
 ## 6 · Complete the blinded D/A/I sheet
 
 **Budget real time for this.** 12 topics × up to 12 candidates ≈ **100–140 judgments**, each with a full
