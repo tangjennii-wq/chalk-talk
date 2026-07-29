@@ -138,7 +138,7 @@ export default {
     if (request.method === "GET" && url.pathname === "/health") {
       const ip = request.headers.get("CF-Connecting-IP") || "unknown";
       const used = await readDailyCount(env, ip);
-      const limit = parseInt(env.DAILY_LIMIT_PER_IP || DEFAULT_DAILY_LIMIT);
+      const limit = dailyLimit(env);
       return jsonOK({
         ok: true,
         model_proxy: "chalk-talk",
@@ -192,7 +192,7 @@ export default {
       return jsonError(404, "not_found", `Unknown endpoint ${request.method} ${url.pathname}`, origin);
 
     const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-    const limit = parseInt(env.DAILY_LIMIT_PER_IP || DEFAULT_DAILY_LIMIT);
+    const limit = dailyLimit(env);
     const used = await readDailyCount(env, ip);
     if (used >= limit)
       return jsonError(429, "rate_limit_exceeded",
@@ -308,9 +308,26 @@ export default {
 // ───────────────────────────────────────────────────────────────────────────
 // Free tier helpers (Jenni 2026-06-22)
 // ───────────────────────────────────────────────────────────────────────────
-function freeTalks(env)  { return parseInt(env.FREE_TALKS  || FREE_TALKS_DEFAULT); }
-function freeImages(env) { return parseInt(env.FREE_IMAGES || FREE_IMAGES_DEFAULT); }
-function freeCapCents(env) { return parseInt(env.MAX_MONTHLY_SPEND_USD || MAX_MONTHLY_SPEND_USD_DEFAULT) * 100; }
+// A MALFORMED LIMIT MUST NOT BE AN ABSENT LIMIT (2026-07-29 audit).
+// `parseInt("unlimited")` and `parseInt("250usd")` are NaN, and every comparison against NaN is false —
+// so `used >= limit` and `spentCents >= capCents` both stop tripping. A typo in a dashboard variable
+// silently switched the guard off, and /health rendered it as `null` (NaN serializes to null), which
+// reads as "not configured" rather than "misconfigured". Fall back to the compiled-in default instead.
+function intEnv(raw, fallback, name) {
+  if (raw == null || raw === "") return fallback;
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 0) {
+    console.warn(`config: ${name}="${raw}" is not a non-negative integer; using default ${fallback}`);
+    return fallback;
+  }
+  return n;
+}
+function freeTalks(env)  { return intEnv(env.FREE_TALKS,  FREE_TALKS_DEFAULT,  "FREE_TALKS"); }
+function freeImages(env) { return intEnv(env.FREE_IMAGES, FREE_IMAGES_DEFAULT, "FREE_IMAGES"); }
+function freeCapCents(env) {
+  return intEnv(env.MAX_MONTHLY_SPEND_USD, MAX_MONTHLY_SPEND_USD_DEFAULT, "MAX_MONTHLY_SPEND_USD") * 100;
+}
+function dailyLimit(env) { return intEnv(env.DAILY_LIMIT_PER_IP, DEFAULT_DAILY_LIMIT, "DAILY_LIMIT_PER_IP"); }
 function nextMonthFirstDayUTC() {
   const d = new Date();
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)).toISOString();
@@ -544,8 +561,13 @@ async function handleRetrieve(request, env, origin) {
   if (query.length > 4000)
     return jsonError(400, "query_too_long", "`query` must be ≤4000 chars.", origin);
 
+  // CLAMP AT BOTH ENDS (2026-07-29 audit). Math.min alone let a negative through: match_count:-5 is a
+  // truthy parseInt, min(-5, 50) is -5, and `union.slice(0, -5)` silently drops the five BEST-ranked
+  // chunks off the tail and returns the rest — while `count` reports that length as if the request had
+  // been honoured. Also rejects NaN from a non-numeric value rather than falling through it.
+  const requestedCount = parseInt(body.match_count);
   const matchCount = Math.min(
-    parseInt(body.match_count) || RETRIEVE_DEFAULT_MATCH_COUNT,
+    Number.isFinite(requestedCount) && requestedCount > 0 ? requestedCount : RETRIEVE_DEFAULT_MATCH_COUNT,
     RETRIEVE_MAX_MATCH_COUNT
   );
   // Backstop floor: if the caller doesn't specify, drop the weakly-related tail
@@ -612,7 +634,7 @@ async function handleRetrieve(request, env, origin) {
     // OFF BY DEFAULT. Production behaviour is unchanged until candidate-level precision/recall on the
     // labeled set says this helps. Build one stage, measure it, keep it only if it earns its place.
     const wantRerank = body.rerank === true;
-    let rerankApplied = false;
+    let rerankApplied = false, rerankScored = null, rerankUnscored = null;
     if (wantRerank && union.length) {
       try {
         // EXACT scoring of the union — not a global top-N lookup.
@@ -650,16 +672,42 @@ async function handleRetrieve(request, env, origin) {
         // every bare_ranked_score is null and sorting on it would quietly reproduce the arrival order
         // while still reporting rerank_applied:true — the confound back again, now invisible. Treat it
         // as a failure and fall back loudly.
-        if (union.some(c => c.bare_similarity != null && c.bare_ranked_score == null)) {
+        //
+        // THE FIRST VERSION OF THIS GUARD HAD THE SAME HOLE IT WAS GUARDING (2026-07-29, second pass).
+        // It read `bare_similarity != null && bare_ranked_score == null`, which requires the lookup to
+        // have SUCCEEDED for a row before it can complain that the row lacks a score. In the case that
+        // actually matters — the whole lookup missing, because the RPC returned [], or an id type
+        // mismatch made every Map hit fail — BOTH fields are null on every candidate, `some(...)` is
+        // false, nothing throws, and the comparator computes -Infinity - -Infinity = NaN for every pair.
+        // A NaN comparator leaves the array in arrival order in V8. So the union kept exactly the pooled
+        // facet order the rerank exists to replace, and the response said rerank_applied:true.
+        //
+        // Guard on COVERAGE instead: how many candidates the RPC actually scored.
+        if (!Array.isArray(bareRows)) {
+          throw new Error("score_candidate_chunks returned a non-array: " + typeof bareRows);
+        }
+        if (ids.length && bare.size === 0) {
+          throw new Error(`score_candidate_chunks scored 0 of ${ids.length} candidates — the RPC is `
+                        + "present but matched nothing (id type mismatch, or an empty result); ranking "
+                        + "on this would reproduce facet order while reporting a rerank");
+        }
+        if (union.some(c => c.bare_ranked_score == null && c.bare_similarity != null)) {
           throw new Error("score_candidate_chunks returned no ranked_score — deployed function predates "
                         + "the 2026-07-29 authority-parity fix; apply add_score_candidate_chunks.sql");
         }
         // A null here now means the row genuinely has no stored embedding — not "outside a top-N".
-        // It still ranks last, but that is a data problem, and it is COUNTED so it cannot hide.
+        // It still ranks last, but that is a data problem, and it is REPORTED (not merely logged) so it
+        // cannot hide: a console.warn in a Worker is invisible to the evaluator reading the response.
         const unscored = union.filter(c => c.bare_ranked_score == null).length;
         if (unscored) console.warn(`rerank: ${unscored}/${union.length} candidates had no stored embedding`);
-        union.sort((a, b) => (b.bare_ranked_score == null ? -Infinity : b.bare_ranked_score)
-                           - (a.bare_ranked_score == null ? -Infinity : a.bare_ranked_score));
+        rerankUnscored = unscored;
+        rerankScored = bare.size;
+        // -Number.MAX_VALUE, not -Infinity: two unscored candidates must compare EQUAL (a finite
+        // difference of 0), not NaN. NaN is falsy, so under `||` chaining it silently hands the decision
+        // to the next comparator — see the authority tie-break below, where that made publication type
+        // the primary key for unscored pairs.
+        const key = (x) => (x.bare_ranked_score == null ? -Number.MAX_VALUE : x.bare_ranked_score);
+        union.sort((a, b) => key(b) - key(a));
         rerankApplied = true;
       } catch (err) {
         // Fail OPEN to current behaviour rather than returning nothing — but say so, so a silent
@@ -674,7 +722,7 @@ async function handleRetrieve(request, env, origin) {
     // Runs AFTER the rerank so the two stages stay separately measurable — that is the whole point of
     // building them one at a time. Drops only sources that cannot be teaching evidence at all; it does
     // NOT drop on tier, and it does NOT drop non-landmark papers.
-    let metadataFilterApplied = false, dropped = [];
+    let metadataFilterApplied = false, dropped = [], unionBeforeFilter = union.length;
     if (body.metadata_filter === true) {
       const kept = [];
       for (const c of union) {
@@ -717,9 +765,12 @@ async function handleRetrieve(request, env, origin) {
       // latent one, waiting for whoever turned the flag on and got a silently different ranking policy.
       //
       // pubRank is a TIE-BREAK, so it may only speak when the primary scores are equal.
+      // -Number.MAX_VALUE for the same reason as the main sort: -Infinity minus -Infinity is NaN, NaN is
+      // falsy, and `||` would then hand the whole decision to pubRank — making publication type the
+      // PRIMARY key for every unscored pair, inside a comparator whose entire purpose is to be secondary.
       const primary = rerankApplied
-        ? (x) => (x.bare_ranked_score == null ? -Infinity : x.bare_ranked_score)
-        : (x) => (x.ranked_score || 0);
+        ? (x) => (x.bare_ranked_score == null ? -Number.MAX_VALUE : x.bare_ranked_score)
+        : (x) => (typeof x.ranked_score === "number" ? x.ranked_score : -Number.MAX_VALUE);
       // Exact float equality is the right test here: a tie means the same number, and treating
       // near-misses as ties would let pubRank quietly outrank a genuine score difference.
       union.sort((a, b) => (primary(b) - primary(a)) || (pubRank(a.publication_type) - pubRank(b.publication_type)));
@@ -731,6 +782,9 @@ async function handleRetrieve(request, env, origin) {
     merged._metadataFilterApplied = metadataFilterApplied;
     merged._authorityApplied = authorityApplied;
     merged._dropped = dropped;
+    merged._unionBeforeFilter = unionBeforeFilter;
+    merged._rerankScored = rerankScored;
+    merged._rerankUnscored = rerankUnscored;
   } catch (err) {
     return jsonError(502, "retrieval_failed", "Failed to retrieve chunks: " + err.message, origin);
   }
@@ -749,7 +803,21 @@ async function handleRetrieve(request, env, origin) {
     dropped_by_metadata: merged._dropped || [],
     // An explicit signal so the caller never has to infer "no evidence" from an empty array — and so a
     // talk built with no local grounding can say so rather than implying it had some.
-    no_eligible_local_sources: !!merged._metadataFilterApplied && merged.length === 0,
+    // TWO DIFFERENT ZEROES, AND THEY MEAN OPPOSITE THINGS (2026-07-29 audit).
+    // This used to be `filterApplied && length === 0`, which reads "every candidate was positively
+    // classified as non-evidence" — a strong, actionable claim. But retrieval returning nothing in the
+    // first place (bad embedding, min_similarity too high, topic absent from the corpus) produced the
+    // identical flag: the filter loop never executes, dropped is [], and the caller is told the corpus
+    // rejected everything when in fact it offered nothing. Require that there was something to reject.
+    no_eligible_local_sources: !!merged._metadataFilterApplied
+                               && merged.length === 0
+                               && (merged._unionBeforeFilter || 0) > 0,
+    // Distinguishable from the above rather than collapsed into it.
+    no_local_candidates: merged.length === 0 && (merged._unionBeforeFilter || 0) === 0,
+    // Rerank COVERAGE, in the response rather than in a console.warn the caller cannot see. If scored is
+    // far below the candidate count, the ordering is mostly fallback and the flag alone would not say so.
+    rerank_scored: merged._rerankScored,
+    rerank_unscored: merged._rerankUnscored,
     chunks: merged,
   }, origin);
 }
@@ -759,7 +827,7 @@ async function handleImageGeneration(request, env, ctx, origin) {
     return jsonError(503, "openai_not_configured", "OpenAI image generation is not configured on this proxy.", origin);
 
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-  const limit = parseInt(env.DAILY_LIMIT_PER_IP || DEFAULT_DAILY_LIMIT);
+  const limit = dailyLimit(env);
   const used = await readDailyCount(env, ip);
   if (used >= limit)
     return jsonError(429, "rate_limit_exceeded",

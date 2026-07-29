@@ -123,10 +123,25 @@ ok(!/journal_rank\s*<=/.test(sCode),
 // ── 6. the Worker must sort on the boosted score ──────────────────────────────
 // The specific regression: the sort comparator naming bare_similarity instead of bare_ranked_score.
 const worker = readFileSync(new URL("./worker.js", import.meta.url), "utf8");
-const sortLine = (worker.match(/union\.sort\(\(a, b\) => \(b\.bare_[a-z_]+/g) || []);
-ok(sortLine.length > 0, "found the rerank sort comparator in worker.js");
-ok(sortLine.every(s => s.includes("bare_ranked_score")),
+// Scope to the rerank block and test the SORT KEY, not one particular way of spelling the comparator.
+// The 2026-07-29 audit refactored the inline comparator into a `key` helper (so two unscored candidates
+// compare equal instead of NaN), and a test pinned to the old spelling failed on a change that was not a
+// regression. Assert the property: within this block, the ranking key is bare_ranked_score.
+// Anchor the END search AFTER the start, or it finds "STAGE 2" in the file's header comment (offset
+// ~3.9k, versus ~32k for the code) and slices a negative range to "". An empty haystack then fails every
+// assertion about it — loudly, which is the good outcome; a `.includes()` check would have PASSED
+// vacuously. Same locator hazard the audit was looking for, found in the audit's own test.
+const rerankStart = worker.indexOf("const wantRerank");
+const rerankBlock = worker.slice(rerankStart, worker.indexOf("STAGE 2 · METADATA FILTER", rerankStart));
+ok(rerankStart > 0 && rerankBlock.length > 0, "found the rerank block in worker.js");
+const keyFn = rerankBlock.match(/const key = \(x\) => \([^;]+\);/);
+ok(!!keyFn, "the rerank defines an explicit sort key");
+ok(!!keyFn && /bare_ranked_score/.test(keyFn[0]),
    "the rerank sorts on bare_ranked_score — sorting on bare_similarity is the confound");
+ok(!!keyFn && !/bare_similarity/.test(keyFn[0]),
+   "…and the key never reads bare_similarity, which is carried for diagnostics only");
+ok(/union\.sort\(\(a, b\) => key\(b\) - key\(a\)\)/.test(rerankBlock),
+   "…and the sort uses that key rather than an ad-hoc comparator");
 ok(/bare_ranked_score == null/.test(worker),
    "worker throws or guards when ranked_score is missing, rather than ranking on nulls");
 
