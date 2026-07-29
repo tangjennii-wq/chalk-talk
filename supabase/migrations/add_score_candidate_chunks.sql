@@ -14,15 +14,23 @@
 -- one database call, zero embedding calls, and it uses the stored embedding — the same representation
 -- that was ingested, never a re-embedded or truncated copy.
 --
+-- TYPES MUST MATCH document_chunks.id, WHICH IS bigserial (Codex, 2026-07-28).
+-- The first draft of this file declared uuid[] and returned uuid, copied from documents.id without
+-- checking. document_chunks.id is bigserial and match_chunks already returns chunk_id bigint, so the
+-- function would have failed at execution — and because the Worker catches RPC errors and falls back,
+-- reranking would have silently reverted to pooled facet order on EVERY request while reporting
+-- rerank_applied false. A quiet permanent no-op. The JS stub used string ids, so no amount of unit
+-- testing could have caught a database type mismatch; test_schema_types.mjs now asserts it directly.
+--
 -- No tier boost here, deliberately. The rerank ranks on topic similarity; a tier preference is a
 -- separate, later decision and mixing them would make neither measurable.
 
 create or replace function public.score_candidate_chunks(
   query_embedding vector(1536),
-  candidate_chunk_ids uuid[]
+  candidate_chunk_ids bigint[]
 )
 returns table (
-  chunk_id uuid,
+  chunk_id bigint,
   similarity float
 )
 language sql
@@ -41,6 +49,6 @@ comment on function public.score_candidate_chunks is
   'stage-1 rerank so every facet-discovered candidate is scored exactly, rather than being looked up in '
   'a global top-N and silently missed. No tier boost — ranking on topic similarity alone is the point.';
 
-grant execute on function public.score_candidate_chunks(vector(1536), uuid[]) to service_role;
-grant execute on function public.score_candidate_chunks(vector(1536), uuid[]) to authenticated;
-grant execute on function public.score_candidate_chunks(vector(1536), uuid[]) to anon;
+grant execute on function public.score_candidate_chunks(vector(1536), bigint[]) to service_role;
+grant execute on function public.score_candidate_chunks(vector(1536), bigint[]) to authenticated;
+grant execute on function public.score_candidate_chunks(vector(1536), bigint[]) to anon;
