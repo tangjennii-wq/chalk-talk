@@ -115,3 +115,53 @@ jobs:
       # when its verifiers were unreachable, every clearance it has ever granted is suspect.
       - name: Benchmark harness (never pass on unverified evidence)
         run: node test_eval_harness.mjs
+
+      # ── Wired 2026-07-29. SIX suites were on disk and absent from this workflow — three from the
+      # 2026-07-28 retrieval work and three from the 2026-07-29 audit. This is the second time an
+      # unwired suite has slipped through, so the last step below now FAILS if it happens again rather
+      # than relying on anyone remembering.
+
+      # Answer-position bias: the correct choice must not cluster on C/D/E.
+      - name: Boards answer-choice shuffle
+        run: node test_choice_shuffle.mjs
+
+      # Stage 1 + 2 ranking behaviour, executed against stubs rather than pattern-matched.
+      - name: Rerank + metadata filter stages
+        run: node test_rerank_stage.mjs
+
+      # A JS test cannot catch a SQL type error; these compare the migrations against the schema.
+      - name: SQL type agreement (RPC signatures vs document_chunks.id)
+        run: node test_schema_types.mjs
+
+      # A rerank that also repeals the authority boosts is two changes wearing one name, and no
+      # four-arm experiment can attribute it. Binds the two ranking formulas together.
+      - name: Ranking parity (score_candidate_chunks vs canonical match_chunks)
+        run: node test_ranking_formula.mjs
+
+      # Guards that reported states they had not earned: a rerank that ranked nothing, a filter that
+      # had nothing to filter, a spend cap parsed from a typo.
+      - name: Retrieval guards (coverage, NaN comparators, two kinds of zero)
+        run: node test_retrieve_guards.mjs
+
+      # EXECUTES the handler. The scope error this caught is a ReferenceError, not a syntax error —
+      # node --check passes it, and so does importing the module.
+      - name: Legacy /v1/messages path is capped and metered
+        run: node test_legacy_path_metering.mjs
+
+      # THE GUARD ON THE GUARDS. Writing a suite and forgetting to wire it here has happened twice.
+      # A test that never runs is worse than no test: it reads as coverage.
+      - name: Every test suite on disk is wired into this workflow
+        run: |
+          missing=0
+          for f in test_*.mjs rag/test_*.mjs; do
+            [ -e "$f" ] || continue
+            if ! grep -qF "node $f" .github/workflows/tests.yml; then
+              echo "UNWIRED: $f is on disk but never runs in CI"
+              missing=$((missing+1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo "$missing suite(s) exist but do not run. Add them above, in the SAME commit."
+            exit 1
+          fi
+          echo "all suites wired"
