@@ -102,5 +102,77 @@ const BARE = [
      "reranking REORDERS the union, it does not filter it — dropping candidates is a later stage's job");
 }
 
-console.log("\n" + (failures === 0 ? "✔ RERANK STAGE TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
+
+// ═══ STAGE 2 · METADATA FILTER ═══════════════════════════════════════════════
+// Drops sources that cannot be teaching evidence at all. Does NOT drop on tier, and does NOT drop
+// non-landmark papers — Codex, 2026-07-28: "acute topics often depend on them."
+
+const worker2 = worker;   // same file, clearer intent below
+ok(/const WEAK_PUB_TYPES = new Set/.test(worker2), "weak publication types are an explicit named set");
+ok(!/is_landmark_trial\s*===?\s*false/.test(worker2.slice(worker2.indexOf("STAGE 2"), worker2.indexOf("STAGE 2") + 2500)),
+   "the metadata filter NEVER excludes on is_landmark_trial — acute topics depend on non-landmark papers");
+ok(/PUB_TYPE_RANK/.test(worker2) && /ORDERING preference, never a filter/.test(worker2),
+   "publication type is a tie-break ordering, not a second filter");
+ok(/dropped_by_metadata: merged\._dropped/.test(worker2),
+   "every exclusion is returned with its reason — a silent filter is indistinguishable from an empty corpus");
+
+const s2start = worker2.indexOf("    // ── STAGE 2 · METADATA FILTER");
+const s2end = worker2.indexOf("    merged = union.slice(0, matchCount);");
+const s2block = worker2.slice(s2start, s2end);
+
+function runMeta(rows, on) {
+  const ctx = {
+    console: { warn() {} }, Array, Object, String,
+    union: rows.slice(), body: { metadata_filter: on },
+    rerankApplied: false,
+    WEAK_PUB_TYPES: new Set(["letter","editorial","comment","protocol","erratum","correction","retraction","news","biography"]),
+    WEAK_TITLE_RE: /^\s*(correction|erratum|retraction|withdrawn|comment on|reply to|author reply|editorial|letter to the editor)\b/i,
+    PUB_TYPE_RANK: { guideline:0, systematic_review:1, meta_analysis:1, rct:2, review:3, drug_label:4, other:5 },
+  };
+  ctx.pubRank = (t) => (t && ctx.PUB_TYPE_RANK[t] != null) ? ctx.PUB_TYPE_RANK[t] : 5;
+  ctx.isWeakSource = (c) => {
+    const t = String(c.publication_type || "").toLowerCase().trim();
+    if (ctx.WEAK_PUB_TYPES.has(t)) return t;
+    if (ctx.WEAK_TITLE_RE.test(String(c.title || ""))) return "title";
+    return null;
+  };
+  vm.createContext(ctx);
+  // `let` inside the extracted block is script-scoped and never lands on the context object, so the
+  // values are returned explicitly rather than read off ctx.
+  return vm.runInContext(
+    `(() => { ${s2block} return { union, applied: metadataFilterApplied, dropped }; })()`, ctx);
+}
+
+const META_ROWS = [
+  { chunk_id: "guide", title: "ADA Standards of Care 2025", publication_type: "guideline",  ranked_score: 0.5 },
+  { chunk_id: "corr",  title: "Correction: Effects of intensive glucose lowering", publication_type: "other", ranked_score: 0.9 },
+  { chunk_id: "edit",  title: "The future of diabetes care", publication_type: "editorial", ranked_score: 0.8 },
+  { chunk_id: "prac",  title: "Practical management of hyperglycemic crises", publication_type: "other", ranked_score: 0.4 },
+  { chunk_id: "trial", title: "A randomized trial of X", publication_type: "rct", is_landmark_trial: false, ranked_score: 0.6 },
+];
+{
+  const r = runMeta(META_ROWS, true);
+  const ids = r.union.map(x => x.chunk_id);
+  ok(!ids.includes("corr"), 'a "Correction:" notice is dropped even though it scored HIGHEST (0.9)');
+  ok(!ids.includes("edit"), "an editorial is dropped by publication_type");
+  ok(ids.includes("prac"), 'a practice review typed "other" is KEPT — "other" is a catch-all, not a verdict');
+  ok(ids.includes("trial"), "a NON-landmark RCT is kept");
+  ok(r.dropped.length === 2 && r.dropped.every(d => d.reason), "both exclusions are reported with a reason");
+  ok(r.applied === true, "metadata_filter_applied is true when it actually ran");
+}
+{
+  const r = runMeta(META_ROWS, false);
+  ok(r.union.length === META_ROWS.length && r.applied !== true,
+     "OFF by default: nothing dropped, nothing reordered, behaviour unchanged");
+}
+{
+  // everything weak → keep the originals rather than starve the prompt, and say it did not apply
+  const allWeak = [{ chunk_id: "a", title: "Erratum: something", publication_type: "erratum", ranked_score: 0.5 }];
+  const r = runMeta(allWeak, true);
+  ok(r.union.length === 1 && r.applied !== true,
+     "if the filter would empty the union it is SKIPPED and reported as not applied — never return nothing");
+  ok(r.dropped.length === 0, "…and no phantom exclusions are reported for a filter that did not run");
+}
+
+console.log("\n" + (failures === 0 ? "✔ RERANK + METADATA STAGE TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

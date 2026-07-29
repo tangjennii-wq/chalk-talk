@@ -66,6 +66,31 @@ const EMBEDDING_MODEL = "text-embedding-3-small";
 // How deep to look when scoring the union against the bare topic. Large enough that a candidate found
 // only by a facet still gets a real bare score rather than a null. (Stage 1 rerank, 2026-07-28)
 const RERANK_POOL = 300;
+
+// ── STAGE 2 · METADATA FILTERING (2026-07-28) ────────────────────────────────────────────────────
+// Publication types that cannot serve as teaching evidence regardless of how well they score. A
+// correction notice about a diabetes trial embeds close to "diabetes" and carries no teaching content
+// at all — precisely the kind of high-similarity, zero-value hit the D-1 investigation kept surfacing.
+const WEAK_PUB_TYPES = new Set(["letter", "editorial", "comment", "protocol", "erratum", "correction", "retraction", "news", "biography"]);
+
+// Titles announce these unambiguously even when publication_type was ingested as the catch-all "other",
+// which is the common case. Anchored to the START of the title so a paper merely DISCUSSING a retraction
+// is not excluded. (2026-07-28)
+const WEAK_TITLE_RE = /^\s*(correction|erratum|retraction|withdrawn|comment on|reply to|author reply|editorial|letter to the editor)\b/i;
+
+// Preference order when everything else is equal. NOT a filter — nothing is dropped for being low in
+// this list. Codex, 2026-07-28: "Do not automatically exclude non-landmark papers — acute topics often
+// depend on them." An "other"-typed paper may be exactly the practice review an acute topic needs.
+const PUB_TYPE_RANK = { guideline: 0, systematic_review: 1, meta_analysis: 1, rct: 2, review: 3, drug_label: 4, other: 5 };
+const pubRank = (t) => (t && PUB_TYPE_RANK[t] != null) ? PUB_TYPE_RANK[t] : 5;
+
+function isWeakSource(c) {
+  const t = String(c.publication_type || "").toLowerCase().trim();
+  if (WEAK_PUB_TYPES.has(t)) return t;
+  if (WEAK_TITLE_RE.test(String(c.title || ""))) return "title:" + String(c.title || "").slice(0, 40);
+  return null;
+}
+
 const EMBEDDING_DIM = 1536;
 const RETRIEVE_DEFAULT_MATCH_COUNT = 12;
 const RETRIEVE_MAX_MATCH_COUNT = 50;
@@ -597,8 +622,38 @@ async function handleRetrieve(request, env, origin) {
     } else {
       union.sort((a, b) => (b.ranked_score || 0) - (a.ranked_score || 0));
     }
+    // ── STAGE 2 · METADATA FILTER (opt-in, default OFF) ───────────────────────────────────────
+    // Runs AFTER the rerank so the two stages stay separately measurable — that is the whole point of
+    // building them one at a time. Drops only sources that cannot be teaching evidence at all; it does
+    // NOT drop on tier, and it does NOT drop non-landmark papers.
+    let metadataFilterApplied = false, dropped = [];
+    if (body.metadata_filter === true) {
+      const kept = [];
+      for (const c of union) {
+        const why = isWeakSource(c);
+        if (why) dropped.push({ title: String(c.title || "").slice(0, 80), reason: why });
+        else kept.push(c);
+      }
+      // NEVER return an empty set because of this filter. If everything looks weak, that is far more
+      // likely a metadata problem than a corpus with nothing usable in it — so keep the originals and
+      // say the filter did not apply, rather than silently starving the prompt.
+      if (kept.length) { union = kept; metadataFilterApplied = true; }
+      else { dropped = []; console.warn("metadata filter would have emptied the union — skipped"); }
+    }
+
+    // Stable tie-break on publication type: a guideline outranks an "other" at equal relevance. This is
+    // an ORDERING preference, never a filter — nothing is dropped for ranking low here.
+    if (metadataFilterApplied || rerankApplied) {
+      const primary = rerankApplied
+        ? (x) => (x.bare_similarity == null ? -1 : x.bare_similarity)
+        : (x) => (x.ranked_score || 0);
+      union.sort((a, b) => (primary(b) - primary(a)) || (pubRank(a.publication_type) - pubRank(b.publication_type)));
+    }
+
     merged = union.slice(0, matchCount);
     merged._rerankApplied = rerankApplied;
+    merged._metadataFilterApplied = metadataFilterApplied;
+    merged._dropped = dropped;
   } catch (err) {
     return jsonError(502, "retrieval_failed", "Failed to retrieve chunks: " + err.message, origin);
   }
@@ -608,6 +663,11 @@ async function handleRetrieve(request, env, origin) {
     rerank_requested: body.rerank === true,
     rerank_applied: !!merged._rerankApplied,   // NEVER infer this from the request — a rerank that threw
                                                // must not be reported as one that ran
+    metadata_filter_requested: body.metadata_filter === true,
+    metadata_filter_applied: !!merged._metadataFilterApplied,
+    // Every exclusion is reported with its reason. A filter that quietly removes sources is
+    // indistinguishable from a corpus that never had them. (2026-07-28)
+    dropped_by_metadata: merged._dropped || [],
     chunks: merged,
   }, origin);
 }
