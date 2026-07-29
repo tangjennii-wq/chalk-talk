@@ -118,11 +118,15 @@ making them unsupervised risked breaking generation for every user. Full detail 
 
 1. **Background generation can be killed at ~30 seconds.** `ctx.waitUntil()` extends execution for **up
    to 30 seconds** after the response is sent — verified in Cloudflare's own limits page, which states it
-   three times, and **nothing there indicates the Paid plan lifts it**. (`wrangler.toml`'s comment
-   claiming JOBS_KV "requires the Workers Paid plan (for the longer `ctx.waitUntil` budget)" is
-   mistaken.) A 50–100s draft+critique can stall at `running`, never write `done`, and never reach its
-   refund path. Needs Workflows, Queues, or Durable Objects — the two constructs Cloudflare documents as
-   having unlimited wall time are Workflows per-step and Durable Objects while a caller is connected.
+   three times, and **nothing there indicates the Paid plan lifts it**. Independently confirmed by Codex.
+   A 50–100s draft+critique stalls at `running`, never writes `done`, and never reaches its refund path,
+   so the user watches a spinner forever *and* loses a talk. The `wrangler.toml` comment claiming JOBS_KV
+   "requires the Workers Paid plan (for the longer `ctx.waitUntil` budget)" was the false premise this
+   shipped on — Paid raises **CPU** time, a different limit that shares the number 30, and generation is
+   almost all *waiting*, which consumes no CPU at all. Comment corrected in place.
+   **Full analysis and the three options: `rag/runs/2026-07-29-background-execution.md`.**
+   Interim only: `/generate-status` now reports `stalled: true` after 90s idle instead of a status the
+   client polls forever. That makes the failure visible; it does not fix it.
 2. **`/v1/messages` never verifies that `/consume` happened.** A signed-in caller can skip the frontend
    and generate with zero talks remaining. Needs a server-issued reservation, not a client convention.
 3. **`WRITER_CLEARED` is enforced only on the async route.** The sync route accepts any member of

@@ -186,5 +186,34 @@ const workerCode = worker.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).joi
   ok(/anonMonthKey/.test(img), "…using a month key that exists on both paths");
 }
 
+// ── 10 · A KILLED BACKGROUND JOB MUST BE VISIBLE, NOT AN INFINITE SPINNER ────
+// runGeneration is handed to ctx.waitUntil AFTER the job id is returned, and Cloudflare terminates
+// post-response work at ~30s regardless of plan. A 50-100s draft+critique is killed mid-flight: no
+// `done`, no `error`, and no refund, because the refund lives inside the terminated function. The record
+// just stops changing while the client polls it forever.
+//
+// This does NOT fix that — the fix is durable execution. It makes the failure reportable.
+{
+  const status = worker.slice(worker.indexOf("async function handleGenerateStatus"),
+                              worker.indexOf("async function handleGenerateCancel"));
+  ok(status.length > 0, "found handleGenerateStatus");
+  ok(/stalled: true/.test(status), "a long-idle running job is reported as stalled");
+  ok(/idle_seconds/.test(status), "…with how long it has been idle, so the claim is checkable");
+  ok(/STALL_AFTER_MS/.test(status), "…against a named threshold rather than a bare number");
+  // Read-only: the runner may still be alive, and racing it from a polling endpoint risks
+  // double-refunding or clobbering a real result.
+  ok(!/JOBS_KV\.put/.test(status), "the status endpoint does NOT mutate the job record");
+  ok(!/refundQuota|refundOnce/.test(status), "…and does not refund from a read path");
+  ok(/not something you did/.test(status),
+     "…and the message tells the user it is a known defect rather than blaming their input");
+
+  // The false premise that shipped this feature must not survive in the config.
+  const wrangler = readFileSync(new URL("./wrangler.toml", import.meta.url), "utf8");
+  ok(!/Requires the Workers Paid plan \(for the longer/.test(wrangler),
+     "wrangler.toml no longer claims Paid buys a longer ctx.waitUntil budget");
+  ok(/up to 30 seconds/.test(wrangler) && /cpu_ms/.test(wrangler),
+     "…and records the real limit plus the CPU-time confusion that caused it");
+}
+
 console.log("\n" + (failures === 0 ? "✔ RETRIEVAL GUARD TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

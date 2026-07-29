@@ -9,8 +9,28 @@ FREE_TALKS = "10"
 FREE_IMAGES = "5"
 MAX_MONTHLY_SPEND_USD = "250"
 
-# Background (server-side) generation job store. Requires the Workers Paid plan (for the longer
-# ctx.waitUntil budget). To turn it on:
+# Background (server-side) generation job store.
+#
+# ⚠ THE PREMISE OF THIS FEATURE IS WRONG (2026-07-29). This comment used to say the Paid plan buys "the
+# longer ctx.waitUntil budget". There is no such thing. Cloudflare's limits page states three separate
+# times that `waitUntil()` "can extend execution for up to 30 seconds after the response is sent or the
+# client disconnects", with NO plan qualifier and no config lever:
+#   https://developers.cloudflare.com/workers/platform/limits/
+#
+# What Paid actually raises is CPU time (30s default -> 5 min via `cpu_ms`). That is a DIFFERENT limit
+# that happens to share the number 30. Chalk Talk's generation is almost entirely spent WAITING on
+# Anthropic, which consumes no CPU time at all — so raising cpu_ms does nothing for this.
+#
+# Consequence: runGeneration() is handed to ctx.waitUntil after the job id is returned, and a 50–100s
+# draft+critique can be terminated at ~30s. The job then stays at `running`/`critique` forever, never
+# writes `done`, and never reaches its refund path — so the user loses a talk AND gets nothing.
+# Independently confirmed by Codex, 2026-07-29. Tracked as the top item in RELEASE.md.
+#
+# Durable alternatives, from Cloudflare's own table: Workflows (unlimited wall time per step — the best
+# semantic fit for a multi-step draft/review job), Queue consumers (15 min), Durable Object alarms
+# (15 min). Until one is in place, JOBS_KV makes background generation *look* reliable rather than be it.
+#
+# To turn it on:
 #   1) wrangler kv namespace create JOBS_KV
 #   2) uncomment the block below and paste the printed id
 #   3) wrangler deploy

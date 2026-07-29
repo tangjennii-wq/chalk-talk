@@ -1341,6 +1341,35 @@ async function handleGenerateStatus(request, jobId, env, origin) {
   // STRICT owner match: require the job to have an owner AND that it's this user. An ownerless record
   // (e.g. a pre-fix legacy job) is treated as not-found rather than readable by any signed-in user.
   if (obj.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
+
+  // ── SURFACE THE ~30s waitUntil KILL INSTEAD OF SPINNING FOREVER (2026-07-29) ─────────────────────
+  // runGeneration is handed to ctx.waitUntil AFTER the job id is returned, and Cloudflare terminates
+  // post-response work at ~30 seconds regardless of plan. A 50–100s draft+critique is therefore killed
+  // mid-flight: no `done`, no `error`, no refund — the record simply stops being updated, and the client
+  // polls a job that will never change. The user watches a spinner forever and silently loses a talk.
+  //
+  // This does NOT fix that; the fix is durable execution (Workflows/Queues/DO — see RELEASE.md). It makes
+  // the failure VISIBLE, which is the difference between a bug you can report and one you cannot.
+  //
+  // Read-only on purpose. It classifies, it does not mutate, and it does not refund: the runner may still
+  // be alive and about to write, and racing it from a polling endpoint would risk double-refunding or
+  // clobbering a real result. Diagnosis here, remediation where the state is owned.
+  const STALL_AFTER_MS = 90_000;
+  if (obj.status === "running" || obj.status === "critique") {
+    const last = Date.parse(obj.updatedAt || obj.createdAt || "");
+    const idleMs = Number.isFinite(last) ? Date.now() - last : 0;
+    if (idleMs > STALL_AFTER_MS) {
+      return jsonOK(Object.assign({}, obj, {
+        stalled: true,
+        idle_seconds: Math.round(idleMs / 1000),
+        stall_reason: "no_progress",
+        stall_detail: "Background generation has not progressed for " + Math.round(idleMs / 1000)
+          + "s. Cloudflare terminates post-response work at ~30s, so this job was most likely killed "
+          + "mid-generation and will never finish. Your talk credit was reserved and not refunded — "
+          + "this is a known defect in the background path, not something you did.",
+      }), origin);
+    }
+  }
   return jsonOK(obj, origin);
 }
 
