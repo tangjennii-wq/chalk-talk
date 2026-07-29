@@ -16,11 +16,19 @@
 --
 -- TYPES MUST MATCH document_chunks.id, WHICH IS bigserial (Codex, 2026-07-28).
 -- The first draft of this file declared uuid[] and returned uuid, copied from documents.id without
--- checking. document_chunks.id is bigserial and match_chunks already returns chunk_id bigint, so the
--- function would have failed at execution — and because the Worker catches RPC errors and falls back,
--- reranking would have silently reverted to pooled facet order on EVERY request while reporting
--- rerank_applied false. A quiet permanent no-op. The JS stub used string ids, so no amount of unit
--- testing could have caught a database type mismatch; test_schema_types.mjs now asserts it directly.
+-- checking. document_chunks.id is bigserial and match_chunks already returns chunk_id bigint.
+--
+-- WHERE IT WOULD HAVE FAILED, precisely (Codex corrected my first account of this): at CREATION, not
+-- silently at runtime. `c.id = any(candidate_chunk_ids)` with a bigint column and a uuid[] parameter
+-- raises `operator does not exist: bigint = uuid`, and a GRANT naming a signature no function has raises
+-- its own error. So the migration would have failed loudly rather than installing something broken.
+--
+-- The dangerous path was narrower but real: ignore the failed migration, deploy the Worker anyway, and
+-- every rerank request then falls back with rerank_applied:false — a feature that looks live and does
+-- nothing. My first note claimed the silent no-op was the DEFAULT outcome; it was not.
+--
+-- Either way the JS stub used string ids, so no amount of unit testing could have caught a database type
+-- mismatch; test_schema_types.mjs now asserts it directly.
 --
 -- No tier boost here, deliberately. The rerank ranks on topic similarity; a tier preference is a
 -- separate, later decision and mixing them would make neither measurable.

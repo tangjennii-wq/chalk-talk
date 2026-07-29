@@ -4,10 +4,14 @@
 // `returns chunk_id uuid`, copied from documents.id without checking. But document_chunks.id is
 // **bigserial**, and match_chunks already returns `chunk_id bigint`.
 //
-// The failure mode that makes this worth a dedicated suite: the Worker catches RPC errors and falls back
-// to pooled facet order. So a type-mismatched function would have thrown on EVERY request, been caught,
-// and reverted to the old ranking — while honestly reporting rerank_applied:false. Stage 1 would have
-// been a permanent silent no-op that looked like a working feature with a suspiciously flat result.
+// WHERE IT ACTUALLY FAILS (corrected — my first account of this was wrong). Postgres rejects it at
+// CREATION: `c.id = any(candidate_chunk_ids)` with a bigint column and uuid[] parameter raises
+// `operator does not exist: bigint = uuid`, and the GRANT names a signature no function has. The
+// migration fails loudly; it does not install something broken.
+//
+// The real risk is narrower: ignore the failed migration, deploy the Worker anyway, and every rerank
+// request falls back with rerank_applied:false — a feature that looks live and does nothing. Worth a
+// suite because that is quiet, and because catching it at commit time beats catching it at deploy time.
 //
 // And no JavaScript test could have caught it. The stub passes string ids ("dcct", "ada2024"), which is
 // exactly right for exercising ranking logic and exactly useless for catching a database type error.
