@@ -1,22 +1,41 @@
 # End-to-end click test — the last gate before Chalk Talk goes live
 
-Everything up to here is unit-tested. This is the part that needs a browser, your Cloudflare account, and
-a real Anthropic call. **Budget ~20 minutes and about 3 talk credits.**
-
-Order matters: deploy the Worker first, then the front end. `index.html` is served by Pages on push and
-the new client sends `X-CT-Receipt`; if the Worker is old it will ignore the header harmlessly, but if the
-Worker is new and the *client* is old, every talk 402s. **Worker first.**
-
-```bash
-cd ~/Developer/chalk-talk
-npx wrangler deploy
-```
-
-Then push, which publishes the front end.
+Everything up to here is unit-tested (30 suites, 1195 assertions). This is the part that needs a browser,
+your Cloudflare account, and real Anthropic calls. **Budget ~25 minutes and about 4 talk credits.**
 
 ---
 
-## 0 · Prove you are testing the new Worker
+## ⚠ ORDER: FRONT END FIRST, THEN THE WORKER
+
+An earlier version of this file said Worker first. **That was wrong and would have broken every talk.**
+The receipt work reversed the compatibility direction:
+
+| | result |
+|---|---|
+| **new Worker + old client** | **every free-tier talk 402s** — the old client sends no `X-CT-Receipt` / `X-CT-Job` / `X-CT-Stage`, and the new Worker requires them |
+| **old Worker + new client** | fine — the old Worker ignores headers it does not know |
+
+So push first (Pages publishes `index.html`), confirm the new build is actually being served, *then*
+`wrangler deploy`. The window in between is safe.
+
+```bash
+cd ~/Developer/chalk-talk
+git push origin main
+```
+
+- [ ] Hard-reload the site. In the console, `BUILD_ID` reads **`2026-07-30-02`**. If it still shows the
+      old id you are testing a cached page and everything below is meaningless.
+
+```bash
+npx wrangler deploy
+```
+
+- [ ] Deploy succeeded and the output lists **`env.GEN_WORKFLOW (ChalkTalkGeneration)`** among the
+      bindings. No binding, no durable path.
+
+---
+
+## 0 · Prove you are on the new Worker
 
 Not that it responded — that it has the new behaviour.
 
@@ -24,105 +43,115 @@ Not that it responded — that it has the new behaviour.
 curl -s -X POST "https://<your-worker>.workers.dev/retrieve" -H 'Content-Type: application/json' -d '{"query":"diabetic ketoacidosis","rerank":true}' | jq '{rerank_applied, rerank_scored}'
 ```
 
-`rerank_scored: null` means an **old** Worker is still serving — that field does not exist in the previous
-build. Stop and redeploy.
+- [ ] `rerank_scored` is a **number**. `null` means the old build is still serving — that field does not
+      exist there.
 
 ---
 
-## 1 · START — the durable path is actually in use
+## 1 · START — the durable path is in use
 
-Generate a talk. In DevTools → Network, find the `POST /generate-async` response.
+Generate a talk. DevTools → Network → the `POST /generate-async` response.
 
-- [ ] **`durable: true`** — the Workflow ran. `false` means `GEN_WORKFLOW` is unbound and you are on the
-      old ~30-second path, which is the entire defect we set out to fix.
-- [ ] A `jobId` came back and polling starts.
+- [ ] **`durable: true`.** `false` means `GEN_WORKFLOW` is unbound and you are on the old ~30-second
+      path, which is the entire defect this was built to fix.
 
-## 2 · FINISH — past 30 seconds, which was impossible before
+## 2 · FINISH — past 30 seconds, which was previously impossible
 
-- [ ] The talk completes. Note `elapsedSec` in the final `/generate-status` response.
-- [ ] **If it exceeds ~30 seconds, that is the proof.** On the old path this generation would have been
-      terminated mid-flight, leaving the job stuck and the credit gone.
+- [ ] The talk completes; note `elapsedSec` on the final `/generate-status`.
+- [ ] **If it exceeds ~30s, that is the proof.** On the old path this generation would have been killed
+      mid-flight, leaving the job stuck and the credit gone.
 - [ ] The talk renders with citations.
 
 ## 3 · RELOAD + RECONNECT — the mobile case
 
-Start a talk. While it is drafting, **reload the page.**
+Start a talk; reload the page while it drafts.
 
-- [ ] The app picks the job back up rather than starting over.
+- [ ] It picks the job back up rather than restarting.
 - [ ] The talk arrives.
-- [ ] **Exactly one credit was spent**, not two. Check the badge before and after.
+- [ ] **Exactly one credit spent.** Check the badge before and after.
 
 ## 4 · CANCEL — and it must tell the truth
 
-Start a talk, then cancel during the critique stage.
+Cancel during the critique stage.
 
-- [ ] The response carries **`cancelled: true`** (not merely `status: "cancelled"` — the two used to be
-      the same thing even when the write failed).
-- [ ] The credit is **returned** — badge goes back up.
+- [ ] The response carries **`cancelled: true`**, not merely `status: "cancelled"` — those used to be the
+      same thing even when the write failed.
+- [ ] The credit comes back.
 - [ ] Cancelling twice does not refund twice.
 
-## 5 · DUPLICATE SUBMIT — the refund-scope fix
+## 5 · DUPLICATE SUBMIT
 
-Hardest to trigger by hand; the double-click is the realistic version.
+- [ ] Double-click Generate. Only **one** generation runs, **one** credit consumed.
+- [ ] The second request returns `resumed: true` and **does not refund the first one's credit** — that
+      was the bug: `create()` throws for both "already running" and "failed to start".
 
-- [ ] Double-click Generate quickly. Only **one** generation runs.
-- [ ] **Only one credit is consumed.**
-- [ ] The second request returns `resumed: true` rather than an error, and **does not refund the first
-      one's credit** — that was the bug: `create()` throws for both "already running" and "failed to
-      start", and refunding on the wrong one takes back a credit for a talk that is about to arrive.
+## 6 · THE AUTHORISATION GATES — verify they refuse, from a terminal
 
-## 6 · THE TWO GATES — verify they refuse, from a terminal
+Substitute a real signed-in token. **Each of these should also cost nothing** — that is the point.
 
-These are the bypasses that existed on the sync route. Substitute a real signed-in token.
-
-**Writer allowlist** — an uncleared model must be refused for teaching content:
+**(a) No receipt** — the quota bypass:
 
 ```bash
-curl -s -X POST "https://<your-worker>.workers.dev/v1/messages" -H 'Content-Type: application/json' -H 'Origin: https://tangjennii.github.io' -H 'X-Supabase-Auth: <token>' -H 'X-CT-Meter: talk' -d '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":"hi"}]}' | jq '.error.type'
+curl -s -X POST "https://<your-worker>.workers.dev/v1/messages" -H 'Content-Type: application/json' -H 'Origin: https://tangjennii.github.io' -H 'X-Supabase-Auth: <token>' -H 'X-CT-Meter: talk' -d '{"model":"claude-opus-5","messages":[{"role":"user","content":"hi"}]}' | jq '.error.type, .error.detail.reason'
 ```
 
-- [ ] `"writer_not_cleared"` — and nothing was billed.
+- [ ] `"receipt_required"`, reason `"unknown_or_expired"`.
 
-**Quota receipt** — a talk without one must be refused:
+**(b) Relabelled as `aux`** — the hole a header-based gate could not close:
 
 ```bash
-curl -s -X POST "https://<your-worker>.workers.dev/v1/messages" -H 'Content-Type: application/json' -H 'Origin: https://tangjennii.github.io' -H 'X-Supabase-Auth: <token>' -H 'X-CT-Meter: talk' -d '{"model":"claude-opus-5","messages":[{"role":"user","content":"hi"}]}' | jq '.error.type'
+curl -s -X POST "https://<your-worker>.workers.dev/v1/messages" -H 'Content-Type: application/json' -H 'Origin: https://tangjennii.github.io' -H 'X-Supabase-Auth: <token>' -H 'X-CT-Meter: aux' -d '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":"hi"}]}' | jq '.error.type'
 ```
 
-- [ ] `"receipt_required"` — this is the quota bypass, closed.
+- [ ] `"receipt_required"` — **not** a 200. `aux` is not an exemption; it still spends your key.
+
+**(c) An uncleared model with a valid receipt.** Generate a talk normally, grab the `receipt` from the
+`/v1/free-tier/consume` response in the Network tab and its `X-CT-Job`, then:
+
+```bash
+curl -s -X POST "https://<your-worker>.workers.dev/v1/messages" -H 'Content-Type: application/json' -H 'Origin: https://tangjennii.github.io' -H 'X-Supabase-Auth: <token>' -H 'X-CT-Meter: talk' -H 'X-CT-Receipt: <receipt>' -H 'X-CT-Job: <job>' -H 'X-CT-Stage: draft' -d '{"model":"claude-sonnet-4-20250514","messages":[{"role":"user","content":"hi"}]}' | jq '.error.type'
+```
+
+- [ ] `"writer_not_cleared"` — the model gate rides on the receipt, so no header routes around it.
 
 ## 7 · NOTHING BROKE THAT USED TO WORK
+
+The receipt now covers **every** free-tier call, so these are the ones most likely to have been caught by
+it accidentally:
 
 - [ ] Images still generate.
 - [ ] Boards mode still works.
 - [ ] Check-for-updates still works.
+- [ ] Podcast script / diagram prompts (the `aux` paths) still work **from the app**.
 - [ ] The free-tier badge shows the right remaining count.
 
-## 8 · LOGS — one look, for the thing units cannot show
+> If an `aux` feature 402s, that is a real bug and not a false alarm: it means the front end is calling it
+> outside a generation, with no receipt. Tell me which feature — the fix is to mint an `aux` receipt for
+> it rather than to weaken the gate.
+
+## 8 · LOGS — one look
 
 ```bash
 npx wrangler tail --format json | jq 'select(.outcome != "ok") | {outcome, eventTimestamp}'
 ```
 
-- [ ] No `exceededCpu`. Generation is spent *waiting* on Anthropic, which consumes no CPU time — if this
-      appears, something is doing real work in a step that shouldn't be.
+- [ ] No `exceededCpu`. Generation is spent *waiting* on Anthropic, which consumes no CPU time.
 
 ---
 
 ## If something fails
-
-**Roll back the Worker, not the repo.** Cloudflare keeps previous versions:
 
 ```bash
 npx wrangler deployments list
 npx wrangler rollback --message "reverting <what> — <why>"
 ```
 
-The front end reverts forward (`git revert`), never by force-push — see RELEASE.md.
+The front end reverts forward (`git revert`), never by force-push. **If you roll back the Worker, also
+revert the front end** — a new client against an old Worker is fine, but you want the pair matched.
 
-Both database migrations are additive and safe to leave in place: `canonical_match_chunks` replaces a
-function with its own exported definition, and `score_candidate_chunks` is unreachable unless a request
-sets `rerank: true`, which no shipped client does.
+Both database migrations are additive and safe to leave: `canonical_match_chunks` replaces a function
+with its own exported definition, and `score_candidate_chunks` is unreachable unless a request sets
+`rerank: true`, which no shipped client does.
 
 ---
 
@@ -130,8 +159,12 @@ sets `rerank: true`, which no shipped client does.
 
 - **Anthropic idempotency.** Unconfirmed — the API reference is client-rendered and returned only
   "Loading…" to a fetch. The paid-call guarantee is **at-most-once, fail-closed**, not exactly-once.
-- **Retrieval quality.** Calibration has not been run; see `CALIBRATION_RUNBOOK.md`. That is a separate
-  question from whether the app works, and it is measured with physician judgements, not clicks.
-- **The remaining audit items** in `rag/runs/2026-07-29-worker-audit.md` — fail-open spend reads, the soft
-  cap under concurrency, non-atomic job idempotency, cache-creation token pricing, and the unbound
-  `RATE_LIMIT_KV`. None blocks launch; all are still open.
+- **Intent.** Someone holding a valid `aux` receipt can send a medical prompt to a cheap model on their
+  own bounded budget. The server cannot read intent. What it guarantees is that nothing reaches the
+  upstream unauthorised, a Chalk Talk *talk* is written only by a cleared model, and every call is
+  bounded and attributable.
+- **Retrieval quality.** Calibration unrun — `CALIBRATION_RUNBOOK.md`. A separate question from whether
+  the app works, and measured with physician judgements rather than clicks.
+- **The remaining audit items** in `rag/runs/2026-07-29-worker-audit.md`: fail-open spend reads, the soft
+  cap under concurrency, non-atomic job idempotency, cache-creation token pricing, unbound
+  `RATE_LIMIT_KV`. None blocks launch; all still open.

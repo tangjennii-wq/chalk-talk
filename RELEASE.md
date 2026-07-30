@@ -12,10 +12,10 @@ the live database on 2026-07-29 rather than carried forward.
 | | |
 |---|---|
 | branch | **`main`** — `launch-integration` is fully merged and is history now |
-| `BUILD_ID` / `build.txt` | `2026-07-30-01` |
+| `BUILD_ID` / `build.txt` | `2026-07-30-02` |
 | front end | **changed** — `pollAsyncGeneration` gained a `stalled` branch, so this one *does* need deploying |
 | database | production `chalktalk` (`hrcvcjiefndvytlcbmpa`); there is no staging project |
-| tests | 30 suites, all green, all wired into `.github/workflows/tests.yml` |
+| tests | 30 suites, 1195 assertions, all green, all wired into `.github/workflows/tests.yml` |
 | wrangler `main` | **`worker_entry.js`** (was `worker.js`) — it exports the Workflow class as well as the fetch handler |
 
 ## Two things worth knowing before you deploy
@@ -69,29 +69,46 @@ Already applied to the database (nothing to deploy): `canonical_match_chunks`,
 
 ## Deploying
 
-**This release changes `index.html`**, which Pages serves — so it goes live on push, before the Worker is
-deployed. Between those two moments the client has a `stalled` branch and the Worker never sets the flag:
-harmless (the branch simply never fires), but deploy the Worker promptly so the two halves match.
+### ⚠ FRONT END FIRST, THEN THE WORKER — this reversed
+
+An earlier version of this file said Worker first. The receipt work inverted the compatibility direction:
+
+| | result |
+|---|---|
+| **new Worker + old client** | **every free-tier talk 402s** — the old client sends no `X-CT-Receipt` / `X-CT-Job` / `X-CT-Stage` |
+| **old Worker + new client** | fine — the old Worker ignores headers it does not know |
 
 ```bash
-# 1. everything green, from a clean tree
+# 1 · everything green, from a clean tree
 for f in test_*.mjs rag/test_*.mjs; do node "$f" >/dev/null || echo "FAILED: $f"; done
-git status --porcelain          # expect empty
+git status --porcelain
 
-# 2. Worker
-npx wrangler deploy
-
-# 3. prove the deployed Worker is the new one — not that it responded, that it has the new behaviour
-curl -s -X POST "$WORKER_URL/retrieve" \
-  -H 'Content-Type: application/json' \
-  -d '{"query":"diabetic ketoacidosis","rerank":true}' | jq '{rerank_applied, rerank_scored, rerank_unscored}'
-# EXPECT rerank_applied:true and rerank_scored > 0.
-# rerank_applied:false means score_candidate_chunks is missing or threw.
-# rerank_scored:null means an OLD Worker is still serving — the field does not exist there.
+# 2 · FRONT END (Pages publishes on push)
+git push origin main
 ```
 
-The front end needs no deploy unless `index.html` changed; if it did, bump `BUILD_ID` **and** `build.txt`
-together — the update banner compares them.
+Hard-reload the site and confirm `BUILD_ID` reads **`2026-07-30-02`** before continuing. A cached page
+makes every subsequent check meaningless.
+
+```bash
+# 3 · WORKER
+npx wrangler deploy
+```
+
+Confirm the deploy output lists **`env.GEN_WORKFLOW (ChalkTalkGeneration)`**. No binding, no durable path.
+
+```bash
+# 4 · prove the deployed Worker is the new one — not that it responded, that it BEHAVES differently
+curl -s -X POST "$WORKER_URL/retrieve" -H 'Content-Type: application/json' \
+  -d '{"query":"diabetic ketoacidosis","rerank":true}' | jq '{rerank_applied, rerank_scored}'
+# rerank_scored: null means an OLD Worker is still serving — that field does not exist there.
+```
+
+Then work through **`rag/runs/2026-07-30-e2e-checklist.md`** — start, finish past 30s, reload/reconnect,
+cancel, duplicate submit, the three authorisation refusals, and one look at `wrangler tail`.
+
+If `index.html` changes again, bump `BUILD_ID` **and** `build.txt` together — the update banner compares
+them.
 
 ## Rolling back
 
