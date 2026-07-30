@@ -83,10 +83,23 @@ const STALL_AFTER_MS = 90_000;
 //
 // The header now only selects WHICH receipt is demanded. It cannot exempt a request from needing one.
 const RECEIPT_TTL_SECONDS = 1800;
-// Per-stage budgets. A stage legitimately runs more than once — a 529 retry, a model fallback — so each
-// gets a small allowance rather than exactly one. These are ceilings on abuse, not expected counts.
+// ── WHY draft IS 2 AND NOT 1, AND NOT 3 (Codex asked; the honest answer) ─────────────────────────────
+// Codex: "if drafting is at-most-once, three draft authorisations conflict with that guarantee."
+// Correct, and I had conflated two different paths.
+//
+//   DURABLE path (Workflow): genuinely at-most-once per (job, step). paidModelStep caches the result
+//     and refuses to re-issue when a call was made and no result was stored. `PAID_RETRY.limit = 0`.
+//     The receipt is not what bounds it there.
+//
+//   SYNC path (/v1/messages): there is NO result cache. A 529 from Anthropic means the call produced
+//     nothing and the client legitimately retries — and that retry IS a second billed attempt. So the
+//     budget here is a BOUND, not an at-most-once guarantee, and it should not be described as one.
+//
+// 2 = the initial attempt plus one retry for an overloaded upstream. Not 3: nothing in the observed
+// shape needs a third, and every extra unit is a unit someone can spend. Not 1: a single 529 would then
+// fail the generation outright, which trades a real user-facing failure for no security gain.
 const RECEIPT_STAGE_BUDGETS = {
-  talk: { draft: 3, critique: 3, refine: 3 },
+  talk: { draft: 2, critique: 2, refine: 2 },
   // Utility work (podcast scripts, diagram prompts, chat) still spends Jenni's key, so it is authorised
   // and bounded too — it simply does not consume a talk credit and may use cheaper models.
   aux:  { aux: 8 },
@@ -368,6 +381,19 @@ export default {
       fHeaders.set("Access-Control-Allow-Origin", origin || "*");
       fHeaders.set("Vary", "Origin");
       return new Response(upstreamF.body, { status: upstreamF.status, statusText: upstreamF.statusText, headers: fHeaders });
+    }
+
+    // ── A METERED TALK MUST NEVER REACH THE LEGACY PATH ──────────────────────────────────────────────
+    // Found by the test, not by reading: with SUPABASE_URL or the service key missing, the free-tier
+    // branch above is skipped entirely and the request falls through to here — where there is no
+    // receipt check, no quota, and no writer allowlist. So the fail-closed behaviour I had just added
+    // was itself bypassable by a misconfiguration, which is precisely the case it existed for.
+    //
+    // Anything presenting a sign-in token, or declaring itself a talk, is a free-tier request. If the
+    // free-tier machinery is not configured, it is refused rather than quietly served by the demo path.
+    if (supaToken || request.headers.get("X-CT-Meter") === "talk") {
+      return jsonError(503, "receipt_store_unavailable",
+        "Generation is temporarily unavailable (free tier not configured). Nothing was charged.", origin);
     }
 
     // ── Legacy / demo path (per-IP daily limit on Jenni's key) ──────────────
@@ -742,25 +768,24 @@ async function handleFreeTierConsume(request, env, origin) {
   // The cap bounds abuse without breaking the legitimate shape.
   let receipt = null;
   if (kind === "talk") {
-    if (!env.JOBS_KV) {
-      // FAIL CLOSED. Without a receipt store, quota cannot be authorised — and a metered medical
-      // generation that cannot be authorised must not proceed. Degrading to "allow everything" would let
-      // a misconfiguration silently disable both the quota and the writer allowlist, which is worse than
-      // an outage: an outage is visible. (Codex, 2026-07-30)
-      return jsonError(503, "receipt_store_unavailable",
-        "Generation is temporarily unavailable (job store not configured). Nothing was charged.", origin);
-    }
     receipt = crypto.randomUUID();
     const stages = {};
     for (const [name, max] of Object.entries(RECEIPT_STAGE_BUDGETS.talk)) stages[name] = { max, used: 0 };
-    await env.JOBS_KV.put("receipt:" + receipt, JSON.stringify({
-      userId: user.id,
-      jobId: jobId || null,          // binds the receipt to THIS generation
-      kind: "talk",
-      allowedModels: WRITER_CLEARED, // the model gate travels with the receipt, not with a header
-      stages,
-      issuedAt: new Date().toISOString(),
-    }), { expirationTtl: RECEIPT_TTL_SECONDS });
+    try {
+      // Minted in Postgres, where redemption is atomic. A receipt the client could mint, or one whose
+      // counter lives somewhere without row locking, is ornamental.
+      await supaServiceRPC(env, "receipt_issue", {
+        p_id: receipt, p_user_id: user.id, p_job: jobId || null,
+        p_kind: "talk", p_allowed_models: WRITER_CLEARED,
+        p_stages: stages, p_ttl_seconds: RECEIPT_TTL_SECONDS,
+      });
+    } catch (err) {
+      // FAIL CLOSED. The credit was already consumed above, so refund it rather than charging for a
+      // generation that cannot be authorised. An outage is visible; a silently ungated proxy is not.
+      await refundQuota(env, user.email, "talk");
+      return jsonError(503, "receipt_store_unavailable",
+        "Generation is temporarily unavailable. Nothing was charged.", origin);
+    }
   }
 
   // Report remaining for the badge.
@@ -783,39 +808,43 @@ async function handleFreeTierConsume(request, env, origin) {
  * PAID, not to meter precisely. The ledger meters. A user racing themselves to squeeze a few extra
  * calls out of one receipt is bounded by maxCalls either way.
  */
+// ── REDEMPTION IS ATOMIC, IN POSTGRES, BECAUSE KV COULD NOT BE (Codex, 2026-07-30) ───────────────────
+// This was a KV read-modify-write. Codex said that cannot bound concurrent reuse. Measured against the
+// real handler rather than argued:
+//
+//     stage budget 3, ten simultaneous requests -> ten allowed, TEN BILLED
+//
+// Not "occasionally exceeds": every one got through. Each read used=0, each decided it was in budget,
+// each spent money. The bound existed only when nothing was racing it.
+//
+// `receipt_redeem` performs the check and the decrement in ONE UPDATE, so concurrent transactions
+// serialise on the row and exactly `max` can win. Postgres provides the primitive; KV does not, and no
+// amount of care in the Worker substitutes for it.
+//
+// Cost is one round trip per paid call. Deliberate: a billing control that is fast and wrong is worth
+// less than one that is correct. It also FAILS CLOSED — an unreachable database refuses the call rather
+// than waving it through, which is the only safe direction when the question is "has this been paid for".
 async function authoriseReceipt(env, { receiptId, userId, jobId, stage, model }) {
-  if (!env.JOBS_KV) return { ok: false, reason: "no_receipt_store" };
-  let raw;
-  try { raw = await env.JOBS_KV.get("receipt:" + receiptId); }
-  catch (_) { return { ok: false, reason: "store_unreachable" }; }
-  if (!raw) return { ok: false, reason: "unknown_or_expired" };
-  let rec; try { rec = JSON.parse(raw); } catch (_) { return { ok: false, reason: "corrupt" }; }
-
-  // Every check below exists because its absence was a bypass:
-  //   owner — another user's receipt would authorise your generation
-  //   job   — a receipt for job A would fund unlimited job Bs off one credit
-  //   model — the writer allowlist would stay a client-header courtesy
-  //   stage — a draft authorisation would buy more drafts, or a critique
-  if (rec.userId !== userId) return { ok: false, reason: "wrong_owner" };
-  if (jobId && rec.jobId && rec.jobId !== jobId) return { ok: false, reason: "wrong_job" };
-  // Binding must not be optional, or it is decorative.
-  if (jobId && !rec.jobId) return { ok: false, reason: "receipt_not_job_bound" };
-
-  if (Array.isArray(rec.allowedModels) && !rec.allowedModels.includes(model)) {
-    return { ok: false, reason: "model_not_authorised", allowed: rec.allowedModels };
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { ok: false, reason: "no_receipt_store" };
   }
-
-  const st = rec.stages && rec.stages[stage];
-  if (!st) return { ok: false, reason: "stage_not_authorised" };
-  if ((st.used || 0) >= (st.max || 0)) return { ok: false, reason: "stage_exhausted" };
-  st.used = (st.used || 0) + 1;
-
-  // Read-modify-write, so counts are approximate under heavy self-concurrency. Acceptable: the receipt
-  // proves the work was PAID FOR and bounds it; the ledger is what meters precisely.
+  if (!/^[0-9a-f-]{36}$/i.test(String(receiptId || ""))) {
+    return { ok: false, reason: "unknown_or_expired" };
+  }
+  let rows;
   try {
-    await env.JOBS_KV.put("receipt:" + receiptId, JSON.stringify(rec), { expirationTtl: RECEIPT_TTL_SECONDS });
-  } catch (_) { /* ownership, job, model and stage have all already been checked */ }
-  return { ok: true, stage, used: st.used, max: st.max, kind: rec.kind };
+    rows = await supaServiceRPC(env, "receipt_redeem", {
+      p_receipt: receiptId, p_user_id: userId,
+      p_job: jobId || "", p_stage: stage, p_model: model,
+    });
+  } catch (err) {
+    // Fail closed. If we cannot establish that this was paid for, it was not.
+    return { ok: false, reason: "store_unreachable" };
+  }
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  if (!row) return { ok: false, reason: "no_result" };
+  if (row.ok === true) return { ok: true, stage, used: row.used, max: row.max_allowed };
+  return { ok: false, reason: row.reason || "refused" };
 }
 
 async function handleFreeTierBonus(request, env, origin) {

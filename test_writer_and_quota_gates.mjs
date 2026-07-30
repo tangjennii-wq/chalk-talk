@@ -21,20 +21,23 @@ const ok = (c, m) => { console.log((c ? "✓" : "✗ FAIL") + " — " + m); if (
 const ORIGIN = "http://localhost:8000";
 const realFetch = globalThis.fetch;
 
-function harness({ withKV = true, userId = "u1" } = {}) {
-  const kv = new Map();
+// Receipts live in Postgres now, so the harness models receipt_issue / receipt_redeem.
+//
+// receipt_redeem is modelled as ATOMIC — check and decrement inseparable — because that is what the SQL
+// does: one UPDATE ... WHERE used < max, serialised by the row lock. Modelling it as read-then-write
+// would reproduce the KV bug in the test and let a broken implementation pass. Section 8 demonstrates
+// the difference explicitly rather than asking anyone to take it on faith.
+const RECEIPTS = new Map();
+function harness({ withStore = true, userId = "u1" } = {}) {
   const calls = { anthropic: 0 };
   const env = {
     ALLOWED_ORIGINS: ORIGIN, ANTHROPIC_API_KEY: "sk-test",
-    SUPABASE_URL: "https://x.test", SUPABASE_SERVICE_ROLE_KEY: "k",
     MAX_MONTHLY_SPEND_USD: "250",
+    JOBS_KV: { get: async () => null, put: async () => {}, delete: async () => {} },
   };
-  if (withKV) env.JOBS_KV = {
-    get: async (k) => kv.get(k) ?? null,
-    put: async (k, v) => { kv.set(k, v); },
-    delete: async (k) => { kv.delete(k); },
-  };
-  globalThis.fetch = async (url) => {
+  if (withStore) { env.SUPABASE_URL = "https://x.test"; env.SUPABASE_SERVICE_ROLE_KEY = "k"; }
+
+  globalThis.fetch = async (url, init) => {
     const u = String(url);
     if (u.includes("api.anthropic.com")) {
       calls.anthropic++;
@@ -44,12 +47,39 @@ function harness({ withKV = true, userId = "u1" } = {}) {
     if (u.includes("/auth/v1/user")) {
       return new Response(JSON.stringify({ id: userId, email: "a@b.c" }), { status: 200, headers: { "Content-Type": "application/json" } });
     }
+    const body = (() => { try { return JSON.parse(init && init.body || "{}"); } catch (_) { return {}; } })();
+    if (u.includes("receipt_issue")) {
+      RECEIPTS.set(body.p_id, {
+        userId: body.p_user_id, jobId: body.p_job, kind: body.p_kind,
+        allowedModels: body.p_allowed_models, stages: JSON.parse(JSON.stringify(body.p_stages)),
+        expired: false,
+      });
+      return new Response("null", { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    if (u.includes("receipt_redeem")) {
+      const r = RECEIPTS.get(body.p_receipt);
+      const fail = (reason) => new Response(JSON.stringify([{ ok: false, reason, used: 0, max_allowed: 0 }]),
+                                            { status: 200, headers: { "Content-Type": "application/json" } });
+      if (!r) return fail("unknown_or_expired");
+      if (r.userId !== body.p_user_id) return fail("wrong_owner");
+      if (r.jobId && r.jobId !== body.p_job) return fail("wrong_job");
+      if (!r.allowedModels.includes(body.p_model)) return fail("model_not_authorised");
+      const st = r.stages[body.p_stage];
+      if (!st) return fail("stage_not_authorised");
+      // ATOMIC, as the SQL is. No await between reading `used` and writing it.
+      if (st.used >= st.max) return fail("stage_exhausted");
+      st.used += 1;
+      return new Response(JSON.stringify([{ ok: true, reason: "ok", used: st.used, max_allowed: st.max }]),
+                          { status: 200, headers: { "Content-Type": "application/json" } });
+    }
     if (u.includes("free_tier_consume")) return new Response("true", { status: 200, headers: { "Content-Type": "application/json" } });
     return new Response("[]", { status: 200, headers: { "Content-Type": "application/json" } });
   };
-  return { env, calls, kv };
+  return { env, calls };
 }
 const ctx = { waitUntil() {} };
+// Mirrors RECEIPT_STAGE_BUDGETS.talk.draft in worker.js.
+const RECEIPT_DRAFT_BUDGET = 2;
 
 function msg({ model = "claude-opus-5", kind = "talk", receipt, job, stage } = {}) {
   const headers = { "Content-Type": "application/json", Origin: ORIGIN, "X-CT-Meter": kind, "X-Supabase-Auth": "t" };
@@ -112,8 +142,8 @@ const reason = async (res) => ((await res.json()).error || {}).detail?.reason;
     const r = await worker.fetch(msg({ receipt: body.receipt, job: "job-cccccccc", stage: "draft" }), h.env, ctx);
     if (r.status === 200) allowed++; else refused++;
   }
-  ok(allowed <= 3, `a draft authorisation permits at most its stage budget (${allowed} allowed)`);
-  ok(refused >= 9, `…and refuses the rest (${refused} of 12)`);
+  ok(allowed <= 2, `a draft authorisation permits at most its stage budget (${allowed} allowed)`);
+  ok(refused >= 10, `…and refuses the rest (${refused} of 12)`);
   ok(h.calls.anthropic === allowed, "…with upstream spend matching exactly the allowed calls");
 
   // …and the critique budget is SEPARATE, so exhausting drafts does not consume it.
@@ -131,7 +161,7 @@ const reason = async (res) => ((await res.json()).error || {}).detail?.reason;
 // v2 logged a warning and continued, so a misconfiguration silently disabled both quota and the writer
 // allowlist while the app kept spending. An outage is visible; a silently ungated proxy is not.
 {
-  const h = harness({ withKV: false });
+  const h = harness({ withStore: false });
   h.calls.anthropic = 0;
   const res = await worker.fetch(msg({ receipt: "anything", job: "j", stage: "draft" }), h.env, ctx);
   ok(res.status === 503, `no receipt store => 503, not "carry on" (got ${res.status})`);
@@ -165,7 +195,6 @@ const reason = async (res) => ((await res.json()).error || {}).detail?.reason;
   const { body } = await mint(h.env, "job-ffffffff");
   // Same env and KV, different authenticated user.
   const h2 = harness({ userId: "SOMEONE_ELSE" });
-  h2.env.JOBS_KV = h.env.JOBS_KV;
   h2.calls.anthropic = 0;
   const res = await worker.fetch(msg({ receipt: body.receipt, job: "job-ffffffff", stage: "draft" }), h2.env, ctx);
   ok(res.status === 402 && await reason(res) === "wrong_owner", "another user's receipt is refused");
@@ -181,11 +210,102 @@ const reason = async (res) => ((await res.json()).error || {}).detail?.reason;
   const flat = src.split("\n").map(l => l.replace(/^\s*\/\/\s?/, "")).join(" ").replace(/\s+/g, " ");
   ok(/client header cannot determine whether a request is medical/.test(flat),
      "the source records WHY the header-based gate was wrong");
-  ok(/allowedModels: WRITER_CLEARED/.test(flat),
+  ok(/p_allowed_models: WRITER_CLEARED/.test(flat),
      "…and that the model gate now travels with the receipt");
   ok(!/receipt check SKIPPED/.test(src), "the silent-degradation path is gone");
   ok(/Availability does not outrank billing and content safety/.test(src),
      "…replaced by an explicit statement of the trade");
+}
+
+// ── 8 · TEN AT ONCE MUST NOT EXCEED THE BUDGET ───────────────────────────────
+// Codex: "Receipt redemption must be atomic. KV read-modify-write and eventual consistency can allow
+// concurrent reuse. Prove that 10 simultaneous requests with the same jobId + stage cannot exceed its
+// budget."
+//
+// He was right, and the measurement was worse than the warning. Against the previous KV implementation,
+// with a stage budget of 3:
+//
+//     concurrent requests: 10   allowed: 10   UPSTREAM CALLS BILLED: 10
+//
+// Every one got through. Each read used=0, each decided it was in budget, each spent money. The bound
+// existed only when nothing was racing it — which is the one condition under which a bound is pointless.
+//
+// Both shapes are executed below so the difference is demonstrated rather than claimed.
+{
+  const BUDGET = 2;
+
+  // (a) THE OLD SHAPE — read, decide, write, with an await between. This is what KV forces.
+  {
+    let used = 0, billed = 0;
+    const nonAtomic = async () => {
+      const seen = used;                                   // read
+      await new Promise(r => setTimeout(r, 1));            // ...any await at all
+      if (seen >= BUDGET) return false;                    // decide on a stale read
+      used = seen + 1;                                     // write
+      billed++;
+      return true;
+    };
+    await Promise.all(Array.from({ length: 10 }, nonAtomic));
+    ok(billed > BUDGET,
+       `NON-ATOMIC: 10 concurrent requests billed ${billed} against a budget of ${BUDGET} — the bug, reproduced`);
+  }
+
+  // (b) THE SQL SHAPE — check and decrement inseparable, as `UPDATE ... WHERE used < max` is.
+  {
+    let used = 0, billed = 0;
+    const atomic = async () => {
+      await new Promise(r => setTimeout(r, 1));            // latency before, as a real round trip has
+      if (used >= BUDGET) return false;                    // check and decrement with NO await between:
+      used += 1;                                           // JS is single-threaded, so this is atomic,
+      billed++;                                            // exactly as the row lock makes the SQL atomic
+      return true;
+    };
+    await Promise.all(Array.from({ length: 10 }, atomic));
+    ok(billed === BUDGET,
+       `ATOMIC: 10 concurrent requests billed exactly ${billed} — the budget holds`);
+  }
+
+  // NB the SQL was ALSO verified in production, sequentially: redeem #1 and #2 succeed, #3 is refused
+  // with stage_exhausted, and wrong job / wrong owner / uncleared model / unknown stage each return
+  // their own reason. A first attempt at a CONCURRENT check used generate_series + lateral and reported
+  // ten authorised against a budget of two — that is one statement sharing one snapshot, so it measured
+  // the test rather than the lock. The concurrent case rests on Postgres row-locking semantics; see
+  // supabase/migrations/add_receipts.sql for how to close that last gap with real parallel connections.
+
+  // (c) END TO END, through the real handler, against the modelled store.
+  const h = harness();
+  const { body } = await mint(h.env, "job-concurrent");
+  h.calls.anthropic = 0;
+  const results = await Promise.all(Array.from({ length: 10 }, () =>
+    worker.fetch(msg({ receipt: body.receipt, job: "job-concurrent", stage: "draft" }), h.env, ctx)));
+  const allowed = results.filter(r => r.status === 200).length;
+  ok(allowed <= RECEIPT_DRAFT_BUDGET,
+     `10 simultaneous requests, same job and stage: ${allowed} allowed (budget ${RECEIPT_DRAFT_BUDGET})`);
+  ok(h.calls.anthropic === allowed,
+     `…and UPSTREAM CALLS BILLED = ${h.calls.anthropic}, matching exactly what was authorised`);
+  ok(h.calls.anthropic <= RECEIPT_DRAFT_BUDGET,
+     "…so concurrency cannot buy calls the receipt did not authorise");
+  globalThis.fetch = realFetch;
+}
+
+// ── 9 · REDEMPTION LIVES WHERE ATOMICITY EXISTS ──────────────────────────────
+{
+  const src = (await import("fs")).readFileSync(new URL("./worker.js", import.meta.url), "utf8");
+  ok(/supaServiceRPC\(env, "receipt_redeem"/.test(src),
+     "redemption goes through the database, not KV");
+  ok(!/JOBS_KV\.get\("receipt:/.test(src), "no KV receipt reads remain");
+  ok(!/JOBS_KV\.put\("receipt:/.test(src), "no KV receipt writes remain");
+  ok(/return \{ ok: false, reason: "store_unreachable" \}/.test(src),
+     "an unreachable database FAILS CLOSED — if we cannot establish it was paid for, it was not");
+
+  const sql = (await import("fs")).readFileSync(new URL("./supabase/migrations/add_receipts.sql", import.meta.url), "utf8");
+  const flatSql = sql.split("\n").map(l => l.replace(/^\s*--.*$/, "")).join(" ").replace(/\s+/g, " ");
+  ok(/update public\.generation_receipts/.test(flatSql) && /jsonb_set/.test(flatSql),
+     "the SQL decrements with an UPDATE");
+  ok(/< \(\(r\.stages -> p_stage ->> 'max'\)::int\)/.test(flatSql),
+     "…whose WHERE carries the budget check, so decision and decrement are one statement");
+  ok(/revoke all on function public\.receipt_issue/.test(flatSql),
+     "…and a browser cannot mint its own receipt");
 }
 
 console.log("\n" + (failures === 0 ? "✔ AUTHORISATION TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
