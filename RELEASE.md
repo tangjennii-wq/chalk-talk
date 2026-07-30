@@ -136,33 +136,39 @@ was rather than half-migrated.
 
 `rag/runs/2026-07-29-worker-audit.md` has the detail. In priority order:
 
-1. **Background generation — durable path BUILT and its platform assumptions MEASURED, not yet run
-   end-to-end.** `ctx.waitUntil()` is cut off ~30s after the response on either plan while a
-   draft+critique needs 50–100s, so the legacy path loses long generations *and* the user's credit. A
-   Cloudflare Workflow now replaces it. A runtime probe measured the four behaviours the docs leave open
-   (`rag/runs/2026-07-30-workflow-probe-results.md`) and two came back worse than documented — `limit: N`
-   is 1 + N executions, so the original `limit: 1` was a two-call config, and `NonRetryableError` is
-   silently defeated by a custom `name`. Both corrected. **Remaining: the end-to-end click test in
-   `rag/runs/2026-07-30-e2e-checklist.md`, then deploy.** Until `/generate-async` returns
+1. **Background generation — durable path BUILT, platform assumptions MEASURED, not yet run end to end.**
+   `ctx.waitUntil()` is cut off ~30s after the response on either plan while a draft+critique needs
+   50–100s. A Cloudflare Workflow replaces it, and a runtime probe measured the four behaviours the docs
+   leave open (`rag/runs/2026-07-30-workflow-probe-results.md`) — two came back worse than documented.
+   **Remaining: `rag/runs/2026-07-30-e2e-checklist.md`, then deploy.** Until `/generate-async` returns
    `durable: true` in production, treat the defect as live.
-2. **`getMonthlySpendCents` fails open** — every error returns `0`, so the cap disengages exactly when
+2. **The client still chooses prompts.** Authorisation is bound to user, job, stage and model, and
+   redemption is atomic — but the server does not know *what* it is generating. Design and sequencing in
+   `rag/runs/2026-07-30-server-owned-generation-design.md`. Recommendation there: move the prompt
+   templates server-side (approach A) before the larger migration, and keep BYOK on the current route,
+   since that is the user's own key and prompt.
+3. **`getMonthlySpendCents` fails open** — every error returns `0`, so the cap disengages exactly when
    Supabase is unhealthy, while `/status` reports healthy remaining capacity.
-3. **The cap is a soft backstop, not a hard cap.** Spend is read before work and recorded after, so
-   concurrent requests can all observe `$249` and proceed. The UI copy should say "backstop".
-4. **Async idempotency is non-atomic** — two requests with the same `clientJobId` can both see no record
-   and both start work. KV has no compare-and-set; this wants a Durable Object or a DB constraint.
-5. **`cache_creation_input_tokens` is never priced** (1.25×–2× input), so the ledger runs below the
-   Anthropic invoice and the cap trips later than intended.
-6. **`RATE_LIMIT_KV` is not bound** in `wrangler.toml`, so the per-IP daily limit does nothing while
-   `/health` reports it enforcing with full headroom.
-7. **Rotate the exposed OpenAI and Supabase service-role keys.** Carried across several sessions.
-8. **Calibration has not been run** — `CALIBRATION_RUNBOOK.md`. Separate from launch readiness.
+4. **The cap is a soft backstop, not a hard cap.** Spend is read before work and recorded after, so
+   concurrent requests can all observe `$249` and proceed.
+5. **Async idempotency is non-atomic** — two requests with the same `clientJobId` can both see no record
+   and both start work. (The *receipt* is now atomic; the job record is not.)
+6. **`cache_creation_input_tokens` is never priced** (1.25×–2× input), so the ledger runs below the
+   Anthropic invoice.
+7. **`RATE_LIMIT_KV` is not bound**, so the per-IP daily limit does nothing while `/health` reports it
+   enforcing.
+8. **Rotate the exposed OpenAI and Supabase service-role keys.** Carried across several sessions.
+9. **Calibration has not been run** — `CALIBRATION_RUNBOOK.md`. Separate from launch readiness.
 
-### Closed since the audit
+### Closed
 
-- ~~`/v1/messages` never verifies that `/consume` happened~~ — receipts, bound to the paying user.
-- ~~`WRITER_CLEARED` enforced only on the async route~~ — enforced on both, with the receipt making it
-  authoritative rather than advisory.
+- ~~Quota enforced by client convention~~ — server-issued receipts, bound to user + job + stage + model,
+  redeemed atomically in Postgres. KV let **10 concurrent requests through a budget of 3, all billed**.
+- ~~`WRITER_CLEARED` enforced only on the async route~~ — the model set travels on the receipt, so no
+  header routes around it.
+- ~~`X-CT-Meter: aux` exempted a request from every gate~~ — every free-tier call is authorised.
+- ~~A misconfiguration silently disabled authorisation~~ — fails closed, including the path where a
+  missing Supabase config dropped the request onto the unguarded legacy route.
 - ~~Unauthenticated image generation spends the OpenAI key uncapped~~ — capped and ledgered.
 - ~~The legacy `/v1/messages` path is unledgered~~ — capped and ledgered.
 - ~~Cancellation reports success it did not achieve~~ — 502 with `cancelled: false`.
