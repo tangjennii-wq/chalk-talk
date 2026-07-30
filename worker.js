@@ -67,11 +67,30 @@ const IMAGE_FLAT_CENTS = 8;   // gpt-image-1.5 high quality ≈ $0.08/image
 // STALL_AFTER_MS is deliberately several missed beats, so one slow write or a clock skew is not a stall.
 const CRITIQUE_HEARTBEAT_MS = 20_000;
 const STALL_AFTER_MS = 90_000;
-// A generation receipt proves a talk was paid for. One generation legitimately makes several model
-// calls — draft, review, 529 retries, model fallbacks — so a receipt authorises a bounded number rather
-// than one. Twelve is generous against the observed shape and still finite.
-const RECEIPT_MAX_CALLS = 12;
+// ── RECEIPTS AUTHORISE A SPECIFIC OPERATION, NOT "SOME CALLS" (Codex, 2026-07-30) ────────────────────
+// The first version issued a receipt worth 12 arbitrary calls, gated on `X-CT-Meter: talk`. Two holes:
+// one consumed credit then buys up to twelve INDEPENDENT generations, and a client header cannot
+// determine whether a request is medical — relabel the talk `aux` and both the writer allowlist and the
+// receipt requirement vanish. Documenting that limitation was not the same as closing it.
+//
+// A receipt is now bound to (user, job, stage, model set), each STAGE has its own budget, and the
+// operation is derived from the RECEIPT rather than from a header:
+//
+//   userId        the person who paid. Another user's receipt is refused.
+//   jobId         this generation. A receipt for job A cannot authorise job B.
+//   allowedModels for a talk receipt, exactly WRITER_CLEARED — the model gate travels with the receipt.
+//   stages        { draft: {max, used}, ... } — a draft authorisation cannot buy more drafts, or a critique.
+//
+// The header now only selects WHICH receipt is demanded. It cannot exempt a request from needing one.
 const RECEIPT_TTL_SECONDS = 1800;
+// Per-stage budgets. A stage legitimately runs more than once — a 529 retry, a model fallback — so each
+// gets a small allowance rather than exactly one. These are ceilings on abuse, not expected counts.
+const RECEIPT_STAGE_BUDGETS = {
+  talk: { draft: 3, critique: 3, refine: 3 },
+  // Utility work (podcast scripts, diagram prompts, chat) still spends Jenni's key, so it is authorised
+  // and bounded too — it simply does not consume a talk credit and may use cheaper models.
+  aux:  { aux: 8 },
+};
 const EMBEDDING_MODEL = "text-embedding-3-small";
 // (RERANK_POOL removed 2026-07-28. It encoded the assumption that a global top-N lookup could score the
 // facet union; it cannot. score_candidate_chunks scores the union exactly, so there is no pool depth to
@@ -220,7 +239,13 @@ export default {
     if (!body.model || !ALLOWED_MODELS.includes(body.model))
       return jsonError(400, "model_not_allowed", `Model '${body.model}' not allowed.`, origin);
 
-    // ── SERVER-SIDE WRITER ALLOWLIST (Codex, 2026-07-29 → 2026-07-30) ──────────────────────────────
+    // ── THE WRITER ALLOWLIST LIVES ON THE RECEIPT, NOT ON A HEADER (Codex, 2026-07-30) ─────────────
+    // An earlier version gated on `X-CT-Meter: talk`. A client header cannot determine whether a request
+    // is medical: relabel the talk `aux` and both the allowlist and the receipt requirement vanish.
+    // The real check is in authoriseReceipt() — a talk receipt carries allowedModels = WRITER_CLEARED,
+    // and there is no path to the upstream that skips the receipt. What follows is retained only as a
+    // cheap early reject; it is NOT the control.
+    // ── (historical note) SERVER-SIDE WRITER ALLOWLIST (Codex, 2026-07-29) ─────────────────────────
     // `callAnthropicText` fails closed against WRITER_CLEARED, but that is the ASYNC runner only. This
     // synchronous endpoint validated nothing but ALLOWED_MODELS, which deliberately includes older and
     // cheaper models for non-writing utility calls — podcast scripts, diagram prompts, chat. So a
@@ -289,16 +314,33 @@ export default {
       // receipts, so the check cannot run at all. Rejecting every talk in that case would take the app
       // down on a misconfiguration rather than protecting anything, so it degrades to the previous
       // behaviour and says so in the log. JOBS_KV IS bound in production.
-      if (meterKind === "talk" && env.JOBS_KV) {
-        const receiptId = request.headers.get("X-CT-Receipt") || "";
-        const redeemed = await redeemReceipt(env, receiptId, user.id);
-        if (!redeemed.ok) {
-          return jsonError(402, "receipt_required",
-            "This generation was not paid for. Start it from the app so a talk is reserved first.",
-            origin, { reason: redeemed.reason });
-        }
-      } else if (meterKind === "talk") {
-        console.warn("receipt check SKIPPED: JOBS_KV is not bound, so quota is unenforceable here");
+      // FAIL CLOSED WITHOUT A RECEIPT STORE. The previous version logged a warning and continued, so a
+      // production misconfiguration silently disabled BOTH the quota and the writer allowlist while the
+      // app kept spending. Availability does not outrank billing and content safety here: an outage is
+      // visible, a silently ungated proxy is not. (Codex, 2026-07-30)
+      if (!env.JOBS_KV) {
+        return jsonError(503, "receipt_store_unavailable",
+          "Generation is temporarily unavailable (job store not configured). Nothing was charged.", origin);
+      }
+
+      // EVERY free-tier call is authorised — this is Jenni's key, and `aux` is not a free pass. The
+      // header only selects WHICH receipt is demanded; it cannot exempt a request from needing one,
+      // which is exactly what made the old `X-CT-Meter: aux` relabelling trick work.
+      const receiptId = request.headers.get("X-CT-Receipt") || "";
+      const stage = (request.headers.get("X-CT-Stage") || (meterKind === "talk" ? "draft" : "aux"))
+        .toLowerCase().replace(/[^a-z]/g, "");
+      const auth = await authoriseReceipt(env, {
+        receiptId, userId: user.id, jobId: request.headers.get("X-CT-Job") || null,
+        stage, model: body.model,
+      });
+      if (!auth.ok) {
+        const modelIssue = auth.reason === "model_not_authorised";
+        return jsonError(modelIssue ? 403 : 402,
+          modelIssue ? "writer_not_cleared" : "receipt_required",
+          modelIssue
+            ? `Model '${body.model}' is not authorised for this generation. Cleared: [${WRITER_CLEARED.join(", ")}].`
+            : "This generation was not authorised. Start it from the app so a talk is reserved first.",
+          origin, { reason: auth.reason, stage });
       }
 
       let upstreamF;
@@ -663,8 +705,15 @@ async function handleFreeTierConsume(request, env, origin) {
   const user = await verifySupabaseUser(env, token);
   if (!user) return jsonError(401, "auth_invalid", "Sign-in token was rejected. Sign in again.", origin);
 
-  let kind = "talk";
-  try { const b = JSON.parse(await request.text() || "{}"); if (b.kind === "image") kind = "image"; } catch (e) {}
+  let kind = "talk", jobId = null;
+  try {
+    const b = JSON.parse(await request.text() || "{}");
+    if (b.kind === "image") kind = "image";
+    // The receipt is bound to this generation. A client-chosen id is fine: it grants nothing, it only
+    // PARTITIONS the authorisation, so the worst a caller can do by choosing one is constrain
+    // themselves. What it prevents is a receipt for job A authorising an unlimited number of job Bs.
+    if (typeof b.clientJobId === "string" && /^[a-zA-Z0-9_-]{8,64}$/.test(b.clientJobId)) jobId = b.clientJobId;
+  } catch (e) {}
 
   // System spend cap backstop.
   const monthKey = new Date().toISOString().slice(0, 7);
@@ -692,13 +741,25 @@ async function handleFreeTierConsume(request, env, origin) {
   // model fallbacks — and charging a talk per call would burn a user's quota in a single generation.
   // The cap bounds abuse without breaking the legitimate shape.
   let receipt = null;
-  if (kind === "talk" && env.JOBS_KV) {
+  if (kind === "talk") {
+    if (!env.JOBS_KV) {
+      // FAIL CLOSED. Without a receipt store, quota cannot be authorised — and a metered medical
+      // generation that cannot be authorised must not proceed. Degrading to "allow everything" would let
+      // a misconfiguration silently disable both the quota and the writer allowlist, which is worse than
+      // an outage: an outage is visible. (Codex, 2026-07-30)
+      return jsonError(503, "receipt_store_unavailable",
+        "Generation is temporarily unavailable (job store not configured). Nothing was charged.", origin);
+    }
     receipt = crypto.randomUUID();
+    const stages = {};
+    for (const [name, max] of Object.entries(RECEIPT_STAGE_BUDGETS.talk)) stages[name] = { max, used: 0 };
     await env.JOBS_KV.put("receipt:" + receipt, JSON.stringify({
       userId: user.id,
+      jobId: jobId || null,          // binds the receipt to THIS generation
+      kind: "talk",
+      allowedModels: WRITER_CLEARED, // the model gate travels with the receipt, not with a header
+      stages,
       issuedAt: new Date().toISOString(),
-      calls: 0,
-      maxCalls: RECEIPT_MAX_CALLS,
     }), { expirationTtl: RECEIPT_TTL_SECONDS });
   }
 
@@ -722,22 +783,39 @@ async function handleFreeTierConsume(request, env, origin) {
  * PAID, not to meter precisely. The ledger meters. A user racing themselves to squeeze a few extra
  * calls out of one receipt is bounded by maxCalls either way.
  */
-async function redeemReceipt(env, receiptId, userId) {
-  if (!env.JOBS_KV) return { ok: false, reason: "no_store" };
+async function authoriseReceipt(env, { receiptId, userId, jobId, stage, model }) {
+  if (!env.JOBS_KV) return { ok: false, reason: "no_receipt_store" };
   let raw;
   try { raw = await env.JOBS_KV.get("receipt:" + receiptId); }
   catch (_) { return { ok: false, reason: "store_unreachable" }; }
   if (!raw) return { ok: false, reason: "unknown_or_expired" };
   let rec; try { rec = JSON.parse(raw); } catch (_) { return { ok: false, reason: "corrupt" }; }
-  // A receipt belongs to the user who paid for it. Without this, one user's receipt would authorise
-  // another user's generation — a quota bypass wearing the fix's clothes.
+
+  // Every check below exists because its absence was a bypass:
+  //   owner — another user's receipt would authorise your generation
+  //   job   — a receipt for job A would fund unlimited job Bs off one credit
+  //   model — the writer allowlist would stay a client-header courtesy
+  //   stage — a draft authorisation would buy more drafts, or a critique
   if (rec.userId !== userId) return { ok: false, reason: "wrong_owner" };
-  if ((rec.calls || 0) >= (rec.maxCalls || RECEIPT_MAX_CALLS)) return { ok: false, reason: "exhausted" };
-  rec.calls = (rec.calls || 0) + 1;
+  if (jobId && rec.jobId && rec.jobId !== jobId) return { ok: false, reason: "wrong_job" };
+  // Binding must not be optional, or it is decorative.
+  if (jobId && !rec.jobId) return { ok: false, reason: "receipt_not_job_bound" };
+
+  if (Array.isArray(rec.allowedModels) && !rec.allowedModels.includes(model)) {
+    return { ok: false, reason: "model_not_authorised", allowed: rec.allowedModels };
+  }
+
+  const st = rec.stages && rec.stages[stage];
+  if (!st) return { ok: false, reason: "stage_not_authorised" };
+  if ((st.used || 0) >= (st.max || 0)) return { ok: false, reason: "stage_exhausted" };
+  st.used = (st.used || 0) + 1;
+
+  // Read-modify-write, so counts are approximate under heavy self-concurrency. Acceptable: the receipt
+  // proves the work was PAID FOR and bounds it; the ledger is what meters precisely.
   try {
     await env.JOBS_KV.put("receipt:" + receiptId, JSON.stringify(rec), { expirationTtl: RECEIPT_TTL_SECONDS });
-  } catch (_) { /* the count is best-effort; the ownership and existence checks already passed */ }
-  return { ok: true, calls: rec.calls };
+  } catch (_) { /* ownership, job, model and stage have all already been checked */ }
+  return { ok: true, stage, used: st.used, max: st.max, kind: rec.kind };
 }
 
 async function handleFreeTierBonus(request, env, origin) {

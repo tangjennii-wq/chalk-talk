@@ -749,13 +749,23 @@ function freeTierActive(){
 }
 // Consume ONE unit of quota for a generation. Returns {ok} or {ok:false, code, message}.
 // Called once per generation (not per API call) so retries/fallbacks don't double-charge.
+// One id per generation. The receipt is bound to it server-side, so a receipt for one generation
+// cannot authorise another — which is what stopped one consumed credit from buying many talks.
+function _newGenJobId(){
+  var id;
+  try { id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)); }
+  catch(_){ id = String(Date.now()) + Math.random().toString(36).slice(2); }
+  id = String(id).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64);
+  S.genJobId = id;
+  return id;
+}
 async function consumeFreeTier(kind){
   if(!freeTierActive()) return {ok:true, skipped:true};
   try{
     var r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/v1/free-tier/consume", {
       method:"POST",
       headers:{ "Content-Type":"application/json", "X-Supabase-Auth": freeTierToken() },
-      body: JSON.stringify({ kind: kind||"talk" })
+      body: JSON.stringify({ kind: kind||"talk", clientJobId: _newGenJobId() })
     });
     var data = {}; try{ data = await r.json(); }catch(_){}
     if(r.ok){
@@ -1338,7 +1348,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-30-01";
+var BUILD_ID = "2026-07-30-02";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6628,7 +6638,12 @@ async function callAPI(sys, content, maxTok, opts) {
     headers = {"Content-Type":"application/json","X-Supabase-Auth":freeTierToken(),"X-CT-Meter":(opts.meterKind||"aux")};
     // Present the receipt on talk-kind calls. One receipt covers the whole generation — draft, review,
     // retries, fallbacks — so it is sent on each call rather than consumed by the first.
-    if((opts.meterKind||"aux") === "talk" && S.genReceipt) headers["X-CT-Receipt"] = S.genReceipt;
+    // The receipt is the authorisation, so it travels on EVERY free-tier call — `aux` included. The
+    // stage tells the server which per-stage budget to spend, so a draft authorisation cannot be reused
+    // as more drafts or as a critique.
+    if(S.genReceipt) headers["X-CT-Receipt"] = S.genReceipt;
+    if(S.genJobId) headers["X-CT-Job"] = S.genJobId;
+    headers["X-CT-Stage"] = opts.stage || ((opts.meterKind||"aux") === "talk" ? "draft" : "aux");
   } else if (useProxy) {
     endpoint = PROXY_CONFIG.url.replace(/\/$/, "") + "/v1/messages";
     headers = {"Content-Type":"application/json"};
@@ -7140,7 +7155,7 @@ async function generate(){
     if(S.style==="boards"){ var _bdLvl=boardsDifficulty(), _bd=BOARDS_DIFFICULTY[_bdLvl]; sys += "\n\nTARGET DIFFICULTY LEVEL FOR THIS QUESTION: Level "+_bdLvl+" ("+_bd.label+"). "+_bd.directive+" Set question.difficulty_level="+_bdLvl+' and question.difficulty_label="'+_bd.label+'", populate question.difficulty_rationale and question.reasoning_steps, and calibrate reasoning depth + distractor closeness to this level per the DIFFICULTY CALIBRATION rules above.'; }
 
     // Step 1: Main generation with model fallback chain (Opus -> Sonnet -> Haiku)
-    var mainOpts = { meterKind: "talk" };   // free-tier spend-metering tag (quota already consumed up front)
+    var mainOpts = { meterKind: "talk", stage: "draft" };   // stage picks the receipt budget the server spends
     if (S.wantWebSearch) mainOpts.tools = [{type:"web_search_20250305",name:"web_search",max_uses:3,allowed_domains:ALLOWED_SEARCH_DOMAINS}];
     // Guard: web-search allowed_domains must be duplicate-free, else Anthropic rejects the call.
     if (S.wantWebSearch) {
@@ -7424,7 +7439,7 @@ async function generate(){
           _critiqueModel = _asyncCritModel || "";        // the Worker's reviewer ("" on an older Worker)
         }
         else {
-          var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels);
+          var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels, { stage: "critique" });
           critTxt = critResult.txt;
           _critiqueModel = critResult.modelUsed || "";
           if (critResult.fellBack) console.info("Critique via " + critResult.modelUsed);
@@ -8019,7 +8034,7 @@ async function weaveFeedbackTalk(userMsg){
     text: "REVIEWER FEEDBACK TO APPLY:\n" + userMsg +
       "\n\n===== CURRENT TALK JSON (0-based section indices; apply the feedback, return only changes) =====\n" + existingJson
   }].concat(buildReferenceParts(S.files));
-  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind:"talk" });
+  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind:"talk", stage:"refine" });
   // Charge-after: parse FIRST — if the model returned malformed JSON the refine failed and we throw
   // below without charging. Only consume once we have a usable result. (Jenni 2026-07-03)
   var parsed = JSON.parse(fixJSON(txt));
@@ -8237,7 +8252,7 @@ async function compressTalk(userMsg){
     text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (compress this; preserve every section, fact, and citation):\n" + existingJson
   }];
   // No file refs needed — this is a copy-edit of the existing talk, not a content addition.
-  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk" });
+  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk", stage: "refine" });
   // parse before charging — malformed OR incomplete = no charge, no render (Codex 2026-07-26)
   var compressed = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "compressed talk");
   if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }   // was a free full generation with no consume (quota bypass)
@@ -8295,7 +8310,7 @@ async function expandTalk(userMsg){
     text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (expand each section with more depth; preserve every existing fact and section):\n" + existingJson
   }].concat(buildReferenceParts(S.files));
   // Higher max — expansion grows the talk so we need headroom.
-  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk" });
+  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk", stage: "refine" });
   // parse before charging — malformed OR incomplete = no charge, no render (Codex 2026-07-26)
   var expanded = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "expanded talk");
   if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }   // was a free full generation with no consume (quota bypass)
@@ -8445,7 +8460,7 @@ async function weaveRevision(userMsg){
   // Also routes refine through Sonnet (was Haiku via default MODEL) — refine is a context-heavy
   // task where Haiku was occasionally dropping bullets. Worth ~$0.02/refine for the bump in
   // reliability. (Jenni 2026-06-10 "increase the cap for refine".)
-  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk" });
+  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk", stage: "refine" });
   // Charge-after: the refine model call succeeded (owner billed), so consume 1 talk now.
   if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
   var patch = JSON.parse(fixJSON(txt));
@@ -9303,7 +9318,7 @@ async function retryReview(){
   for (var a = 0; a < 2 && !ok; a++){
     if (a > 0) await new Promise(function(r){ setTimeout(r, 1200); });
     try {
-      var res = await callAPIWithFallback(rp.critiqueSystem, critiqueInput, rp.critMaxTok, rp.criticModels);
+      var res = await callAPIWithFallback(rp.critiqueSystem, critiqueInput, rp.critMaxTok, rp.criticModels, { stage: "critique" });
       var txt = res.txt; _retryCriticModel = res.modelUsed || "";
       if (!txt || !txt.trim()) throw new Error("empty review response");
       var _racc = acceptCritique(txt, rp.draft, rp.style || S.style, "retried critic rewrite");

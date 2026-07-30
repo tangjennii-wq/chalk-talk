@@ -1,20 +1,18 @@
-// SERVER-SIDE WRITER ALLOWLIST + QUOTA RECEIPT — run: node test_writer_and_quota_gates.mjs
+// AUTHORISATION ON THE SYNC ROUTE — run: node test_writer_and_quota_gates.mjs
 //
-// Two bypasses Codex found, both on the SYNCHRONOUS /v1/messages route, both invisible from the async
-// runner where the equivalent guards do exist:
+// Three rounds of review got this wrong in three different ways, each time in the same direction: the
+// gate looked like a control and was actually a courtesy.
 //
-//   1. WRITER ALLOWLIST. `callAnthropicText` fails closed against WRITER_CLEARED — but that is the async
-//      path only. This endpoint validated ALLOWED_MODELS, which deliberately includes older and cheaper
-//      models for utility calls, so a tampered client could have an unbenchmarked model write medical
-//      teaching content while the file header said generation FAILS CLOSED. It did, on one of two routes.
+//   v1  no gate at all. WRITER_CLEARED was enforced only by the async runner; the quota was enforced by
+//       the client's good manners.
+//   v2  gated on `X-CT-Meter: talk` and a 12-call receipt. Codex: a client header cannot decide whether
+//       a request is medical (relabel it `aux` and both gates vanish), and one credit buying twelve
+//       arbitrary calls buys twelve independent generations.
+//   v3  this. Authorisation is a receipt bound to (user, job, stage, model set). The header selects
+//       WHICH receipt is demanded; it cannot exempt a request from needing one.
 //
-//   2. QUOTA. Quota is consumed by POST /v1/free-tier/consume, which the front end calls before
-//      generating. This endpoint checked authentication and then trusted that it had happened. A caller
-//      who skipped the app could generate with zero talks left, and the per-IP fallback does not stop it
-//      because RATE_LIMIT_KV is unbound.
-//
-// Both are executed here against the real handler. Counting the upstream calls is the assertion that
-// matters: a gate that returns the right status code while still spending money is not a gate.
+// Every assertion counts UPSTREAM CALLS, not status codes. A gate that returns 403 while still spending
+// money is not a gate.
 import worker from "./worker.js";
 
 let failures = 0;
@@ -23,18 +21,18 @@ const ok = (c, m) => { console.log((c ? "✓" : "✗ FAIL") + " — " + m); if (
 const ORIGIN = "http://localhost:8000";
 const realFetch = globalThis.fetch;
 
-function harness({ quotaOk = true } = {}) {
+function harness({ withKV = true, userId = "u1" } = {}) {
   const kv = new Map();
-  const calls = { anthropic: 0, consume: 0 };
+  const calls = { anthropic: 0 };
   const env = {
     ALLOWED_ORIGINS: ORIGIN, ANTHROPIC_API_KEY: "sk-test",
     SUPABASE_URL: "https://x.test", SUPABASE_SERVICE_ROLE_KEY: "k",
     MAX_MONTHLY_SPEND_USD: "250",
-    JOBS_KV: {
-      get: async (k) => kv.get(k) ?? null,
-      put: async (k, v) => { kv.set(k, v); },
-      delete: async (k) => { kv.delete(k); },
-    },
+  };
+  if (withKV) env.JOBS_KV = {
+    get: async (k) => kv.get(k) ?? null,
+    put: async (k, v) => { kv.set(k, v); },
+    delete: async (k) => { kv.delete(k); },
   };
   globalThis.fetch = async (url) => {
     const u = String(url);
@@ -44,143 +42,151 @@ function harness({ quotaOk = true } = {}) {
                           { status: 200, headers: { "Content-Type": "application/json" } });
     }
     if (u.includes("/auth/v1/user")) {
-      return new Response(JSON.stringify({ id: "u1", email: "a@b.c" }), { status: 200, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ id: userId, email: "a@b.c" }), { status: 200, headers: { "Content-Type": "application/json" } });
     }
-    if (u.includes("free_tier_consume")) {
-      calls.consume++;
-      return new Response(String(quotaOk), { status: 200, headers: { "Content-Type": "application/json" } });
-    }
+    if (u.includes("free_tier_consume")) return new Response("true", { status: 200, headers: { "Content-Type": "application/json" } });
     return new Response("[]", { status: 200, headers: { "Content-Type": "application/json" } });
   };
   return { env, calls, kv };
 }
-
 const ctx = { waitUntil() {} };
 
-function msg({ model = "claude-opus-5", kind = "talk", receipt = null, auth = "t" } = {}) {
-  const headers = { "Content-Type": "application/json", Origin: ORIGIN, "X-CT-Meter": kind };
-  if (auth) headers["X-Supabase-Auth"] = auth;
+function msg({ model = "claude-opus-5", kind = "talk", receipt, job, stage } = {}) {
+  const headers = { "Content-Type": "application/json", Origin: ORIGIN, "X-CT-Meter": kind, "X-Supabase-Auth": "t" };
   if (receipt) headers["X-CT-Receipt"] = receipt;
+  if (job) headers["X-CT-Job"] = job;
+  if (stage) headers["X-CT-Stage"] = stage;
   return new Request("https://p.test/v1/messages", {
     method: "POST", headers,
-    body: JSON.stringify({ model, messages: [{ role: "user", content: "write me a talk" }] }),
+    body: JSON.stringify({ model, messages: [{ role: "user", content: "manage severe hyperkalemia" }] }),
   });
 }
-
-async function mintReceipt(env) {
+async function mint(env, jobId) {
   const res = await worker.fetch(new Request("https://p.test/v1/free-tier/consume", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Origin: ORIGIN, "X-Supabase-Auth": "t" },
-    body: JSON.stringify({ kind: "talk" }),
+    method: "POST", headers: { "Content-Type": "application/json", Origin: ORIGIN, "X-Supabase-Auth": "t" },
+    body: JSON.stringify({ kind: "talk", clientJobId: jobId }),
   }), env, ctx);
-  return (await res.json()).receipt;
+  return { status: res.status, body: await res.json() };
 }
+const reason = async (res) => ((await res.json()).error || {}).detail?.reason;
 
-// ── 1 · WRITER ALLOWLIST ─────────────────────────────────────────────────────
-{
-  const h = harness();
-  const receipt = await mintReceipt(h.env);
-  ok(!!receipt, "/consume issues a receipt when a talk is paid for");
-
-  h.calls.anthropic = 0;
-  const bad = await worker.fetch(msg({ model: "claude-sonnet-4-20250514", receipt }), h.env, ctx);
-  const body = await bad.json();
-  ok(bad.status === 403, `an uncleared model is REFUSED for talk content (got ${bad.status})`);
-  ok((body.error && body.error.type) === "writer_not_cleared", "…with writer_not_cleared");
-  ok(h.calls.anthropic === 0, "…and nothing was spent upstream");
-
-  // Haiku too — it is on ALLOWED_MODELS for utility work and must not write teaching content.
-  const haiku = await worker.fetch(msg({ model: "claude-haiku-4-5-20251001", receipt }), h.env, ctx);
-  ok(haiku.status === 403, "…the same for Haiku, which ALLOWED_MODELS permits for utility calls");
-
-  const good = await worker.fetch(msg({ model: "claude-opus-5", receipt }), h.env, ctx);
-  ok(good.status === 200, "a CLEARED writer is allowed through");
-  ok(h.calls.anthropic === 1, "…and reaches Anthropic exactly once");
-  globalThis.fetch = realFetch;
-}
-
-// ── 2 · UTILITY CALLS ARE UNAFFECTED ─────────────────────────────────────────
-// ALLOWED_MODELS includes cheaper models deliberately: podcast scripts, diagram prompts, chat. Gating
-// those on WRITER_CLEARED would break real features to protect against nothing.
-{
-  const h = harness();
-  const aux = await worker.fetch(msg({ model: "claude-haiku-4-5-20251001", kind: "aux" }), h.env, ctx);
-  ok(aux.status === 200, "a non-talk utility call with an uncleared model still works");
-  ok(h.calls.anthropic === 1, "…and reaches Anthropic");
-  globalThis.fetch = realFetch;
-}
-
-// ── 3 · THE QUOTA BYPASS ─────────────────────────────────────────────────────
-// The whole finding: a signed-in caller skipping the front end.
+// ── 1 · `aux` CANNOT BE USED TO GENERATE WITH AN UNCLEARED MODEL ─────────────
+// Codex's first hole: relabel the talk and both gates disappear. It must not matter what the header says.
 {
   const h = harness();
   h.calls.anthropic = 0;
-  const noReceipt = await worker.fetch(msg({ receipt: null }), h.env, ctx);
-  const b = await noReceipt.json();
-  ok(noReceipt.status === 402, `a talk with NO receipt is refused (got ${noReceipt.status})`);
-  ok((b.error && b.error.type) === "receipt_required", "…with receipt_required");
-  ok(h.calls.anthropic === 0, "…having spent nothing — the point of the gate");
-
-  const forged = await worker.fetch(msg({ receipt: "not-a-real-receipt" }), h.env, ctx);
-  ok(forged.status === 402, "a forged receipt is refused");
-  ok(h.calls.anthropic === 0, "…and still spends nothing");
-  globalThis.fetch = realFetch;
-}
-
-// ── 4 · A RECEIPT BELONGS TO THE USER WHO PAID FOR IT ────────────────────────
-// Otherwise one person's receipt authorises another's generation — the same bypass wearing the fix's
-// clothes.
-{
-  const h = harness();
-  const receipt = await mintReceipt(h.env);
-  // Re-point auth at a DIFFERENT user, receipt unchanged.
-  globalThis.fetch = async (url) => {
-    const u = String(url);
-    if (u.includes("api.anthropic.com")) { h.calls.anthropic++; return new Response("{}", { status: 200 }); }
-    if (u.includes("/auth/v1/user")) {
-      return new Response(JSON.stringify({ id: "SOMEONE_ELSE", email: "z@z.z" }), { status: 200, headers: { "Content-Type": "application/json" } });
-    }
-    return new Response("[]", { status: 200, headers: { "Content-Type": "application/json" } });
-  };
-  h.calls.anthropic = 0;
-  const stolen = await worker.fetch(msg({ receipt }), h.env, ctx);
-  const sb = await stolen.json();
-  ok(stolen.status === 402, "another user's receipt is refused");
-  ok(sb.error && sb.error.detail && sb.error.detail.reason === "wrong_owner", "…for the right reason");
-  ok(h.calls.anthropic === 0, "…and spends nothing");
-  globalThis.fetch = realFetch;
-}
-
-// ── 5 · ONE RECEIPT COVERS A GENERATION, NOT ONE CALL — BUT IS BOUNDED ───────
-// A generation makes several calls (draft, review, retries, fallbacks). Charging a talk per call would
-// burn a user's whole quota on one generation; unlimited calls would make the receipt meaningless.
-{
-  const h = harness();
-  const receipt = await mintReceipt(h.env);
-  h.calls.anthropic = 0;
-  let okCount = 0, refused = 0;
-  for (let i = 0; i < 20; i++) {
-    const r = await worker.fetch(msg({ receipt }), h.env, ctx);
-    if (r.status === 200) okCount++; else refused++;
+  for (const model of ["claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"]) {
+    const res = await worker.fetch(msg({ model, kind: "aux" }), h.env, ctx);
+    ok(res.status >= 400, `aux + ${model} is REFUSED (got ${res.status}) — the header is not an exemption`);
   }
-  ok(okCount > 1, `one receipt covers multiple calls (${okCount}) — a generation is not a single call`);
-  ok(refused > 0, `…but is bounded: ${refused} of 20 refused once exhausted`);
-  ok(h.calls.anthropic === okCount, "…and upstream spend matches exactly the calls that were allowed");
+  ok(h.calls.anthropic === 0, "…and nothing reached Anthropic. `aux` no longer bypasses authorisation");
   globalThis.fetch = realFetch;
 }
 
-// ── 6 · THE SOURCE SAYS WHAT THESE GATES ARE, AND ARE NOT ───────────────────
+// ── 2 · A RECEIPT FOR JOB A CANNOT AUTHORISE JOB B ───────────────────────────
+// Otherwise one consumed credit funds unlimited generations.
+{
+  const h = harness();
+  const { body } = await mint(h.env, "job-aaaaaaaa");
+  h.calls.anthropic = 0;
+  const res = await worker.fetch(
+    msg({ receipt: body.receipt, job: "job-bbbbbbbb", stage: "draft" }), h.env, ctx);
+  ok(res.status === 402, `a receipt used against a DIFFERENT job is refused (got ${res.status})`);
+  ok(await reason(res) === "wrong_job", "…for wrong_job specifically");
+  ok(h.calls.anthropic === 0, "…and spends nothing");
+
+  const good = await worker.fetch(
+    msg({ receipt: body.receipt, job: "job-aaaaaaaa", stage: "draft" }), h.env, ctx);
+  ok(good.status === 200, "…while the job it was minted for works");
+  globalThis.fetch = realFetch;
+}
+
+// ── 3 · A DRAFT AUTHORISATION CANNOT BUY TWELVE MORE DRAFTS ──────────────────
+// The v2 receipt was 12 arbitrary calls. Per-stage budgets bound each phase separately.
+{
+  const h = harness();
+  const { body } = await mint(h.env, "job-cccccccc");
+  h.calls.anthropic = 0;
+  let allowed = 0, refused = 0;
+  for (let i = 0; i < 12; i++) {
+    const r = await worker.fetch(msg({ receipt: body.receipt, job: "job-cccccccc", stage: "draft" }), h.env, ctx);
+    if (r.status === 200) allowed++; else refused++;
+  }
+  ok(allowed <= 3, `a draft authorisation permits at most its stage budget (${allowed} allowed)`);
+  ok(refused >= 9, `…and refuses the rest (${refused} of 12)`);
+  ok(h.calls.anthropic === allowed, "…with upstream spend matching exactly the allowed calls");
+
+  // …and the critique budget is SEPARATE, so exhausting drafts does not consume it.
+  const crit = await worker.fetch(msg({ receipt: body.receipt, job: "job-cccccccc", stage: "critique" }), h.env, ctx);
+  ok(crit.status === 200, "critique has its own budget — exhausting drafts does not exhaust it");
+
+  // A stage that was never authorised is refused outright.
+  const bogus = await worker.fetch(msg({ receipt: body.receipt, job: "job-cccccccc", stage: "somethingelse" }), h.env, ctx);
+  ok(bogus.status === 402 && await reason(bogus) === "stage_not_authorised",
+     "…and an unrecognised stage is refused rather than defaulting to something permissive");
+  globalThis.fetch = realFetch;
+}
+
+// ── 4 · MISSING KV FAILS CLOSED, WITH ZERO UPSTREAM CALLS ────────────────────
+// v2 logged a warning and continued, so a misconfiguration silently disabled both quota and the writer
+// allowlist while the app kept spending. An outage is visible; a silently ungated proxy is not.
+{
+  const h = harness({ withKV: false });
+  h.calls.anthropic = 0;
+  const res = await worker.fetch(msg({ receipt: "anything", job: "j", stage: "draft" }), h.env, ctx);
+  ok(res.status === 503, `no receipt store => 503, not "carry on" (got ${res.status})`);
+  ok(h.calls.anthropic === 0, "…and ZERO upstream calls");
+
+  const consume = await mint(h.env, "job-dddddddd");
+  ok(consume.status === 503, "…and /consume refuses to pretend it reserved anything");
+  globalThis.fetch = realFetch;
+}
+
+// ── 5 · MODEL AND OPERATION MUST MATCH WHAT THE RECEIPT AUTHORISES ───────────
+// The model gate rides on the receipt, so there is no header to set that routes around it.
+{
+  const h = harness();
+  const { body } = await mint(h.env, "job-eeeeeeee");
+  h.calls.anthropic = 0;
+  for (const model of ["claude-sonnet-4-20250514", "claude-haiku-4-5-20251001", "claude-sonnet-5"]) {
+    const res = await worker.fetch(msg({ model, receipt: body.receipt, job: "job-eeeeeeee", stage: "draft" }), h.env, ctx);
+    ok(res.status === 403, `${model} is not authorised by a talk receipt (got ${res.status})`);
+  }
+  ok(h.calls.anthropic === 0, "…and none of them reached Anthropic");
+  const cleared = await worker.fetch(
+    msg({ model: "claude-opus-5", receipt: body.receipt, job: "job-eeeeeeee", stage: "draft" }), h.env, ctx);
+  ok(cleared.status === 200 && h.calls.anthropic === 1, "…while a cleared writer goes through, once");
+  globalThis.fetch = realFetch;
+}
+
+// ── 6 · ANOTHER USER'S RECEIPT ───────────────────────────────────────────────
+{
+  const h = harness({ userId: "u1" });
+  const { body } = await mint(h.env, "job-ffffffff");
+  // Same env and KV, different authenticated user.
+  const h2 = harness({ userId: "SOMEONE_ELSE" });
+  h2.env.JOBS_KV = h.env.JOBS_KV;
+  h2.calls.anthropic = 0;
+  const res = await worker.fetch(msg({ receipt: body.receipt, job: "job-ffffffff", stage: "draft" }), h2.env, ctx);
+  ok(res.status === 402 && await reason(res) === "wrong_owner", "another user's receipt is refused");
+  ok(h2.calls.anthropic === 0, "…and spends nothing");
+  globalThis.fetch = realFetch;
+}
+
+// ── 7 · THE SOURCE MUST NOT CLAIM MORE THAN IT DOES ─────────────────────────
 {
   const src = (await import("fs")).readFileSync(new URL("./worker.js", import.meta.url), "utf8");
-  ok(/X-CT-Meter is supplied by the client/.test(src),
-     "the writer allowlist states plainly that the header is client-supplied");
-  ok(/it is NOT an authorisation control/.test(src),
-     "…and that it is not an authorisation control on its own");
-  ok(/receipt/i.test(src.slice(src.indexOf("SERVER-SIDE WRITER ALLOWLIST"), src.indexOf("SERVER-SIDE WRITER ALLOWLIST") + 1600)),
-     "…naming the receipt as the thing that makes it real");
-  ok(/JOBS_KV is not bound, so quota is unenforceable here/.test(src),
-     "the one deliberate degradation — no KV, no receipt store — is logged rather than silent");
+  // Flatten AND strip the leading // of continuation lines, so a comment that wraps mid-sentence still
+  // matches. Pinning a specific wrap makes the test fail on a reflow that changed nothing.
+  const flat = src.split("\n").map(l => l.replace(/^\s*\/\/\s?/, "")).join(" ").replace(/\s+/g, " ");
+  ok(/client header cannot determine whether a request is medical/.test(flat),
+     "the source records WHY the header-based gate was wrong");
+  ok(/allowedModels: WRITER_CLEARED/.test(flat),
+     "…and that the model gate now travels with the receipt");
+  ok(!/receipt check SKIPPED/.test(src), "the silent-degradation path is gone");
+  ok(/Availability does not outrank billing and content safety/.test(src),
+     "…replaced by an explicit statement of the trade");
 }
 
-console.log("\n" + (failures === 0 ? "✔ WRITER + QUOTA GATE TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
+console.log("\n" + (failures === 0 ? "✔ AUTHORISATION TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);
