@@ -56,14 +56,21 @@ That prints a 32-character hex id. Open `wrangler.toml` in this folder and repla
 npx wrangler deploy
 ```
 
-Deploy prints the URL, ending in `.workers.dev`. Then, substituting that URL:
+Deploy prints the URL. Yours is:
 
 ```bash
-curl -sS --max-time 300 https://chalk-talk-workflow-probe.YOURNAME.workers.dev/
+curl -sS https://chalk-talk-workflow-probe.chalktalk.workers.dev/
 ```
 
-To run a single question instead of all four, append `?mode=limit0`, `?mode=limitN`,
-`?mode=nonretryable` or `?mode=replay`.
+The **first** call starts four workflow instances and returns immediately. Wait ~45 seconds and call the
+**same URL again** — it reports either `N/4 finished` or the full verdict. Keep calling until you get the
+verdict; each call is instant.
+
+To discard a run and start over:
+
+```bash
+curl -sS https://chalk-talk-workflow-probe.chalktalk.workers.dev/reset
+```
 
 ### If wrangler complains about `~/.Trash`
 
