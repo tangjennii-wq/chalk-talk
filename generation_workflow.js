@@ -6,23 +6,25 @@
 // project has spent a day learning what untested-but-asserted looks like.
 //
 // ── THE ONE THING THAT COULD COST REAL MONEY ─────────────────────────────────────────────────────────
-// `step.do()` RETRIES BY DEFAULT. From Cloudflare's own docs, the default when no config is supplied:
+// `step.do()` RETRIES BY DEFAULT: limit 5, exponential backoff, when no config is supplied. So a naive
+// `step.do("draft", () => callAnthropic(...))` can be billed five times for one talk.
 //
-//     retries: { limit: 5, delay: 10000, backoff: "exponential" }, timeout: "10 minutes"
+// A runtime probe against the real Cloudflare runtime (2026-07-30) settled what the docs did not, and
+// two answers came back worse than the docs implied:
 //
-// So a naive `step.do("draft", () => callAnthropic(...))` can call — and be billed for — a draft up to
-// five times. Every paid step here therefore:
+//   * `limit: N` means 1 + N RETRIES. `limit: 3` executed FOUR times. The `limit: 1` this file used to
+//     carry therefore permitted TWO paid calls per step.
+//   * `NonRetryableError` did NOT stop retries — six executions against `limit: 5`. It cannot be relied
+//     on as a guard.
 //
-//   1. passes an EXPLICIT retry config rather than inheriting the default;
-//   2. does a pre-flight check inside the same step, which the docs explicitly sanction ("unless you
-//      need multiple calls to prove idempotency"), so a retry after a committed-but-unpersisted call
-//      returns the earlier result instead of buying a second one;
-//   3. throws NonRetryableError on anything that is not plainly transient.
+// What actually protects the user, in order:
+//   1. `PAID_RETRY = { retries: { limit: 0 } }` — measured to execute the callback exactly once.
+//   2. A durable RESULT CACHE, so an engine restart re-enters on the stored response rather than buying
+//      a second one. Restarts are not retries and no retry setting prevents them.
+//   3. The attempt marker, which REFUSES when a call was issued and no result was stored — the state
+//      where we cannot know whether the provider billed us.
 //
-// The docs do NOT specify whether `limit: N` means N attempts or 1 + N retries — the prose and the code
-// comment on the same page disagree — and they never document `limit: 0`. So the retry count is treated
-// as untrustworthy and the idempotency guard is what actually protects the user. (Verified against
-// developers.cloudflare.com/workflows, 2026-07-29.)
+// NonRetryableError is still thrown, for the message it puts on the instance. It is not a guard.
 //
 // ── OTHER RULES THIS FILE OBEYS ──────────────────────────────────────────────────────────────────────
 // * Step names are deterministic string literals — the name is the cache key, so a name built from a
@@ -31,13 +33,31 @@
 // * No reliance on in-memory state between steps; everything meaningful is a step return value.
 // * `event.payload` is treated as immutable.
 
-// Attempt markers are written BEFORE a paid call and cleared after it succeeds. If a step restarts and
-// finds a marker with no result, the provider may already have been billed — see claimAttempt().
+// TTL for the attempt marker AND the result cache. Long enough to outlive any plausible restart window,
+// short enough that a stale entry cannot block a genuinely new generation of the same job id.
 const MARKER_TTL_SECONDS = 3600;
 
-/** Conservative retry policy for PAID steps. Explicit, never the 5x default. */
-export const PAID_RETRY = { retries: { limit: 1, delay: "5 seconds", backoff: "constant" }, timeout: "10 minutes" };
-/** Bookkeeping steps are cheap and safe to retry — they touch our own storage only. */
+// ── MEASURED, NOT ASSUMED (runtime probe, 2026-07-30) ────────────────────────────────────────────────
+// A throwaway Worker on the real runtime answered the questions the docs left open, and two answers
+// changed this file:
+//
+//   `limit: 3`  →  FOUR executions.  `limit` means 1 + N RETRIES, not N attempts.
+//                  So the previous `limit: 1` permitted TWO paid calls per step. That is the exact
+//                  double-charge this design exists to prevent, sitting in the constant meant to prevent it.
+//
+//   `limit: 0`  →  ACCEPTED, callback ran exactly ONCE.
+//                  The docs never mention it; the runtime supports it. This is the only configuration
+//                  that guarantees a paid call is issued at most once per step execution.
+//
+//   NonRetryableError → did NOT stop retries (ran 6 times against limit: 5).
+//                  So it is NOT load-bearing here and must not be treated as a guard. Diagnosis in
+//                  progress — the leading hypothesis is that passing a custom `name` (which this file
+//                  used to do) defeats the runtime's detection. Until that is settled, the retry config
+//                  and the durable marker do the work and NonRetryableError is only a label.
+/** PAID steps: exactly one execution. Measured, not inferred. Never raise this. */
+export const PAID_RETRY = { retries: { limit: 0, delay: 0 }, timeout: "10 minutes" };
+/** Bookkeeping steps touch only our own storage, so retrying them is safe and desirable.
+ *  NB with 1+N semantics this is four executions, which is fine for an idempotent ledger write. */
 export const CHEAP_RETRY = { retries: { limit: 3, delay: "2 seconds", backoff: "linear" }, timeout: "1 minute" };
 
 /**
@@ -67,38 +87,73 @@ export async function releaseAttempt(deps, jobId, stepName) {
 }
 
 /**
- * One paid model call, guarded.
+ * One paid model call, at most once.
  *
- * `deps.NonRetryableError` is injected so this module needs no Cloudflare import; worker_entry.js passes
- * the real class and the tests pass a stand-in.
+ * `deps.NonRetryableError` is injected so this module needs no Cloudflare import.
+ *
+ * ── A HOLE THE PROBE MADE ME FIND (2026-07-30) ──────────────────────────────────────────────────────
+ * The previous version released the attempt marker immediately after a successful call and returned.
+ * But the engine persists a step's result AFTER the callback returns — and the docs are explicit that a
+ * step "may have to restart, and it will start over from the beginning". So: call succeeds, marker
+ * released, engine restarts before persisting, next execution sees no marker, and buys a second draft.
+ *
+ * A marker alone cannot fix that, because the safe state after a successful call is not "no attempt" —
+ * it is "attempt made, and here is what it produced". So the result is CACHED, and the cache is checked
+ * first. This is the same shape as the check-before-charge pattern in Cloudflare's own docs, with our
+ * own storage standing in for a provider "was this charged?" endpoint that Anthropic does not offer.
+ *
+ * Write order is load-bearing:
+ *   cache written BEFORE the marker is cleared  → a crash between them re-enters on the cache (correct)
+ *   marker still set with no cache              → a call was issued and we cannot know if it billed, so
+ *                                                 REFUSE rather than re-issue
+ *
+ * NonRetryableError is thrown for signalling only. The probe showed it did not stop retries, so it is
+ * not relied upon; `PAID_RETRY.limit = 0` and this cache are what actually hold.
  */
 export async function paidModelStep(deps, { jobId, stepName, call }) {
+  const cacheKey = `result:${jobId}:${stepName}`;
+
+  // 1 · Did a previous execution already complete this paid call? Then reuse it. No second charge.
+  const cached = await deps.kvGet(cacheKey);
+  if (cached) {
+    try { return JSON.parse(cached); } catch (_) { /* corrupt cache: fall through to the marker check */ }
+  }
+
+  // 2 · Did a previous execution ISSUE a call we have no result for? We cannot know whether it billed.
   const { alreadyAttempted } = await claimAttempt(deps, jobId, stepName);
   if (alreadyAttempted) {
-    // A previous attempt reached the provider and we have no result to show for it. Re-issuing would
-    // risk a second charge for the same talk, so stop and surface it instead of quietly spending again.
     throw new deps.NonRetryableError(
-      `${stepName}: a previous attempt already called the model for job ${jobId}; refusing to re-issue a ` +
-      "paid request. The reservation will be refunded.",
-      "DuplicatePaidAttempt",
+      `${stepName}: a previous attempt already called the model for job ${jobId} and no result was ` +
+      "stored, so it may already have been billed. Refusing to re-issue. The reservation is refunded.",
     );
   }
+
   let out;
   try {
     out = await call();
   } catch (err) {
-    // A transient upstream failure is worth the single configured retry; anything else is not. Retrying
-    // a 400 five times buys nothing and delays the refund.
-    if (!isTransient(err)) {
-      await releaseAttempt(deps, jobId, stepName);   // never called successfully — safe to allow a retry later
-      throw new deps.NonRetryableError(String(err && err.message || err), "PermanentModelFailure");
-    }
-    // Transient: clear the marker so the ONE configured retry is allowed to proceed.
-    await releaseAttempt(deps, jobId, stepName);
-    throw err;
+    // Clear the marker ONLY when we know the call cannot have been billed — i.e. the provider answered
+    // with a status. A network error or timeout may have been billed after the response was generated,
+    // so the marker stays and a later execution refuses. Fail closed on ambiguity.
+    if (definitelyNotBilled(err)) await releaseAttempt(deps, jobId, stepName);
+    throw isTransient(err) ? err : new deps.NonRetryableError(String((err && err.message) || err));
   }
+
+  // 3 · Cache BEFORE releasing, so no window exists where neither is set.
+  try { await deps.kvPut(cacheKey, JSON.stringify(out), MARKER_TTL_SECONDS); } catch (_) {}
   await releaseAttempt(deps, jobId, stepName);
   return out;
+}
+
+/**
+ * True only when the provider demonstrably answered without producing billable output.
+ *
+ * An HTTP status means a response came back. A network failure means we do not know what happened at the
+ * other end, and "do not know" must be treated as "may have been billed".
+ */
+export function definitelyNotBilled(err) {
+  const s = String((err && err.message) || err || "");
+  return /\b(4\d\d|5\d\d)\b/.test(s) && !/timeout|timed out|aborted/i.test(s);
 }
 
 export function isTransient(err) {
@@ -132,7 +187,7 @@ export async function runGenerationWorkflow({ step, payload, deps }) {
     });
     if (!d || !d.text || !String(d.text).trim()) {
       // An empty draft is a permanent failure of this attempt, not something a retry fixes.
-      throw new deps.NonRetryableError("The model returned an empty draft.", "EmptyDraft");
+      throw new deps.NonRetryableError("The model returned an empty draft.");
     }
     return { text: d.text, modelUsed: d.modelUsed, usage: d.usage || {}, webSearched: !!d.webSearched };
   });

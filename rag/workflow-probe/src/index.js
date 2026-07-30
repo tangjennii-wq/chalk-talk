@@ -15,7 +15,7 @@
 import { WorkflowEntrypoint } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 
-const MODES = ["limit0", "limitN", "nonretryable", "replay"];
+const MODES = ["limit0", "limitN", "nonretryable", "nrnamed", "nrduck", "replay"];
 const RUN_KEY = "current-run";
 
 export class Probe extends WorkflowEntrypoint {
@@ -45,11 +45,35 @@ export class Probe extends WorkflowEntrypoint {
       });
     }
 
-    // Q3 — does NonRetryableError stop after ONE execution despite limit: 5?
-    if (mode === "nonretryable") {
+    // ── Q3 · WHY DID NonRetryableError NOT STOP? (round 2) ────────────────────
+    // Round 1 threw `new NonRetryableError("stop", "ProbeStop")` — with a custom `name` — and the
+    // callback ran SIX times, i.e. 1 + limit(5). It was not recognised as non-retryable at all.
+    //
+    // Hypothesis: the runtime identifies these by `error.name === "NonRetryableError"`, so supplying a
+    // custom name defeats the mechanism. The docs present the second argument as an ordinary optional
+    // name and say nothing about this.
+    //
+    // This matters directly: generation_workflow.js threw with custom names too
+    // ("DuplicatePaidAttempt", "PermanentModelFailure", "EmptyDraft"), so if the hypothesis holds, none
+    // of those would have stopped a retry either. Three variants isolate it.
+    if (mode === "nonretryable") {          // BASELINE, no custom name
       await step.do("q3", { retries: { limit: 5, delay: 1 }, timeout: "1 minute" }, async () => {
         await bump(`${runId}:q3`);
+        throw new NonRetryableError("stop");
+      });
+    }
+    if (mode === "nrnamed") {               // the round-1 failure, reproduced
+      await step.do("q3named", { retries: { limit: 5, delay: 1 }, timeout: "1 minute" }, async () => {
+        await bump(`${runId}:q3named`);
         throw new NonRetryableError("stop", "ProbeStop");
+      });
+    }
+    if (mode === "nrduck") {                // a PLAIN Error wearing the name — is `name` the discriminator?
+      await step.do("q3duck", { retries: { limit: 5, delay: 1 }, timeout: "1 minute" }, async () => {
+        await bump(`${runId}:q3duck`);
+        const e = new Error("stop");
+        e.name = "NonRetryableError";
+        throw e;
       });
     }
 
@@ -72,11 +96,13 @@ export class Probe extends WorkflowEntrypoint {
 const num = (v) => (v == null ? null : parseInt(v, 10));
 
 async function readCounts(env, runId) {
-  const [q1, q2, q3, f, s] = await Promise.all([
+  const [q1, q2, q3, q3n, q3d, f, s] = await Promise.all([
     env.PROBE_KV.get(`${runId}:q1`), env.PROBE_KV.get(`${runId}:q2`), env.PROBE_KV.get(`${runId}:q3`),
+    env.PROBE_KV.get(`${runId}:q3named`), env.PROBE_KV.get(`${runId}:q3duck`),
     env.PROBE_KV.get(`${runId}:q4first`), env.PROBE_KV.get(`${runId}:q4second`),
   ]);
-  return { q1: num(q1), q2: num(q2), q3: num(q3), q4first: num(f), q4second: num(s) };
+  return { q1: num(q1), q2: num(q2), q3: num(q3), q3named: num(q3n), q3duck: num(q3d),
+           q4first: num(f), q4second: num(s) };
 }
 
 function verdict(counts, statuses, createErrors) {
@@ -101,11 +127,23 @@ function verdict(counts, statuses, createErrors) {
       "an unexpected count — tell Claude."));
   } else line(null, "limit:N — inconclusive");
 
-  // Q3 — the documented stop mechanism.
-  if (counts.q3 !== null) {
-    line(counts.q3 === 1, `NonRetryableError with limit:5 ran the callback ${counts.q3} time(s). ` +
-      (counts.q3 === 1 ? "Stops immediately, as documented." : "SERIOUS: it did NOT stop retries."));
-  } else line(null, "NonRetryableError — inconclusive");
+  // Q3 — three variants, to find out WHY round 1 did not stop.
+  const bare = counts.q3, named = counts.q3named, duck = counts.q3duck;
+  if (bare !== null) {
+    line(bare === 1, `NonRetryableError (no custom name), limit:5 → ${bare} execution(s). ` +
+      (bare === 1 ? "Stops, as documented." : "Does NOT stop even bare — do not rely on it at all."));
+  } else line(null, "NonRetryableError bare — inconclusive");
+  if (named !== null) {
+    line(named === 1, `NonRetryableError WITH custom name, limit:5 → ${named} execution(s). ` +
+      (named === 1 ? "The custom name is harmless." : "The custom name DEFEATS it — never pass one."));
+  } else line(null, "NonRetryableError named — inconclusive");
+  if (duck !== null) {
+    line(true, `plain Error with name="NonRetryableError", limit:5 → ${duck} execution(s). ` +
+      (duck === 1 ? "`name` IS the discriminator." : "`name` alone is not enough; the real class is required."));
+  } else line(null, "duck-typed name — inconclusive");
+  if (bare === 1 && named !== null && named > 1) {
+    L.push("     => DIAGNOSIS: passing a custom name defeats NonRetryableError. Throw it with a message only.");
+  }
 
   // Q4 — invalidates the design if wrong.
   if (counts.q4first !== null) {
