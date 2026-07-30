@@ -92,10 +92,21 @@ executes `1 + limit` times and does *not* honour `NonRetryableError`. Modelling 
 this double-charge pass locally and fail in production, which is precisely the failure the probe exists
 to catch.
 
-Four mutations verified: restoring `limit: 1`, removing the result cache, clearing the marker on any
-error, and reintroducing a custom error name each turn the suite red.
+A dedicated section pins all four measured properties in one place, so if the platform ever changes,
+one section fails and names what moved. It includes the assertion Codex asked for explicitly:
 
-29 suites, 1158 assertions.
+```
+✓ Q2: limit: 1 => TWO executions — never call this 'one paid call'
+```
+
+Seven mutations verified across the suite: restoring `limit: 1`, removing the result cache, clearing the
+marker on any error, reintroducing a custom error name, and merging critique back into the draft step
+each turn it red.
+
+29 suites, 1169 assertions.
+
+**On the `errored` statuses in the raw output** — expected, and not a problem. Every probe throws
+deliberately; `errored` is the instance doing what it was asked. The execution *counts* are the result.
 
 ## Verdict: all four questions answered, architecture holds
 

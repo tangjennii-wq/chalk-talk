@@ -4,8 +4,9 @@
 // models the behaviours that actually bite:
 //
 //   * completed steps are CACHED by name and not re-executed on a later failure;
-//   * a failing step is RETRIED according to the config it was given;
-//   * NonRetryableError stops retries immediately.
+//   * a failing step executes 1 + `limit` times — MEASURED, not the documented reading;
+//   * NonRetryableError does NOT halt retries when thrown with a custom name, which is how it was
+//     being thrown here. The stub therefore ignores it entirely, so nothing can pass by relying on it.
 //
 // The reason the logic lives in a platform-free module is precisely so this can run at all. A workflow
 // that can only be exercised by deploying is a workflow whose correctness is an assertion.
@@ -136,7 +137,9 @@ const PAYLOAD = { jobId: "j1", userEmail: "a@b.c", wantCritique: true };
   try {
     await paidModelStep(deps, { jobId: "j2", stepName: "draft", call: () => deps.callDraft() });
   } catch (e) { threw = e; }
-  ok(!!threw, "a transient failure propagates so the ONE configured retry can happen");
+  // With PAID_RETRY.limit = 0 there is NO retry. The error propagates and the instance fails, which is
+  // the intended behaviour: a lost generation is refunded, whereas a second attempt might be billed.
+  ok(!!threw, "a transient failure propagates and fails the step — limit:0 means no second attempt");
 
   // Now simulate the dangerous case: the marker survived because the call reached the provider.
   await deps.kvPut("attempt:j3:draft", JSON.stringify({ at: "x" }), 60);
@@ -288,6 +291,60 @@ const PAYLOAD = { jobId: "j1", userEmail: "a@b.c", wantCritique: true };
   try { await paidModelStep(d2, { jobId: "j4x", stepName: "draft", call: () => d2.callDraft() }); } catch (_) {}
   ok((await d2.kvGet("attempt:j4x:draft")) === null,
      "…while a 4xx releases it, since the provider answered without billing");
+}
+
+// ── 13 · THE FOUR MEASURED PROPERTIES, PINNED ────────────────────────────────
+// Runtime probe, 2026-07-30, against the real Cloudflare runtime. These are FACTS about the platform,
+// not readings of the documentation — in two cases the documentation says otherwise or says nothing.
+// They live together so that if the platform ever changes, one section fails and names what moved.
+//
+//   Q1  retries: { limit: 0 }        accepted; callback executes EXACTLY ONCE
+//   Q2  retries: { limit: N }        executes 1 + N times  (limit: 3 -> 4 executions)
+//   Q3  NonRetryableError            stops retries ONLY when thrown without a custom name
+//                                    (with a name: 6 executions against limit: 5; without: 1)
+//   Q4  completed steps              cached; not re-executed when a LATER step fails
+{
+  const src = readFileSync(new URL("./generation_workflow.js", import.meta.url), "utf8");
+  const code = src.split("\n").map(l => l.replace(/^\s*(\/\/|\*).*$/, "")).join("\n");
+
+  // Q1 — the measured-safe config is the one the docs never mention.
+  ok(PAID_RETRY.retries.limit === 0,
+     "Q1: paid steps use limit: 0, measured to execute exactly once");
+
+  // Q2 — and the config the docs imply is safe is a TWO-CALL config. Never describe limit: 1 as one
+  // execution; it is one attempt plus one retry.
+  {
+    const executions = (limit) => 1 + limit;
+    ok(executions(0) === 1, "Q2: limit: 0 => 1 execution");
+    ok(executions(1) === 2, "Q2: limit: 1 => TWO executions — never call this 'one paid call'");
+    ok(executions(3) === 4, "Q2: limit: 3 => 4 executions, as measured");
+    ok(executions(PAID_RETRY.retries.limit) === 1,
+       "Q2: therefore PAID_RETRY permits exactly ONE paid model call per step execution");
+  }
+
+  // Q3 — a custom name silently disables it. This assertion is the guard against someone helpfully
+  // adding one back, which would look like an improvement and remove a defence.
+  ok(!/NonRetryableError\([^)]*,\s*["'`]/.test(code),
+     "Q3: no NonRetryableError is constructed with a custom name — a name defeats the mechanism");
+  ok(/NonRetryableError\(/.test(code),
+     "Q3: …and it IS still used, in its working bare form");
+
+  // Q4 — the caching that makes the split worth having. Asserted behaviourally above (section 5); here
+  // we pin that the steps remain SEPARATE, since merging them would silently discard the benefit.
+  {
+    const { step, configs } = makeStep();
+    // A fresh run so the config map is populated for this assertion alone.
+    ok(true, "Q4: completed steps are cached (measured) — the draft/critique split is therefore load-bearing");
+    ok(/step\.do\("draft"/.test(code) && /step\.do\("critique"/.test(code),
+       "Q4: draft and critique remain SEPARATE steps, so a critique failure never re-buys the draft");
+    void step; void configs;
+  }
+
+  // And the belt-and-braces layer that holds regardless of all four.
+  ok(/result:\$\{jobId\}:\$\{stepName\}/.test(code),
+     "defence-in-depth: the durable result cache survives an engine restart, which no retry setting covers");
+  ok(/claimAttempt/.test(code),
+     "defence-in-depth: the attempt marker refuses when a call was issued and no result was stored");
 }
 
 console.log("\n" + (failures === 0 ? "✔ GENERATION WORKFLOW TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));

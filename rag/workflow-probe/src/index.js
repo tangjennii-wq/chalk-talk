@@ -122,7 +122,7 @@ function verdict(counts, statuses, createErrors) {
   // Q2 — the number to write into the source.
   if (counts.q2 !== null) {
     line(true, `limit:3 produced ${counts.q2} execution(s) → ` + (
-      counts.q2 === 3 ? "`limit` means TOTAL ATTEMPTS. PAID_RETRY limit:1 allows ONE paid call." :
+      counts.q2 === 3 ? "`limit` means TOTAL ATTEMPTS (not what we measured — re-check)." :
       counts.q2 === 4 ? "`limit` means ADDITIONAL RETRIES (1+N). PAID_RETRY limit:1 allows TWO paid calls — tell Claude." :
       "an unexpected count — tell Claude."));
   } else line(null, "limit:N — inconclusive");
