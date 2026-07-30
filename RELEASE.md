@@ -117,40 +117,35 @@ was rather than half-migrated.
 
 ## Still outstanding — read this before calling anything ready
 
-None of the fixes above touches the largest risks. They are architectural, they need decisions, and
-making them unsupervised risked breaking generation for every user. Full detail in
-`rag/runs/2026-07-29-worker-audit.md`. In priority order:
+`rag/runs/2026-07-29-worker-audit.md` has the detail. In priority order:
 
-1. **Background generation — DURABLE PATH BUILT, NOT YET PROVEN ON CLOUDFLARE.** `ctx.waitUntil()` is
-   cut off ~30s after the response on either plan while a draft+critique needs 50–100s, so the legacy
-   path loses long generations *and* the user's credit. A Cloudflare Workflow now replaces it:
-   draft / critique / meter / finalize as separate durable steps, unlimited wall time per step, and the
-   draft is never re-bought when the critique fails. **`step.do()` retries 5× by default** — wrapping a
-   paid call without overriding that would bill five drafts per talk — so every paid step passes an
-   explicit conservative config plus an attempt-marker guard that refuses to re-issue.
-   `/generate-async` reports `durable: true|false`, so which path ran is never a guess.
-   **The code is unit-tested and has never run on Cloudflare.** Until the 8-point checklist in
-   `rag/runs/2026-07-29-workflow-migration.md` passes, treat this defect as live — on any deploy where
-   the binding is missing, it is. Delete the `waitUntil` path once it does.
-
-2. ~~`/v1/messages` never verifies that `/consume` happened~~ — **FIXED.** `/consume` now issues a
-   short-lived generation **receipt**, bound to the paying user and bounded to 12 calls, and a talk-kind
-   request without a valid one gets 402 before anything is spent. Utility (`aux`) calls are unaffected.
-3. ~~`WRITER_CLEARED` enforced only on the async route~~ — **FIXED.** A talk-kind request with an
-   uncleared model gets 403 on the sync route too. Being honest about its limits: `X-CT-Meter` is
-   client-supplied, so this stops the accidental and honest cases; the **receipt** is what makes it an
-   actual control, and both are enforced together.
-4. **`getMonthlySpendCents` fails open** — every error returns `0`, so the cap disengages exactly when
-   Supabase is unhealthy, and `/status` simultaneously reports healthy remaining capacity.
-5. **The cap is a soft backstop, not a hard cap.** Spend is read before work and recorded after, so
-   concurrent requests can all observe `$249` and proceed. Overshoot is bounded only by in-flight cost.
-   The UI copy should say "backstop" unless reservations are added.
-6. **Async idempotency is non-atomic** — two requests with the same `clientJobId` can both see no record,
-   both reserve quota, and both start provider work. KV has no compare-and-set; this needs a Durable
-   Object or a database unique constraint.
-7. **`cache_creation_input_tokens` is never priced** (1.25×–2× input), so the ledger runs below the
+1. **Background generation — durable path BUILT and its platform assumptions MEASURED, not yet run
+   end-to-end.** `ctx.waitUntil()` is cut off ~30s after the response on either plan while a
+   draft+critique needs 50–100s, so the legacy path loses long generations *and* the user's credit. A
+   Cloudflare Workflow now replaces it. A runtime probe measured the four behaviours the docs leave open
+   (`rag/runs/2026-07-30-workflow-probe-results.md`) and two came back worse than documented — `limit: N`
+   is 1 + N executions, so the original `limit: 1` was a two-call config, and `NonRetryableError` is
+   silently defeated by a custom `name`. Both corrected. **Remaining: the end-to-end click test in
+   `rag/runs/2026-07-30-e2e-checklist.md`, then deploy.** Until `/generate-async` returns
+   `durable: true` in production, treat the defect as live.
+2. **`getMonthlySpendCents` fails open** — every error returns `0`, so the cap disengages exactly when
+   Supabase is unhealthy, while `/status` reports healthy remaining capacity.
+3. **The cap is a soft backstop, not a hard cap.** Spend is read before work and recorded after, so
+   concurrent requests can all observe `$249` and proceed. The UI copy should say "backstop".
+4. **Async idempotency is non-atomic** — two requests with the same `clientJobId` can both see no record
+   and both start work. KV has no compare-and-set; this wants a Durable Object or a DB constraint.
+5. **`cache_creation_input_tokens` is never priced** (1.25×–2× input), so the ledger runs below the
    Anthropic invoice and the cap trips later than intended.
-8. **`RATE_LIMIT_KV` is not bound** in `wrangler.toml`, so the per-IP daily limit does nothing while
+6. **`RATE_LIMIT_KV` is not bound** in `wrangler.toml`, so the per-IP daily limit does nothing while
    `/health` reports it enforcing with full headroom.
-9. **Rotate the exposed OpenAI and Supabase service-role keys.** Carried across several sessions.
-10. **Calibration has not been run** — see `CALIBRATION_RUNBOOK.md`.
+7. **Rotate the exposed OpenAI and Supabase service-role keys.** Carried across several sessions.
+8. **Calibration has not been run** — `CALIBRATION_RUNBOOK.md`. Separate from launch readiness.
+
+### Closed since the audit
+
+- ~~`/v1/messages` never verifies that `/consume` happened~~ — receipts, bound to the paying user.
+- ~~`WRITER_CLEARED` enforced only on the async route~~ — enforced on both, with the receipt making it
+  authoritative rather than advisory.
+- ~~Unauthenticated image generation spends the OpenAI key uncapped~~ — capped and ledgered.
+- ~~The legacy `/v1/messages` path is unledgered~~ — capped and ledgered.
+- ~~Cancellation reports success it did not achieve~~ — 502 with `cancelled: false`.

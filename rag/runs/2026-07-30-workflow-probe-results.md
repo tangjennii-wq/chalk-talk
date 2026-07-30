@@ -124,5 +124,7 @@ deliberately; `errored` is the instance doing what it was asked. The execution *
 
 - **Anthropic idempotency** — unconfirmed; the reference page is client-rendered and returns only
   "Loading…" to a fetch. The guarantee remains **at-most-once, fail-closed**, not exactly-once.
-- **The probe Worker is still deployed.** Clean it up whenever you like:
-  `cd rag/workflow-probe && npx wrangler delete`
+- ~~The probe Worker is still deployed.~~ **Deleted 2026-07-30**, along with its KV namespace. The
+  source stays in `rag/workflow-probe/` so it can be redeployed if the platform's behaviour ever needs
+  re-checking — it also carries `nrnamed` and `nrduck` modes that would confirm the Q3 diagnosis within
+  a single run.
