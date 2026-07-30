@@ -74,17 +74,29 @@ trips over a folder it can't read. Running from `rag/workflow-probe` (as above) 
 
 ## What you should see
 
+The script starts four workflow instances, then polls every 10 seconds and prints the verdict:
+
 ```
+    [10s] run r5k2j1: 2/4 finished — {"limit0":"errored","limitN":"running",...}
+    [20s] run r5k2j1: 3/4 finished — ...
+
 CLOUDFLARE WORKFLOW RUNTIME PROBE
 =================================
 
 OK  limit:0 — ...
 OK  limit:3 produced N execution(s) → ...
 OK  NonRetryableError with limit:5 ran the callback 1 time(s). Stops immediately, as documented.
-OK  step caching: the completed first step ran 1 time(s) while the second failed 3 time(s). ...
+OK  step caching: the completed first step ran 1 time(s) ...
 ```
 
 Four `OK` lines means every assumption under `generation_workflow.js` holds. Any `!!` means one doesn't.
+
+> **On the first attempt this returned Cloudflare error `1104`.** The Worker was creating all four
+> instances and then polling them *inside the same request*, holding one HTTP request open for up to six
+> minutes. I don't know precisely what 1104 means and haven't guessed — the fix doesn't depend on it. A
+> request shouldn't sit blocked for minutes waiting on background work, which is the same mistake as the
+> `ctx.waitUntil` bug this probe exists to investigate, wearing a different hat. The Worker now starts
+> the instances and returns immediately; the *script* does the waiting.
 
 | | question | expected | if it differs |
 |---|---|---|---|

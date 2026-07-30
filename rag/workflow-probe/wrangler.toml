@@ -16,4 +16,4 @@ class_name = "Probe"
 # then paste the printed id below.
 [[kv_namespaces]]
 binding = "PROBE_KV"
-id = "PASTE_THE_ID_FROM_THE_COMMAND_ABOVE"
+id = "330dd8833fce4c4d835cd6477817cdad"

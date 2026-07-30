@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
-# ONE COMMAND. Run it from anywhere:
+# ONE COMMAND. Run from anywhere:
 #
 #   bash ~/Developer/chalk-talk/rag/workflow-probe/run-probe.sh
 #
-# Written after the first attempt failed three ways, none of which were the user's fault:
-#   * interactive zsh does NOT treat `#` as a comment, so a trailing "# paste id here" was passed as
-#     arguments to wrangler;
-#   * the cd was relative, so it failed from the home directory;
-#   * `<subdomain>` in a curl example was parsed by the shell as a redirect.
-# So: no inline comments on command lines, absolute paths throughout, and the URL is read from
-# wrangler's own output rather than typed.
-
+# Deploys a throwaway Worker, runs four probes, prints a verdict. No paid API. Does not touch Chalk Talk.
+#
+# Design notes, both earned the hard way:
+#   * No inline `#` comments on command lines — interactive zsh does not treat them as comments.
+#   * The Worker STARTS the instances and returns immediately; this script does the waiting. The first
+#     version polled inside the request, held it open for minutes, and died with Cloudflare error 1104.
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,32 +17,26 @@ cd "$DIR"
 echo "==> Working in $DIR"
 echo
 
-# Wrangler walks up from the current directory looking for config and has been seen tripping over
-# ~/.Trash when started from the home directory. Running from this folder avoids that.
 if [ ! -f wrangler.toml ]; then
-  echo "wrangler.toml not found in $DIR — is the repo checked out fully?" >&2
+  echo "wrangler.toml not found in $DIR" >&2
   exit 1
 fi
 
-# ── 1 · KV namespace, created only if the config still holds the placeholder ──
+# ── 1 · KV namespace, only if still a placeholder ────────────────────────────
 if grep -q "PASTE_THE_ID_FROM_THE_COMMAND_ABOVE" wrangler.toml; then
   echo "==> Creating the PROBE_KV namespace"
   KV_OUT="$(npx --yes wrangler kv namespace create PROBE_KV 2>&1 || true)"
   echo "$KV_OUT"
-
-  # wrangler has printed this a few different ways across versions; take the first 32-char hex id.
   KV_ID="$(printf '%s' "$KV_OUT" | grep -oE '[0-9a-f]{32}' | head -1 || true)"
   if [ -z "$KV_ID" ]; then
     echo >&2
-    echo "Could not find a namespace id in that output." >&2
-    echo "Open wrangler.toml and replace PASTE_THE_ID_FROM_THE_COMMAND_ABOVE with the id, then re-run." >&2
+    echo "No namespace id found in that output. Put it into wrangler.toml by hand and re-run." >&2
     exit 1
   fi
-  # macOS sed needs the empty -i argument.
   sed -i '' "s/PASTE_THE_ID_FROM_THE_COMMAND_ABOVE/$KV_ID/" wrangler.toml
   echo "==> Wrote namespace id $KV_ID into wrangler.toml"
 else
-  echo "==> PROBE_KV already configured, skipping creation"
+  echo "==> PROBE_KV already configured"
 fi
 echo
 
@@ -57,17 +49,39 @@ echo
 URL="$(printf '%s' "$DEPLOY_OUT" | grep -oE 'https://[a-zA-Z0-9._-]*workers\.dev' | head -1 || true)"
 if [ -z "$URL" ]; then
   echo "Deploy finished but no workers.dev URL was printed." >&2
-  echo "Find the URL in the Cloudflare dashboard and curl it yourself, then paste me the output." >&2
   exit 1
 fi
 
-# ── 3 · run all four probes ──────────────────────────────────────────────────
-echo "==> Running the probe at $URL"
-echo "    (four workflow instances, about 30-60 seconds; no paid API is called)"
+# ── 3 · start, then poll from HERE rather than inside the Worker ─────────────
+echo "==> Clearing any previous run"
+curl -sS --max-time 30 "$URL/reset" >/dev/null || true
+
+echo "==> Starting four workflow instances"
+curl -sS --max-time 30 "$URL/" || true
 echo
-curl -sS --max-time 300 "$URL/"
+
+echo "==> Waiting for them to finish (checking every 10s, up to 4 minutes)"
+RESULT=""
+for i in $(seq 1 24); do
+  sleep 10
+  RESULT="$(curl -sS --max-time 30 "$URL/" || true)"
+  if printf '%s' "$RESULT" | grep -q "RUNTIME PROBE"; then
+    break
+  fi
+  printf '    [%s] %s\n' "$((i * 10))s" "$(printf '%s' "$RESULT" | head -1)"
+done
+
 echo
+echo "────────────────────────────────────────────────────────────────────────"
+printf '%s\n' "$RESULT"
+echo "────────────────────────────────────────────────────────────────────────"
 echo
-echo "==> Done. Paste the block above back to me."
-echo "==> To clean up afterwards:"
-echo "      cd \"$DIR\" && npx wrangler delete"
+if ! printf '%s' "$RESULT" | grep -q "RUNTIME PROBE"; then
+  echo "Did not reach a verdict in 4 minutes. Paste the above anyway — the partial"
+  echo "statuses are still informative."
+fi
+echo "==> Paste the block above back to Claude."
+echo
+echo "==> Cleanup, when you are done:"
+echo "      cd \"$DIR\""
+echo "      npx wrangler delete"
