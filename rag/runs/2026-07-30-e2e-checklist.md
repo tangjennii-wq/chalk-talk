@@ -23,6 +23,20 @@ The receipt work reversed the compatibility direction:
 So push first (Pages publishes `index.html`), confirm the new build is actually being served, *then*
 `wrangler deploy`. The window in between is safe.
 
+**The compatibility assumption is verified, not assumed.** Codex asked for that explicitly, and it is
+exactly the kind of claim I have been wrong about before. I extracted the Worker as it stands at the last
+deployed commit (`db77cb9`) and ran it against the new front end's request shapes:
+
+| new-frontend shape | old deployed Worker |
+|---|---|
+| `/consume` body carrying `clientJobId` | **200** — extra field ignored, no `receipt` in the response (so the client sends no receipt headers) |
+| `/v1/messages` with `X-CT-Receipt`, `X-CT-Job`, `X-CT-Stage` | **200**, one upstream call |
+| the same on an `aux` call | **200**, one upstream call |
+| `/generate-async` | **200** |
+
+No new field is rejected. **Front-end-first is safe, and no compatibility bridge is needed.** Deploy the
+Worker promptly afterwards anyway: until you do, the new gates are not enforcing.
+
 ```bash
 cd ~/Developer/chalk-talk
 git push origin main
