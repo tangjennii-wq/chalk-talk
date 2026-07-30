@@ -383,82 +383,34 @@ export default {
       return new Response(upstreamF.body, { status: upstreamF.status, statusText: upstreamF.statusText, headers: fHeaders });
     }
 
-    // ── A METERED TALK MUST NEVER REACH THE LEGACY PATH ──────────────────────────────────────────────
-    // Found by the test, not by reading: with SUPABASE_URL or the service key missing, the free-tier
-    // branch above is skipped entirely and the request falls through to here — where there is no
-    // receipt check, no quota, and no writer allowlist. So the fail-closed behaviour I had just added
-    // was itself bypassable by a misconfiguration, which is precisely the case it existed for.
+    // ── THE APP-FUNDED UNAUTHENTICATED PATH IS CLOSED (Codex, 2026-07-30) ─────────────────────────────
+    // Codex asked the right question: does the legacy path spend the app's key? It does — every branch
+    // below used `env.ANTHROPIC_API_KEY`. So omitting the sign-in token and labelling the request `aux`
+    // reached Jenni's key with no receipt, no quota and no writer allowlist. Capping and metering it
+    // (which I did earlier today) bounded the cost but left it UNAUTHORISED, and his rule is the right
+    // one: every request spending an app-funded key needs server-issued authorisation, regardless of
+    // headers or claimed intent.
     //
-    // Anything presenting a sign-in token, or declaring itself a talk, is a free-tier request. If the
-    // free-tier machinery is not configured, it is refused rather than quietly served by the demo path.
-    if (supaToken || request.headers.get("X-CT-Meter") === "talk") {
-      return jsonError(503, "receipt_store_unavailable",
-        "Generation is temporarily unavailable (free tier not configured). Nothing was charged.", origin);
-    }
-
-    // ── Legacy / demo path (per-IP daily limit on Jenni's key) ──────────────
+    // I had previously argued for metering rather than closing, on the grounds that "no caller I can
+    // find" is not "no caller". That reasoning is fine for a *bounded* path and wrong for an
+    // *unauthorised* one. Closing it.
     //
-    // PUT IT UNDER THE SAME CAP AND LEDGER AS EVERY OTHER PATH (2026-07-29 audit).
-    // This branch spends ANTHROPIC_API_KEY and, until now, checked no monthly cap and wrote no ledger
-    // row — so its spend was both uncapped and invisible to the cap every other path respects. Its only
-    // stated guard was the per-IP daily counter, and that counter does nothing: RATE_LIMIT_KV is not
-    // bound in wrangler.toml, so readDailyCount always returns 0 while /health reports the limit as
-    // enforced with full headroom.
+    // THERE IS NO BYOK TO PRESERVE HERE — verified rather than assumed. The Worker never reads a
+    // caller-supplied key; it only ever sends `env.ANTHROPIC_API_KEY`. The shipped client's BYOK mode
+    // calls api.anthropic.com DIRECTLY and never touches this Worker. So "only true BYOK may bypass the
+    // receipt" is satisfied trivially: nothing that reaches this endpoint is BYOK, and everything that
+    // reaches it must therefore be authorised.
     //
-    // Reaching it only requires OMITTING the X-Supabase-Auth header. Origin is checked, but Origin is a
-    // client-supplied header and trivially set by any non-browser client.
-    //
-    // I did NOT close this path, deliberately. No shipped frontend uses it — PROXY_CONFIG.enabled is
-    // false on both main and launch-integration, verified — but "no caller I can find" is not "no
-    // caller", and silently 403-ing an unknown client while Jenni is away is the worse failure. Metering
-    // it is strictly additive: every existing caller keeps working, the spend becomes visible, and it
-    // stops at the same $250 backstop as everything else.
-    // Recomputed rather than reused: meterKind and monthKey above are const-scoped to the free-tier
-    // branch, so referencing them here is a ReferenceError at runtime — which `node --check` does not
-    // catch, because it is a scope error and not a syntax error. Caught by reading, not by the check.
-    const legacyMeterKind = request.headers.get("X-CT-Meter") || "aux";
-    const legacyMonthKey = new Date().toISOString().slice(0, 7);
-    const legacyCapCents = freeCapCents(env);
-    const legacySpent = await getMonthlySpendCents(env, legacyMonthKey);
-    if (legacySpent >= legacyCapCents) {
-      return jsonError(503, "free_tier_paused",
-        "Chalk Talk's free tier is paused for this month. Add your own Anthropic key to keep going.",
-        origin, { resumes_on: nextMonthFirstDayUTC() });
-    }
+    // The error names both legitimate routes so anyone who does turn up is not simply stonewalled.
+    return jsonError(401, "authorisation_required",
+      "This endpoint requires a signed-in session with a generation receipt. Sign in to use the free "
+      + "tier, or set your own Anthropic key — a personal key calls Anthropic directly and does not go "
+      + "through this proxy.",
+      origin, { free_tier: "sign in, then generate from the app", byok: "set your own key in the header menu" });
 
-    let upstream;
-    try {
-      upstream = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify(body),
-      });
-    } catch (err) {
-      return jsonError(502, "upstream_unreachable", "Could not reach Anthropic API: " + err.message, origin);
-    }
-
-    if (upstream.ok) {
-      ctx.waitUntil(incrementDailyCount(env, ip));
-      // Same metering as the free-tier branch, so this path's spend lands in spend_ledger and counts
-      // toward the cap checked above rather than accruing off the books.
-      ctx.waitUntil(meterCost(env, upstream.clone(), body.model,
-                              legacyMeterKind === "talk" ? "talk" : "aux", legacyMonthKey));
-    }
-
-    const respHeaders = new Headers(upstream.headers);
-    respHeaders.set("Access-Control-Allow-Origin", origin || "*");
-    respHeaders.set("Vary", "Origin");
-    respHeaders.set("X-RateLimit-Limit", String(limit));
-    respHeaders.set("X-RateLimit-Remaining", String(Math.max(0, limit - used - (upstream.ok ? 1 : 0))));
-    respHeaders.set("X-RateLimit-Reset", midnightUTC());
-
-    return new Response(upstream.body, {
-      status: upstream.status, statusText: upstream.statusText, headers: respHeaders,
-    });
+    // (The legacy demo body that used to live here is deleted, not commented out. An unreachable block
+    // that spends an API key is an invitation: someone re-enables it later without re-deriving why it
+    // was closed. Git has it if it is ever wanted back.)
   },
 };
 

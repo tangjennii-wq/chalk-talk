@@ -1,23 +1,25 @@
-// LEGACY PATH METERING — run: node test_legacy_path_metering.mjs
+// THE UNAUTHENTICATED APP-FUNDED PATH IS CLOSED — run: node test_legacy_path_metering.mjs
 //
-// WHY THIS EXISTS (2026-07-29 audit). The legacy/demo branch of POST /v1/messages spends
-// ANTHROPIC_API_KEY. It checked no monthly cap and wrote no ledger row, so its spend was uncapped AND
-// invisible to the cap every other path respects. Its only stated guard was the per-IP daily counter,
-// and that counter does nothing: RATE_LIMIT_KV is not bound in wrangler.toml, so readDailyCount always
-// returns 0 while /health advertises the limit as enforced with full headroom.
+// (Filename kept so CI wiring and history stay continuous. What it asserts has inverted.)
 //
-// Reaching it requires only OMITTING the X-Supabase-Auth header. Origin is checked, but Origin is
-// client-supplied and trivially set by any non-browser client.
+// ── HISTORY, BECAUSE THE REASONING CHANGED TWICE ────────────────────────────────────────────────────
+// v1  The legacy/demo branch of POST /v1/messages spent ANTHROPIC_API_KEY with no cap and no ledger.
+//     Reaching it required only OMITTING the X-Supabase-Auth header. Its stated guard was a per-IP
+//     counter that does nothing, because RATE_LIMIT_KV is unbound.
 //
-// The path was NOT closed — no shipped frontend uses it (PROXY_CONFIG.enabled is false on both main and
-// launch-integration) but "no caller I can find" is not "no caller". It was metered instead, which is
-// strictly additive: existing callers keep working, spend becomes visible, and it stops at the same
-// backstop as everything else.
+// v2  I capped and metered it rather than closing it, arguing that "no caller I can find" is not "no
+//     caller" and that silently 403-ing an unknown client was the worse failure.
 //
-// THIS TEST EXECUTES THE HANDLER. `node --check` cannot catch what went wrong on the first attempt: I
-// referenced `meterKind` and `monthKey`, both const-scoped to the free-tier branch, which is a
-// ReferenceError at runtime and not a syntax error. Importing the module does not catch it either,
-// because the handler body never runs. Only calling it does.
+// v3  Codex asked the question that settles it: does that path spend the app's key? It does. And his
+//     rule follows — every request spending an app-funded key requires server-issued authorisation,
+//     regardless of headers or claimed intent. Metering bounded the COST; it left the path
+//     UNAUTHORISED. My v2 reasoning is sound for a bounded path and wrong for an unauthorised one.
+//
+// Verified before closing, rather than assumed:
+//   * the Worker NEVER reads a caller-supplied key — it only ever sends env.ANTHROPIC_API_KEY;
+//   * the shipped client's BYOK mode calls api.anthropic.com DIRECTLY and never touches this Worker.
+// So "only true BYOK may bypass the receipt" holds trivially: nothing reaching this endpoint is BYOK,
+// therefore everything reaching it must be authorised.
 import worker from "./worker.js";
 
 let failures = 0;
@@ -25,86 +27,88 @@ const ok = (c, m) => { console.log((c ? "✓" : "✗ FAIL") + " — " + m); if (
 
 const ORIGIN = "http://localhost:8000";
 const realFetch = globalThis.fetch;
+const ctx = { waitUntil() {} };
 
-function makeEnv(overrides = {}) {
-  return {
+function harness() {
+  const calls = { anthropic: 0 };
+  const env = {
     ALLOWED_ORIGINS: ORIGIN,
-    ANTHROPIC_API_KEY: "sk-test",
+    ANTHROPIC_API_KEY: "sk-app-funded",
+    SUPABASE_URL: "https://x.test",
+    SUPABASE_SERVICE_ROLE_KEY: "k",
     MAX_MONTHLY_SPEND_USD: "250",
-    DAILY_LIMIT_PER_IP: "10",
-    // Deliberately NO SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY, so the free-tier branch is skipped and
-    // the request falls through to the legacy path — exactly the condition being tested.
-    ...overrides,
+    JOBS_KV: { get: async () => null, put: async () => {}, delete: async () => {} },
   };
-}
-const ctxCalls = [];
-const ctx = { waitUntil: (p) => { ctxCalls.push(p); return p; } };
-
-function req(headers = {}) {
-  return new Request("https://proxy.test/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Origin": ORIGIN, ...headers },
-    body: JSON.stringify({ model: "claude-opus-5", messages: [{ role: "user", content: "hi" }] }),
-  });
-}
-
-// ── 1 · the legacy path RUNS — no ReferenceError from the metering I added ────
-{
-  ctxCalls.length = 0;
-  let upstreamCalled = false;
   globalThis.fetch = async (url) => {
     if (String(url).includes("api.anthropic.com")) {
-      upstreamCalled = true;
-      return new Response(JSON.stringify({ content: [{ type: "text", text: "ok" }], usage: { input_tokens: 10, output_tokens: 5 } }),
-                          { status: 200, headers: { "Content-Type": "application/json" } });
+      calls.anthropic++;
+      return new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } });
     }
     return new Response("[]", { status: 200, headers: { "Content-Type": "application/json" } });
   };
-  let res, threw = null;
-  try { res = await worker.fetch(req(), makeEnv(), ctx); }
-  catch (e) { threw = e; }
-  globalThis.fetch = realFetch;
-
-  ok(threw === null, `the legacy path executes without throwing${threw ? " — " + threw.message : ""}`);
-  ok(!!res && res.status === 200, "…and returns the upstream response");
-  ok(upstreamCalled, "…having actually called Anthropic");
-  // The metering is scheduled via ctx.waitUntil. Before this fix there was exactly one (the daily
-  // counter); there must now also be a meterCost.
-  ok(ctxCalls.length >= 2, `…and schedules metering as well as the counter (${ctxCalls.length} tasks)`);
+  return { env, calls };
 }
 
-// ── 2 · the monthly cap now applies to this path ─────────────────────────────
-// Previously it did not exist here at all: the branch went straight to fetch.
+const req = (headers = {}) => new Request("https://p.test/v1/messages", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", Origin: ORIGIN, ...headers },
+  body: JSON.stringify({ model: "claude-opus-5", messages: [{ role: "user", content: "manage DKA" }] }),
+});
+
+// ── 1 · THE BYPASS: no token, labelled aux ───────────────────────────────────
+// This is the exact shape Codex described — omit the sign-in token, claim it is auxiliary, send a
+// medical prompt. It used to reach the app key.
 {
-  ctxCalls.length = 0;
-  let anthropicCalled = false;
-  globalThis.fetch = async (url) => {
-    if (String(url).includes("api.anthropic.com")) { anthropicCalled = true; return new Response("{}", { status: 200 }); }
-    // getMonthlySpendCents reads the ledger via PostgREST — report the cap as already blown.
-    return new Response(JSON.stringify([{ total_cents: 999999 }]), { status: 200, headers: { "Content-Type": "application/json" } });
-  };
-  const res = await worker.fetch(req(), makeEnv({ SUPABASE_URL: "https://x.test", SUPABASE_SERVICE_ROLE_KEY: "k", }), ctx)
-    .catch(e => ({ status: 0, err: e }));
+  const h = harness();
+  const res = await worker.fetch(req({ "X-CT-Meter": "aux" }), h.env, ctx);
+  const body = await res.json();
   globalThis.fetch = realFetch;
-  // NB: with SUPABASE_* set AND no auth header, the free-tier branch is skipped (it requires the token),
-  // so this still exercises the legacy path — now with a reachable ledger.
-  ok(res.status === 503, `an exhausted cap stops the legacy path too (got ${res.status})`);
-  ok(!anthropicCalled, "…before spending anything upstream");
+  ok(res.status === 401, `an unauthenticated aux request is REFUSED (got ${res.status})`);
+  ok((body.error && body.error.type) === "authorisation_required", "…with authorisation_required");
+  ok(h.calls.anthropic === 0, "…and the app-funded key was NOT spent — the assertion that matters");
 }
 
-// ── 3 · the source states what it did NOT do, and why ────────────────────────
-// The path is still open. A future reader must not have to infer that from its absence.
+// ── 2 · No header games help ─────────────────────────────────────────────────
+{
+  for (const headers of [
+    {},
+    { "X-CT-Meter": "talk" },
+    { "X-CT-Meter": "aux", "X-CT-Receipt": "made-up" },
+    { "X-CT-Meter": "aux", "X-CT-Stage": "draft", "X-CT-Job": "j" },
+  ]) {
+    const h = harness();
+    const res = await worker.fetch(req(headers), h.env, ctx);
+    globalThis.fetch = realFetch;
+    ok(res.status === 401 && h.calls.anthropic === 0,
+       `refused with zero spend: ${JSON.stringify(headers) || "{}"}`);
+  }
+}
+
+// ── 3 · The refusal names both legitimate routes ─────────────────────────────
+// A caller who genuinely turns up should not be stonewalled into guessing.
+{
+  const h = harness();
+  const body = await (await worker.fetch(req(), h.env, ctx)).json();
+  globalThis.fetch = realFetch;
+  const d = (body.error && body.error.detail) || {};
+  ok(/sign in/i.test(d.free_tier || ""), "the error points to the free tier");
+  ok(/own key/i.test(d.byok || ""), "…and to BYOK");
+  ok(/directly/i.test(body.error.message || ""), "…noting that a personal key does not use this proxy");
+}
+
+// ── 4 · The code is GONE, not commented out ──────────────────────────────────
+// An unreachable block that spends an API key is an invitation: someone re-enables it later without
+// re-deriving why it was closed.
 {
   const src = (await import("fs")).readFileSync(new URL("./worker.js", import.meta.url), "utf8");
-  const legacy = src.slice(src.indexOf("Legacy / demo path"), src.indexOf("const respHeaders"));
-  ok(/RATE_LIMIT_KV is not\s*\n?\s*\/\/ bound|RATE_LIMIT_KV is not/.test(legacy),
-     "the comment records that the per-IP guard is non-functional, not merely weak");
-  ok(/did NOT close this path/.test(legacy),
-     "…and that leaving it open was a decision, with its reason");
-  ok(/getMonthlySpendCents\(env, legacyMonthKey\)/.test(legacy), "the cap check is present");
-  ok(/meterCost\(env, upstream\.clone\(\)/.test(src.slice(src.indexOf("Legacy / demo path"))),
-     "the ledger write is present");
+  const code = src.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
+  const anthropicCalls = (code.match(/fetch\("https:\/\/api\.anthropic\.com/g) || []).length;
+  ok(anthropicCalls === 2,
+     `exactly two call sites to Anthropic remain (found ${anthropicCalls}): the authorised free-tier ` +
+     "branch, and callAnthropicText which only the Workflow runner reaches");
+  ok(!/Legacy \/ demo path/.test(code), "the legacy branch is deleted from the code path");
+  ok(/deleted, not commented out/.test(src), "…and the source says so, with the reason");
 }
 
-console.log("\n" + (failures === 0 ? "✔ LEGACY PATH METERING TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
+console.log("\n" + (failures === 0 ? "✔ UNAUTHENTICATED APP-FUNDED PATH IS CLOSED" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

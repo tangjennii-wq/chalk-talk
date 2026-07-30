@@ -164,8 +164,12 @@ const reason = async (res) => ((await res.json()).error || {}).detail?.reason;
   const h = harness({ withStore: false });
   h.calls.anthropic = 0;
   const res = await worker.fetch(msg({ receipt: "anything", job: "j", stage: "draft" }), h.env, ctx);
-  ok(res.status === 503, `no receipt store => 503, not "carry on" (got ${res.status})`);
-  ok(h.calls.anthropic === 0, "…and ZERO upstream calls");
+  // 401 (the unauthenticated app-funded path is closed) or 503 (free tier unconfigured) — either is a
+  // refusal. Pinning the exact code would make this fail on a reword that changed nothing; the property
+  // is that it is refused and NOTHING IS SPENT.
+  ok(res.status === 401 || res.status === 503,
+     `no receipt store => refused, not "carry on" (got ${res.status})`);
+  ok(h.calls.anthropic === 0, "…and ZERO app-funded upstream calls");
 
   const consume = await mint(h.env, "job-dddddddd");
   ok(consume.status === 503, "…and /consume refuses to pretend it reserved anything");

@@ -1,4 +1,9 @@
-# End-to-end click test — the last gate before Chalk Talk goes live
+# End-to-end pass — testing the current bounded architecture
+
+**This is not public-launch approval.** It exercises integration of what exists now: durable execution,
+receipts, and the authorisation gates. The prompt-ownership migration
+(`2026-07-30-server-owned-generation-design.md`) comes after, and *that* is the launch gate. Running this
+first is deliberate — it surfaces integration failures while the surface area is still small.
 
 Everything up to here is unit-tested (30 suites, 1195 assertions). This is the part that needs a browser,
 your Cloudflare account, and real Anthropic calls. **Budget ~25 minutes and about 4 talk credits.**
@@ -105,6 +110,15 @@ curl -s -X POST "https://<your-worker>.workers.dev/v1/messages" -H 'Content-Type
 
 - [ ] `"receipt_required"` — **not** a 200. `aux` is not an exemption; it still spends your key.
 
+**(bb) No sign-in token at all** — the app-funded path Codex asked about, now closed:
+
+```bash
+curl -s -X POST "https://<your-worker>.workers.dev/v1/messages" -H 'Content-Type: application/json' -H 'Origin: https://tangjennii.github.io' -H 'X-CT-Meter: aux' -d '{"model":"claude-opus-5","messages":[{"role":"user","content":"manage DKA"}]}' | jq '.error.type'
+```
+
+- [ ] `"authorisation_required"`. There is no unauthenticated route to the app key any more. (BYOK is
+      unaffected: a personal key calls Anthropic directly and never reaches this Worker.)
+
 **(c) An uncleared model with a valid receipt.** Generate a talk normally, grab the `receipt` from the
 `/v1/free-tier/consume` response in the Network tab and its `X-CT-Job`, then:
 
@@ -113,6 +127,38 @@ curl -s -X POST "https://<your-worker>.workers.dev/v1/messages" -H 'Content-Type
 ```
 
 - [ ] `"writer_not_cleared"` — the model gate rides on the receipt, so no header routes around it.
+
+## 6b · CONCURRENCY, FOR REAL — the gap I could not close from here
+
+Sequential redemption is verified in production. The **concurrent** case rests on documented Postgres
+row-locking semantics, not a measurement, because I could not orchestrate parallel connections from the
+sandbox. This closes it in about a minute.
+
+```bash
+export DATABASE_URL='<your supabase connection string>'
+psql "$DATABASE_URL" -c "select receipt_issue('aaaaaaaa-0000-0000-0000-000000000001'::uuid,'bbbbbbbb-0000-0000-0000-000000000001'::uuid,'e2e-concurrency','talk',array['claude-opus-5'],'{\"draft\":{\"max\":2,\"used\":0}}'::jsonb,1800);"
+```
+
+```bash
+for i in $(seq 1 10); do psql "$DATABASE_URL" -tAc "select ok from receipt_redeem('aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000001','e2e-concurrency','draft','claude-opus-5');" & done; wait
+```
+
+- [ ] Exactly **two** `t` and eight `f`. Anything above two means the row lock is not doing what the
+      design assumes, and the budget is not a budget — **tell me before going further.**
+
+```bash
+psql "$DATABASE_URL" -c "delete from generation_receipts where job_id = 'e2e-concurrency';"
+```
+
+## 6c · CRITIQUE FAILURE MUST NOT RE-BUY THE DRAFT
+
+The property the whole draft/critique split exists for. Easiest trigger: point the critic at a
+nonexistent model id in the request the app sends, or temporarily remove `claude-opus-5` from the
+critic's chain.
+
+- [ ] The instance errors after the draft.
+- [ ] `wrangler tail` shows **one** draft call, not two — a critique failure never re-purchases it.
+- [ ] The credit is refunded exactly once.
 
 ## 7 · NOTHING BROKE THAT USED TO WORK
 
