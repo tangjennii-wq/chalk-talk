@@ -67,6 +67,11 @@ const IMAGE_FLAT_CENTS = 8;   // gpt-image-1.5 high quality ≈ $0.08/image
 // STALL_AFTER_MS is deliberately several missed beats, so one slow write or a clock skew is not a stall.
 const CRITIQUE_HEARTBEAT_MS = 20_000;
 const STALL_AFTER_MS = 90_000;
+// A generation receipt proves a talk was paid for. One generation legitimately makes several model
+// calls — draft, review, 529 retries, model fallbacks — so a receipt authorises a bounded number rather
+// than one. Twelve is generous against the observed shape and still finite.
+const RECEIPT_MAX_CALLS = 12;
+const RECEIPT_TTL_SECONDS = 1800;
 const EMBEDDING_MODEL = "text-embedding-3-small";
 // (RERANK_POOL removed 2026-07-28. It encoded the assumption that a global top-N lookup could score the
 // facet union; it cannot. score_candidate_chunks scores the union exactly, so there is no pool depth to
@@ -214,6 +219,28 @@ export default {
 
     if (!body.model || !ALLOWED_MODELS.includes(body.model))
       return jsonError(400, "model_not_allowed", `Model '${body.model}' not allowed.`, origin);
+
+    // ── SERVER-SIDE WRITER ALLOWLIST (Codex, 2026-07-29 → 2026-07-30) ──────────────────────────────
+    // `callAnthropicText` fails closed against WRITER_CLEARED, but that is the ASYNC runner only. This
+    // synchronous endpoint validated nothing but ALLOWED_MODELS, which deliberately includes older and
+    // cheaper models for non-writing utility calls — podcast scripts, diagram prompts, chat. So a
+    // tampered client could send `claude-sonnet-4-20250514` here and have an unbenchmarked model write
+    // medical teaching content, while the header comment two hundred lines up said generation FAILS
+    // CLOSED. It did, on one of two routes.
+    //
+    // WHAT THIS CHECK IS, AND WHAT IT IS NOT. X-CT-Meter is supplied by the client, so a caller who
+    // wants to evade this can label a talk as `aux`. It therefore protects every honest client and
+    // stops the accidental case; it is NOT an authorisation control.
+    //
+    // The control is the generation RECEIPT below: a talk that consumes quota must present one, and a
+    // receipt pins the model set server-side. Both are enforced here so that the weaker check still
+    // covers the paths a receipt does not reach yet.
+    const requestKind = request.headers.get("X-CT-Meter") || "aux";
+    if (requestKind === "talk" && !WRITER_CLEARED.includes(body.model)) {
+      return jsonError(403, "writer_not_cleared",
+        `Model '${body.model}' is not cleared to write teaching content. Cleared: [${WRITER_CLEARED.join(", ")}].`,
+        origin, { cleared: WRITER_CLEARED });
+    }
     if (!Array.isArray(body.messages))
       return jsonError(400, "missing_messages", "messages array is required.", origin);
     if (body.max_tokens && body.max_tokens > MAX_TOKENS_CAP) body.max_tokens = MAX_TOKENS_CAP;
@@ -248,10 +275,32 @@ export default {
           origin, { resumes_on: nextMonthFirstDayUTC() });
       }
 
-      // NOTE: quota is consumed exactly once per generation via POST /v1/free-tier/consume
-      // (called by the frontend before it starts). We do NOT consume here, because a single
-      // generation makes several /v1/messages calls (draft + peer review, plus 529 retries and
-      // model fallbacks) — charging per call would burn multiple talks for one generation.
+      // ── THE QUOTA WAS ENFORCED BY CONVENTION, NOT BY THE SERVER (Codex, 2026-07-30) ───────────────
+      // Quota is consumed once per generation via POST /v1/free-tier/consume, which the front end calls
+      // before starting. This endpoint verified the user was signed in and then trusted that it had
+      // happened. A caller who skipped the front end could generate with zero talks remaining, and the
+      // per-IP fallback does not stop it because RATE_LIMIT_KV is unbound.
+      //
+      // A talk-kind request must now present the RECEIPT issued by /consume. It is bound to the user
+      // who paid, bounded in calls, and expires — so it proves this generation was paid for, by this
+      // person, recently. Utility calls (`aux`) are unaffected: they are not metered against talks.
+      //
+      // FAILS CLOSED, with one deliberate exception: if JOBS_KV is not bound there is nowhere to store
+      // receipts, so the check cannot run at all. Rejecting every talk in that case would take the app
+      // down on a misconfiguration rather than protecting anything, so it degrades to the previous
+      // behaviour and says so in the log. JOBS_KV IS bound in production.
+      if (meterKind === "talk" && env.JOBS_KV) {
+        const receiptId = request.headers.get("X-CT-Receipt") || "";
+        const redeemed = await redeemReceipt(env, receiptId, user.id);
+        if (!redeemed.ok) {
+          return jsonError(402, "receipt_required",
+            "This generation was not paid for. Start it from the app so a talk is reserved first.",
+            origin, { reason: redeemed.reason });
+        }
+      } else if (meterKind === "talk") {
+        console.warn("receipt check SKIPPED: JOBS_KV is not bound, so quota is unenforceable here");
+      }
+
       let upstreamF;
       try {
         upstreamF = await fetch("https://api.anthropic.com/v1/messages", {
@@ -629,6 +678,30 @@ async function handleFreeTierConsume(request, env, origin) {
       : "You've used your free talks. Add your own Anthropic key (~$5 covers ~30 talks) to continue.";
     return jsonError(429, kind === "image" ? "image_quota_exceeded" : "quota_exceeded", msg, origin);
   }
+  // ── ISSUE A GENERATION RECEIPT (Codex, 2026-07-30) ────────────────────────────────────────────────
+  // The quota bypass: /v1/messages verified authentication but never verified that /consume had
+  // happened. A signed-in caller could skip the front end and generate with zero talks remaining,
+  // because the only thing tying the two together was the client's good manners.
+  //
+  // A receipt is a server-issued, single-generation credential proving a talk was actually paid for. It
+  // is minted HERE, where the quota was just decremented, and presented on each /v1/messages call of
+  // that generation. It also pins the model set, which is what turns the header-based writer allowlist
+  // above into a real control rather than a courtesy.
+  //
+  // Multiple calls per receipt on purpose: one generation makes several — draft, review, 529 retries,
+  // model fallbacks — and charging a talk per call would burn a user's quota in a single generation.
+  // The cap bounds abuse without breaking the legitimate shape.
+  let receipt = null;
+  if (kind === "talk" && env.JOBS_KV) {
+    receipt = crypto.randomUUID();
+    await env.JOBS_KV.put("receipt:" + receipt, JSON.stringify({
+      userId: user.id,
+      issuedAt: new Date().toISOString(),
+      calls: 0,
+      maxCalls: RECEIPT_MAX_CALLS,
+    }), { expirationTtl: RECEIPT_TTL_SECONDS });
+  }
+
   // Report remaining for the badge.
   let remaining = null;
   try {
@@ -638,7 +711,33 @@ async function handleFreeTierConsume(request, env, origin) {
     const row = Array.isArray(r) ? r[0] : r;
     if (row) remaining = { talks_remaining: row.talks_remaining, images_remaining: row.images_remaining };
   } catch (e) {}
-  return jsonOK({ consumed: true, kind, remaining }, origin);
+  return jsonOK({ consumed: true, kind, remaining, receipt }, origin);
+}
+
+/**
+ * Redeem one call against a generation receipt.
+ *
+ * Returns { ok } or { ok: false, reason }. Read-modify-write on KV, so the call count is approximate
+ * under heavy concurrency — that is acceptable here because the receipt's job is to prove quota was
+ * PAID, not to meter precisely. The ledger meters. A user racing themselves to squeeze a few extra
+ * calls out of one receipt is bounded by maxCalls either way.
+ */
+async function redeemReceipt(env, receiptId, userId) {
+  if (!env.JOBS_KV) return { ok: false, reason: "no_store" };
+  let raw;
+  try { raw = await env.JOBS_KV.get("receipt:" + receiptId); }
+  catch (_) { return { ok: false, reason: "store_unreachable" }; }
+  if (!raw) return { ok: false, reason: "unknown_or_expired" };
+  let rec; try { rec = JSON.parse(raw); } catch (_) { return { ok: false, reason: "corrupt" }; }
+  // A receipt belongs to the user who paid for it. Without this, one user's receipt would authorise
+  // another user's generation — a quota bypass wearing the fix's clothes.
+  if (rec.userId !== userId) return { ok: false, reason: "wrong_owner" };
+  if ((rec.calls || 0) >= (rec.maxCalls || RECEIPT_MAX_CALLS)) return { ok: false, reason: "exhausted" };
+  rec.calls = (rec.calls || 0) + 1;
+  try {
+    await env.JOBS_KV.put("receipt:" + receiptId, JSON.stringify(rec), { expirationTtl: RECEIPT_TTL_SECONDS });
+  } catch (_) { /* the count is best-effort; the ownership and existence checks already passed */ }
+  return { ok: true, calls: rec.calls };
 }
 
 async function handleFreeTierBonus(request, env, origin) {

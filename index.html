@@ -764,7 +764,12 @@ async function consumeFreeTier(kind){
         images_remaining: data.remaining.images_remaining,
         signed_in:true
       });
-      return {ok:true, remaining:data.remaining};
+      // The Worker now issues a RECEIPT proving this generation was paid for, and requires it on every
+      // talk-kind /v1/messages call. Without it the server cannot tell a paid generation from a caller
+      // who skipped the app entirely — which was the quota bypass. Held in memory only: it is
+      // short-lived, single-generation, and there is no reason for it to outlive the tab.
+      S.genReceipt = data.receipt || null;
+      return {ok:true, remaining:data.remaining, receipt:data.receipt};
     }
     return {ok:false, code:(data.error&&data.error.type)||"quota_error", message:(data.error&&data.error.message)||"Free tier limit reached", resumes_on:(data.error&&data.error.detail&&data.error.detail.resumes_on)};
   }catch(e){
@@ -1333,7 +1338,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-29-02";
+var BUILD_ID = "2026-07-30-01";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6621,6 +6626,9 @@ async function callAPI(sys, content, maxTok, opts) {
   if (useFree) {
     endpoint = RAG_CONFIG.url.replace(/\/$/, "") + "/v1/messages";
     headers = {"Content-Type":"application/json","X-Supabase-Auth":freeTierToken(),"X-CT-Meter":(opts.meterKind||"aux")};
+    // Present the receipt on talk-kind calls. One receipt covers the whole generation — draft, review,
+    // retries, fallbacks — so it is sent on each call rather than consumed by the first.
+    if((opts.meterKind||"aux") === "talk" && S.genReceipt) headers["X-CT-Receipt"] = S.genReceipt;
   } else if (useProxy) {
     endpoint = PROXY_CONFIG.url.replace(/\/$/, "") + "/v1/messages";
     headers = {"Content-Type":"application/json"};

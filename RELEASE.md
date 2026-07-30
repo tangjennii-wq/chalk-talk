@@ -12,10 +12,10 @@ the live database on 2026-07-29 rather than carried forward.
 | | |
 |---|---|
 | branch | **`main`** — `launch-integration` is fully merged and is history now |
-| `BUILD_ID` / `build.txt` | `2026-07-29-02` |
+| `BUILD_ID` / `build.txt` | `2026-07-30-01` |
 | front end | **changed** — `pollAsyncGeneration` gained a `stalled` branch, so this one *does* need deploying |
 | database | production `chalktalk` (`hrcvcjiefndvytlcbmpa`); there is no staging project |
-| tests | 28 suites, all green, all wired into `.github/workflows/tests.yml` |
+| tests | 30 suites, all green, all wired into `.github/workflows/tests.yml` |
 | wrangler `main` | **`worker_entry.js`** (was `worker.js`) — it exports the Workflow class as well as the fetch handler |
 
 ## Two things worth knowing before you deploy
@@ -133,11 +133,13 @@ making them unsupervised risked breaking generation for every user. Full detail 
    `rag/runs/2026-07-29-workflow-migration.md` passes, treat this defect as live — on any deploy where
    the binding is missing, it is. Delete the `waitUntil` path once it does.
 
-2. **`/v1/messages` never verifies that `/consume` happened.** A signed-in caller can skip the frontend
-   and generate with zero talks remaining. Needs a server-issued reservation, not a client convention.
-3. **`WRITER_CLEARED` is enforced only on the async route.** The sync route accepts any member of
-   `ALLOWED_MODELS`, which includes Sonnet and Haiku — so a tampered client can have unbenchmarked models
-   write medical teaching content. **This is a content-safety guarantee, not a spend one.**
+2. ~~`/v1/messages` never verifies that `/consume` happened~~ — **FIXED.** `/consume` now issues a
+   short-lived generation **receipt**, bound to the paying user and bounded to 12 calls, and a talk-kind
+   request without a valid one gets 402 before anything is spent. Utility (`aux`) calls are unaffected.
+3. ~~`WRITER_CLEARED` enforced only on the async route~~ — **FIXED.** A talk-kind request with an
+   uncleared model gets 403 on the sync route too. Being honest about its limits: `X-CT-Meter` is
+   client-supplied, so this stops the accidental and honest cases; the **receipt** is what makes it an
+   actual control, and both are enforced together.
 4. **`getMonthlySpendCents` fails open** — every error returns `0`, so the cap disengages exactly when
    Supabase is unhealthy, and `/status` simultaneously reports healthy remaining capacity.
 5. **The cap is a soft backstop, not a hard cap.** Spend is read before work and recorded after, so
