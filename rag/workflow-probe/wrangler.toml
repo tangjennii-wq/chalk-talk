@@ -1,0 +1,19 @@
+name = "chalk-talk-workflow-probe"
+main = "src/index.js"
+compatibility_date = "2025-01-01"   # Workflows need >= 2024-10-22
+
+# A throwaway Worker whose entire purpose is to make steps fail on purpose. Keep it separate from
+# chalk-talk-proxy: never probe retry behaviour inside the Worker that holds the real API keys.
+
+[[workflows]]
+name = "chalk-talk-probe"
+binding = "PROBE"
+class_name = "Probe"
+
+# Counts survive engine restarts here rather than in a top-level variable, which Workflows explicitly
+# warns is not durable state. Create with:
+#   npx wrangler kv namespace create PROBE_KV
+# then paste the printed id below.
+[[kv_namespaces]]
+binding = "PROBE_KV"
+id = "PASTE_THE_ID_FROM_THE_COMMAND_ABOVE"

@@ -175,6 +175,11 @@ jobs:
       - name: Durable generation workflow (paid steps never inherit the 5x retry default)
         run: node test_generation_workflow.mjs
 
+      # Only the reservation belonging to the NEWLY created job may ever be refunded. A duplicate
+      # submit whose instance is live must not claw back a running job's credit.
+      - name: Submit / refund scope
+        run: node test_submit_refund_scope.mjs
+
       # THE GUARD ON THE GUARDS. Writing a suite and forgetting to wire it here has happened twice.
       # A test that never runs is worse than no test: it reads as coverage.
       - name: Every test suite on disk is wired into this workflow
