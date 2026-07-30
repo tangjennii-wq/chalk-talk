@@ -6,15 +6,18 @@ built to find, in the constant written to prevent it.**
 ## Raw
 
 ```
+round 1 (NonRetryableError WITH a custom name):
 raw counts:   {"q1":1,"q2":4,"q3":6,"q4first":1,"q4second":4}
-raw statuses: {"limit0":"complete","limitN":"errored","nonretryable":"complete","replay":"errored"}
+
+round 2 (identical, except the custom name removed):
+raw counts:   {"q1":1,"q2":4,"q3":1,"q4first":1,"q4second":4}
 ```
 
 | | question | documented | **measured** |
 |---|---|---|---|
 | Q1 | `retries: { limit: 0 }` | not mentioned at all | **accepted, callback ran exactly once** |
 | Q2 | does `limit: 3` mean 3 or 4 executions? | contradicts itself | **4 — `limit` is 1 + N RETRIES** |
-| Q3 | does `NonRetryableError` stop retries? | "stops step retries" | **no — 6 executions against `limit: 5`** |
+| Q3 | does `NonRetryableError` stop retries? | "stops step retries" | **only without a custom name — 6 executions with, 1 without** |
 | Q4 | is a completed step re-executed when a later one fails? | cached | **cached — confirmed, ran once** |
 
 ## What changed, and why it mattered
@@ -28,17 +31,30 @@ Now `limit: 0`, which Q1 measured as exactly one execution. The docs never menti
 supports it. **The safe configuration is the one that isn't documented, and the one the docs imply is
 safe permits two charges.**
 
-### 2 · `NonRetryableError` is not a guard
+### 2 · `NonRetryableError` is defeated by its own optional second argument — DIAGNOSED
 
-Six executions against `limit: 5` — it was not recognised at all. Anything that treated it as a stop was
-relying on nothing. It is still thrown, for the message it puts on the instance status, and that is all.
+Round 1 threw `new NonRetryableError("stop", "ProbeStop")` → **6 executions** against `limit: 5`.
+Round 2 changed exactly one thing, dropping the name → **1 execution**.
 
-**Diagnosis in progress.** The probe threw it with a custom `name` (`"ProbeStop"`), and so did
-`generation_workflow.js` (`"DuplicatePaidAttempt"`, `"PermanentModelFailure"`, `"EmptyDraft"`). The
-leading hypothesis is that the runtime detects these by `error.name` and a custom name defeats it. Round
-two adds three variants — bare, named, and a plain `Error` wearing the name — which separates "custom
-name breaks it" from "it never works" from "`name` is the discriminator". All custom names have been
-removed from the production path meanwhile, since they cost nothing and may be the cause.
+```
+new NonRetryableError("stop", "ProbeStop")   ->  6
+new NonRetryableError("stop")                ->  1
+```
+
+**Passing a custom `name` silently defeats it.** The docs present that second argument as an ordinary
+optional name and say nothing about the consequence. `generation_workflow.js` passed one on every throw
+(`"DuplicatePaidAttempt"`, `"PermanentModelFailure"`, `"EmptyDraft"`), so none of them would have stopped
+a retry — a guard that was doing nothing while reading as though it were.
+
+All custom names are gone. `NonRetryableError` does now work, and is used, but it is **not** the primary
+defence: a guard that fails silently when someone adds a helpful-looking argument is not one to lean on.
+`limit: 0` and the result cache are what hold.
+
+*A note on the evidence.* The two measurements come from consecutive runs rather than one run with both
+variants — my edit adding named/duck-typed modes landed after the deploy. One variable changed between
+them and nothing else, so the comparison is sound, but a single run containing both is available any
+time by re-running the probe (it now carries `nrnamed` and `nrduck` modes, which would also settle
+whether `name` alone is the discriminator).
 
 ### 3 · A hole the probe made me find, which no question asked about
 
@@ -81,9 +97,21 @@ error, and reintroducing a custom error name each turn the suite red.
 
 29 suites, 1158 assertions.
 
+## Verdict: all four questions answered, architecture holds
+
+| | |
+|---|---|
+| Q1 `limit: 0` | accepted, exactly one execution — now used for every paid step |
+| Q2 `limit: N` | 1 + N retries — the old `limit: 1` was a two-call config |
+| Q3 `NonRetryableError` | works, but only without a custom name — all names removed |
+| Q4 step caching | confirmed — the draft/critique split is sound |
+
+**Next, in order:** server-side writer allowlist → server-side quota enforcement → end-to-end click test
+(start, reload, reconnect, finish, cancel, duplicate submit) → deploy Worker and front end together.
+
 ## Still open
 
-- **Q3 diagnosis** — probe redeployed with three variants; keep it up until the answer is in.
-- **Anthropic idempotency** — still unconfirmed; the reference page is client-rendered. The guarantee
-  remains **at-most-once, fail-closed**, not exactly-once.
-- **Do not deploy** until Q3 is understood.
+- **Anthropic idempotency** — unconfirmed; the reference page is client-rendered and returns only
+  "Loading…" to a fetch. The guarantee remains **at-most-once, fail-closed**, not exactly-once.
+- **The probe Worker is still deployed.** Clean it up whenever you like:
+  `cd rag/workflow-probe && npx wrangler delete`

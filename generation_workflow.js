@@ -14,8 +14,12 @@
 //
 //   * `limit: N` means 1 + N RETRIES. `limit: 3` executed FOUR times. The `limit: 1` this file used to
 //     carry therefore permitted TWO paid calls per step.
-//   * `NonRetryableError` did NOT stop retries — six executions against `limit: 5`. It cannot be relied
-//     on as a guard.
+//   * `NonRetryableError` stops retries ONLY when thrown WITHOUT a custom name. Measured twice, one
+//     variable changed between runs:
+//         new NonRetryableError("stop", "ProbeStop")  -> SIX executions against limit: 5
+//         new NonRetryableError("stop")               -> ONE execution
+//     A custom `name` silently defeats it. The docs present that second argument as an ordinary optional
+//     name and say nothing about this. Every throw in this file used to pass one.
 //
 // What actually protects the user, in order:
 //   1. `PAID_RETRY = { retries: { limit: 0 } }` — measured to execute the callback exactly once.
@@ -24,7 +28,8 @@
 //   3. The attempt marker, which REFUSES when a call was issued and no result was stored — the state
 //      where we cannot know whether the provider billed us.
 //
-// NonRetryableError is still thrown, for the message it puts on the instance. It is not a guard.
+// NonRetryableError IS used, always without a name, and does stop retries in that form. It is still not
+// the PRIMARY defence: a guard defeated by adding a plausible-looking argument is not one to lean on.
 //
 // ── OTHER RULES THIS FILE OBEYS ──────────────────────────────────────────────────────────────────────
 // * Step names are deterministic string literals — the name is the cache key, so a name built from a
@@ -49,11 +54,8 @@ const MARKER_TTL_SECONDS = 3600;
 //                  The docs never mention it; the runtime supports it. This is the only configuration
 //                  that guarantees a paid call is issued at most once per step execution.
 //
-//   NonRetryableError → did NOT stop retries (ran 6 times against limit: 5).
-//                  So it is NOT load-bearing here and must not be treated as a guard. Diagnosis in
-//                  progress — the leading hypothesis is that passing a custom `name` (which this file
-//                  used to do) defeats the runtime's detection. Until that is settled, the retry config
-//                  and the durable marker do the work and NonRetryableError is only a label.
+//   NonRetryableError → 6 executions WITH a custom name, 1 without. The custom name defeats it.
+//                  Diagnosed by changing exactly that one thing between two runs. Never pass a name.
 /** PAID steps: exactly one execution. Measured, not inferred. Never raise this. */
 export const PAID_RETRY = { retries: { limit: 0, delay: 0 }, timeout: "10 minutes" };
 /** Bookkeeping steps touch only our own storage, so retrying them is safe and desirable.
@@ -107,8 +109,9 @@ export async function releaseAttempt(deps, jobId, stepName) {
  *   marker still set with no cache              → a call was issued and we cannot know if it billed, so
  *                                                 REFUSE rather than re-issue
  *
- * NonRetryableError is thrown for signalling only. The probe showed it did not stop retries, so it is
- * not relied upon; `PAID_RETRY.limit = 0` and this cache are what actually hold.
+ * NonRetryableError is thrown WITHOUT a custom name — with one it silently stops working (measured: 6
+ * executions with a name, 1 without). It is a secondary defence; `PAID_RETRY.limit = 0` and this cache
+ * are what actually hold.
  */
 export async function paidModelStep(deps, { jobId, stepName, call }) {
   const cacheKey = `result:${jobId}:${stepName}`;
