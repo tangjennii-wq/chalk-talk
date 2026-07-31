@@ -36,14 +36,31 @@
 -- invocation runs inside ONE statement and therefore shares one snapshot, so each reads used=0. It
 -- measured a property of my test, not of the lock.
 --
--- Real concurrency is separate transactions, where the second UPDATE blocks on the row lock and, under
--- READ COMMITTED, re-evaluates its WHERE against the updated row before proceeding. That is what bounds
--- it. I could not orchestrate ten genuinely concurrent connections through the tooling available here,
--- so the strongest claim I can make honestly is: sequential enforcement is verified in production, and
--- the concurrent case rests on documented Postgres row-locking semantics rather than on a measurement.
--- Worth closing that gap during the end-to-end pass, with something like:
---     for i in $(seq 1 10); do psql "$DATABASE_URL" -c "select * from receipt_redeem(...)" & done; wait
-
+-- ── THE CONCURRENT CASE, NOW MEASURED (2026-07-30) ───────────────────────────────────────────────────
+-- I first wrote that I could not orchestrate genuinely parallel connections from the tooling available,
+-- and left it as a psql loop for Jenni. That was giving up one step early. dblink was available:
+-- temporarily installed, a login role created with EXECUTE on this function and an RLS policy scoped to
+-- one test job id, then TEN separate backends opened and fired with dblink_send_query so every request
+-- was in flight before any result was read.
+--
+--     concurrent_connections: 10
+--     authorised:              2      <- exactly the budget
+--     refused:                 8
+--     counter_after:           2
+--
+-- Ten transactions, one row, two winners. The row lock does what the design assumes.
+--
+-- Two false starts worth keeping, because both produced a confident wrong answer:
+--   1. generate_series + lateral -> 10 authorised. One statement, one snapshot, every call read used=0.
+--      It measured the test, not the lock. I nearly reported it as the function failing.
+--   2. Issuing the receipt inside the same DO block as the dblink calls -> 0 authorised. The insert had
+--      not committed, so the external connections could not see the row at all.
+-- A concurrency test that shares a snapshot, or races against uncommitted data, is not a concurrency
+-- test. Both failure modes look like a result.
+--
+-- Everything created for this was removed and the removal verified: role, extension, policy, grants and
+-- the test receipt all confirmed absent afterwards.
+--
 begin;
 
 create table if not exists public.generation_receipts (

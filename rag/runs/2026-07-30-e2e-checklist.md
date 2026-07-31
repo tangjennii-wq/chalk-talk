@@ -142,27 +142,25 @@ curl -s -X POST "https://<your-worker>.workers.dev/v1/messages" -H 'Content-Type
 
 - [ ] `"writer_not_cleared"` — the model gate rides on the receipt, so no header routes around it.
 
-## 6b · CONCURRENCY, FOR REAL — the gap I could not close from here
+## 6b · CONCURRENCY — ✅ ALREADY DONE, no action needed
 
-Sequential redemption is verified in production. The **concurrent** case rests on documented Postgres
-row-locking semantics, not a measurement, because I could not orchestrate parallel connections from the
-sandbox. This closes it in about a minute.
+**Measured against production, 2026-07-30.** I said this needed your psql loop; it did not — dblink let
+me open ten real backends and fire them all with `dblink_send_query` before reading any result.
 
-```bash
-export DATABASE_URL='<your supabase connection string>'
-psql "$DATABASE_URL" -c "select receipt_issue('aaaaaaaa-0000-0000-0000-000000000001'::uuid,'bbbbbbbb-0000-0000-0000-000000000001'::uuid,'e2e-concurrency','talk',array['claude-opus-5'],'{\"draft\":{\"max\":2,\"used\":0}}'::jsonb,1800);"
+```
+concurrent_connections: 10
+authorised:              2      <- exactly the budget
+refused:                 8
+counter_after:           2
 ```
 
-```bash
-for i in $(seq 1 10); do psql "$DATABASE_URL" -tAc "select ok from receipt_redeem('aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000001','e2e-concurrency','draft','claude-opus-5');" & done; wait
-```
+Ten transactions, one row, two winners. Everything created for the test — a login role, the dblink
+extension, an RLS policy scoped to one test job id, and the test receipt — was removed and the removal
+verified.
 
-- [ ] Exactly **two** `t` and eight `f`. Anything above two means the row lock is not doing what the
-      design assumes, and the budget is not a budget — **tell me before going further.**
-
-```bash
-psql "$DATABASE_URL" -c "delete from generation_receipts where job_id = 'e2e-concurrency';"
-```
+*(Two earlier attempts each produced a confident wrong answer: `generate_series` + `lateral` gave 10
+authorised because one statement shares one snapshot; issuing the receipt inside the same transaction as
+the dblink calls gave 0 authorised because the insert had not committed. Recorded in the migration.)*
 
 ## 6c · CRITIQUE FAILURE MUST NOT RE-BUY THE DRAFT
 
