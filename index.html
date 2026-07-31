@@ -5924,6 +5924,15 @@ function _journalAgree(a,b){
   var key=function(s){ return s.split(/\s+/).filter(function(w){ return w && !stop[w]; }).map(function(w){ return w[0]; }).join(""); };
   var ka=key(na), kb=key(nb);
   if(ka.length>=2 && ka===kb) return true;                   // "N Engl J Med" vs "New England Journal of Medicine"
+  // ONE-TOKEN ACRONYMS — the case the line above CANNOT reach (2026-07-31).
+  // key() maps a single token to its FIRST letter, so key("nejm") is "n", never "nejm", and the
+  // initials test can never fire for a compact acronym. The example in the comment above,
+  // "N Engl J Med", is multi-token and does pass — which is precisely why this survived review: the
+  // shape that was tested worked, and the shape models actually emit did not. Measured cost: three
+  // correct landmark citations (DOSE, ADVOR, CARRESS-HF) silently dropped from a single talk because
+  // "NEJM" could not be matched against "The New England Journal of Medicine".
+  var acroMatch=function(x,y){ return x.length>=2 && x.length<=8 && x.indexOf(" ")<0 && x===key(y); };
+  if(acroMatch(na,nb) || acroMatch(nb,na)) return true;
   var ta=na.split(/\s+/), tb=nb.split(/\s+/), sb={}; tb.forEach(function(w){ sb[w]=1; });
   var i2=0; ta.forEach(function(w){ if(sb[w]) i2++; });
   return i2 / Math.min(ta.length, tb.length) >= 0.6;
@@ -5980,14 +5989,34 @@ async function verifyModelDois(talk){
       var claimedTitle = String(x.ref.source || ""), claimedYear = parseInt(x.ref.year, 10) || null;
       var claimedJournal = String(x.ref.society || "");
       var mismatch = [];
-      if(claimedTitle && v.title && _titleSimilar(claimedTitle, v.title) < 0.5) mismatch.push("title");
+      var titleSim = (claimedTitle && v.title) ? _titleSimilar(claimedTitle, v.title) : null;
+      if(titleSim != null && titleSim < 0.5) mismatch.push("title");
       if(claimedYear && v.year && Math.abs(claimedYear - v.year) > 1) mismatch.push("year");
       if(claimedJournal && v.journal && !_journalAgree(claimedJournal, v.journal)) mismatch.push("journal");
-      if(mismatch.length >= 1 && x.ref.id != null){
+
+      // JOURNAL ALONE IS NOT EVIDENCE OF A WRONG PAPER (2026-07-31).
+      // Journal strings vary far more than titles do — acronyms, a leading "The", subtitles, publisher
+      // renames — whereas a DOI genuinely pointing at a DIFFERENT article disagrees on the TITLE too.
+      // So journal may corroborate a drop; it may not cause one on its own while the title still
+      // agrees. Without this, one naming variant discards a correct landmark citation, which is a
+      // worse outcome for a physician reading the talk than the mislabelling this guard prevents.
+      var decisive = mismatch.filter(function(m){ return m !== "journal"; });
+      var drop = decisive.length >= 1
+              || (mismatch.indexOf("journal") >= 0 && titleSim != null && titleSim < 0.8);
+
+      if(drop && x.ref.id != null){
         // The DOI is real but points at something else than claimed → the citation is wrong.
         dropIds.push(String(x.ref.id));
-        console.warn("Dropped ref " + x.ref.id + ": DOI " + x.doi + " is a real paper but its " +
-          mismatch.join("/") + " disagrees with the cited claim (\"" + claimedTitle.slice(0,60) + "\" vs \"" + String(v.title).slice(0,60) + "\")");
+        // Report the fields that ACTUALLY disagreed. This previously printed the two TITLES no matter
+        // which check fired, so a journal mismatch was reported alongside two near-identical titles —
+        // it read as a title bug and sent the first diagnosis to the wrong function entirely.
+        var shown = mismatch.map(function(m){
+          if(m === "title")   return "title: \"" + claimedTitle.slice(0,60) + "\" vs \"" + String(v.title).slice(0,60) + "\"";
+          if(m === "year")    return "year: " + claimedYear + " vs " + v.year;
+          return "journal: \"" + claimedJournal + "\" vs \"" + String(v.journal) + "\"";
+        }).join("; ");
+        console.warn("Dropped ref " + x.ref.id + ": DOI " + x.doi + " is a real paper but disagrees on " +
+          mismatch.join("/") + " — " + shown);
         return;
       }
       // Agreement → this is DOI IDENTITY verified: the reference really is the paper it says it is.
