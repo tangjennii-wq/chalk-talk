@@ -43,7 +43,21 @@ ok(/async function verifyModelDois\(/.test(html), "verifyModelDois() exists");
 ok((html.match(/verifyCitations\(await verifyModelDois\(await verifyModelPmids\(/g) || []).length === 4,
    "DOI + PMID verification runs in ALL FOUR release paths, before verifyCitations");
 ok(/return any \? out : null;/.test(html), "a total network failure returns null → FAIL OPEN (drops nothing)");
-const vmdSrc = html.slice(html.indexOf("async function verifyModelDois("), html.indexOf("async function verifyModelDois(") + 4000);
+// FULL function body, brace-matched (2026-07-31). This was a fixed 4000-CHARACTER WINDOW, and the
+// moment verifyModelDois grew past it three assertions started failing — not because the properties
+// broke, but because the code they check had slid past character 4000. It read exactly like a
+// regression. A window whose correctness depends on the length of the thing it inspects is not an
+// anchor; it is a slow-acting false alarm.
+const vmdSrc = (() => {
+  const start = html.indexOf("async function verifyModelDois(");
+  if (start < 0) throw new Error("verifyModelDois not found in index.html");
+  let depth = 0;
+  for (let j = html.indexOf("{", start); j < html.length; j++) {
+    if (html[j] === "{") depth++;
+    else if (html[j] === "}") { depth--; if (depth === 0) return html.slice(start, j + 1); }
+  }
+  throw new Error("unbalanced braces in verifyModelDois");
+})();
 ok(/if\(!map\) return talk;/.test(vmdSrc), "network failure leaves the talk untouched");
 ok(/_stripChipIds\(talk, dropIds\)/.test(vmdSrc), "a fabricated DOI's inline [n] chips are stripped from the body");
 ok(/if\(r\.pmid && \/\^\\d\{6,9\}\$\/\.test\(String\(r\.pmid\)\)\) return;/.test(vmdSrc),
@@ -73,10 +87,17 @@ ok(extractDoi({}) === "" && extractDoi(null) === "", "missing/!null input is saf
 // Crossref confirming "this DOI exists" is not "this DOI is the paper the model cited". Overwriting our
 // metadata with Crossref's would silently relabel an unrelated article and award it a trusted chip.
 ok(/IDENTITY CHECK \(Codex 2026-07-26\)/.test(html), "the identity check is present and documented");
-ok(/_titleSimilar\(claimedTitle, v\.title\) < 0\.5/.test(vmdSrc), "compares the model's claimed TITLE against Crossref's");
+// The threshold moved onto a named `titleSim` so the drop rule can also ask whether the title agrees
+// STRONGLY (see the journal-corroboration rule below). Same comparison, same 0.5 cut for "disagrees".
+ok(/_titleSimilar\(claimedTitle, v\.title\)/.test(vmdSrc) && /titleSim < 0\.5/.test(vmdSrc),
+   "compares the model's claimed TITLE against Crossref's (disagrees below 0.5)");
 ok(/Math\.abs\(claimedYear - v\.year\) > 1/.test(vmdSrc), "compares the claimed YEAR against Crossref's");
 ok(/!_journalAgree\(claimedJournal, v\.journal\)/.test(vmdSrc), "compares the claimed JOURNAL against Crossref's");
-const idxMismatch = vmdSrc.indexOf("mismatch.length >= 1"), idxAdopt = vmdSrc.indexOf('x.ref.src_verified = "crossref"');
+// Anchor moved from `mismatch.length >= 1` to `var drop =`: a journal-name disagreement on its own no
+// longer drops a reference whose title still agrees, because journal strings vary far more than titles
+// and a DOI pointing at a different paper disagrees on the title too. The ORDERING property under test
+// is unchanged — decide first, adopt Crossref metadata only after.
+const idxMismatch = vmdSrc.indexOf("var drop ="), idxAdopt = vmdSrc.indexOf('x.ref.src_verified = "crossref"');
 ok(idxMismatch > 0 && idxAdopt > idxMismatch, "the comparison happens BEFORE adopting Crossref metadata (no silent relabelling)");
 ok(/if\(r\.src_verified === "crossref"\) return \["high", "doi_identity_verified"\]/.test(html),
    'the label is "doi_identity_verified" — it does NOT claim the source supports the claim');

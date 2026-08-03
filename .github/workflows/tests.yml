@@ -148,6 +148,12 @@ jobs:
       - name: Legacy /v1/messages path is capped and metered
         run: node test_legacy_path_metering.mjs
 
+      # Found in production on the first real talk after the durable deploy: three correct NEJM landmark
+      # trials (DOSE, ADVOR, CARRESS-HF) were dropped because "NEJM" could not be matched to "The New
+      # England Journal of Medicine". The initials fallback maps a single token to its first letter.
+      - name: Citation identity — journal acronyms and the drop rule
+        run: node test_citation_identity.mjs
+
       # Syntax gates for the two files CI never executes. Cheap, and they catch a broken commit
       # before it reaches a deploy or a calibration run.
       - name: Syntax check the Worker and the evaluator
