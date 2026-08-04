@@ -1348,7 +1348,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-04";
+var BUILD_ID = "2026-07-31-05";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1400,6 +1400,48 @@ var ASYNC_GEN_CONFIG = {
   jobKey: "ct_active_job" // localStorage key holding the in-flight jobId for reconnect
 };
 var _asyncUnavailable = false; // set true after a 503 async_unconfigured this session
+
+// ── THE RECOVERY HANDLE IS THE LAST THING TO GO (Codex, 2026-07-31) ───────────────────────────────
+// `ct_active_job` was deleted the instant pollAsyncGeneration returned — BEFORE parsing, review
+// recovery, provenance stamping or rendering. So any failure in post-processing stranded a COMPLETED,
+// ALREADY-PAID Workflow result with no way back to it: the talk existed on the server, the credit was
+// spent, and the only handle to it had just been thrown away. The catch paths then deleted it again,
+// removing the handle a second time for good measure.
+//
+// Observed exactly this: a reload showed "Network hiccup" and the probe reported NO STORED JOB. I read
+// that as "the key was never written". It was written, used, and prematurely destroyed.
+//
+// Two rules now:
+//   1. Clear only once the finished talk is in S.talk, or a reviewPending has been durably saved —
+//      i.e. once there is another way to recover the work.
+//   2. COMPARE-AND-DELETE. A late callback from an older generation must not erase the handle to a
+//      newer one; without the id check, a stale unwind silently strands the job the user is watching.
+function _clearActiveJob(jobId, why){
+  try{
+    var raw = localStorage.getItem(ASYNC_GEN_CONFIG.jobKey);
+    if(!raw) return;
+    var cur = JSON.parse(raw || "null");
+    if(jobId && cur && cur.jobId && cur.jobId !== jobId){
+      console.info("Keeping active-job handle: stored " + cur.jobId + " is not the job being cleared (" + jobId + ")");
+      return;                                   // a newer job owns the slot
+    }
+    localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey);
+    if(why) console.info("Cleared active-job handle: " + why);
+  }catch(_){}
+}
+// Errors after which the job REMAINS recoverable, so the handle must survive. A client-side parse or
+// render failure is the whole reason this list exists: the server's work is fine, ours broke.
+function _errorKeepsJobRecoverable(e){
+  var code = e && e.code;
+  if(code === "timeout" || code === "stalled" || code === "network" || code === "auth") return true;
+  if(code === "expired" || code === "cancelled") return false;   // confirmed terminal — safe to release
+  var m = String((e && e.message) || e || "");
+  if(/Failed to fetch|NetworkError|Load failed|ERR_[A-Z]|ECONN|net::/i.test(m)) return true;
+  // Parse / schema / shape failures: the Workflow finished, we could not read it. Keep the handle so a
+  // reload can try again against the same completed result.
+  if(/Unexpected token|Unexpected end of (JSON|input)|is not valid JSON|JSON\.parse|Empty response|incomplete|missing/i.test(m)) return true;
+  return false;
+}
 
 // Should THIS generation go through the background Worker path?
 function asyncGenApplicable(){
@@ -1513,8 +1555,22 @@ async function pollAsyncGeneration(jobId, onStage, checkAbort, onPartial){
         headers:{ "X-Supabase-Auth": freeTierToken() }
       });
     }catch(netErr){ continue; } // transient network blip — keep polling (this is the whole point)
-    if(r.status === 404){ throw new Error("Generation job expired. Please tap Generate again."); }
-    if(!r.ok){ continue; }
+    // EXPLICIT CODES (Codex, 2026-07-31). `if(!r.ok) continue;` treated EVERY non-OK as "still
+    // running", so a 401 after a token refresh, or a 403, spun silently until the nine-minute poll
+    // timeout and then surfaced as a timeout — a diagnosis that named the wrong thing entirely. Only
+    // genuinely transient statuses justify another lap.
+    if(r.status === 404){ var ee = new Error("Generation job expired. Please tap Generate again."); ee.code = "expired"; throw ee; }
+    if(r.status === 401 || r.status === 403){
+      var ae = new Error("Your session expired while the talk was generating. Sign in and reload — the talk is still on our servers.");
+      ae.code = "auth";            // recoverable: the job is fine, our credentials are not
+      throw ae;
+    }
+    if(r.status === 429 || r.status === 502 || r.status === 503 || r.status === 504 || r.status >= 500){ continue; }  // transient
+    if(!r.ok){
+      var ue = new Error("Unexpected status " + r.status + " while checking your talk.");
+      ue.code = "status_" + r.status;
+      throw ue;
+    }
     var job; try{ job = await r.json(); }catch(_){ continue; }
     if(job.stage && job.stage !== lastStage){ lastStage = job.stage; if(onStage) try{ onStage(job.stage); }catch(_){} }
     // Feed the live partial draft into the streaming preview (server writes it while drafting).
@@ -1582,7 +1638,9 @@ async function resumeAsyncJobIfAny(){
       function(){ return S.genCancelled || _myGenId !== S.genId; },
       function(partial){ if(S.genCancelled || _myGenId !== S.genId) return; _applyStreamingPartial(partial); }
     );
-    try{ localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); }catch(_){}
+    // NOT cleared here. The Workflow has returned, but nothing has been parsed, reviewed, stamped or
+    // rendered yet — and every one of those can throw. Clearing now is what stranded a completed paid
+    // result behind a "Network hiccup". The handle is released after S.talk is assigned (below).
     var txt = (res && res.draftText) || "";
     if(!txt.trim()) throw new Error("Empty response");
     // STRICT (Codex 2026-07-26): the resumed async draft reaches S.talk exactly like the synchronous one,
@@ -1641,6 +1699,10 @@ async function resumeAsyncJobIfAny(){
         webSearched: !!(res && res.webSearched), err: (_resumeCritErr && _resumeCritErr.message) || "" };
       S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";   // WITHHELD: the preview must not linger as if it were a finished talk
       _saveReviewPending();
+      // Withheld, but DURABLY SAVED: reviewPending carries the draft and the critique spec, so "Retry
+      // review" can recover it without the reconnect handle. That — not the poll returning — is what
+      // makes it safe to release.
+      _clearActiveJob(stored && stored.jobId, "withheld draft saved to reviewPending");
       S.citationAuditPending = false; S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
       render();
       return;   // NO S.talk — an unreviewed draft is never displayed
@@ -1678,9 +1740,19 @@ async function resumeAsyncJobIfAny(){
         if(_auditGenId === S.genId && S.talk === finalTalk && audited){ S.talk = audited; S.citationAuditPending = false; render(); }
       }catch(_){ if(_auditGenId === S.genId && S.talk === finalTalk){ S.citationAuditPending = false; render(); } }
     })();
+    // SAFE TO RELEASE NOW: the finished talk is in S.talk and rendered, so there is another way back
+    // to this work. Compare-and-delete, in case a newer generation already claimed the slot.
+    _clearActiveJob(stored && stored.jobId, "resumed talk delivered");
     if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
   }catch(err){
-    try{ localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); }catch(_){}
+    // PRESERVE THE HANDLE ON ANYTHING RECOVERABLE. This unconditionally deleted it, so a parse or
+    // review failure on the resume path destroyed the last route back to a completed, paid result —
+    // and then reported a network error, which is not what happened.
+    if(_errorKeepsJobRecoverable(err)){
+      console.info("Keeping active-job handle after a recoverable resume failure: " + ((err && err.message) || err));
+    } else {
+      _clearActiveJob(stored && stored.jobId, "resume failed unrecoverably: " + ((err && err.code) || (err && err.message) || err));
+    }
     clearInterval(loadTimer); S.loading = false;
     // Silent on cancel / stale / expired job — the user can just regenerate.
     if(err && err.code !== "cancelled" && _myGenId === S.genId && !/expired/i.test(err.message||"")){
@@ -7389,6 +7461,9 @@ async function generate(){
     // to know which one actually ran. Declared HERE with the other draft flags to avoid the var-hoisting
     // trap that has bitten this function twice. (Codex 2026-07-26)
     var txt, _asyncCritTxt = null, _asyncCritModel = "", _useAsync = false, _draftWebSearched = false, _draftModel = "";
+    // Held at generate() scope so the catch can compare-and-delete against the job it actually
+    // submitted, rather than deleting whatever happens to be in the slot.
+    var _asyncJobId = null;
     if (asyncGenApplicable()) {
       var _job = await submitAsyncGeneration({
         draft:    { sys: sys, content: uc, maxTok: maxTok, models: mainModels, tools: (mainOpts.tools || null) },
@@ -7409,6 +7484,7 @@ async function generate(){
         } catch(_){ _ragDigest = []; }
         try { localStorage.setItem(ASYNC_GEN_CONFIG.jobKey, JSON.stringify({ jobId: _job.jobId, genId: _myGenId, topic: S.topic, style: S.style, depth: S.depth,
           ragDigest: _ragDigest, ragCount: (S.ragChunks || []).length, at: Date.now() })); } catch(_){}
+        _asyncJobId = _job.jobId;
         S.genBackgroundSafe = true;   // async path survives backgrounding → swap the "keep tab open" warning
         S.loadMsg = "Generating on our servers — safe to switch tabs or lock your phone.";
         if (typeof render === "function") render();
@@ -7417,7 +7493,8 @@ async function generate(){
           function(){ return S.genCancelled || _myGenId !== S.genId; },
           function(partial){ if (S.genCancelled || _myGenId !== S.genId) return; _applyStreamingPartial(partial); }
         );
-        try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){}
+        // NOT cleared here — see _clearActiveJob. Parsing, the review gate, provenance stamping and
+        // render all still lie ahead, and a throw in any of them would strand a paid, completed result.
         txt = (_res && _res.draftText) || "";
         _asyncCritTxt = (_res && _res.critText) || "";
         _asyncCritModel = (_res && _res.critModelUsed) || "";   // absent on an older Worker → stays "" (unknown, not accused)
@@ -7557,6 +7634,8 @@ async function generate(){
         err: (lastCritErr && lastCritErr.message) || "" };
       S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";   // WITHHELD: the preview must not linger as if it were a finished talk
       _saveReviewPending();
+      // Same reasoning as the resume path: durably saved, therefore recoverable without the handle.
+      if (_useAsync) _clearActiveJob(_asyncJobId, "withheld draft saved to reviewPending");
       S.citationAuditPending = false; S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
       render();
       return;   // NO charge, NO S.talk
@@ -7614,6 +7693,11 @@ async function generate(){
   S.citationAuditPending = true;
   S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";   // preview retired — the real talk is on screen now
   S.talk = finalTalk;
+  // THE HANDLE IS RELEASED HERE, and not one line earlier. The talk is parsed, reviewed, stamped and
+  // assigned — so the work is recoverable by other means and the reconnect key has done its job.
+  // Everything between the Workflow returning and this assignment can throw, and while it can, the
+  // handle is the only route back to a result the user has already paid for.
+  if (_useAsync) _clearActiveJob(_asyncJobId, "talk delivered");
     S.sec=0;S.dg=null;S.dgErr="";S.podScript="";
     if (glRef) { S.glRef = glRef; } else { S.glRef = null; }
     // Always cache the depth we just generated so an immediate flip back is instant AND both variants
@@ -7643,7 +7727,11 @@ async function generate(){
     // reconnect key here would strand a generation that was still running and had already been paid
     // for — and the user, told to start again, would be charged twice. Keep the key so a reload can
     // reconnect, exactly as for a timeout. (Codex, 2026-07-29)
-    if(_myGenId === S.genId && !(e && (e.code === "timeout" || e.code === "stalled"))){ try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){} }
+    // Widened 2026-07-31: the exemption used to be timeout/stalled only, so a PARSE failure on a
+    // completed job deleted the handle and stranded paid work. Any recoverable error now keeps it.
+    if(_myGenId === S.genId && !_errorKeepsJobRecoverable(e)){
+      _clearActiveJob(_asyncJobId, "generation failed unrecoverably: " + ((e && e.code) || (e && e.message) || e));
+    }
     // "cancelled" (from the async poll, on user-cancel OR a superseding restart) and stale-gen are
     // silent — not real errors. (Jenni 2026-07-03)
     if(!S.genCancelled && !(e && e.code === "cancelled") && _myGenId === S.genId){
@@ -7758,7 +7846,9 @@ function cancelGen(){
       fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-cancel/" + encodeURIComponent(_stored.jobId), { method:"POST", headers:{ "X-Supabase-Auth": freeTierToken() } });
     }
   } catch(_){}
-  try { localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey); } catch(_){}
+  // Confirmed user cancellation is a legitimate clear — the server job is being cancelled too, and the
+  // refund path owns the credit from here.
+  _clearActiveJob(_stored && _stored.jobId, "user cancelled");
   S.queueAudio = false; // don't carry the audio-queue intent into the next generation
   // Abort the live fetch so we stop paying for tokens we won't use. (Jenni 2026-06-09 #5)
   if (window._lastGenAbort) try { window._lastGenAbort.abort() } catch(_){}

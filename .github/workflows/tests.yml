@@ -178,6 +178,12 @@ jobs:
       - name: CORS preflight allows every header the client sends
         run: node test_cors_preflight.mjs
 
+      # ct_active_job was deleted the instant the poll returned — before parsing, review recovery,
+      # provenance or render — so any post-processing failure stranded a completed, already-paid
+      # Workflow result with no handle left to reconnect with.
+      - name: Reconnect handle outlives post-processing
+        run: node test_job_handle_lifecycle.mjs
+
       # Syntax gates for the two files CI never executes. Cheap, and they catch a broken commit
       # before it reaches a deploy or a calibration run.
       - name: Syntax check the Worker and the evaluator

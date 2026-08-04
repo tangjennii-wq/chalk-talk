@@ -328,8 +328,29 @@ const NOW = new Date().toISOString();
      "…and to cancel before restarting, so a live job cannot be double-charged");
 
   // The reconnect key must survive a stall, or the reload advice is a lie.
-  ok(/e\.code === "timeout" \|\| e\.code === "stalled"/.test(html),
+  //
+  // Rewritten 2026-07-31. This matched the literal `e.code === "timeout" || e.code === "stalled"`,
+  // which was the whole retention rule at the time. That rule turned out to be too NARROW — it deleted
+  // the handle after a parse failure on a completed job, stranding paid work — so the condition moved
+  // into _errorKeepsJobRecoverable() and grew. The property under test is unchanged; only its spelling
+  // moved, so assert the property by EXECUTING the predicate rather than matching its source.
+  const keeps = (() => {
+    const start = html.indexOf("function _errorKeepsJobRecoverable(");
+    let depth = 0, body = "";
+    for (let j = html.indexOf("{", start); j < html.length; j++) {
+      if (html[j] === "{") depth++;
+      else if (html[j] === "}") { depth--; if (depth === 0) { body = html.slice(start, j + 1); break; } }
+    }
+    const c = {};
+    new Function("c", body + "c.f=_errorKeepsJobRecoverable;")(c);
+    return c.f;
+  })();
+  const withCode = (code) => { const e = new Error("x"); e.code = code; return e; };
+  ok(keeps(withCode("stalled")) === true,
      "the client RETAINS the reconnect key on a stall, exactly as for a timeout");
+  ok(keeps(withCode("timeout")) === true, "…and on a timeout");
+  ok(/_errorKeepsJobRecoverable\(/.test(html.replace(/^\s*\/\/.*$/gm, "")),
+     "…and the catch path consults that predicate rather than deleting unconditionally");
 }
 
 globalThis.fetch = realFetch;
