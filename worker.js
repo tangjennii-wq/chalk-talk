@@ -880,6 +880,11 @@ async function handleRetrieve(request, env, origin) {
       max_age_years: maxAgeYears,
       allowed_sources: allowedSources,
       tier_boost_weight: tierBoostWeight,
+    }, {
+      useHnswCandidates: body.use_hnsw_candidates === true,
+      candidatePool: (typeof body.candidate_pool === "number" && body.candidate_pool > 0)
+        ? Math.min(body.candidate_pool, 1000)   // pgvector caps hnsw.ef_search at 1000
+        : undefined,
     })));
     // Dedupe by chunk_id, keeping the highest ranked_score any sub-query achieved for it.
     const best = new Map();
@@ -1079,11 +1084,52 @@ async function handleRetrieve(request, env, origin) {
     merged._rerankScored = rerankScored;
     merged._rerankUnscored = rerankUnscored;
   } catch (err) {
-    return jsonError(502, "retrieval_failed", "Failed to retrieve chunks: " + err.message, origin);
+    // FAIL OPEN FOR GENERATION, FAIL CLOSED FOR PROVENANCE (Codex, 2026-07-31).
+    // This used to be a bare 502. The client's only sensible response to a retrieval failure is to
+    // carry on and SAY SO, but a transport-level error is indistinguishable from the network being
+    // down, so every failure collapsed into a console warning the reader never saw — and the talk was
+    // presented exactly like a grounded one. Returning 200 with an explicit status makes the outcome a
+    // value the client can propagate into the talk instead of an exception it swallows.
+    //
+    // This is NOT "catch the timeout and claim success": results is empty, retrieval_applied is false,
+    // and retrieval_status names the cause. The Worker still logs it so `wrangler tail` sees it.
+    const status = classifyRetrievalError(err);
+    // TELEMETRY, because returning 200 takes these out of ordinary HTTP-error monitoring (Codex).
+    // Structured and single-line on purpose, so it is greppable without a log platform:
+    //   npx wrangler tail --format json \
+    //     | jq 'select(.logs[]?.message[0]? | tostring | contains("retrieval_outcome"))'
+    // The counter that matters is retrieval_timeout — it is the leading indicator that the corpus has
+    // outgrown the full scan again, which is precisely how this defect reached a physician's talk.
+    console.error(JSON.stringify({
+      event: "retrieval_outcome",
+      retrieval_status: status,
+      query_len: String(query || "").length,
+      queries: queries.length,
+      hnsw: body.use_hnsw_candidates === true,
+      detail: String((err && err.message) || err).slice(0, 200),
+      at: new Date().toISOString(),
+    }));
+    return jsonOK({
+      query, queries, count: 0, results: [],
+      retrieval_status: status,
+      retrieval_applied: false,
+      retrieval_detail: String((err && err.message) || err).slice(0, 300),
+      rerank_requested: body.rerank === true, rerank_applied: false,
+      metadata_filter_requested: body.metadata_filter === true, metadata_filter_applied: false,
+      authority_tiebreak_requested: body.authority_tiebreak === true, authority_tiebreak_applied: false,
+      dropped_by_metadata: [],
+      no_eligible_local_sources: false,   // unknown — nothing was evaluated, so claim neither zero
+      no_local_candidates: false,
+    }, origin);
   }
 
   return jsonOK({
     query, queries, count: merged.length,
+    // ONE FIELD THE CALLER CAN SWITCH ON, rather than four booleans it must combine correctly.
+    // "ok" is asserted only when chunks actually came back; an empty result is never "ok".
+    retrieval_status: merged.length > 0 ? "ok" : "no_relevant_sources",
+    retrieval_applied: merged.length > 0,
+    hnsw_candidates_requested: body.use_hnsw_candidates === true,
     rerank_requested: body.rerank === true,
     rerank_applied: !!merged._rerankApplied,   // NEVER infer this from the request — a rerank that threw
                                                // must not be reported as one that ran
@@ -1253,15 +1299,42 @@ async function embedQueries(openaiKey, texts) {
   return data.data.sort((a, b) => a.index - b.index).map(d => d.embedding);
 }
 
-async function callMatchChunks(env, params) {
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/match_chunks`, {
+// A Postgres statement timeout is SQLSTATE 57014. It must never be collapsed into a generic failure:
+// "the corpus is slow" and "the corpus is broken" are different messages to a physician, and only one of
+// them is worth retrying. PostgREST returns the code in the JSON body, so match the body, not the status.
+const PG_STATEMENT_TIMEOUT = "57014";
+function classifyRetrievalError(err) {
+  const s = String((err && err.message) || err || "");
+  if (s.includes(PG_STATEMENT_TIMEOUT) || /statement timeout|canceling statement/i.test(s)) {
+    return "retrieval_timeout";
+  }
+  return "retrieval_error";
+}
+
+// TWO-STAGE IS OPT-IN AND MUST STAY THAT WAY UNTIL CALIBRATED.
+// match_chunks ranks the WHOLE table by ranked_score and cannot use the HNSW index, because both the
+// filter and the sort are computed expressions over a join. match_chunks_hnsw picks candidates by RAW
+// COSINE first and applies the boosts only within that pool, so a heavily-boosted document with
+// mediocre similarity can fall outside the pool and never surface. Measured overlap@8 against the full
+// scan over 25 sampled queries: pool 50 -> 6.96, 100 -> 7.40, 200 -> 7.92, 500 -> 8.00 (identical on all
+// 25). Lossless at 500 TODAY, on a 2,833-chunk corpus — that guarantee decays as the corpus grows, which
+// is the reason this is a flag and not a replacement.
+const HNSW_DEFAULT_POOL = 500;
+async function callMatchChunks(env, params, opts) {
+  opts = opts || {};
+  const useHnsw = opts.useHnswCandidates === true;
+  const fn = useHnsw ? "match_chunks_hnsw" : "match_chunks";
+  const body = useHnsw
+    ? Object.assign({}, params, { candidate_pool: opts.candidatePool || HNSW_DEFAULT_POOL })
+    : params;
+  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, {
     method: "POST",
     headers: {
       "apikey": env.SUPABASE_ANON_KEY,
       "Authorization": `Bearer ${env.SUPABASE_ANON_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(params),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Supabase ${res.status}: ${(await res.text()).slice(0, 300)}`);
   return await res.json();

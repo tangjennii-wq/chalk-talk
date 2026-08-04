@@ -59,11 +59,15 @@ npx wrangler deploy
 Not that it responded — that it has the new behaviour.
 
 ```bash
-curl -s -X POST "https://<your-worker>.workers.dev/retrieve" -H 'Content-Type: application/json' -d '{"query":"diabetic ketoacidosis","rerank":true}' | jq '{rerank_applied, rerank_scored}'
+curl -s -X POST "https://chalk-talk-proxy.chalktalk.workers.dev/retrieve" -H 'Content-Type: application/json' -H 'Origin: https://tangjennii-wq.github.io' -d '{"query":"diabetic ketoacidosis","rerank":true}' | jq '{rerank_applied, rerank_scored, count}'
 ```
 
 - [ ] `rerank_scored` is a **number**. `null` means the old build is still serving — that field does not
       exist there.
+
+> **The `Origin` header is required on every curl in this file, including this one.** Without it the
+> proxy answers `origin_not_allowed` and you learn nothing about the endpoint you meant to test. The
+> first version of this line omitted it and produced exactly that false result.
 
 ---
 

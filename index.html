@@ -1348,7 +1348,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-01";
+var BUILD_ID = "2026-07-31-02";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6830,7 +6830,7 @@ async function callAPIWithFallback(sys, content, maxTok, models, opts) {
 // ═══════════ RAG RETRIEVAL ═══════════
 async function retrieveRAG(topic, opts) {
   opts = opts || {};
-  if (!RAG_CONFIG.enabled || !RAG_CONFIG.url) return {text: "", chunks: []};
+  if (!RAG_CONFIG.enabled || !RAG_CONFIG.url) return {text: "", chunks: [], status: "disabled"};
   // ── Retrieval quality floors ──────────────────────────────────────────────
   // Weakly-related chunks (the 0.16–0.30 tail seen in the old sources panel) were
   // reaching the prompt and diluting grounding. Embeddings are over (title+abstract)
@@ -6860,10 +6860,25 @@ async function retrieveRAG(topic, opts) {
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ query: _t, queries: expandedQueries, match_count: opts.match_count || 24, min_similarity: ABS_FLOOR })
     });
-    if (!r.ok) { console.warn("RAG retrieve failed: " + r.status); return {text: "", chunks: []}; }
+    // A TRANSPORT FAILURE IS NOT "NO SOURCES" (2026-07-31).
+    // This returned the same empty shape as a successful-but-empty retrieval, so a talk written with no
+    // evidence because the database timed out was indistinguishable from one written on a topic the
+    // corpus does not cover. A live talk shipped that way: /retrieve 502'd on a Postgres statement
+    // timeout, this line logged one console warning, and the talk rendered like any grounded one.
+    if (!r.ok) {
+      console.warn("RAG retrieve failed: " + r.status);
+      return {text: "", chunks: [], status: r.status === 408 || r.status === 504 ? "retrieval_timeout" : "retrieval_error"};
+    }
     var data = await r.json();
+    // The Worker now names the outcome. Trust it when present; fall back to inference for an older
+    // Worker, but never infer "ok" — absence of a status is not evidence of success.
+    var wStatus = typeof data.retrieval_status === "string" ? data.retrieval_status : null;
+    if (wStatus === "retrieval_timeout" || wStatus === "retrieval_error") {
+      console.warn("RAG " + wStatus + ": " + (data.retrieval_detail || ""));
+      return {text: "", chunks: [], status: wStatus};
+    }
     var chunks = data.chunks || [];
-    if (!chunks.length) return {text: "", chunks: []};
+    if (!chunks.length) return {text: "", chunks: [], status: "no_relevant_sources"};
     // Absolute floor (backstop in case the worker didn't enforce it).
     chunks = chunks.filter(function(c){ return typeof c.similarity !== "number" || c.similarity >= ABS_FLOOR; });
     // NOTE: the old RELATIVE floor (keep only within 0.08 of the best match) is deliberately GONE. It made
@@ -6876,7 +6891,7 @@ async function retrieveRAG(topic, opts) {
     // guidelines cannot crowd out the literature, or vice versa. (Jenni 2026-07-10)
     var glChunks = chunks.filter(function(c){ return c.source === "guideline"; }).slice(0, 4);
     chunks = chunks.filter(function(c){ return c.source !== "guideline"; }).slice(0, MAX_KEEP);
-    if (!chunks.length && !glChunks.length) { console.info("RAG: all chunks below similarity floor for \"" + _t + "\""); return {text: "", chunks: [], guidelineText: "", guidelineChunks: []}; }
+    if (!chunks.length && !glChunks.length) { console.info("RAG: all chunks below similarity floor for \"" + _t + "\""); return {text: "", chunks: [], guidelineText: "", guidelineChunks: [], status: "no_relevant_sources"}; }
     var lines = chunks.map(function(c, i) {
       var auths = (c.authors || "").split(",").slice(0, 3).join(",");
       if (c.authors && c.authors.split(",").length > 3) auths += " et al.";
@@ -6892,10 +6907,13 @@ async function retrieveRAG(topic, opts) {
       });
       guidelineText = "\n\n\u2550\u2550\u2550 RETRIEVED SOCIETY GUIDELINE SUMMARIES (condensed factual summaries \u2014 NOT full guideline text) \u2550\u2550\u2550\nThese are short summaries of the named society guidelines, retrieved as relevant to this topic. Use them to anchor treatment and threshold recommendations, and cite them by SOCIETY AND YEAR (add them to the references array with type \"guideline\"). You are seeing a SUMMARY, not the guideline document \u2014 do not attribute a specific recommendation to a guideline unless the summary below actually states it.\n\n" + glLines.join("\n\n") + "\n\u2550\u2550\u2550 END GUIDELINE SUMMARIES \u2550\u2550\u2550";
     }
-    return {text: text, chunks: chunks, guidelineText: guidelineText, guidelineChunks: glChunks};
+    // "ok" ONLY when something was actually retrieved. Guideline summaries count as grounding, papers
+    // count as grounding; neither present is not a success just because no error was thrown.
+    return {text: text, chunks: chunks, guidelineText: guidelineText, guidelineChunks: glChunks,
+            status: (chunks.length || glChunks.length) ? "ok" : "no_relevant_sources"};
   } catch (e) {
     console.warn("RAG retrieve error: " + e.message);
-    return {text: "", chunks: []};
+    return {text: "", chunks: [], status: /timeout|timed out|abort/i.test(String(e && e.message)) ? "retrieval_timeout" : "retrieval_error"};
   }
 }
 
@@ -7137,6 +7155,9 @@ async function generate(){
   try{
     var glRef = getGuidelinesForTopic(S.topic);
     var ragResult = await retrieveRAG(S.topic); var ragContext = ragResult.text || ""; S.ragChunks = ragResult.chunks || [];
+    // Carried, not recomputed. The disclosure has to survive save/resume/refine, so the STATE travels
+    // with the talk rather than being re-derived from whatever S.ragChunks happens to hold later.
+    S.ragStatus = ragResult.status || "retrieval_error";
     var guidelineContext = "";
     if (glRef) {
       guidelineContext = "\n\n═══ GUIDELINE REFERENCE CONTEXT (use this to anchor your recommendations) ═══" + glRef.context;
@@ -7499,6 +7520,7 @@ async function generate(){
       S.reviewPending = { draft: draftTalk, critiqueSystem: critiqueSystem, critiquePrefix: critiquePrefix,
         critMaxTok: critMaxTok, criticModels: criticModels, topic: S.topic, style: S.style, depth: S.depth,
         provider: (S.genProvider || "claude"), writerModel: _draftModel || "", charged: !!_useAsync, ragCount: (S.ragChunks || []).length,
+        ragStatus: S.ragStatus || "retrieval_error",
         guidelinesLoaded: !!glRef, webSearched: ((S.genProvider || "claude") === "claude" && _draftWebSearched),
         err: (lastCritErr && lastCritErr.message) || "" };
       S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";   // WITHHELD: the preview must not linger as if it were a finished talk
@@ -7525,6 +7547,7 @@ async function generate(){
       writerModels: [_draftModel || ""].concat(_critiqueRewroteTalk ? [_critiqueModel || ""] : []),
       webSearched: ((S.genProvider || "claude") === "claude" && _draftWebSearched),
       ragCount: (S.ragChunks || []).length,
+      ragStatus: S.ragStatus || "retrieval_error",
       guidelinesLoaded: !!glRef
     });
 
@@ -9366,6 +9389,7 @@ async function retryReview(){
     writerModels: [rp.writerModel || ""].concat(_retryRewroteTalk ? [_retryCriticModel || ""] : []),
     webSearched: !!rp.webSearched,               // the DRAFT's actual search; a review retry never re-searches
     ragCount: (rp.ragCount != null ? rp.ragCount : (S.ragChunks || []).length),
+    ragStatus: rp.ragStatus || null,
     guidelinesLoaded: (rp.guidelinesLoaded != null ? rp.guidelinesLoaded : !!getGuidelinesForTopic(rp.topic))
   });
   if (genUsesFreeTier() && !rp.charged){ try{ await consumeFreeTier("talk"); }catch(_){} }
@@ -9486,6 +9510,9 @@ function _stampProvenance(talk, o){
   talk._writerModel = talk._writerModels[0] || "";       // the drafter, kept for display + back-compat
   talk._webSearched = !!o.webSearched;                   // ACTUAL search, not the toggle
   talk._ragCount = (o.ragCount != null ? o.ragCount : 0);// 0 = don't claim RAG grounding
+  // null on talks saved before 2026-07-31. Absence is NOT success: an old talk with zero chunks gets
+  // the honest "no sources" disclosure rather than silence.
+  talk._ragStatus = o.ragStatus || null;
   talk._guidelinesLoaded = !!o.guidelinesLoaded;         // a guideline actually matched this topic
   talk._citationsVerified = false;                       // true ONLY after the background audit succeeds
   return talk;
@@ -9791,6 +9818,87 @@ function writerWarningHtml(t){
     + 'source before teaching from this.</b></div>';
 }
 
+// RETRY SOURCES — re-run retrieval for a talk that was written while retrieval was down.
+//
+// Deliberately NOT a regeneration. The talk text is already written and already reviewed; re-writing it
+// would spend a credit and change medical content the user may have read. This only re-runs retrieval
+// and, on success, upgrades the provenance state so the disclosure stops claiming an outage that has
+// since cleared. If retrieval is still down, the disclosure stays exactly as it was.
+//
+// FREE, unconditionally: no /consume, no receipt, no model call. The user paid for this talk once and
+// the missing evidence was our failure, not their request.
+async function retrySources(){
+  var t = S.talk; if(!t) return;
+  var btn = document.getElementById("retrySourcesBtn");
+  var msg = document.getElementById("retrySourcesMsg");
+  var say = function(s){ if(msg) msg.textContent = s; };
+  if(btn){ btn.disabled = true; btn.style.opacity = "0.55"; }
+  say("Searching…");
+  try{
+    var topic = t.title || S.topic || "";
+    var res = await retrieveRAG(topic);
+    var st = res.status || "retrieval_error";
+    if(st === "ok"){
+      var papers = (res.chunks || []).length;
+      S.ragChunks = res.chunks || [];
+      S.ragGuidelines = res.guidelineChunks || [];
+      // NOT "ok" (Codex, 2026-07-31). "ok" means GROUNDED DURING GENERATION — the sources were in the
+      // prompt while the model wrote the talk. Finding papers afterwards does not make that true
+      // retrospectively: this text was drafted without them, and relabelling it grounded would be a
+      // false provenance claim of exactly the kind the whole disclosure exists to prevent.
+      //
+      // These sources may later SUPPORT or VERIFY individual claims — the citation audit can use them —
+      // but supporting a claim after the fact is a different assertion from having informed the draft.
+      // Upgrading to "ok" requires a semantic claim-to-source audit that does not exist yet.
+      S.ragStatus = "sources_added_after_generation";
+      t._ragStatus = "sources_added_after_generation";
+      t._ragCount = papers;
+      // The talk body is untouched. What changes is what we CLAIM about it, plus the sources now
+      // available to the citation audit — which still verifies every one of them as it always did.
+      // Persist so the corrected state survives a refresh AND reaches other devices. Only for a talk
+      // ALREADY saved — retrying sources must not silently create a library entry the user never asked
+      // for. LOCAL first (synchronous, always available), then CLOUD (best-effort, may be offline).
+      try{
+        if(t.id){
+          var _all = loadSavedTalks();
+          var _i = _all.findIndex(function(x){ return x && x.id === t.id; });
+          if(_i >= 0){
+            _all[_i].ragStatus = "sources_added_after_generation";
+            _all[_i].ragCount  = papers;
+            if(_all[_i].provenance){ _all[_i].provenance.ragStatus = "sources_added_after_generation"; _all[_i].provenance.ragCount = papers; }
+            writeSavedTalks(_all);
+          }
+        }
+      }catch(_){ }
+      // CLOUD. cloudUpdateTalk serialises the whole talk object into talk_json, and _ragStatus /
+      // _ragCount live on that object, so the corrected provenance travels with it — which is what
+      // makes the disclosure survive opening the talk on another device. Without this the correction
+      // was local-only and a second device would still show the outage banner forever.
+      try{
+        if(S.loadedTalkId && window.sb && S.user && typeof cloudUpdateTalk === "function"){
+          var _cok = await cloudUpdateTalk(S.loadedTalkId);
+          if(!_cok) console.warn("retrySources: cloud provenance update failed; local copy is correct");
+        }
+      }catch(_){ console.warn("retrySources: cloud provenance update threw; local copy is correct"); }
+      say(papers ? ("Found " + papers + " source" + (papers===1?"":"s") + ".") : "Guidelines attached.");
+      render();
+      return;
+    }
+    if(st === "no_relevant_sources"){
+      t._ragStatus = "no_relevant_sources"; S.ragStatus = "no_relevant_sources";
+      say("Searched — no directly relevant sources in the library.");
+      render();
+      return;
+    }
+    say(st === "retrieval_timeout" ? "Still timing out. Try again in a minute."
+                                   : "Retrieval is still unavailable.");
+  }catch(e){
+    say("Retrieval is still unavailable.");
+  }finally{
+    if(btn){ btn.disabled = false; btn.style.opacity = ""; }
+  }
+}
+
 function _provenanceChips(t, auditPending){
   if(!t || !t._reviewStatus) return [];
   var wb = writerLabel(t._writtenBy);
@@ -9802,10 +9910,25 @@ function _provenanceChips(t, auditPending){
   // view, so the chip could only ever read "reviewed". A label with one possible value carries no
   // information — it was just noise above the title.
   var gl = !!t._guidelinesLoaded, rc = (t._ragCount || 0);
-  if (gl && rc > 0) chips.push("📚 " + rc + " paper" + (rc === 1 ? "" : "s") + " found to cite from");
+  // FAIL OPEN FOR GENERATION, FAIL CLOSED FOR PROVENANCE (Codex, 2026-07-31).
+  // A grounding chip may only appear when sources were ACTUALLY retrieved. Silence was not enough: a
+  // talk written during a database outage looked identical to one written on a topic the corpus does
+  // not cover, and a reader could not tell either from a grounded talk without counting chips.
+  var rs = t._ragStatus || null;
+  var retrievalBroke = (rs === "retrieval_timeout" || rs === "retrieval_error");
+  if (retrievalBroke) {
+    // Named as unavailable, NOT as absent. "We couldn't look" and "we looked and found nothing" are
+    // different clinical statements, and only one of them is worth retrying.
+    chips.push("⚠️ Evidence retrieval unavailable — no local source grounding");
+  } else if (rs === "sources_added_after_generation") {
+    // Deliberately NOT the "found to cite from" wording used for a grounded talk. This talk was drafted
+    // without these sources; they were attached afterwards. The distinction is the whole point.
+    chips.push("🔎 " + rc + " source" + (rc === 1 ? "" : "s") + " added after drafting — not used to write this talk");
+  } else if (gl && rc > 0) chips.push("📚 " + rc + " paper" + (rc === 1 ? "" : "s") + " found to cite from");
   else if (gl) chips.push("📚 Society guidelines on hand");
   else if (rc > 0) chips.push("📚 " + rc + " paper" + (rc === 1 ? "" : "s") + " found to cite from");
-  // neither → NO grounding claim
+  else if (rs === "no_relevant_sources") chips.push("📭 No directly relevant sources in the library");
+  // neither, and no status → NO grounding claim (talks saved before this field existed)
   if (t._webSearched) chips.push("🌐 Also searched the web");
   if (t._citationsVerified) chips.push("✓ References checked — they exist and match");
   else if (auditPending) chips.push("… Checking the references");
@@ -11977,6 +12100,25 @@ function renderMain(){
          + '</div>';
       }
 
+      // ─── Evidence-gap notice + a FREE retry ───────────────────────────────────────────────────
+      // Only when retrieval BROKE (timeout/error), not when it ran and found nothing: re-running a
+      // healthy search that already returned nothing just spends time to reprint the same answer.
+      // This attaches sources to the EXISTING talk — it never regenerates, never rewrites, and never
+      // touches quota, because the user already paid for this talk and the failure was ours.
+      var _rsBroke = (t._ragStatus === "retrieval_timeout" || t._ragStatus === "retrieval_error");
+      if(_rsBroke && !isBQ){
+        h+='<div id="evidenceGapNotice" style="margin:12px 0 2px;padding:11px 13px;border-radius:12px;'
+         + 'background:var(--amber-bg,#fdf6e7);border:1px solid var(--amber-line,#f0dcae);font-size:11.5px;line-height:1.55;color:var(--ink)">'
+         + '<div style="font-weight:600;margin-bottom:3px">Evidence retrieval was unavailable</div>'
+         + '<div style="color:var(--ink-muted)">This talk was written from the model’s medical knowledge and the '
+         + 'society-guideline summaries, and reviewed — but without Chalk Talk’s retrieved sources. '
+         + 'Verify clinical numbers and recommendations against current primary guidance before teaching from it.</div>'
+         + '<button id="retrySourcesBtn" style="margin-top:9px;background:var(--plum-rich);border:none;border-radius:9px;'
+         + 'padding:7px 13px;color:#fff;font-size:11.5px;font-weight:600;cursor:pointer">Retry sources — free</button>'
+         + '<span id="retrySourcesMsg" style="margin-left:9px;color:var(--ink-muted)"></span>'
+         + '</div>';
+      }
+
       // "See as poster" CTA — bottom-of-Overview discovery hint for the Slides tab.
       // Boards-mode talks have no Slides view (isBQ), so skip there. (Jenni 2026-06-08)
       if(!isBQ){
@@ -13402,6 +13544,7 @@ function bindMain(){
   var sib=document.getElementById("saveSlidesImgBtn");if(sib)sib.onclick=exportSlidesImage;
   // Overview's bottom CTA → switch to Slides tab + jump to top (Jenni 2026-06-08)
   var o2s=document.getElementById("overviewToSlidesBtn");if(o2s)o2s.onclick=function(){S.tab="slides";window.scrollTo(0,0);render()};
+  var _rsb=document.getElementById("retrySourcesBtn");if(_rsb)_rsb.onclick=function(){retrySources();};
   // Shared-talk info chip — expands/collapses the "Shared by … · Make your own →" details
   var sit=document.getElementById("sharedInfoToggle");if(sit)sit.onclick=function(){S.shareInfoOpen=!S.shareInfoOpen;render()};
   var jtb=document.getElementById("jsonTalkBtn");if(jtb)jtb.onclick=function(){exportTalkJSON(null)};

@@ -167,6 +167,18 @@ language sql volatile as $$
   select count(*)::int from d;
 $$;
 
+-- ⚠ THIS BLOCK DID NOT DO WHAT IT SAYS. Corrected 2026-07-31 in
+-- revoke_public_execute_on_privileged_rpcs.sql — see that file for the full finding.
+--
+-- CREATE FUNCTION grants EXECUTE to PUBLIC by default, and revoking from anon and authenticated does
+-- NOT remove it: both roles keep inheriting it through PUBLIC. So `has_function_privilege('anon',
+-- 'receipt_issue', 'EXECUTE')` was TRUE from the day this migration ran. What actually stopped a
+-- browser minting receipts was RLS on generation_receipts (enabled, zero policies) plus the table
+-- grant below — not the function-level control this comment claims.
+--
+-- The revokes are LEFT AS WRITTEN rather than edited, because the mistake is the point: an explicit
+-- revoke that reads correctly, passes review, and silently leaves the default grant in place.
+--
 -- Service role only. These are minted and redeemed by the Worker, never by a browser: a client that
 -- could mint its own receipt would make the whole mechanism ornamental.
 revoke all on public.generation_receipts from anon, authenticated;

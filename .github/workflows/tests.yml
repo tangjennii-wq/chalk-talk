@@ -154,6 +154,24 @@ jobs:
       - name: Citation identity — journal acronyms and the drop rule
         run: node test_citation_identity.mjs
 
+      # A live talk was generated with zero retrieved evidence and presented like a grounded one,
+      # because /retrieve 502'd and the client swallowed it. Fail open for generation, fail closed for
+      # provenance: no response may claim ok/applied while returning zero sources.
+      - name: Retrieval status is explicit (timeout vs error vs empty)
+        run: node test_retrieval_status.mjs
+
+      # Fail open for generation, fail closed for provenance. A talk written during a retrieval outage
+      # rendered identically to a grounded one; these assert the two zeroes read differently and that
+      # the disclosure survives save/resume/refine.
+      - name: Evidence disclosure + free Retry sources
+        run: node test_evidence_disclosure.mjs
+
+      # Four SECURITY DEFINER billing RPCs were callable by anon, including free_tier_grant_bonus, which
+      # authorises nothing and grants quota by email. CREATE FUNCTION's default EXECUTE-to-PUBLIC had
+      # outlived an explicit `revoke ... from anon, authenticated`.
+      - name: Privileged RPCs are not reachable from a browser
+        run: node test_rpc_exposure.mjs
+
       # Syntax gates for the two files CI never executes. Cheap, and they catch a broken commit
       # before it reaches a deploy or a calibration run.
       - name: Syntax check the Worker and the evaluator
