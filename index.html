@@ -1348,7 +1348,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-02";
+var BUILD_ID = "2026-07-31-03";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -9512,7 +9512,20 @@ function _stampProvenance(talk, o){
   talk._ragCount = (o.ragCount != null ? o.ragCount : 0);// 0 = don't claim RAG grounding
   // null on talks saved before 2026-07-31. Absence is NOT success: an old talk with zero chunks gets
   // the honest "no sources" disclosure rather than silence.
-  talk._ragStatus = o.ragStatus || null;
+  //
+  // ── THE POST-DRAFTING LABEL IS A RATCHET (Codex, 2026-07-31) ────────────────────────────────────
+  // Once a talk is marked sources_added_after_generation it can NEVER become "ok". "ok" asserts the
+  // sources were in the prompt while the model wrote the talk. Refining afterwards — even refining
+  // *using* those very sources — does not make that true of the original drafting: the text a reader
+  // already has was produced without them, and a refine pass rewrites some of it, not all of it.
+  //
+  // Without this, the honest label was one refine away from silently becoming a grounding claim, which
+  // is the same false-provenance failure as the retry upgrade, arriving by a slower route.
+  var _priorRag = talk._ragStatus || null;
+  var _nextRag  = o.ragStatus || null;
+  talk._ragStatus = (_priorRag === "sources_added_after_generation" && _nextRag === "ok")
+    ? "sources_added_after_generation"
+    : _nextRag;
   talk._guidelinesLoaded = !!o.guidelinesLoaded;         // a guideline actually matched this topic
   talk._citationsVerified = false;                       // true ONLY after the background audit succeeds
   return talk;

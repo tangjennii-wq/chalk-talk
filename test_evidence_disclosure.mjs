@@ -103,7 +103,10 @@ const GROUNDED = /found to cite from|guidelines on hand/i;
   const code = html.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
   ok((code.match(/ragStatus:/g) || []).length >= 3,
      "ragStatus is written into provenance on every persistence path");
-  ok(/talk\._ragStatus = o\.ragStatus \|\| null;/.test(code),
+  // Was a literal match on `talk._ragStatus = o.ragStatus || null;`. That line became the ratchet in
+  // section 8, so assert the PROPERTY — the stamped value derives from the persisted o.ragStatus —
+  // rather than a spelling that a correct change is free to alter.
+  ok(/_nextRag\s*=\s*o\.ragStatus \|\| null/.test(code) && /talk\._ragStatus = /.test(code),
      "…and read back when a saved talk is rehydrated");
   ok(/S\.ragStatus = ragResult\.status/.test(code),
      "…captured from the retrieval result rather than re-derived later");
@@ -166,6 +169,42 @@ const GROUNDED = /found to cite from|guidelines on hand/i;
   // cloudUpdateTalk serialises the whole talk object, which is what carries _ragStatus.
   const cu = grab("cloudUpdateTalk");
   ok(/talk_json: t/.test(cu), "cloudUpdateTalk persists the whole talk object (carrying _ragStatus)");
+}
+
+// ── 8 · REFINE CANNOT LAUNDER THE POST-DRAFTING LABEL ────────────────────────
+// Codex, 2026-07-31: a talk marked sources_added_after_generation, then refined USING those sources,
+// must not become grounded-during-generation. The text the reader already has was drafted without them.
+{
+  const sctx = {};
+  new Function("ctx",
+    "var S={genProvider:'claude'};" +
+    "function talkWriterModels(o){return (o._writerModels||[]).filter(Boolean).concat(o._writerModel?[o._writerModel]:[]);}" +
+    grab("_stampProvenance") + "ctx.f=_stampProvenance;")(sctx);
+  const stamp = sctx.f;
+
+  // The exact sequence: outage -> retry attaches sources -> user refines, retrieval now healthy.
+  const t = { _ragStatus: "sources_added_after_generation" };
+  stamp(t, { ragStatus: "ok", ragCount: 5, writerModel: "claude-opus-5" });
+  ok(t._ragStatus === "sources_added_after_generation",
+     `refine does NOT upgrade the post-drafting label (got ${t._ragStatus})`);
+
+  const after = chipsFor({ _ragStatus: t._ragStatus, _ragCount: 5, _guidelinesLoaded: true });
+  ok(!GROUNDED.test(after), "…and the reader still sees the post-drafting wording, not a grounding claim");
+
+  // The ratchet must not freeze everything: a talk genuinely grounded at draft time still reads as such,
+  // and a later outage must still be able to report itself.
+  const fresh = {};
+  stamp(fresh, { ragStatus: "ok", ragCount: 5 });
+  ok(fresh._ragStatus === "ok", "a normally-grounded talk is unaffected by the ratchet");
+
+  const broke = { _ragStatus: "sources_added_after_generation" };
+  stamp(broke, { ragStatus: "retrieval_timeout", ragCount: 0 });
+  ok(broke._ragStatus === "retrieval_timeout",
+     "…and a later outage is still reportable — the ratchet blocks only the upgrade to ok");
+
+  const legacy = { _ragStatus: null };
+  stamp(legacy, { ragStatus: "ok", ragCount: 3 });
+  ok(legacy._ragStatus === "ok", "a talk with no prior status is not penalised");
 }
 
 console.log("\n" + (failures === 0 ? "✔ EVIDENCE DISCLOSURE OK" : "✗ " + failures + " FAILURE(S)"));

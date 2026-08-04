@@ -141,5 +141,79 @@ ok(files.length > 0, `found ${files.length} migration files to scan`);
      "retrieval functions are not on the privileged list (they carry no billing authority)");
 }
 
+// ── 6 · EXHAUSTIVE: EVERY SECURITY DEFINER FUNCTION IN THE CHECKED-IN SCHEMA ──
+// Not a hard-coded list of the seven found today. SECURITY DEFINER runs as the function OWNER and
+// bypasses RLS, so any such function reachable from a browser role is a privilege escalation waiting
+// for someone to add a body that trusts its parameters — which is exactly how free_tier_grant_bonus
+// became exploitable. Every one must either be revoked from PUBLIC, or allow-listed WITH A REASON.
+const SECDEF_ALLOWLIST = {
+  get_public_profile:
+    "Public by design: returns the already-public profile for a handle, which is the point of a public " +
+    "profile page. Takes a handle, not a user id, and exposes no private column.",
+  is_handle_available:
+    "Public by design: sign-up must tell an anonymous visitor whether a handle is free, before they " +
+    "have any session. Returns a boolean and nothing else.",
+  reject_reserved_handle:
+    "Trigger function. Calling it directly raises 'can only be called as trigger', so an EXECUTE grant " +
+    "confers nothing. Listed rather than revoked so the exemption is a decision on the record.",
+  handle_new_user:
+    "Trigger function on auth.users insert; same reasoning as reject_reserved_handle.",
+};
+{
+  const secdef = new Map();   // fn -> file
+  for (const f of files) {
+    const sql = readFileSync(new URL(f, migDir), "utf8");
+    const code = sql.split("\n").filter(l => !/^\s*--/.test(l)).join("\n");
+    // Each CREATE FUNCTION body up to the next CREATE/end, checked for SECURITY DEFINER.
+    const re = /create\s+(?:or\s+replace\s+)?function\s+([a-z_.]+)\s*\(/gis;
+    const hits = [...code.matchAll(re)];
+    hits.forEach((m, i) => {
+      const body = code.slice(m.index, i + 1 < hits.length ? hits[i + 1].index : code.length);
+      if (/security\s+definer/i.test(body)) {
+        secdef.set(m[1].replace(/^public\./, ""), f);
+      }
+    });
+  }
+  ok(secdef.size > 0, `found ${secdef.size} SECURITY DEFINER function(s) in checked-in migrations`);
+
+  const all = files.map(f => readFileSync(new URL(f, migDir), "utf8"))
+                   .map(s => s.split("\n").filter(l => !/^\s*--/.test(l)).join("\n")).join("\n");
+  const unguarded = [];
+  for (const [fn, file] of secdef) {
+    const re = new RegExp(`revoke\\s+all\\s+on\\s+function\\s+[a-z_.]*${fn}\\s*\\([^)]*\\)\\s*from\\s+([^;]+);`, "gis");
+    const revoked = [...all.matchAll(re)].some(m => /\bpublic\b/.test(m[1].toLowerCase()));
+    const allowed = Object.prototype.hasOwnProperty.call(SECDEF_ALLOWLIST, fn)
+                 && SECDEF_ALLOWLIST[fn].length > 40;   // a reason, not a rubber stamp
+    if (!revoked && !allowed) unguarded.push(`${fn} (${file})`);
+  }
+  ok(unguarded.length === 0,
+     unguarded.length
+       ? `SECURITY DEFINER reachable by a browser role, not revoked and not allow-listed:\n     ${unguarded.join("\n     ")}`
+       : "every SECURITY DEFINER function is revoked from PUBLIC or allow-listed with a justification");
+}
+
+// ── 7 · THE REPO MUST BE ABLE TO REPRODUCE THE FIX ───────────────────────────
+// The billing functions have NO checked-in definition — they were created outside the repo, which is a
+// large part of why the exposure was invisible to code review: there was no file for a reviewer to read.
+// Until they are captured, the least this can do is guarantee the REVOKE is reproducible, so a rebuild
+// from migrations cannot silently restore the open grants.
+{
+  const known = ["free_tier_grant_bonus", "free_tier_consume", "free_tier_remaining", "ledger_add"];
+  const all = files.map(f => readFileSync(new URL(f, migDir), "utf8"))
+                   .map(s => s.split("\n").filter(l => !/^\s*--/.test(l)).join("\n")).join("\n");
+  const missing = known.filter(fn => {
+    const re = new RegExp(`revoke\\s+all\\s+on\\s+function\\s+[a-z_.]*${fn}\\s*\\(`, "is");
+    return !re.test(all);
+  });
+  ok(missing.length === 0,
+     missing.length ? `production SECURITY DEFINER function(s) with no reproducible revoke: ${missing.join(", ")}`
+                    : "every known production billing RPC has a checked-in revoke");
+
+  // Recorded so the omission is tracked rather than forgotten.
+  const review = readFileSync(new URL("./rag/runs/2026-07-31-privileged-rpc-security-review.md", here), "utf8");
+  ok(/no checked-in definition/i.test(review) || /created outside the repo/i.test(review),
+     "the security review records that these functions are not defined in the repo");
+}
+
 console.log("\n" + (failures === 0 ? "✔ RPC EXPOSURE OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);
