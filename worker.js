@@ -1876,7 +1876,16 @@ function corsPreflight(origin, allowedOrigins) {
     headers: {
       "Access-Control-Allow-Origin": allowedOrigin,
       "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, X-Supabase-Auth, X-CT-Meter, X-Admin-Token, X-Provider-Key, Authorization",
+      // X-CT-Receipt / X-CT-Job / X-CT-Stage added 2026-07-31. They were added to the CLIENT with the
+      // receipt work and never here, so the browser's preflight rejected every free-tier /v1/messages
+      // call with "Request header field x-ct-stage is not allowed by Access-Control-Allow-Headers".
+      //
+      // It survived every test because nothing in the suite speaks CORS: preflight is a BROWSER
+      // behaviour, and the Node tests call worker.fetch() directly, where custom headers simply arrive.
+      // The durable path masked it in production too — the Workflow calls Anthropic server-side, so a
+      // talk still generated, while the client-side aux calls (citation audit, images, check-for-updates)
+      // failed with a bare "Network hiccup" that named nothing.
+      "Access-Control-Allow-Headers": "Content-Type, X-Supabase-Auth, X-CT-Meter, X-CT-Receipt, X-CT-Job, X-CT-Stage, X-Admin-Token, X-Provider-Key, Authorization",
       "Access-Control-Max-Age": "86400",
       "Vary": "Origin",
     },

@@ -172,6 +172,12 @@ jobs:
       - name: Privileged RPCs are not reachable from a browser
         run: node test_rpc_exposure.mjs
 
+      # The receipt headers were added to the client and never to Access-Control-Allow-Headers, so every
+      # browser-side /v1/messages call died at preflight. 33 suites passed because none of them speak
+      # CORS: preflight is a browser behaviour and the Node tests call worker.fetch() directly.
+      - name: CORS preflight allows every header the client sends
+        run: node test_cors_preflight.mjs
+
       # Syntax gates for the two files CI never executes. Cheap, and they catch a broken commit
       # before it reaches a deploy or a calibration run.
       - name: Syntax check the Worker and the evaluator
