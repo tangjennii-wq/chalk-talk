@@ -1348,7 +1348,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-03";
+var BUILD_ID = "2026-07-31-04";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6322,13 +6322,30 @@ async function verifyCitations(talk) {
   }
 
   var dropPmid = {}, dropChip = {};
-  S.citeAudit = { checked: pairs.length, dropped: 0 };
+  S.citeAudit = { checked: pairs.length, dropped: 0, drops: [] };
   for (var pi = 0; pi < pairs.length; pi++) {
     if (verdicts[pi] === false) {
       var p = pairs[pi];
       if (p.kind === "pmid") dropPmid[p.pmid + "::" + p.claim] = true;
       else dropChip[p.refId + "::" + p.claim] = true;
       S.citeAudit.dropped++;
+      // DIAGNOSTIC (2026-07-31). A 7-of-11 drop rate on an endocarditis talk has two very different
+      // explanations and the aggregate count cannot tell them apart:
+      //   (a) the model cited PMIDs for claims the abstracts do not substantiate — the guard working;
+      //   (b) the CLAIM GRANULARITY is wrong — `claim` is the whole string the citation sits in, so a
+      //       multi-clause bullet must be supported in EVERY clause, and a citation that correctly
+      //       supports one sentence is dropped because of a neighbouring one.
+      // Recording the pair makes that answerable by reading rather than by guessing. Kept on S so it
+      // survives for inspection after the talk renders.
+      S.citeAudit.drops.push({
+        kind: p.kind,
+        pmid: p.pmid,
+        source: (absByPmid[p.pmid] && absByPmid[p.pmid].title) || "",
+        claimChars: p.claim.length,
+        clauses: (p.claim.match(/[;.]\s+/g) || []).length + 1,
+        claim: p.claim,
+        abstract: (absByPmid[p.pmid] && absByPmid[p.pmid].abstract) || "",
+      });
     }
   }
   if (!S.citeAudit.dropped) return talk;
@@ -6358,6 +6375,21 @@ async function verifyCitations(talk) {
     return node;
   }
   console.info("Citation audit: dropped " + S.citeAudit.dropped + "/" + S.citeAudit.checked + " unsupported citation(s) (inline PMIDs + [N] chips)");
+  // Print the actual pairs, so a high drop rate can be READ rather than guessed at. `clauses` is the
+  // tell: if the dropped claims are consistently multi-clause while the kept ones are single-clause,
+  // the auditor is judging a whole bullet against one abstract and the granularity is the bug, not the
+  // model's citing. Full objects (claim + abstract) are on S.citeAudit.drops for inspection.
+  if (S.citeAudit.drops && S.citeAudit.drops.length) {
+    try {
+      console.groupCollapsed("Citation audit — " + S.citeAudit.drops.length + " dropped (expand to judge)");
+      console.table(S.citeAudit.drops.map(function(d){
+        return { clauses: d.clauses, chars: d.claimChars, pmid: d.pmid,
+                 claim: d.claim.slice(0, 110), source: String(d.source).slice(0, 60) };
+      }));
+      console.info("Full claim + abstract for each: S.citeAudit.drops");
+      console.groupEnd();
+    } catch (_) {}
+  }
   // Re-prune AFTER stripping. walkStrip passes `references` through untouched, so a ref whose only chip
   // was just removed would keep its bibliography entry — the inline citation vanishes but the unsupported
   // source still shows under References. Re-running prune (whose bodyMentions check is now honest) drops
