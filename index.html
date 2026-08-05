@@ -1348,7 +1348,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-06";
+var BUILD_ID = "2026-07-31-13";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1426,12 +1426,21 @@ function _clearActiveJob(jobId, why){
       return;                                   // a newer job owns the slot
     }
     localStorage.removeItem(ASYNC_GEN_CONFIG.jobKey);
+    _asyncResultInHand = false;        // the handle is gone; a later generation starts fresh
     if(why) console.info("Cleared active-job handle: " + why);
   }catch(_){}
 }
 // Errors after which the job REMAINS recoverable, so the handle must survive. A client-side parse or
 // render failure is the whole reason this list exists: the server's work is fine, ours broke.
+// Set the moment pollAsyncGeneration hands back a result, cleared when the handle is released.
+// STATE, NOT STRING MATCHING (Codex, 2026-07-31). The predicate below classifies errors by message,
+// which is guesswork: a TypeError from a render bug, a null dereference in provenance stamping, or any
+// exception whose wording nobody anticipated would fall through to "unrecoverable" and delete the
+// handle to work that is FINISHED AND PAID FOR on the server. Once the result is in hand, the only
+// correct answer is to keep the handle, whatever went wrong afterwards.
+var _asyncResultInHand = false;
 function _errorKeepsJobRecoverable(e){
+  if(_asyncResultInHand) return true;   // the Workflow finished; our failure is not its problem
   var code = e && e.code;
   if(code === "timeout" || code === "stalled" || code === "network" || code === "auth") return true;
   if(code === "expired" || code === "cancelled") return false;   // confirmed terminal — safe to release
@@ -1638,6 +1647,7 @@ async function resumeAsyncJobIfAny(){
       function(){ return S.genCancelled || _myGenId !== S.genId; },
       function(partial){ if(S.genCancelled || _myGenId !== S.genId) return; _applyStreamingPartial(partial); }
     );
+    _asyncResultInHand = true;   // from here on, ANY failure keeps the handle
     // NOT cleared here. The Workflow has returned, but nothing has been parsed, reviewed, stamped or
     // rendered yet — and every one of those can throw. Clearing now is what stranded a completed paid
     // result behind a "Network hiccup". The handle is released after S.talk is assigned (below).
@@ -7192,6 +7202,16 @@ function buildCritiqueSpec(style, topic, glRef, ragChunks){
 
 async function generate(){
   if(!S.topic.trim()||S.loading)return;
+  // A CANCELLATION IN FLIGHT BLOCKS A NEW GENERATION. There is exactly ONE reconnect handle; starting
+  // another job while the previous one's cancellation is unresolved overwrites it, and if termination
+  // turns out to have failed, that first paid job is left running with nothing pointing at it.
+  if(S.cancelPending || S.cancelUnresolved){
+    S.error = S.cancelUnresolved
+      ? "Couldn't confirm your previous talk stopped — it may still be running. Reload to reconnect to it first."
+      : "Still stopping your previous talk — one moment.";
+    if(typeof render === "function") render();
+    return;
+  }
   // GUIDELINE-DATA GATE (JSON-source migration): never build a talk without guideline grounding. If the
   // data hasn't loaded, block and surface why; if a prior load errored, kick off a retry. (Jenni 2026-07)
   if(!guidelinesReady()){
@@ -7500,6 +7520,7 @@ async function generate(){
           function(){ return S.genCancelled || _myGenId !== S.genId; },
           function(partial){ if (S.genCancelled || _myGenId !== S.genId) return; _applyStreamingPartial(partial); }
         );
+        _asyncResultInHand = true;   // from here on, ANY failure keeps the handle
         // NOT cleared here — see _clearActiveJob. Parsing, the review gate, provenance stamping and
         // render all still lie ahead, and a throw in any of them would strand a paid, completed result.
         txt = (_res && _res.draftText) || "";
@@ -7847,15 +7868,77 @@ function cancelGen(){
   S.genCancelled = true;
   // Stop any server-side background job immediately (don't wait for the poll loop's next tick) and
   // drop the persisted job so it isn't resumed after a reload. (Jenni 2026-07-03)
-  try {
-    var _stored = JSON.parse(localStorage.getItem(ASYNC_GEN_CONFIG.jobKey) || "null");
-    if(_stored && _stored.jobId && RAG_CONFIG.url){
-      fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-cancel/" + encodeURIComponent(_stored.jobId), { method:"POST", headers:{ "X-Supabase-Auth": freeTierToken() } });
-    }
-  } catch(_){}
-  // Confirmed user cancellation is a legitimate clear — the server job is being cancelled too, and the
-  // refund path owns the credit from here.
-  _clearActiveJob(_stored && _stored.jobId, "user cancelled");
+  // CLEAR ONLY ON CONFIRMED CANCELLATION (Codex, 2026-07-31).
+  // This fired the cancel request WITHOUT awaiting it and deleted the handle immediately. If the
+  // request never landed — offline, 500, the tab closing — the server kept generating, the credit
+  // stayed spent, and the only handle to the running job was gone. "I asked it to stop" is not "it
+  // stopped": the Worker answers `cancelled: true` only after it has verified the write, and that
+  // answer is the thing worth acting on.
+  var _stored = null;
+  try { _stored = JSON.parse(localStorage.getItem(ASYNC_GEN_CONFIG.jobKey) || "null"); } catch(_){ _stored = null; }
+  if(_stored && _stored.jobId && RAG_CONFIG.url){
+    // THE UI STAYS LOCKED UNTIL CANCELLATION RESOLVES (Codex, 2026-07-31).
+    // This fired the request and immediately set S.loading = false, so the user could start a NEW
+    // generation while the old one's fate was unknown. There is one reconnect handle; the new job
+    // overwrites it. If termination had failed, the first paid job kept running with nothing pointing
+    // at it — the same stranding this whole thread began with, arriving by a different door.
+    S.cancelPending = true;
+    S.cancelUnresolved = false;
+    if(typeof render === "function") render();
+    (async function(jobId){
+      var _cancelResolved = false;
+      try{
+        var cr = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-cancel/" + encodeURIComponent(jobId),
+                             { method:"POST", headers:{ "X-Supabase-Auth": freeTierToken() } });
+        var cj = null; try{ cj = await cr.json(); }catch(_){ cj = null; }
+        // CANCELLED **AND** THE CREDIT SETTLED. The server reports these separately because they are
+        // separate facts: a job can be genuinely stopped while its refund failed. Releasing the handle
+        // on `cancelled` alone would leave a spent credit with nothing pointing at the job it paid for.
+        // "already_refunded" counts as settled — an earlier cancel got there first.
+        var _refundSettled = cj && (cj.refunded === true
+                                    || cj.refund_outcome === "already_refunded");
+        if(cr.ok && cj && cj.cancelled === true && _refundSettled){
+          _cancelResolved = true;
+          _clearActiveJob(jobId, "server confirmed cancellation and refund");
+        } else if(cr.ok && cj && cj.already_complete === true){
+          _cancelResolved = true;   // nothing left running; the finished talk is collectable
+          // Too late to cancel — the talk finished. Keep the handle so a reload collects the work that
+          // was paid for, rather than discarding a completed result the user is entitled to.
+          console.info("Cancel arrived after completion — keeping the handle so the finished talk can be collected");
+        } else if(cr.ok && cj && cj.cancelled === true){
+          console.warn("Cancelled, but the refund did not settle (" + ((cj && cj.refund_outcome) || "unknown")
+                       + ") — keeping the reconnect handle for " + jobId);
+        } else {
+          // Job may still be running and is still paid for. Keep the handle so a reload can reconnect
+          // rather than stranding it.
+          console.warn("Cancel not confirmed by the server — keeping the reconnect handle for " + jobId);
+        }
+      }catch(e){
+        console.warn("Cancel request failed (" + ((e && e.message) || e) + ") — keeping the reconnect handle for " + jobId);
+      }finally{
+        // NOT an unconditional clear (Codex, 2026-07-31). Clearing here on FAILURE re-opened the exact
+        // hole the flag exists to close: cancellation unresolved, the old job possibly still running,
+        // and generate() free to start a new one that overwrites the single reconnect handle.
+        //
+        // `cancelResolved` is set only on a confirmed cancellation or a confirmed already-complete.
+        // When it is false the UI stays blocked and says why — and the way out is RELOAD, which
+        // reconnects to the job the handle still points at.
+        if(_cancelResolved){
+          S.cancelPending = false;
+          S.cancelUnresolved = false;
+        } else {
+          S.cancelPending = false;
+          S.cancelUnresolved = true;
+          S.error = "Couldn't confirm that your talk stopped — it may still be running. Reload to "
+                  + "reconnect to it before starting another.";
+        }
+        if(typeof render === "function") render();
+      }
+    })(_stored.jobId);
+  } else {
+    // Nothing server-side to cancel (sync path, or no handle) — safe to drop whatever is there.
+    _clearActiveJob(_stored && _stored.jobId, "cancelled with no server job");
+  }
   S.queueAudio = false; // don't carry the audio-queue intent into the next generation
   // Abort the live fetch so we stop paying for tokens we won't use. (Jenni 2026-06-09 #5)
   if (window._lastGenAbort) try { window._lastGenAbort.abort() } catch(_){}

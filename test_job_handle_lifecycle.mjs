@@ -143,6 +143,49 @@ const present = () => !!store["ct_active_job"];
      "the resume catch no longer deletes the handle unconditionally");
 }
 
+// ── 4b · LIFECYCLE STATE BEATS STRING MATCHING ───────────────────────────────
+// Codex, 2026-07-31: classifying errors by message is guesswork. Once the Workflow result is in hand,
+// ANY exception — a TypeError from a render bug, a null dereference in provenance, anything nobody
+// anticipated — must preserve the handle, because the work is finished and paid for on the server.
+{
+  const c2 = {};
+  new Function("c2", "var _asyncResultInHand = true;" + grab("_errorKeepsJobRecoverable") +
+                     "c2.f=_errorKeepsJobRecoverable;")(c2);
+  const keepsAfterResult = c2.f;
+
+  const unanticipated = [
+    new TypeError("Cannot read properties of undefined (reading 'sections')"),
+    new RangeError("Maximum call stack size exceeded"),
+    new Error("something nobody wrote a regex for"),
+  ];
+  for (const e of unanticipated) {
+    ok(keepsAfterResult(e) === true,
+       `with the result in hand, an unanticipated error still keeps the handle — ${e.constructor.name}`);
+    // …and the same error BEFORE the result arrives is correctly treated as unrecoverable.
+    ok(keeps(e) === false, `…while the same error before the result does not — ${e.constructor.name}`);
+  }
+
+  const code = html.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
+  ok(/if\(_asyncResultInHand\) return true;/.test(code),
+     "the predicate short-circuits on lifecycle state before inspecting any message");
+  ok((code.match(/_asyncResultInHand = true;/g) || []).length >= 2,
+     "…set at BOTH poll-return sites (initial and resume)");
+  ok(/_asyncResultInHand = false;/.test(code), "…and reset when the handle is released");
+}
+
+// ── 4c · CANCELLATION IS CONFIRMED, NOT ASSUMED ──────────────────────────────
+// The handle was deleted immediately after firing an UNAWAITED cancel request. If that request never
+// landed, the server kept generating, the credit stayed spent, and the handle was gone.
+{
+  const code = html.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
+  ok(/cj\.cancelled === true/.test(code),
+     "the handle is cleared only when the server answers cancelled: true");
+  ok(/await fetch\(RAG_CONFIG\.url[\s\S]{0,160}generate-cancel/.test(code),
+     "…and the cancel request is awaited rather than fired and forgotten");
+  ok(/keeping the reconnect handle/.test(html),
+     "…an unconfirmed cancel keeps the handle so a reload can reconnect");
+}
+
 // ── 5 · THE POLL DISTINGUISHES STATUS CODES ──────────────────────────────────
 // `if(!r.ok) continue;` treated 401/403 as "still running" and spun to the nine-minute timeout, then
 // blamed a timeout — a diagnosis that named the wrong failure.

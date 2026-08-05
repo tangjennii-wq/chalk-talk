@@ -184,6 +184,24 @@ jobs:
       - name: Reconnect handle outlives post-processing
         run: node test_job_handle_lifecycle.mjs
 
+      # The live smoke test covered generation, retrieval failure, retry and reconnect — but NOT
+      # cancellation/refund, duplicate submit, or a critique failure. Two of the three are automatable
+      # without buying a real talk; the cancel/refund canary still needs a browser.
+      - name: Cancel confirmation, duplicate submit, critique isolation
+        run: node test_cancel_and_duplicate.mjs
+
+      # The durable Workflow NEVER refunded: refundOnce was dead code and makeWorkflowDeps supplied no
+      # deps.refund. Cancellation also swallowed termination failure, ignored the cancelled flag between
+      # paid steps, and misreported cancelling an already-finished job.
+      - name: Cancellation and exactly-once refund
+        run: node test_cancel_refund.mjs
+
+      # The client and Worker disagreed about when authorisation exists: desktop drafted before getting a
+      # receipt, /generate-async returned none, and talk receipts omitted the aux stage the citation
+      # audit uses. One session endpoint mints before any model call; enforcement is staged behind a flag.
+      - name: Generation session / receipt lifecycle
+        run: node test_receipt_session.mjs
+
       # Syntax gates for the two files CI never executes. Cheap, and they catch a broken commit
       # before it reaches a deploy or a calibration run.
       - name: Syntax check the Worker and the evaluator

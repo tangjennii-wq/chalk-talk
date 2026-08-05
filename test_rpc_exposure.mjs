@@ -215,5 +215,94 @@ const SECDEF_ALLOWLIST = {
      "the security review records that these functions are not defined in the repo");
 }
 
+// ── 8 · EVERY SECURITY DEFINER FUNCTION PINS search_path ─────────────────────
+// The second half of the same defect. SECURITY DEFINER runs as the owner; Postgres searches pg_temp
+// FIRST by default; and all four billing functions referenced their tables UNQUALIFIED with no
+// search_path set. A caller able to create a temp table named `free_tier_usage` could therefore shadow
+// the real one and have the function read and write the attacker's table as the owner. Revoking EXECUTE
+// closed the direct route — this closes the hijack that returns the moment anyone re-grants one.
+{
+  const all = files.map(f => readFileSync(new URL(f, migDir), "utf8")).join("\n");
+  const code = all.split("\n").filter(l => !/^\s*--/.test(l)).join("\n");
+
+  // Every CREATE FUNCTION carrying SECURITY DEFINER must also carry a SET search_path.
+  const re = /create\s+(?:or\s+replace\s+)?function\s+([a-z_.]+)\s*\(/gis;
+  const hits = [...code.matchAll(re)];
+  const unpinned = [];
+  hits.forEach((m, i) => {
+    const body = code.slice(m.index, i + 1 < hits.length ? hits[i + 1].index : code.length);
+    // BOTH SPELLINGS. pg_get_functiondef() emits `SET search_path TO 'public', 'pg_temp'`, while
+    // hand-written migrations use `set search_path = public, pg_temp`. The first version of this guard
+    // accepted only `=` and therefore flagged a CORRECTLY pinned function exported from production —
+    // a guard that rejects the right answer teaches people to route around it.
+    if (/security\s+definer/i.test(body) && !/set\s+search_path\s*(=|to)\s/i.test(body)) {
+      unpinned.push(m[1].replace(/^public\./, ""));
+    }
+  });
+  ok(unpinned.length === 0,
+     unpinned.length ? `SECURITY DEFINER without a pinned search_path: ${unpinned.join(", ")}`
+                     : "every SECURITY DEFINER definition in the repo pins search_path");
+
+  ok(/pg_temp/.test(code), "…and pg_temp is named explicitly (last), not left to the default ordering");
+
+  // The billing functions must now HAVE a checked-in definition, not merely a checked-in revoke.
+  for (const fn of ["free_tier_consume", "free_tier_remaining", "free_tier_grant_bonus", "ledger_add"]) {
+    ok(new RegExp(`create\\s+or\\s+replace\\s+function\\s+public\\.${fn}\\s*\\(`, "i").test(code),
+       `${fn} now has a checked-in definition (the repo can reproduce production)`);
+  }
+
+  // And they must reference their tables schema-qualified, or the pin is doing half the work.
+  const billing = code.slice(code.indexOf("free_tier_consume"));
+  ok(!/[^.]\bfree_tier_usage\b/.test(billing.replace(/public\.free_tier_usage/g, "")),
+     "billing functions reference public.free_tier_usage schema-qualified");
+}
+
+// ── 9 · THE MIGRATIONS MATCH WHAT THE WORKER EXPECTS ─────────────────────────
+// The owner check was applied to production with execute_sql and the migration file was never updated,
+// so the repo returned `already_reserved` on every conflict while production returned `owned_by_other`.
+// A rebuild from migrations would have RESTORED the cross-user vulnerability, and the Worker — which
+// reads owner_id — would have broken against the rebuilt function.
+//
+// This is the second time in one day that repo-vs-production drift hid a security property. A guard is
+// cheaper than remembering: whatever contract the Worker consumes must be visible in the SQL.
+{
+  // COMMENTS STRIPPED FIRST. These migrations DISCUSS `owned_by_other` at length in prose, so
+  // `all.includes("'owned_by_other'")` was satisfied by the explanation of the bug rather than by the
+  // branch that fixes it — deleting the return statement and keeping the comment would have passed.
+  // That is the fourth time in this repo a check has matched its own documentation, and the reason the
+  // earlier "mutation-tested" claim did not prove what it said. Extract the FUNCTION BODY, not the file.
+  const stripSql = (t) => t.split("\n").filter(l => !/^\s*--/.test(l)).join("\n");
+  const allRaw = files.map(f => readFileSync(new URL(f, migDir), "utf8")).join("\n");
+  const all = (() => {
+    const src = stripSql(allRaw);
+    const i = src.indexOf("create or replace function public.reserve_talk_for_job");
+    if (i < 0) return src;
+    const end = src.indexOf("$function$;", src.indexOf("$function$", i) + 10);
+    return src.slice(i, end > i ? end : src.length);
+  })();
+  const wsrc = readFileSync(new URL("./worker.js", here), "utf8");
+  const wcode = wsrc.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
+
+  // Every outcome string the Worker branches on must exist in the checked-in SQL.
+  for (const outcome of ["owned_by_other", "already_reserved", "quota_exhausted", "reserved"]) {
+    if (!new RegExp(`["'\`]${outcome}["'\`]`).test(wcode)) continue;   // Worker doesn't use it — skip
+    // RETURNED, not merely mentioned. Comments are stripped and the search is scoped to the function
+    // body already, but `includes` would still be satisfied by the string appearing in a condition or a
+    // leftover fragment. The contract the Worker consumes is what the function RETURNS.
+    ok(new RegExp(`return query select[^;]*'${outcome}'`, "s").test(all),
+       `the Worker branches on "${outcome}" and the function RETURNS it`);
+  }
+
+  // Every column the Worker reads off the row must be in the declared return type.
+  if (/row\.owner_id/.test(wcode)) {
+    ok(/returns table \(reserved boolean, outcome text, owner_id uuid\)/.test(all),
+       "the Worker reads row.owner_id and the migration declares it");
+  }
+
+  // And the signature change needs an explicit DROP, or a replay fails on the OUT-parameter row type.
+  ok(/drop function if exists public\.reserve_talk_for_job/.test(stripSql(allRaw)),
+     "…with an explicit DROP, since CREATE OR REPLACE cannot change an OUT-parameter row type");
+}
+
 console.log("\n" + (failures === 0 ? "✔ RPC EXPOSURE OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

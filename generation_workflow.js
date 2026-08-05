@@ -143,8 +143,28 @@ export async function paidModelStep(deps, { jobId, stepName, call }) {
   }
 
   // 3 · Cache BEFORE releasing, so no window exists where neither is set.
-  try { await deps.kvPut(cacheKey, JSON.stringify(out), MARKER_TTL_SECONDS); } catch (_) {}
-  await releaseAttempt(deps, jobId, stepName);
+  //
+  // A SWALLOWED CACHE-WRITE FAILURE PRODUCED TWO PAID CALLS (Codex, 2026-07-31).
+  // This was `try { kvPut } catch (_) {}` followed by an UNCONDITIONAL releaseAttempt. If the cache
+  // write failed, the result was gone AND the marker was deleted — so a replay found neither, believed
+  // no call had been issued, and bought the draft a second time. The comment above promised "no window
+  // exists where neither is set"; the empty catch created exactly that window.
+  //
+  // The marker is now released ONLY on a confirmed cache write. If the write fails we keep it, which
+  // makes a replay refuse and refund: the user loses this talk rather than paying for it twice. Failing
+  // closed on ambiguity is the same rule the error path above already followed.
+  let cached_ok = false;
+  try {
+    await deps.kvPut(cacheKey, JSON.stringify(out), MARKER_TTL_SECONDS);
+    cached_ok = true;
+  } catch (err) {
+    console.error(JSON.stringify({
+      event: "paid_result_cache_failed", jobId, step: stepName,
+      detail: String((err && err.message) || err).slice(0, 200),
+      consequence: "attempt marker retained; a replay will refuse rather than re-issue a paid call",
+    }));
+  }
+  if (cached_ok) await releaseAttempt(deps, jobId, stepName);
   return out;
 }
 
@@ -173,6 +193,9 @@ export function isTransient(err) {
  */
 export async function runGenerationWorkflow({ step, payload, deps }) {
   const { jobId } = payload;
+  try {
+  // Every exit that is not a delivered talk refunds exactly once — see the try/catch at the end of this
+  // function. Nothing did before: a cancelled or failed durable generation kept the credit.
   // ── THE REQUEST BODY NEVER CROSSES A STEP BOUNDARY ───────────────────────────────────────────────
   // Two separate 1 MiB ceilings apply here: the Workflow event payload, and any single step's return
   // value. Chalk Talk accepts up to 5 MB (MAX_REQUEST_BYTES) because a talk can carry an uploaded
@@ -183,7 +206,13 @@ export async function runGenerationWorkflow({ step, payload, deps }) {
   // ── 1 · DRAFT ──────────────────────────────────────────────────────────────
   // Deterministic name. Cached on success, so a later failure never re-buys it.
   const draft = await step.do("draft", PAID_RETRY, async () => {
-    await deps.updateJob(jobId, { status: "running", stage: "drafting" });
+    // CANCELLATION IS CHECKED BEFORE MONEY IS SPENT (Codex, 2026-07-31).
+    // updateJob returns FALSE when the record carries `cancelled` — and both paid steps ignored it.
+    // A cancel that landed in KV but whose terminate() failed (or was swallowed) therefore did not stop
+    // the Workflow: it walked straight into a paid call the user had already asked to stop.
+    if (!(await deps.updateJob(jobId, { status: "running", stage: "drafting" }))) {
+      throw new deps.NonRetryableError(CANCELLED_BEFORE_STEP + "draft");
+    }
     const d = await paidModelStep(deps, {
       jobId, stepName: "draft",
       call: () => deps.callDraft(jobId),
@@ -201,7 +230,11 @@ export async function runGenerationWorkflow({ step, payload, deps }) {
   let critique = { text: "", modelUsed: "", usage: null };
   if (payload.wantCritique) {
     critique = await step.do("critique", PAID_RETRY, async () => {
-      await deps.updateJob(jobId, { stage: "critique" });
+      // The most valuable of the two checks: the draft has ALREADY been billed by this point, so
+      // proceeding into a second paid call on a cancelled job doubles the loss.
+      if (!(await deps.updateJob(jobId, { stage: "critique" }))) {
+        throw new deps.NonRetryableError(CANCELLED_BEFORE_STEP + "critique");
+      }
       const c = await paidModelStep(deps, {
         jobId, stepName: "critique",
         call: () => deps.callCritique(jobId, draft.text),
@@ -225,7 +258,11 @@ export async function runGenerationWorkflow({ step, payload, deps }) {
   // ── 4 · FINALIZE ───────────────────────────────────────────────────────────
   // Last, so a crash before it leaves the job resumable rather than falsely complete.
   await step.do("finalize", CHEAP_RETRY, async () => {
-    await deps.updateJob(jobId, {
+    // THE WRITE MUST LAND (Codex, 2026-07-31). updateJob returns false when a cancel or a terminal
+    // guard rejects the patch — and this ignored it, returning {finalized:true} and completing the
+    // Workflow with NO RESULT IN KV. The instance looked successful, the user was charged, and the
+    // talk did not exist. Throwing routes it into the terminal handler, which refunds.
+    const wrote = await deps.updateJob(jobId, {
       status: "done",
       result: {
         draftText: draft.text,
@@ -235,10 +272,46 @@ export async function runGenerationWorkflow({ step, payload, deps }) {
         webSearched: draft.webSearched,
       },
     });
+    if (!wrote) {
+      throw new deps.NonRetryableError(
+        "finalize: the job record refused the result write (cancelled or already terminal), so no talk "
+        + "was delivered. Refunding rather than reporting success.");
+    }
     return { finalized: true };
   });
 
   return { ok: true, jobId };
+
+  } catch (err) {
+    // ── TERMINAL FAILURE OR CANCELLATION: REFUND, EXACTLY ONCE ───────────────────────────────────────
+    // Every non-delivery exit passes through here. Previously none did — refundOnce was dead code and
+    // the durable path kept the credit on every cancel and every failure.
+    //
+    // The refund is attempted BEFORE the record is marked, so a crash between them leaves a job that
+    // looks failed and IS refunded, rather than one that looks refunded and is not. refund_talk_once is
+    // idempotent, so a retry of this handler cannot double-credit.
+    const cancelled = isCancellation(err);
+    let refund = { refunded: false, why: "not attempted" };
+    try { refund = await refundOnce(deps, jobId, cancelled ? "cancelled" : "workflow_failed"); }
+    catch (_) { /* recorded below as not-refunded; never mask the original failure */ }
+
+    try {
+      // finalizeJob, NOT updateJob: updateJob refuses every write once `cancelled` is set, so recording
+      // the outcome of a CANCELLED job through it silently wrote nothing. The refund had already landed
+      // in Postgres and the record showed no trace of it.
+      await (deps.finalizeJob || deps.updateJob)(jobId, {
+        status: cancelled ? "cancelled" : "error",
+        cancelled: cancelled || undefined,
+        refunded: refund.refunded,
+        refundOutcome: refund.why,
+        error: { message: String((err && err.message) || err).slice(0, 500) },
+      });
+    } catch (_) { /* the refund already happened; a failed status write must not undo it */ }
+
+    // Re-throw so the Workflow instance itself is recorded as failed. Swallowing here would make a
+    // broken generation indistinguishable from a successful one in the Cloudflare dashboard.
+    throw err;
+  }
 }
 
 /**
@@ -249,16 +322,38 @@ export async function runGenerationWorkflow({ step, payload, deps }) {
  * KV is eventually consistent so this is best-effort, not a lock — but it turns "refund every time we
  * notice" into "refund approximately once", which is the difference that matters for a credit.
  */
+// Recognisable prefix so the runner can tell "the user cancelled" from "the model broke". Both refund;
+// only one of them is a fault worth surfacing.
+export const CANCELLED_BEFORE_STEP = "cancelled before step: ";
+export function isCancellation(err) {
+  return /cancelled before step: /.test(String((err && err.message) || err || ""));
+}
+
+// REFUND, EXACTLY ONCE, KEYED BY JOB.
+//
+// This helper previously existed and was CALLED BY NOTHING: makeWorkflowDeps did not even supply
+// deps.refund, so every cancelled or failed DURABLE generation silently kept the user's credit. The
+// legacy waitUntil runner has its own local refundOnce and does refund — which is precisely why the gap
+// survived review. The name existed, tests referenced it, and the path that actually runs in production
+// was the one without it.
+//
+// It also used a KV marker as the exactly-once lock. KV is eventually consistent and cannot serve as
+// one: concurrent cancels could each read "not yet refunded" and each grant a credit. The lock now
+// lives in Postgres — `insert ... on conflict (job_id) do nothing` — and deps.refund carries the jobId
+// so the ledger row and the lock are the same row.
 export async function refundOnce(deps, jobId, reason) {
-  const key = `refunded:${jobId}`;
-  const already = await deps.kvGet(key);
-  if (already) return { refunded: false, why: "already refunded" };
-  await deps.kvPut(key, JSON.stringify({ at: deps.now(), reason }), MARKER_TTL_SECONDS);
+  if (typeof deps.refund !== "function") {
+    // Fail LOUD. The previous version called deps.refund() when makeWorkflowDeps never supplied it —
+    // an undefined call inside a try/catch that reported {refunded:false} and moved on. A refund path
+    // that cannot possibly work must not look like one that merely declined.
+    return { refunded: false, why: "deps.refund is not wired" };
+  }
   try {
-    await deps.refund();
-    return { refunded: true, reason };
+    // deps.refund is job-keyed and atomic in Postgres, so there is no client-side marker to keep and no
+    // window in which two callers both believe they are first.
+    const r = await deps.refund(jobId, reason);
+    return { refunded: !!(r && r.refunded), why: (r && r.outcome) || "unknown" };
   } catch (err) {
-    // Leave the marker: a failed refund that we then retry forever is worse than one we surface.
-    return { refunded: false, why: String(err && err.message || err) };
+    return { refunded: false, why: String((err && err.message) || err) };
   }
 }

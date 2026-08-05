@@ -32,6 +32,12 @@ function harness({ withStore = true, userId = "u1" } = {}) {
   const calls = { anthropic: 0 };
   const env = {
     ALLOWED_ORIGINS: ORIGIN, ANTHROPIC_API_KEY: "sk-test",
+    // ENFORCEMENT ON, EXPLICITLY (2026-07-31). Receipt refusal moved behind RECEIPTS_REQUIRED so the
+    // Worker can be deployed BEFORE the client that knows how to obtain a receipt — otherwise free-tier
+    // generation breaks for live users during the gap. This suite asserts the security property, which
+    // is the ENFORCED behaviour, so it sets the flag rather than inheriting the staged-rollout default.
+    // test_receipt_session.mjs covers the unenforced mode (allowed, but logged).
+    RECEIPTS_REQUIRED: "true",
     MAX_MONTHLY_SPEND_USD: "250",
     JOBS_KV: { get: async () => null, put: async () => {}, delete: async () => {} },
   };
@@ -214,8 +220,14 @@ const reason = async (res) => ((await res.json()).error || {}).detail?.reason;
   const flat = src.split("\n").map(l => l.replace(/^\s*\/\/\s?/, "")).join(" ").replace(/\s+/g, " ");
   ok(/client header cannot determine whether a request is medical/.test(flat),
      "the source records WHY the header-based gate was wrong");
-  ok(/p_allowed_models: WRITER_CLEARED/.test(flat),
+  // Was `p_allowed_models: WRITER_CLEARED`. The model set became PER-STAGE on 2026-07-31, because a
+  // writers-only allowlist rejected the citation audit — which runs as `aux`, usually on Haiku — on a
+  // receipt minted for that very generation. The property is unchanged (the gate travels with the
+  // receipt, not with a client header); what it authorises is now stage-appropriate.
+  ok(/p_allowed_models: receiptModelsFor\(kind\)/.test(flat),
      "…and that the model gate now travels with the receipt");
+  ok(/function receiptModelsFor/.test(flat),
+     "…resolved per receipt kind rather than one flat writers-only list");
   ok(!/receipt check SKIPPED/.test(src), "the silent-degradation path is gone");
   ok(/Availability does not outrank billing and content safety/.test(src),
      "…replaced by an explicit statement of the trade");

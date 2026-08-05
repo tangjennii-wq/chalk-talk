@@ -23,7 +23,8 @@ const realFetch = globalThis.fetch;
 /** Counts every quota RPC by name, so a refund cannot happen without this seeing it. */
 function makeHarness({ createBehaviour, instanceExists }) {
   const kv = new Map();
-  const rpc = { consume: 0, refund: 0 };
+  const rpc = { consume: 0, refund: 0, viaBonus: 0, viaJobKey: 0, viaUserScoped: 0 };
+  const reservedJobs = new Set();   // stands in for public.job_reservations
   const created = [];
   const env = {
     ALLOWED_ORIGINS: ORIGIN,
@@ -53,8 +54,29 @@ function makeHarness({ createBehaviour, instanceExists }) {
     if (u.includes("/auth/v1/user")) {
       return new Response(JSON.stringify({ id: "u1", email: "a@b.c" }), { status: 200, headers: { "Content-Type": "application/json" } });
     }
-    if (u.includes("/rpc/free_tier_consume")) { rpc.consume++; return new Response("true", { status: 200, headers: { "Content-Type": "application/json" } }); }
-    if (u.includes("/rpc/free_tier_grant_bonus")) { rpc.refund++; return new Response("true", { status: 200, headers: { "Content-Type": "application/json" } }); }
+    // Submit now reserves per JOB, not per user — consumeQuota is atomic per user but cannot see a job,
+    // which is how a duplicate whose KV read missed took a second credit. The stub is job-aware for the
+    // same reason the real primitive is: a strongly-consistent stub of the OLD design is what let the
+    // double-charge pass a test in the first place.
+    if (u.includes("/rpc/reserve_talk_for_job")) {
+      let jid = "";
+      try { jid = JSON.parse(init && init.body || "{}").p_job_id || ""; } catch (_) {}
+      if (reservedJobs.has(jid)) {
+        return new Response(JSON.stringify([{ reserved: false, outcome: "already_reserved" }]),
+          { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      reservedJobs.add(jid);
+      rpc.consume++;
+      return new Response(JSON.stringify([{ reserved: true, outcome: "reserved" }]),
+        { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    // Still counted, so a regression back to the user-scoped consume at submit is visible.
+    if (u.includes("/rpc/free_tier_consume")) { rpc.consume++; rpc.viaUserScoped++; return new Response("true", { status: 200, headers: { "Content-Type": "application/json" } }); }
+    // Talk refunds moved to the job-keyed atomic RPC on 2026-07-31. BOTH are counted: grant_bonus so a
+    // regression back to the email-keyed primitive is immediately visible, refund_talk_once because it
+    // is what production now calls. The property under test — exactly one refund — is unchanged.
+    if (u.includes("/rpc/free_tier_grant_bonus")) { rpc.refund++; rpc.viaBonus++; return new Response("true", { status: 200, headers: { "Content-Type": "application/json" } }); }
+    if (u.includes("/rpc/refund_talk_once")) { rpc.refund++; rpc.viaJobKey++; return new Response(JSON.stringify([{ refunded: true, outcome: "refunded" }]), { status: 200, headers: { "Content-Type": "application/json" } }); }
     if (u.includes("/rpc/") || u.includes("/rest/")) return new Response("[]", { status: 200, headers: { "Content-Type": "application/json" } });
     return new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } });
   };
@@ -112,6 +134,8 @@ const JOB = "abcdef0123456789abcdef0123456789";
   ok(res.status === 503, "a real start failure returns 503");
   ok(h.rpc.consume === 1 && h.rpc.refund === 1,
      "…refunding exactly one talk — the one this request reserved, no more");
+  ok(h.rpc.viaJobKey === 1 && h.rpc.viaBonus === 0,
+     "…through the JOB-KEYED atomic refund, not the email-keyed bonus grant");
   ok((await h.env.JOBS_KV.get("job:" + JOB)) === null,
      "…and clearing the job record it created, so a retry is not blocked by a phantom");
 }

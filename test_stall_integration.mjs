@@ -342,7 +342,9 @@ const NOW = new Date().toISOString();
       else if (html[j] === "}") { depth--; if (depth === 0) { body = html.slice(start, j + 1); break; } }
     }
     const c = {};
-    new Function("c", body + "c.f=_errorKeepsJobRecoverable;")(c);
+    // The predicate now short-circuits on lifecycle state, so the harness has to supply it. False =
+    // "no Workflow result yet", which is the state a stall or timeout actually occurs in.
+    new Function("c", "var _asyncResultInHand = false;" + body + "c.f=_errorKeepsJobRecoverable;")(c);
     return c.f;
   })();
   const withCode = (code) => { const e = new Error("x"); e.code = code; return e; };

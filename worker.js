@@ -99,11 +99,31 @@ const RECEIPT_TTL_SECONDS = 1800;
 // shape needs a third, and every extra unit is a unit someone can spend. Not 1: a single 529 would then
 // fail the generation outright, which trades a real user-facing failure for no security gain.
 const RECEIPT_STAGE_BUDGETS = {
-  talk: { draft: 2, critique: 2, refine: 2 },
-  // Utility work (podcast scripts, diagram prompts, chat) still spends Jenni's key, so it is authorised
-  // and bounded too — it simply does not consume a talk credit and may use cheaper models.
+  // A TALK RECEIPT MUST COVER EVERY CALL THAT GENERATION MAKES (Codex, 2026-07-31).
+  // `aux` was missing, so the citation audit, diagram prompts and podcast script — all part of one
+  // generation, all spending the app key — were rejected with 402 by a receipt minted for that very
+  // generation. The budget is deliberately generous for aux because a single talk fans out: one audit
+  // over ~30 claim/abstract pairs, several diagram prompts, a podcast script.
+  talk: { draft: 2, critique: 2, refine: 2, aux: 10 },
+  // Utility work outside a generation still spends Jenni's key, so it is authorised and bounded too — it
+  // simply does not consume a talk credit.
   aux:  { aux: 8 },
+  // Refine of a SAVED talk. Free by product decision (Jenni, 2026-07-31): refinement is part of the talk
+  // the user already paid for, and charging again to fix an error the app made is the wrong trade. Bound
+  // narrowly instead — refine and the aux work a re-review needs, nothing else.
+  refine: { refine: 3, critique: 3, aux: 10 },
 };
+
+// PER-STAGE MODEL SETS. One flat allowed_models list forced every stage to share the writer allowlist,
+// so an aux call on Haiku failed the model gate even with a valid receipt. Each stage now authorises
+// exactly the models it legitimately uses.
+const AUX_CLEARED = ["claude-haiku-4-5-20251001", "claude-opus-5", "claude-sonnet-5"];
+function receiptModelsFor(kind) {
+  if (kind === "aux") return AUX_CLEARED;
+  // talk / refine: writers plus the aux models, because one generation spans both kinds of call and the
+  // per-STAGE budget is what bounds each. Narrowing this to writers only is what produced the 402s.
+  return Array.from(new Set([...WRITER_CLEARED, ...AUX_CLEARED]));
+}
 const EMBEDDING_MODEL = "text-embedding-3-small";
 // (RERANK_POOL removed 2026-07-28. It encoded the assumption that a global top-N lookup could score the
 // facet union; it cannot. score_candidate_chunks scores the union exactly, so there is no pool depth to
@@ -219,6 +239,12 @@ export default {
     // ── Free tier endpoints (FREE_TIER_SPEC.md §5) ──────────────────────────
     if (request.method === "GET" && url.pathname === "/v1/free-tier/status") {
       return handleFreeTierStatus(request, env, origin);
+    }
+    if (request.method === "POST" && url.pathname === "/v1/free-tier/session") {
+      return handleFreeTierSession(request, env, origin);
+    }
+    if (request.method === "POST" && url.pathname === "/v1/free-tier/refine-session") {
+      return handleRefineSession(request, env, origin);
     }
     if (request.method === "POST" && url.pathname === "/v1/free-tier/consume") {
       return handleFreeTierConsume(request, env, origin);
@@ -346,7 +372,25 @@ export default {
         receiptId, userId: user.id, jobId: request.headers.get("X-CT-Job") || null,
         stage, model: body.model,
       });
-      if (!auth.ok) {
+      // ── STAGED ENFORCEMENT (Codex, 2026-07-31) ──────────────────────────────────────────────────
+      // The Worker and the published client cannot change in the same instant. Deploying mandatory
+      // enforcement while the live browser cannot obtain a usable receipt breaks free-tier generation
+      // for real users; shipping a client that sends receipts to a Worker that ignores them breaks
+      // nothing. So: deploy this Worker with RECEIPTS_REQUIRED unset, push the client, verify, then set
+      // the flag and redeploy.
+      //
+      // While unset, an unauthorised call is LOGGED and allowed. That is deliberate, temporary and
+      // narrow — it still requires a valid signed-in token, and every occurrence is in the logs. That
+      // is what distinguishes it from the unauthenticated bypass this mechanism replaced.
+      const enforceReceipts = String(env.RECEIPTS_REQUIRED || "").toLowerCase() === "true";
+      if (!auth.ok && !enforceReceipts) {
+        console.error(JSON.stringify({
+          event: "receipt_missing_unenforced", stage, model: body.model,
+          reason: auth.reason, user: user.id,
+          note: "allowed because RECEIPTS_REQUIRED is not true — set it once the client is deployed",
+        }));
+      }
+      if (!auth.ok && enforceReceipts) {
         const modelIssue = auth.reason === "model_not_authorised";
         return jsonError(modelIssue ? 403 : 402,
           modelIssue ? "writer_not_cleared" : "receipt_required",
@@ -517,7 +561,91 @@ async function refundQuota(env, email, kind) {
   const talks = kind === "image" ? 0 : 1, images = kind === "image" ? 1 : 0;
   try { await supaServiceRPC(env, "free_tier_grant_bonus", { p_email: String(email).toLowerCase(), p_bonus_talks: talks, p_bonus_images: images }); } catch (_) {}
 }
-async function refundQuotaTalk(env, email) { return refundQuota(env, email, "talk"); }
+// refundQuotaTalk() DELETED 2026-07-31, not left unused. Every talk refund now goes through
+// refundTalkOnce(), which is job-keyed and atomic in Postgres. Leaving a talk-refund helper here that
+// nothing calls is precisely the shape of the bug this replaced: refundOnce() in generation_workflow.js
+// sat unused for weeks while its name, and tests referencing it, implied the durable path refunded.
+//
+// refundQuota() itself is retained — IMAGE refunds still use it. Images are a per-request credit with no
+// job id, so the job-keyed lock does not apply. That asymmetry is deliberate; it is not an oversight.
+
+// ONE RESERVATION PER JOB, ENFORCED IN POSTGRES (Codex, 2026-07-31).
+//
+// consumeQuota() is atomic per USER but says nothing about jobs, and the duplicate-submit guard read
+// KV — which is EVENTUALLY CONSISTENT. A double-click could miss that read, consume a SECOND talk, and
+// only then learn from Workflow.create() that the instance already existed, returning `resumed: true`
+// with the surplus reservation still taken. My own test asserted consume === 0 for the duplicate and
+// passed, because its KV stub is strongly consistent: it was testing the stub.
+//
+// Compensating with a refund cannot fix it — that would spend the single refund slot refunded_jobs
+// allows for this job id, so a later genuine cancellation would find `already_refunded` and decline to
+// return the credit. The reservation must be idempotent, not repaired afterwards.
+async function reserveTalkForJob(env, jobId, userId, base) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return { reserved: false, outcome: "no_store" };
+  try {
+    const rows = await supaServiceRPC(env, "reserve_talk_for_job", {
+      p_job_id: String(jobId), p_user_id: userId, p_base: base,
+    });
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return { reserved: !!(row && row.reserved), outcome: (row && row.outcome) || "no_result",
+             ownerId: (row && row.owner_id) || null };
+  } catch (err) {
+    console.error(JSON.stringify({ event: "reserve_failed", jobId,
+                                   detail: String((err && err.message) || err).slice(0, 200) }));
+    return { reserved: false, outcome: "reserve_error" };
+  }
+}
+
+// EXACTLY-ONCE, JOB-KEYED REFUND. Replaces the email-keyed bonus grant for every generation refund.
+//
+// refundQuota above grants a BONUS talk keyed by email, guarded by nothing. Bonus talks never expire, so
+// a double refund permanently inflates the account; and "have we refunded yet?" was answered by a KV
+// marker, which is eventually consistent and cannot be an exactly-once lock. refund_talk_once puts both
+// the ledger and the lock in one Postgres row: `insert ... on conflict (job_id) do nothing`.
+//
+// userId may be null — the job record carries it, and the RPC needs it to credit the right account, so
+// the caller resolves it from KV when it has it.
+// ── ONE PLACE THAT MINTS RECEIPTS ───────────────────────────────────────────────────────────────────
+// Receipts were minted inline in /consume and nowhere else, which is why /generate-async returned none
+// and the client had no authorisation for its follow-up calls. Every path now goes through here, so
+// "which stages and models does a receipt cover" has exactly one answer.
+async function mintReceipt(env, { userId, jobId, kind }) {
+  const budgets = RECEIPT_STAGE_BUDGETS[kind];
+  if (!budgets) throw new Error("mintReceipt: unknown receipt kind " + kind);
+  const receipt = crypto.randomUUID();
+  const stages = {};
+  for (const [name, max] of Object.entries(budgets)) stages[name] = { max, used: 0 };
+  await supaServiceRPC(env, "receipt_issue", {
+    p_id: receipt, p_user_id: userId, p_job: jobId || null,
+    p_kind: kind, p_allowed_models: receiptModelsFor(kind),
+    p_stages: stages, p_ttl_seconds: RECEIPT_TTL_SECONDS,
+  });
+  return { receipt, stages, models: receiptModelsFor(kind), ttlSeconds: RECEIPT_TTL_SECONDS };
+}
+
+async function refundTalkOnce(env, jobId, userId, reason) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { refunded: false, outcome: "no_store" };
+  }
+  let uid = userId;
+  if (!uid && env.JOBS_KV) {
+    try { uid = JSON.parse((await env.JOBS_KV.get("job:" + jobId)) || "{}").userId || null; } catch (_) {}
+  }
+  if (!uid) return { refunded: false, outcome: "unknown_user" };
+  try {
+    const rows = await supaServiceRPC(env, "refund_talk_once", {
+      p_job_id: String(jobId), p_user_id: uid, p_reason: reason || "unspecified",
+    });
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return { refunded: !!(row && row.refunded), outcome: (row && row.outcome) || "no_result" };
+  } catch (err) {
+    // Surfaced, never swallowed: an unrefunded credit the user was told was refunded is worse than a
+    // refund we admit we could not complete.
+    console.error(JSON.stringify({ event: "refund_failed", jobId, reason,
+                                   detail: String((err && err.message) || err).slice(0, 200) }));
+    return { refunded: false, outcome: "refund_error" };
+  }
+}
 
 // ── DEPENDENCIES FOR THE DURABLE GENERATION WORKFLOW ─────────────────────────────────────────────────
 // Everything generation_workflow.js needs to touch the outside world, in one injectable object. Built
@@ -529,9 +657,30 @@ export function makeWorkflowDeps(env, { NonRetryableError }) {
     NonRetryableError,
     now: () => new Date().toISOString(),
 
+    // THE REFUND THE DURABLE PATH NEVER HAD. makeWorkflowDeps supplied no `refund`, so refundOnce()
+    // in generation_workflow.js called an undefined function inside a try/catch and reported
+    // {refunded:false} — a refund path that could not possibly work, looking like one that declined.
+    // Job-keyed and atomic in Postgres, so concurrent cancels produce exactly one credit.
+    refund: async (jobId, reason) => refundTalkOnce(env, jobId, null, reason),
+
     kvGet: async (k) => (env.JOBS_KV ? env.JOBS_KV.get(k) : null),
     kvPut: async (k, v, ttl) => { if (env.JOBS_KV) await env.JOBS_KV.put(k, v, { expirationTtl: ttl || 600 }); },
     kvDelete: async (k) => { if (env.JOBS_KV) await env.JOBS_KV.delete(k); },
+
+    // TERMINAL WRITES BYPASS THE CANCELLED GUARD (found in a self-audit, 2026-07-31).
+    // updateJob refuses every write once `cancelled` is set — which is exactly right for the paid steps
+    // and exactly WRONG for the handler that records the outcome. The refund landed in Postgres and the
+    // job record never showed it, so /generate-status could not report refund state for the one case
+    // that most needs it. Measured before fixing: on a cancelled job, ZERO status writes landed.
+    finalizeJob: async (jobId, patch) => {
+      if (!env.JOBS_KV) return false;
+      let cur = {};
+      try { cur = JSON.parse((await env.JOBS_KV.get(jk(jobId))) || "{}"); } catch (_) {}
+      await env.JOBS_KV.put(jk(jobId),
+        JSON.stringify(Object.assign({}, cur, patch, { updatedAt: new Date().toISOString() })),
+        { expirationTtl: 600 });
+      return true;
+    },
 
     // Same read-modify-write plus terminal guard as the legacy runner: a status-less patch can never
     // overwrite a finished record, and a landed cancel stops every further write.
@@ -720,21 +869,19 @@ async function handleFreeTierConsume(request, env, origin) {
   // The cap bounds abuse without breaking the legitimate shape.
   let receipt = null;
   if (kind === "talk") {
-    receipt = crypto.randomUUID();
-    const stages = {};
-    for (const [name, max] of Object.entries(RECEIPT_STAGE_BUDGETS.talk)) stages[name] = { max, used: 0 };
     try {
       // Minted in Postgres, where redemption is atomic. A receipt the client could mint, or one whose
       // counter lives somewhere without row locking, is ornamental.
-      await supaServiceRPC(env, "receipt_issue", {
-        p_id: receipt, p_user_id: user.id, p_job: jobId || null,
-        p_kind: "talk", p_allowed_models: WRITER_CLEARED,
-        p_stages: stages, p_ttl_seconds: RECEIPT_TTL_SECONDS,
-      });
+      receipt = (await mintReceipt(env, { userId: user.id, jobId, kind: "talk" })).receipt;
     } catch (err) {
       // FAIL CLOSED. The credit was already consumed above, so refund it rather than charging for a
       // generation that cannot be authorised. An outage is visible; a silently ungated proxy is not.
-      await refundQuota(env, user.email, "talk");
+      //
+      // Keyed on the RECEIPT id when there is no clientJobId — the receipt is unique per consume, so the
+      // job-keyed lock still gives exactly-once here. Falling back to the email-keyed bonus grant would
+      // reintroduce, on this one path, the double-refund it was removed for. (Self-audit, 2026-07-31 —
+      // this was the fourth talk-refund site and the one I missed on the first pass.)
+      await refundTalkOnce(env, jobId || ("consume:" + receipt), user.id, "receipt_issue_failed");
       return jsonError(503, "receipt_store_unavailable",
         "Generation is temporarily unavailable. Nothing was charged.", origin);
     }
@@ -750,6 +897,123 @@ async function handleFreeTierConsume(request, env, origin) {
     if (row) remaining = { talks_remaining: row.talks_remaining, images_remaining: row.images_remaining };
   } catch (e) {}
   return jsonOK({ consumed: true, kind, remaining, receipt }, origin);
+}
+
+// ══ GENERATION SESSION ══════════════════════════════════════════════════════════════════════════════
+// ONE endpoint that does everything a generation needs authorised, atomically, BEFORE any model call.
+//
+// The old shape was: draft first, then /consume, then get a receipt. The Worker requires a receipt to
+// call Claude, so the very first request 402'd — the client and server disagreed about when
+// authorisation comes into existence. And /generate-async reserved server-side but returned no receipt,
+// so background generations had no authorisation for their citation audit or refine.
+//
+//   client makes a jobId -> POST /v1/free-tier/session -> { jobId, receipt } -> every call carries it
+//
+// Reservation is job-keyed and owner-bound, so a double-click is free and a stranger's job id is
+// refused. Failure or cancellation refunds once, keyed by the same jobId.
+async function handleFreeTierSession(request, env, origin) {
+  const token = request.headers.get("X-Supabase-Auth");
+  const user = token ? await verifySupabaseUser(env, token) : null;
+  if (!user) return jsonError(401, "auth_required", "Sign in to generate.", origin);
+
+  let body = {};
+  try { body = await request.json(); } catch (_) { body = {}; }
+  const jobId = (typeof body.jobId === "string" && /^[a-f0-9-]{16,64}$/i.test(body.jobId))
+    ? body.jobId : crypto.randomUUID();
+
+  const reservation = await reserveTalkForJob(env, jobId, user.id, freeTalks(env));
+  if (reservation.outcome === "owned_by_other") {
+    console.error(JSON.stringify({ event: "job_id_collision", where: "session", jobId, claimant: user.id }));
+    return jsonError(404, "job_not_found", "Job expired or not found.", origin);
+  }
+  if (!reservation.reserved && reservation.outcome === "quota_exhausted") {
+    return jsonError(403, "quota_exceeded",
+      "You've used all your free talks. Add your own key to keep generating.", origin);
+  }
+  if (!reservation.reserved && reservation.outcome !== "already_reserved") {
+    return jsonError(503, "reservation_unavailable",
+      "Couldn't reserve your generation. Please try again in a moment.", origin);
+  }
+
+  let minted;
+  try {
+    minted = await mintReceipt(env, { userId: user.id, jobId, kind: "talk" });
+  } catch (err) {
+    // FAIL CLOSED, and only refund a credit THIS request took.
+    if (reservation.reserved) await refundTalkOnce(env, jobId, user.id, "session_mint_failed");
+    return jsonError(503, "receipt_store_unavailable",
+      "Generation is temporarily unavailable. Nothing was charged.", origin);
+  }
+
+  let remaining = null;
+  try {
+    const r = await supaServiceRPC(env, "free_tier_remaining", {
+      p_user_id: user.id, p_base_talks: freeTalks(env), p_base_images: freeImages(env),
+    });
+    const row = Array.isArray(r) ? r[0] : r;
+    if (row) remaining = { talks_remaining: row.talks_remaining, images_remaining: row.images_remaining };
+  } catch (_) {}
+
+  return jsonOK({
+    jobId,
+    receipt: minted.receipt,
+    stages: Object.keys(minted.stages),
+    expiresInSeconds: minted.ttlSeconds,
+    charged: reservation.reserved,        // false on a duplicate — the credit was taken earlier
+    remaining,
+  }, origin);
+}
+
+// ── REFINE A SAVED TALK: FREE, AFTER AN OWNERSHIP CHECK ─────────────────────────────────────────────
+// Product decision (Jenni, 2026-07-31): refinement is part of the talk the user already paid for, so it
+// costs no credit — charging again to fix an error the app made is the wrong trade. The control is
+// OWNERSHIP, not price: the receipt is minted only after confirming this user owns that saved talk.
+//
+// Also solves the expiry problem plainly. A 30-minute receipt cannot authorise a refine three days
+// later, and it does not have to: a fresh narrow receipt is minted at the moment of refining.
+async function handleRefineSession(request, env, origin) {
+  const token = request.headers.get("X-Supabase-Auth");
+  const user = token ? await verifySupabaseUser(env, token) : null;
+  if (!user) return jsonError(401, "auth_required", "Sign in to refine a talk.", origin);
+
+  let body = {};
+  try { body = await request.json(); } catch (_) { body = {}; }
+  const talkId = String(body.talkId || "");
+  if (!/^[0-9a-f-]{36}$/i.test(talkId)) {
+    return jsonError(400, "bad_talk_id", "A saved talk id is required to refine.", origin);
+  }
+
+  // OWNERSHIP IS THE WHOLE CONTROL. Without it this is a free unauthenticated path to the app key.
+  let owns = false;
+  try {
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/talks?id=eq.${encodeURIComponent(talkId)}&select=id,user_id`,
+      { headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+                   Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` } });
+    if (!res.ok) throw new Error("talks lookup " + res.status);
+    const rows = await res.json();
+    owns = Array.isArray(rows) && rows.length === 1 && rows[0].user_id === user.id;
+  } catch (err) {
+    return jsonError(503, "ownership_check_unavailable",
+      "Couldn't verify this talk right now. Please try again in a moment.", origin);
+  }
+  // 404 either way: whether a talk exists that this user does not own is not their business.
+  if (!owns) return jsonError(404, "talk_not_found", "Talk not found.", origin);
+
+  // Job id derived from the talk, so repeated refines of one talk reuse one authorisation lane and the
+  // per-stage budget bounds them.
+  const jobId = "refine:" + talkId;
+  let minted;
+  try {
+    minted = await mintReceipt(env, { userId: user.id, jobId, kind: "refine" });
+  } catch (err) {
+    return jsonError(503, "receipt_store_unavailable",
+      "Refinement is temporarily unavailable.", origin);
+  }
+  return jsonOK({
+    jobId, receipt: minted.receipt, stages: Object.keys(minted.stages),
+    expiresInSeconds: minted.ttlSeconds, charged: false,
+  }, origin);
 }
 
 /**
@@ -1515,7 +1779,15 @@ async function runGeneration(jobId, body, env) {
   // Refund the reserved talk AT MOST ONCE across all failure paths — several of them can chain (e.g.
   // empty-draft refunds, then its updateJob throws into the catch which would refund again). (Codex fix)
   let _refunded = false;
-  async function refundOnce() { if (_refunded) return; _refunded = true; await refundQuotaTalk(env, body.userEmail); }
+  // Job-keyed and atomic, like the durable path. The old version paired a per-INVOCATION boolean with
+  // an email-keyed BONUS GRANT: the boolean does not survive a retry or a second request, and a bonus
+  // talk never expires, so a double refund permanently inflated quota. `_refunded` is kept only to save
+  // a redundant round trip within one invocation — Postgres is what actually guarantees exactly-once.
+  async function refundOnce() {
+    if (_refunded) return;
+    _refunded = true;
+    await refundTalkOnce(env, jobId, body.userId || null, "legacy_runner");
+  }
   // TERMINAL STATES ARE FINAL — no patch without its own status may follow one (Codex, 2026-07-29).
   // updateJob is a read-modify-write, so ANY writer holding a stale copy can resurrect it. That is not
   // hypothetical: the critique heartbeat could read `running`, be delayed, and land AFTER the `done`
@@ -1664,6 +1936,20 @@ async function handleGenerateAsync(request, env, ctx, origin) {
     const existing = await env.JOBS_KV.get("job:" + jobId);
     if (existing) {
       let ex = {}; try { ex = JSON.parse(existing); } catch (_) {}
+      // OWNERSHIP FIRST, EVEN ON THE FAST PATH (Codex, 2026-07-31).
+      // This returned `resumed: true` for ANY existing job id. jobId is client-supplied, so a stranger
+      // guessing or replaying an id learned that another user's job exists and when it was created.
+      // It no longer redirects the talk — the later writes are gated on having reserved — but confirming
+      // existence and leaking createdAt is still a disclosure, and the reservation's owner check below
+      // is useless if this branch answers first. 404: whose job it is, is not this caller's business.
+      // FAIL CLOSED ON MISSING OWNERSHIP, not just on mismatched ownership (Codex, 2026-07-31).
+      // `ex.userId && ...` treated a record with no userId — an older job written before the field
+      // existed, or a JSON parse failure that yields {} — as ownerless, and handed any authenticated
+      // caller `resumed: true` plus createdAt. Missing ownership is unauthorised, not unowned.
+      if (ex.userId !== user.id) {
+        console.error(JSON.stringify({ event: "job_id_collision", where: "kv_resume", jobId, claimant: user.id }));
+        return jsonError(404, "job_not_found", "Job expired or not found.", origin);
+      }
       return jsonOK({ jobId, createdAt: ex.createdAt || new Date().toISOString(), resumed: true }, origin);
     }
   } catch (_) { /* KV read hiccup — proceed to create */ }
@@ -1671,18 +1957,52 @@ async function handleGenerateAsync(request, env, ctx, origin) {
   // RESERVE 1 talk atomically at submit. free_tier_consume decrements only if quota remains, so N
   // parallel submits with quota=1 → only 1 succeeds; the rest get 403. This enforces the quota against a
   // tampered client AND prevents parallel-job over-run. runGeneration refunds if the job fails/cancels.
-  let reserved = false;
-  try { reserved = await consumeQuota(env, user.id, "talk", env); } catch (_) { reserved = false; }
-  if (!reserved) return jsonError(403, "quota_exceeded", "You've used all your free talks. Add your own key to keep generating.", origin);
+  // JOB-SCOPED, not merely user-scoped. consumeQuota is atomic per user but knows nothing about jobs,
+  // so a duplicate submit whose KV lookup missed took a SECOND credit for the same generation.
+  const reservation = await reserveTalkForJob(env, jobId, user.id, freeTalks(env));
+
+  // ── ANOTHER USER'S JOB ID: REFUSE, DO NOT ADOPT (Codex, 2026-07-31) ──────────────────────────────
+  // jobId is CLIENT-SUPPLIED. Without an owner check, a second user submitting a known job id got
+  // `already_reserved` — free, correct for a duplicate, catastrophic for a stranger — and the handler
+  // then overwrote this record's `userId` and the stored job body before discovering the existing
+  // Workflow. The first user's generation would have been redirected to the second. A cross-account
+  // leak, and worse than the double-charge the reservation was written to prevent.
+  //
+  // 404 rather than 403: whether some other account holds a given job id is not this caller's business.
+  if (reservation.outcome === "owned_by_other") {
+    console.error(JSON.stringify({ event: "job_id_collision", jobId, claimant: user.id }));
+    return jsonError(404, "job_not_found", "Job expired or not found.", origin);
+  }
+  if (!reservation.reserved && reservation.outcome === "quota_exhausted") {
+    return jsonError(403, "quota_exceeded", "You've used all your free talks. Add your own key to keep generating.", origin);
+  }
+  if (!reservation.reserved && reservation.outcome !== "already_reserved") {
+    // Reservation store unreachable — fail closed rather than generating unmetered.
+    return jsonError(503, "reservation_unavailable",
+      "Couldn't reserve your generation. Please try again in a moment.", origin);
+  }
+  // `already_reserved` means this exact job was reserved by an earlier request. Continue WITHOUT
+  // consuming — the duplicate is free by construction — and let the resume logic below return the
+  // existing job.
+  const reservedNow = reservation.reserved;
 
   // Create the job record + kick off work. If the KV write fails AFTER we reserved, refund so the talk
   // isn't leaked. (Codex bug #1)
   const now = new Date().toISOString();
   try {
     // Store userId ON the record so status/cancel can enforce owner-only access. (Security fix)
-    await env.JOBS_KV.put("job:" + jobId, JSON.stringify({ status: "running", stage: "drafting", userId: user.id, createdAt: now, updatedAt: now }), { expirationTtl: 600 });
+    // `executor` records WHICH runner owns this job. Without it, a transient GEN_WORKFLOW.get() failure
+    // is indistinguishable from "no such instance", and cancel would proceed to claim success on a job
+    // that is still running under Workflows. (Codex, 2026-07-31)
+    // ONLY THE RESERVER WRITES THE RECORD. A duplicate rewriting it was the mechanism by which the
+    // owner got overwritten; it would also reset a live job's status back to "drafting".
+    if (reservedNow) {
+      await env.JOBS_KV.put("job:" + jobId, JSON.stringify({ status: "running", stage: "drafting", userId: user.id, executor: env.GEN_WORKFLOW ? "workflow" : "legacy", createdAt: now, updatedAt: now }), { expirationTtl: 600 });
+    }
   } catch (e) {
-    await refundQuotaTalk(env, body.userEmail);
+    // Only refund a credit THIS request reserved. Refunding on a duplicate would spend the job's single
+    // refund slot and leave the original reservation unrefundable.
+    if (reservedNow) await refundTalkOnce(env, jobId, user.id, "job_create_failed");
     return jsonError(503, "job_create_failed", "Couldn't start background generation. Please try again.", origin);
   }
   // ── DURABLE EXECUTION WHEN AVAILABLE, waitUntil ONLY AS A FALLBACK ─────────────────────────────────
@@ -1698,12 +2018,29 @@ async function handleGenerateAsync(request, env, ctx, origin) {
     try {
       // The body lives in KV, NOT in the event payload: payloads cap at 1 MiB and a talk may carry a
       // 5 MB reference upload. The workflow loads it inside the step that needs it.
-      await env.JOBS_KV.put("jobbody:" + jobId, JSON.stringify(body), { expirationTtl: 3600 });
+      // The BODY is the other thing a stranger's submit would have overwritten — replacing the prompt
+      // of a running generation. Only the reserver writes it. (The owner check above already refuses a
+      // stranger; this is the second lock on the same door.)
+      if (reservedNow) {
+        await env.JOBS_KV.put("jobbody:" + jobId, JSON.stringify(body), { expirationTtl: 3600 });
+      }
       await env.GEN_WORKFLOW.create({
         id: jobId,
         params: { jobId, userEmail: body.userEmail || null, wantCritique: !!(body.critique && body.critique.sys) },
       });
-      return jsonOK({ jobId, createdAt: now, durable: true }, origin);
+      // RETURN THE RECEIPT (Codex, 2026-07-31). Background generation reserved the credit server-side
+      // and returned nothing the browser could authorise with, so every follow-up call — citation audit,
+      // diagram prompt, refine — 402'd on a talk that had been correctly paid for.
+      let asyncReceipt = null;
+      try {
+        asyncReceipt = (await mintReceipt(env, { userId: user.id, jobId, kind: "talk" })).receipt;
+      } catch (_) {
+        // The generation itself is authorised server-side and still runs; only the client's follow-up
+        // work loses authorisation. Logged rather than swallowed, so the UI can say the citation audit
+        // is unavailable instead of failing mysteriously.
+        console.error(JSON.stringify({ event: "async_receipt_mint_failed", jobId }));
+      }
+      return jsonOK({ jobId, createdAt: now, durable: true, receipt: asyncReceipt }, origin);
     } catch (err) {
       // DISTINGUISH "ALREADY RUNNING" FROM "FAILED TO START" BY ASKING, NOT BY READING THE MESSAGE.
       // create() throws when the id is already live, and Cloudflare documents no stable error class or
@@ -1714,13 +2051,19 @@ async function handleGenerateAsync(request, env, ctx, origin) {
       try {
         const existingInstance = await env.GEN_WORKFLOW.get(jobId);
         if (existingInstance) {
-          return jsonOK({ jobId, createdAt: now, durable: true, resumed: true }, origin);
+          // A resumed duplicate needs authorisation for its follow-up calls just as much as a fresh
+          // submit. The credit was already taken, so minting here charges nothing — and without it a
+          // reload mid-generation loses the ability to run the citation audit.
+          let resumeReceipt = null;
+          try { resumeReceipt = (await mintReceipt(env, { userId: user.id, jobId, kind: "talk" })).receipt; }
+          catch (_) { console.error(JSON.stringify({ event: "async_receipt_mint_failed", jobId, resumed: true })); }
+          return jsonOK({ jobId, createdAt: now, durable: true, resumed: true, receipt: resumeReceipt }, origin);
         }
       } catch (_) { /* get() throws when the id is unknown — a genuine start failure. Fall through. */ }
 
       // Do NOT fall through to waitUntil on an unknown failure: that would silently downgrade to the
       // path we are trying to retire, and the response would claim success either way. Refund and say so.
-      await refundQuotaTalk(env, body.userEmail);
+      if (reservedNow) await refundTalkOnce(env, jobId, user.id, "workflow_start_failed");
       try { await env.JOBS_KV.delete("job:" + jobId); } catch (_) {}
       return jsonError(503, "workflow_start_failed",
         "Couldn't start background generation. Please try again.", origin);
@@ -1829,17 +2172,90 @@ async function handleGenerateCancel(request, jobId, env, origin) {
   let cur; try { cur = JSON.parse(raw); } catch { return jsonError(500, "bad_job", "Corrupt job record.", origin); }
   if (cur.userId !== user.id) return jsonError(404, "job_not_found", "Job expired or not found.", origin);
 
-  // TERMINATE THE WORKFLOW FIRST, then record it. Order matters: marking the record cancelled while the
-  // instance keeps running would leave a job the user believes is stopped still spending. terminate() is
-  // irreversible and safe to call on an already-finished instance, so a best-effort attempt is correct
-  // here; the refund is handled separately and idempotently so it cannot double-credit.
+  // ── ALREADY FINISHED? THEN THERE IS NOTHING TO CANCEL AND NOTHING TO REFUND ──────────────────────
+  // The old handler marked such a job `cancelled: true` while leaving `status: "done"`, then reported
+  // success — so a user who hit Cancel a moment too late was told the talk was cancelled while the
+  // finished talk sat in the record, and (had a refund existed) would have been credited for work they
+  // received. Authoritative state first, action second.
+  if (cur.status === "done" || cur.result) {
+    return jsonOK({
+      status: "done", cancelled: false, refunded: false,
+      already_complete: true, result_available: true,
+      note: "This generation had already finished; it was not cancelled and no credit was refunded.",
+    }, origin);
+  }
+
+  // ── TERMINATION MUST SUCCEED, OR WE SAY SO ───────────────────────────────────────────────────────
+  // get() and terminate() previously shared one catch that ignored every error, so a genuine
+  // termination outage was indistinguishable from "unknown instance" — and the handler went on to
+  // write cancelled:true regardless. Those are separated now: an unknown id is a legitimate no-op
+  // (legacy waitUntil job, or retention expired); a terminate() that throws is uncertainty, and
+  // uncertainty must be reported as cancelled:false rather than resolved in our own favour.
+  let instance = null, instanceKnown = false;
   if (env.GEN_WORKFLOW) {
     try {
-      const inst = await env.GEN_WORKFLOW.get(jobId);
-      await inst.terminate();
+      instance = await env.GEN_WORKFLOW.get(jobId);
+      instanceKnown = !!instance;
+    } catch (err) {
+      // A TRANSIENT API FAILURE IS NOT "NO SUCH INSTANCE" (Codex, 2026-07-31).
+      // Both surface as a throw from get(). Treating every throw as not-found meant a Cloudflare blip
+      // let cancellation proceed to claim success — and refund — on a job still running under
+      // Workflows. The job record now says which runner owns it, so we can tell the two apart.
+      if (cur.executor === "workflow") {
+        return jsonError(502, "cancel_failed",
+          "Couldn't reach the generation service to stop this talk. It may still be running — reload to "
+          + "reconnect, or try cancelling again.",
+          origin, { cancelled: false, refunded: false, reason: "instance_lookup_failed",
+                    detail: String((err && err.message) || err).slice(0, 200) });
+      }
+      instanceKnown = false;   // legacy job, or pre-`executor` record: nothing to terminate
+    }
+  }
+  if (instanceKnown) {
+    // If the instance reports a terminal state, treat it as complete rather than terminating it.
+    try {
+      const st = await instance.status();
+      const sv = String((st && st.status) || "").toLowerCase();
+
+      // ONLY `complete` WITH A SAVED RESULT MEANS DELIVERED (Codex, 2026-07-31).
+      // These were grouped together and all returned already_complete / refunded:false — so a Workflow
+      // that ERRORED or was TERMINATED left the user charged for a talk they never received. Cloudflare
+      // documents these as distinct terminal states for exactly this reason.
+      if (sv === "complete" && cur.result) {
+        return jsonOK({
+          status: "done", cancelled: false, refunded: false,
+          already_complete: true, result_available: true,
+          note: "This generation had already finished; it was not cancelled and no credit was refunded.",
+        }, origin);
+      }
+      if (sv === "errored" || sv === "terminated" || (sv === "complete" && !cur.result)) {
+        // Terminal WITHOUT a delivered talk. Retrying the refund here is safe (it is atomic and
+        // idempotent) and necessary — the Workflow's own refund attempt may itself have failed.
+        const rf = await refundTalkOnce(env, jobId, cur.userId,
+                                        sv === "complete" ? "completed_without_result" : ("workflow_" + sv));
+        try {
+          cur.status = "error"; cur.refunded = rf.refunded; cur.refundOutcome = rf.outcome;
+          cur.updatedAt = new Date().toISOString();
+          await env.JOBS_KV.put("job:" + jobId, JSON.stringify(cur), { expirationTtl: 600 });
+        } catch (_) { /* the refund already landed; a failed record write must not undo it */ }
+        return jsonOK({
+          status: "error", cancelled: false,
+          refunded: rf.refunded, refund_outcome: rf.outcome,
+          already_complete: true, result_available: false,
+          note: "The generation had already failed (" + sv + "); the credit was reconciled.",
+        }, origin);
+      }
     } catch (_) {
-      // get() throws when the id is unknown (legacy waitUntil job, or already expired past retention).
-      // Not an error: the cancelled flag below still stops the legacy runner at its next checkpoint.
+      // status() is advisory — fall through and attempt termination.
+    }
+    try {
+      await instance.terminate();
+    } catch (err) {
+      return jsonError(502, "cancel_failed",
+        "Could not stop the generation. It may still be running and may still be billed — reload to "
+        + "reconnect, or try cancelling again.",
+        origin, { cancelled: false, refunded: false, reason: "terminate_failed",
+                  detail: String((err && err.message) || err).slice(0, 200) });
     }
   }
 
@@ -1866,7 +2282,18 @@ async function handleGenerateCancel(request, jobId, env, origin) {
         origin, { cancelled: false, reason: "readback_mismatch" });
     }
   } catch (_) { /* read-back is advisory; the write above already succeeded */ }
-  return jsonOK({ status: "cancelled", cancelled: true }, origin);
+
+  // ── REFUND, REPORTED SEPARATELY FROM CANCELLATION ────────────────────────────────────────────────
+  // Two different facts with two different consequences. Collapsing them into one boolean is how a
+  // cancelled-but-unrefunded job would go unnoticed: the client would clear its handle on a truthy
+  // `cancelled` and the credit would be gone with nothing left pointing at the job.
+  const refund = await refundTalkOnce(env, jobId, cur.userId, "user_cancelled");
+  return jsonOK({
+    status: "cancelled",
+    cancelled: true,
+    refunded: refund.refunded,
+    refund_outcome: refund.outcome,   // "refunded" | "already_refunded" | "refund_error" | …
+  }, origin);
 }
 
 function corsPreflight(origin, allowedOrigins) {

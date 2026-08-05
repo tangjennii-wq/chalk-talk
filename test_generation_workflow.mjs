@@ -69,6 +69,7 @@ function makeStep() {
 function makeDeps(overrides = {}) {
   const kv = new Map();
   const calls = { draft: 0, critique: 0, meter: 0, refund: 0 };
+  const refundLedger = new Set();   // stands in for public.refunded_jobs
   const jobs = new Map();
   return {
     calls, kv, jobs,
@@ -81,7 +82,16 @@ function makeDeps(overrides = {}) {
     callDraft: async () => { calls.draft++; return { text: "DRAFT", modelUsed: "claude-opus-5", usage: {} }; },
     callCritique: async () => { calls.critique++; return { text: "CRIT", modelUsed: "claude-opus-5", usage: {} }; },
     meterSpend: async () => { calls.meter++; },
-    refund: async () => { calls.refund++; },
+    // Models refund_talk_once: JOB-KEYED and exactly-once IN THE DATABASE. The guarantee moved there
+    // deliberately on 2026-07-31 — the old client-side KV marker could not provide it, because KV is
+    // eventually consistent and two concurrent cancels could each read "not yet refunded". So the stub
+    // has to be idempotent too, or it tests a contract nothing implements any more.
+    refund: async (jobId, reason) => {
+      if (refundLedger.has(jobId)) return { refunded: false, outcome: "already_refunded" };
+      refundLedger.add(jobId);
+      calls.refund++;
+      return { refunded: true, outcome: "refunded" };
+    },
     ...overrides,
   };
 }
@@ -198,8 +208,40 @@ const PAYLOAD = { jobId: "j1", userEmail: "a@b.c", wantCritique: true };
      "replaying a completed workflow re-buys nothing — cached steps are not re-executed");
 }
 
+// ── 6b · A FAILED CACHE WRITE MUST NOT PRODUCE A SECOND PAID CALL ────────────
+// Codex's probe produced TWO paid calls. The cache write was wrapped in an empty catch and the attempt
+// marker was released unconditionally, so a failed write left NEITHER a cached result NOR a marker — and
+// a replay concluded no call had been issued and bought the draft again. The comment above the code
+// promised "no window exists where neither is set"; the empty catch created exactly that window.
+{
+  let paidCalls = 0;
+  const kv = new Map();
+  const deps = {
+    NonRetryableError: class extends Error {},
+    now: () => "t",
+    kvGet: async (k) => (kv.has(k) ? kv.get(k) : null),
+    // Only the RESULT cache write fails; the attempt marker still works. That asymmetry is the bug.
+    kvPut: async (k, v) => { if (k.startsWith("result:")) throw new Error("KV write failed"); kv.set(k, v); },
+    kvDelete: async (k) => { kv.delete(k); },
+  };
+  const call = async () => { paidCalls++; return { text: "draft", modelUsed: "m" }; };
+
+  const first = await paidModelStep(deps, { jobId: "jc", stepName: "draft", call });
+  ok(first && first.text === "draft", "the first execution still returns its result to the caller");
+  ok(paidCalls === 1, "…having made exactly one paid call");
+
+  // Replay, as a Workflow step retry would.
+  let threw = false;
+  try { await paidModelStep(deps, { jobId: "jc", stepName: "draft", call }); }
+  catch (_) { threw = true; }
+  ok(threw, "a replay REFUSES rather than re-issuing the call");
+  ok(paidCalls === 1, `…so the model is still called exactly ONCE (got ${paidCalls})`);
+}
+
 // ── 7 · refund exactly once, however many callers notice ─────────────────────
-// Cancel and failure can both land here, and terminate() can race a step.
+// Cancel and failure can both land here, and terminate() can race a step. The IDEMPOTENCE now lives in
+// Postgres (insert ... on conflict (job_id) do nothing) rather than in a KV marker, so this asserts the
+// property end to end through deps.refund rather than through a marker key.
 {
   const deps = makeDeps();
   const a = await refundOnce(deps, "j9", "cancelled");
