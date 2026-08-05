@@ -110,6 +110,15 @@ const GROUNDED = /found to cite from|guidelines on hand/i;
      "…and read back when a saved talk is rehydrated");
   ok(/S\.ragStatus = ragResult\.status/.test(code),
      "…captured from the retrieval result rather than re-derived later");
+
+  // RESUME. Found by a live reconnect test on 2026-07-31: closing the tab mid-generation and reopening
+  // produced a talk with _ragStatus === null, because the resume path stamped provenance from the
+  // stored job handle and the handle never carried the status. The evidence digest survived the reload;
+  // the DISCLOSURE did not. A retrieval outage plus a reconnect would have silently dropped the warning.
+  ok(/ragStatus: S\.ragStatus \|\| null, at: Date\.now\(\)/.test(code),
+     "the job handle persists ragStatus at submit, so it survives a reload");
+  ok(/ragStatus: \(stored && stored\.ragStatus\) \|\| null/.test(code),
+     "…and the resume path stamps it back onto the reconnected talk");
 }
 
 // ── 5 · RETRY SOURCES IS FREE, AND DOES NOT REWRITE THE TALK ─────────────────

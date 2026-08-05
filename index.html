@@ -1348,7 +1348,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-05";
+var BUILD_ID = "2026-07-31-06";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1719,6 +1719,9 @@ async function resumeAsyncJobIfAny(){
       webSearched: !!(res && res.webSearched),
       // the count the DRAFT was actually written with, persisted at submit — S.ragChunks is empty after a reload
       ragCount: (stored && stored.ragCount != null) ? stored.ragCount : _resumeRag.length,
+      // Carried from the submit-time handle. Absent on a job submitted by an older build → null, which
+      // renders as "no grounding claim" rather than as a false one.
+      ragStatus: (stored && stored.ragStatus) || null,
       guidelinesLoaded: !!_glRef
     });
     if(S.genCancelled || _myGenId !== S.genId) return;
@@ -7483,7 +7486,11 @@ async function generate(){
           _ragDigest = (S.ragChunks || []).slice(0, 8).map(function(c){ return { title: (c && c.title) || "", pmid: (c && c.pmid) || "" }; });
         } catch(_){ _ragDigest = []; }
         try { localStorage.setItem(ASYNC_GEN_CONFIG.jobKey, JSON.stringify({ jobId: _job.jobId, genId: _myGenId, topic: S.topic, style: S.style, depth: S.depth,
-          ragDigest: _ragDigest, ragCount: (S.ragChunks || []).length, at: Date.now() })); } catch(_){}
+          ragDigest: _ragDigest, ragCount: (S.ragChunks || []).length,
+          // The DISCLOSURE has to survive the reload too, not just the evidence. Without this a
+          // resumed talk stamped _ragStatus=null and the "Evidence retrieval unavailable" warning
+          // silently vanished on reconnect — found in a live reconnect test, 2026-07-31.
+          ragStatus: S.ragStatus || null, at: Date.now() })); } catch(_){}
         _asyncJobId = _job.jobId;
         S.genBackgroundSafe = true;   // async path survives backgrounding → swap the "keep tab open" warning
         S.loadMsg = "Generating on our servers — safe to switch tabs or lock your phone.";
