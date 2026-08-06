@@ -531,6 +531,31 @@ async function verifySupabaseUser(env, token) {
   } catch (e) { return null; }
 }
 
+// ── READ A RECEIPT'S AUTHORITATIVE EXPIRY BACK FROM THE ROW ─────────────────────────────────────────
+// The Worker must not tell the browser when a receipt expires; only the row knows. See the comment in
+// mintReceipt for why computing it here was wrong in a way that clock-skew reasoning concealed.
+async function readReceiptExpiry(env, receiptId) {
+  try {
+    const url = `${env.SUPABASE_URL}/rest/v1/generation_receipts?id=eq.${encodeURIComponent(receiptId)}&select=expires_at`;
+    const r = await fetch(url, {
+      headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+                 Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+                 Accept: "application/json" },
+    });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    const at = Array.isArray(rows) && rows[0] ? rows[0].expires_at : null;
+    if (!at) return null;
+    // Normalise to the same ISO shape the client compares with Date.parse.
+    const t = Date.parse(at);
+    return Number.isNaN(t) ? null : new Date(t).toISOString();
+  } catch (_) {
+    // FAIL CLOSED ON THE CLAIM, NOT ON THE GENERATION: no expiry is reported rather than a guessed one.
+    // The client then treats the credential's lifetime as unknown and applies its conservative heuristic.
+    return null;
+  }
+}
+
 async function supaServiceRPC(env, fn, params) {
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, {
     method: "POST",
@@ -662,17 +687,20 @@ async function mintReceipt(env, { userId, jobId, kind }) {
     ? await deterministicReceiptId(userId, jobId, kind)
     : crypto.randomUUID();   // no job to key on (bare /consume of an aux credit) — one-shot as before
 
-  // ── AN ABSOLUTE EXPIRY, FROM THE SERVER'S CLOCK ─────────────────────────────────────────────────
-  // The client used to infer expiry from when the browser RECEIVED the receipt, and setGenCredentials
-  // stamped at: Date.now() on every write — so returning the same receipt on resume reset a 30-minute
-  // clock that the database had not reset. An expired receipt then looked fresh, and the 402 read as a
-  // permissions problem rather than an expiry.
+  // ── THE EXPIRY IS READ FROM THE ROW, NEVER COMPUTED HERE ────────────────────────────────────────
+  // This was `new Date(Date.now() + RECEIPT_TTL_SECONDS * 1000)`, and I justified it in a comment as
+  // Worker/DB clock skew of "milliseconds in practice". That is true only for a FRESH insert. Talk
+  // receipts are insert-once: on a duplicate submit or a reconnect, `receipt_issue` does nothing and the
+  // row keeps the expiry set at the FIRST mint — while this line returned now + 30 minutes.
   //
-  // Computed here rather than read back from Postgres to avoid a second round trip. That means it can
-  // differ from the row's expires_at by the Worker/DB clock skew (milliseconds in practice). The client
-  // treats it as advisory — the DATABASE is authoritative, and receipt_redeem answers `expired` — so a
-  // small skew shows a stale credential as usable a moment longer, not a live one as dead.
-  const expiresAt = new Date(Date.now() + RECEIPT_TTL_SECONDS * 1000).toISOString();
+  // So the value drifted by the whole elapsed generation, and every reconnect pushed the client's view
+  // further ahead of the database. Past the real expiry the browser held a credential it believed was
+  // live, sent it, and got a 402 that reads as a permissions failure. That is EXACTLY the bug the old
+  // comment claimed to have fixed — moved one layer down and hidden behind plausible reasoning about
+  // clocks. The test could not see it because it only checked that a field of that name existed.
+  //
+  // One extra round trip buys the property that the number the browser holds is the number the database
+  // will enforce.
   const stages = {};
   for (const [name, max] of Object.entries(budgets)) {
     // `models` per stage is what receipt_redeem checks. Without it the flat allowed_models applies and a
@@ -690,8 +718,9 @@ async function mintReceipt(env, { userId, jobId, kind }) {
     });
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (!row || row.ok !== true) throw new Error("receipt_renew_refine refused: " + ((row && row.outcome) || "unknown"));
+    const refineExpiry = await readReceiptExpiry(env, receipt);
     return { receipt, stages, models: receiptModelsFor(kind), ttlSeconds: RECEIPT_TTL_SECONDS,
-             expiresAt, outcome: row.outcome };
+             expiresAt: refineExpiry, outcome: row.outcome };
   }
   // TALK receipts are insert-once and NEVER renewed. The credit was consumed once, so the authorisation
   // it bought exists once. `on conflict (id) do nothing` makes a duplicate submit a no-op that returns
@@ -701,7 +730,10 @@ async function mintReceipt(env, { userId, jobId, kind }) {
     p_kind: kind, p_allowed_models: receiptModelsFor(kind),
     p_stages: stages, p_ttl_seconds: RECEIPT_TTL_SECONDS,
   });
-  return { receipt, stages, models: receiptModelsFor(kind), ttlSeconds: RECEIPT_TTL_SECONDS, expiresAt };
+  // The insert may have been a no-op (duplicate / reconnect), so the row — not this request — decides.
+  const talkExpiry = await readReceiptExpiry(env, receipt);
+  return { receipt, stages, models: receiptModelsFor(kind), ttlSeconds: RECEIPT_TTL_SECONDS,
+           expiresAt: talkExpiry };
 }
 
 // ── ABORT: REVOKE THE RECEIPT **AND** REFUND, IN ONE TRANSACTION ────────────────────────────────────

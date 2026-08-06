@@ -246,6 +246,14 @@ jobs:
       - name: Writer allowlist + quota receipt (server-side)
         run: node test_writer_and_quota_gates.mjs
 
+      # THE TEST SYSTEM ITSELF. Two counting failures in one day, both in the instrument: a local runner
+      # built from `ls | head -18` plus `| tail -17` skipped positions 19-22 and reported "35 suites pass"
+      # when there were 39, and test_refine_guard.mjs made all 15 of its checks with console.assert, which
+      # prints a failure and exits 0 — it could not fail, and every runner counted it as passing. The guard
+      # below catches an UNWIRED suite; this one catches a suite that runs and cannot fail.
+      - name: CI wiring (counts, discovery, and every suite able to fail)
+        run: node test_ci_wiring.mjs
+
       # THE GUARD ON THE GUARDS. Writing a suite and forgetting to wire it here has happened twice.
       # A test that never runs is worse than no test: it reads as coverage.
       - name: Every test suite on disk is wired into this workflow

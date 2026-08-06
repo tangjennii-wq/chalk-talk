@@ -18,6 +18,7 @@ import worker from "./worker.js";
 import { readFileSync } from "fs";
 
 let failures = 0;
+const env2m = (e) => ({ ...e, GEN_WORKFLOW: { create: async () => {}, get: async () => null } });
 const ok = (c, m) => { console.log((c ? "✓" : "✗ FAIL") + " — " + m); if (!c) failures++; };
 
 const ORIGIN = "https://tangjennii-wq.github.io";
@@ -392,6 +393,76 @@ const post = (path, body) => new Request("https://p.test" + path, {
   ok(/begin;[\s\S]*commit;/.test(code), "…and the migration is transactional");
 }
 
+// ══ THE EXPIRY THE BROWSER GETS IS THE EXPIRY THE DATABASE HOLDS ════════════════════════════════════
+//
+// The source-text assertion below (every durable response mentions receiptExpiresAt) is necessary and
+// nowhere near sufficient: it passed while the Worker COMPUTED that value as now + 30 minutes. Talk
+// receipts are insert-once, so on a reconnect the row kept its original expiry and the response claimed a
+// later one — drifting by the whole elapsed generation, and drifting further with every reconnect. Checking
+// that a field of that NAME exists cannot see a wrong VALUE.
+//
+// This test drives the request with a database whose stored expiry is deliberately NOT now + TTL, and
+// requires the response to echo the stored value exactly. A computed expiry fails it.
+{
+  const STORED = "2026-08-06T09:15:42.000Z";        // fixed, in the past, and nothing like now + 30 min
+  let readBack = 0;
+  globalThis.fetch = async (u, i) => {
+    const su = String(u);
+    if (su.includes("/auth/v1/user")) return json({ id: "u-1", email: "j@t.dev" });
+    if (su.includes("/rpc/reserve_talk_for_job")) return json([{ reserved: true, outcome: "reserved", owner_id: "u-1" }]);
+    if (su.includes("/rpc/receipt_issue")) return json(null);            // insert-once: a no-op here
+    if (su.includes("/generation_receipts") && su.includes("select=expires_at")) {
+      readBack++; return json([{ expires_at: STORED }]);
+    }
+    return json([]);
+  };
+  const env = {
+    ALLOWED_ORIGINS: ORIGIN, SUPABASE_URL: "https://x.test", SUPABASE_SERVICE_ROLE_KEY: "k",
+    SUPABASE_ANON_KEY: "a", ANTHROPIC_API_KEY: "sk", FREE_TALKS: "10",
+    JOBS_KV: { get: async () => null, put: async () => {}, delete: async () => {} },
+    GEN_WORKFLOW: { create: async () => {}, get: async () => null },
+  };
+  const res = await worker.fetch(new Request("https://p.test/generate-async", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Origin: ORIGIN, "X-Supabase-Auth": "t" },
+    body: JSON.stringify({ clientJobId: "44444444-5555-6666-7777-888888888888", topic: "x",
+                           style: "lecture", depth: "concise", system: "s",
+                           messages: [{ role: "user", content: "go" }], model: "claude-opus-5" }),
+  }), env, ctx);
+  const b = await res.json();
+  globalThis.fetch = realFetch;
+
+  ok(readBack >= 1, "the Worker READS the receipt's expiry back from the row");
+  ok(b.receiptExpiresAt === STORED,
+     `…and returns the STORED value verbatim (expected ${STORED}, got ${b.receiptExpiresAt})`);
+  // Guard the specific wrong answer, so a regression to computing it is named rather than merely failing.
+  const computed = Date.now() + 30 * 60 * 1000;
+  ok(!(b.receiptExpiresAt && Math.abs(Date.parse(b.receiptExpiresAt) - computed) < 5 * 60 * 1000),
+     "…NOT now + TTL from the Worker's own clock, which is what the old code produced");
+
+  // And when the row cannot be read, no expiry may be invented.
+  globalThis.fetch = async (u) => {
+    const su = String(u);
+    if (su.includes("/auth/v1/user")) return json({ id: "u-1", email: "j@t.dev" });
+    if (su.includes("/rpc/reserve_talk_for_job")) return json([{ reserved: true, outcome: "reserved", owner_id: "u-1" }]);
+    if (su.includes("/rpc/receipt_issue")) return json(null);
+    if (su.includes("/generation_receipts")) return json({ message: "boom" }, 500);
+    return json([]);
+  };
+  const res2 = await worker.fetch(new Request("https://p.test/generate-async", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Origin: ORIGIN, "X-Supabase-Auth": "t" },
+    body: JSON.stringify({ clientJobId: "55555555-6666-7777-8888-999999999999", topic: "x",
+                           style: "lecture", depth: "concise", system: "s",
+                           messages: [{ role: "user", content: "go" }], model: "claude-opus-5" }),
+  }), env2m(env), ctx);
+  const b2 = await res2.json();
+  globalThis.fetch = realFetch;
+  ok(res2.status === 200, "a failed expiry read does not fail the generation");
+  ok(b2.receipt && b2.receiptExpiresAt === null,
+     `…it reports NO expiry rather than a guessed one (got ${JSON.stringify(b2.receiptExpiresAt)})`);
+}
+
 // ══ THE THREE MINIMAL-PASS INVARIANTS (Codex, frozen scope) ═════════════════════════════════════════
 //
 // ── I · FREE TIER IS WORKFLOW-ONLY, AND REFUSES BEFORE CHARGING ──────────────
@@ -438,6 +509,11 @@ const post = (path, body) => new Request("https://p.test" + path, {
     if (su.includes("/auth/v1/user")) return json({ id: "u-1", email: "j@t.dev" });
     if (su.includes("/rpc/reserve_talk_for_job")) return json([{ reserved: true, outcome: "reserved", owner_id: "u-1" }]);
     if (su.includes("/rpc/receipt_issue")) { mintedBeforeStart = created.length === 0; return json(null); }
+    // The expiry now comes from the ROW, so a harness that does not serve the row gets no expiry — which
+    // is the correct behaviour and the reason this stub had to be added.
+    if (su.includes("/generation_receipts") && su.includes("select=expires_at")) {
+      return json([{ expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() }]);
+    }
     return json([]);
   };
   const env = {
