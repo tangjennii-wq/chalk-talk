@@ -815,6 +815,36 @@ function clearGenCredentials(why){
 // Reserves the credit AND mints the receipt in one server call, BEFORE any model call. The old order was
 // draft-then-consume, so the very first request had no receipt and 402'd: the client and the Worker
 // disagreed about when authorisation comes into existence.
+// ── RECOVER THE CREDENTIAL FOR A JOB WE ALREADY PAID FOR ────────────────────────────────────────────
+// Three branches end with a job id and NO receipt: a lost POST response that turned out to have started
+// the job (recovered), an inconclusive one that the poll later connects to (unconfirmed), and a reload
+// whose stored record kept the job but not the credential. Each of those is a talk the user has been
+// charged for, and without a receipt every follow-up call — the citation audit above all — is unauthorised
+// the moment enforcement is on.
+//
+// EXISTENCE IS CHECKED BEFORE MINTING, and that order is the whole safety argument. Reservations are
+// job-keyed, so /v1/free-tier/session on a job that never started would reserve a credit for work that
+// will never run: a charge with nothing behind it. Confirming the job exists first means the reservation
+// is always one that was already taken, which is why the server answers `charged: false` here.
+async function ensureGenCredentialsFor(jobId){
+  if(!jobId || !freeTierActive()) return null;
+  var have = loadGenCredentials();
+  if(have && have.jobId === jobId && have.receipt) return have;   // already holding a live pair
+  try{
+    var sr = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-status/" + encodeURIComponent(jobId),
+                         { headers:{ "X-Supabase-Auth": freeTierToken() } });
+    if(!sr.ok) return null;   // 404: never created, or not ours. Mint nothing.
+  }catch(_){ return null; }   // can't confirm: mint nothing. A missing receipt is recoverable; a phantom charge is not.
+  try{
+    var s = await createGenSession(jobId);   // idempotent per job: same receipt, the row's expiry, no second credit
+    if(s && s.ok){
+      console.info("[gen] recovered credentials for job " + jobId + (s.charged ? " (CHARGED — unexpected)" : " (no charge)"));
+      return loadGenCredentials();
+    }
+  }catch(_){}
+  return null;
+}
+
 async function createGenSession(jobId){
   if(!freeTierActive()) return {ok:true, skipped:true};
   var id = jobId || _newGenJobId();
@@ -1458,7 +1488,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-16";
+var BUILD_ID = "2026-07-31-17";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1784,8 +1814,15 @@ async function resumeAsyncJobIfAny(){
     });
   } else {
     S.genJobId = stored.jobId;
-    console.warn("Resumed job " + stored.jobId + " without a receipt — the citation audit and diagram "
-               + "prompts will not be authorised for this talk.");
+    // RECOVER RATHER THAN WARN. This branch used to log the problem and carry on with no credential, so a
+    // reload that lost the receipt half of the pair produced a talk whose citation audit could not run.
+    // The reservation for this job was taken at submit, so re-minting costs nothing and returns the same
+    // receipt with the row's own expiry; ensureGenCredentialsFor confirms the job exists before asking.
+    var _rec = await ensureGenCredentialsFor(stored.jobId);
+    if(!_rec){
+      console.warn("Resumed job " + stored.jobId + " without a receipt, and could not recover one — the "
+                 + "citation audit and diagram prompts will not be authorised for this talk.");
+    }
   }
   if(stored.topic) S.topic = stored.topic;
   if(stored.style) S.style = stored.style;
@@ -7691,6 +7728,11 @@ async function generate(){
         // THE RECEIPT COMES BACK FROM THE SERVER HERE. Background generation reserves the credit
         // server-side, so the browser never saw an authorisation — and every follow-up call (citation
         // audit, diagram prompt, refine) 402'd on a talk that had been correctly paid for.
+        if (!_job.receipt) {
+          // A recovered / unconfirmed submit returns a job id only. Fetch the credential for it before the
+          // poll, so the citation audit that runs after delivery is authorised.
+          await ensureGenCredentialsFor(_job.jobId);
+        }
         if (_job.receipt) {
           setGenCredentials(_job.jobId, _job.receipt, { expiresAt: _job.receiptExpiresAt || null });
         } else {

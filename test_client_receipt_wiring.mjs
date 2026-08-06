@@ -186,6 +186,109 @@ const grab = (name) => {
   ok(/if \(_wantAsync\)/.test(gen), "…and reused rather than re-evaluated after the await");
 }
 
+// ── 5c · LOST-RESPONSE RECOVERY RESTORES THE RECEIPT **AND** THE EXPIRY ──────
+// Three branches ended with a job id and no credential: a lost POST response whose job did start
+// (`recovered`), an inconclusive one the poll later connects to (`unconfirmed`), and a reload whose stored
+// record kept the job but not the receipt. Every one of those is a talk the user was charged for, and
+// without a receipt the citation audit that runs after delivery is unauthorised once enforcement is on.
+// Passing 41 suites did not cover this: the earlier tests all began from a submit that returned a receipt.
+//
+// EXECUTED, not pattern-matched, because the safety property is an ORDER: existence is confirmed before
+// anything is minted. A helper that minted first would look identical to one that doesn't.
+{
+  const store = {};
+  const calls = [];
+  // A distinctive FUTURE expiry. The first draft of this test used a past timestamp to prove the value
+  // wasn't computed locally — and loadGenCredentials correctly discarded it as expired, so the test failed
+  // on a loader that was behaving properly. Seven minutes out is unmistakably not a fresh thirty.
+  const RECEIPT = "rcpt-recovered";
+  const STORED_EXPIRY = new Date(Date.now() + 7 * 60 * 1000).toISOString();
+  const mkCtx = (jobExists) => {
+    const ctx = {
+      S: { freeTier: {} },
+      localStorage: {
+        getItem: (k) => (k in store ? store[k] : null),
+        setItem: (k, v) => { store[k] = String(v); },
+        removeItem: (k) => { delete store[k]; },
+      },
+      console: { info() {}, warn() {} },
+      RAG_CONFIG: { url: "https://p.test/" },
+      freeTierActive: () => true,
+      freeTierToken: () => "tok",
+      fetch: async (u, init) => {
+        calls.push(String(u).includes("/generate-status/") ? "status" : "session");
+        if (String(u).includes("/generate-status/")) {
+          return { ok: jobExists, status: jobExists ? 200 : 404, json: async () => ({}) };
+        }
+        return { ok: true, status: 200, json: async () => ({
+          jobId: "job-lost", receipt: RECEIPT, receiptExpiresAt: STORED_EXPIRY, charged: false,
+          remaining: { talks_remaining: 6, images_remaining: 5 },
+        }) };
+      },
+    };
+    return ctx;
+  };
+  const build = (ctx) => {
+    const c = {};
+    new Function("S", "localStorage", "console", "RAG_CONFIG", "freeTierActive", "freeTierToken", "fetch", "c",
+      "var GEN_CRED_KEY = 'ct_active_cred';" +
+      grab("setGenCredentials") + grab("loadGenCredentials") + grab("clearGenCredentials") +
+      html.slice(html.indexOf("async function ensureGenCredentialsFor"),
+                 html.indexOf("async function createGenSession")) +
+      html.slice(html.indexOf("async function createGenSession"),
+                 html.indexOf("async function createRefineSession")) +
+      "c.ensure = ensureGenCredentialsFor;"
+    )(ctx.S, ctx.localStorage, ctx.console, ctx.RAG_CONFIG, ctx.freeTierActive, ctx.freeTierToken, ctx.fetch, c);
+    return c;
+  };
+
+  // (a) the job EXISTS: recover the pair, with the server's stored expiry
+  let ctx = mkCtx(true); let c = build(ctx);
+  let got = await c.ensure("job-lost");
+  ok(!!got && got.receipt === RECEIPT, `a confirmed job recovers its receipt (${got && got.receipt})`);
+  ok(got && got.expiresAt === STORED_EXPIRY,
+     `…with the SERVER's stored expiry (${got && got.expiresAt})`);
+  ok(got && Math.abs(Date.parse(got.expiresAt) - (Date.now() + 30 * 60 * 1000)) > 60 * 1000,
+     "…which is NOT a fresh thirty minutes stamped by the browser");
+  ok(calls[0] === "status" && calls.indexOf("session") > 0,
+     `…and existence was confirmed BEFORE minting (order: ${calls.join(" -> ")})`);
+
+  // (b) the job does NOT exist: mint nothing. A missing receipt is recoverable; a phantom charge is not.
+  for (const k of Object.keys(store)) delete store[k];
+  calls.length = 0;
+  ctx = mkCtx(false); c = build(ctx);
+  got = await c.ensure("job-never-started");
+  ok(got === null, "a job that never started recovers nothing");
+  ok(!calls.includes("session"),
+     `…and NO session is created for it, so no credit is reserved for work that will never run (calls: ${calls.join(" -> ") || "none"})`);
+
+  // (c) already holding the pair: don't touch the network at all
+  for (const k of Object.keys(store)) delete store[k];
+  calls.length = 0;
+  ctx = mkCtx(true); c = build(ctx);
+  store["ct_active_cred"] = JSON.stringify({ jobId: "job-held", receipt: "r-held",
+                                             expiresAt: new Date(Date.now() + 6e5).toISOString() });
+  got = await c.ensure("job-held");
+  ok(got && got.receipt === "r-held", "a job already holding a live credential reuses it");
+  ok(calls.length === 0, `…without a single request (calls: ${calls.length})`);
+}
+
+// ── 5d · AND THE CALLERS ACTUALLY USE IT ─────────────────────────────────────
+{
+  const gStart = code.indexOf("async function generate()");
+  const gEnd = code.indexOf("async function ", gStart + 30);
+  const gen = code.slice(gStart, gEnd > gStart ? gEnd : code.length);
+  ok(/if \(!_job\.receipt\)[\s\S]{0,300}ensureGenCredentialsFor\(_job\.jobId\)/.test(gen),
+     "generate() recovers a credential when the submit returned a job id but no receipt");
+  const rStart = code.indexOf("async function resumeAsyncJobIfAny()");
+  const rEnd = code.indexOf("async function ", rStart + 30);
+  const resume = code.slice(rStart, rEnd > rStart ? rEnd : code.length);
+  ok(/ensureGenCredentialsFor\(stored\.jobId\)/.test(resume),
+     "…and so does a resume whose stored record lost the receipt half of the pair");
+  ok(/could not recover one/.test(resume),
+     "…warning only once recovery has actually been attempted and failed");
+}
+
 // ── 6 · REFINE OF A SAVED TALK GETS ITS OWN NARROW SESSION ───────────────────
 {
   ok(/async function createRefineSession/.test(code), "there is a refine-session helper");
