@@ -118,10 +118,24 @@ const RECEIPT_STAGE_BUDGETS = {
 // so an aux call on Haiku failed the model gate even with a valid receipt. Each stage now authorises
 // exactly the models it legitimately uses.
 const AUX_CLEARED = ["claude-haiku-4-5-20251001", "claude-opus-5", "claude-sonnet-5"];
+
+// ── MODELS ARE AUTHORISED PER STAGE, NOT PER RECEIPT (Codex + self-audit, 2026-07-31) ───────────────
+// A flat union was the first fix for the 402s, and it broke something worse than it repaired: a talk
+// receipt must authorise Opus for the draft AND Haiku for the citation audit, so the flat list contained
+// both — and therefore authorised HAIKU FOR THE DRAFT. That defeats WRITER_CLEARED, whose entire purpose
+// is that a Chalk Talk talk is written only by a model benchmarked for clinical prose.
+//
+// Each stage now carries its own set, enforced inside receipt_redeem's single atomic UPDATE.
+const STAGE_MODELS = {
+  draft:    WRITER_CLEARED,   // medical prose — benchmarked writers only
+  refine:   WRITER_CLEARED,   // also medical prose, and also user-facing
+  critique: WRITER_CLEARED,   // the reviewer reads clinical claims; same bar
+  aux:      AUX_CLEARED,      // classification, prompts, scripts — cheap models are appropriate here
+};
+function stageModelsFor(stage) { return STAGE_MODELS[stage] || AUX_CLEARED; }
+// Kept for the receipt's fallback column and for older receipts still in flight.
 function receiptModelsFor(kind) {
   if (kind === "aux") return AUX_CLEARED;
-  // talk / refine: writers plus the aux models, because one generation spans both kinds of call and the
-  // per-STAGE budget is what bounds each. Narrowing this to writers only is what produced the 402s.
   return Array.from(new Set([...WRITER_CLEARED, ...AUX_CLEARED]));
 }
 const EMBEDDING_MODEL = "text-embedding-3-small";
@@ -609,12 +623,67 @@ async function reserveTalkForJob(env, jobId, userId, base) {
 // Receipts were minted inline in /consume and nowhere else, which is why /generate-async returned none
 // and the client had no authorisation for its follow-up calls. Every path now goes through here, so
 // "which stages and models does a receipt cover" has exactly one answer.
+// A receipt id DERIVED from (user, job, kind), so minting is idempotent. receipt_issue is
+// `on conflict (id) do nothing`, which makes a repeat mint a no-op that returns the SAME receipt with
+// its ALREADY-SPENT budget intact — instead of a fresh one with a fresh budget.
+// ONE PERMANENT ID PER (user, job, kind). NO TIME WINDOW.
+//
+// A previous version bucketed the id by floor(now / TTL) to solve "an expired refine receipt is returned
+// forever". That fixed one bug and created two worse ones (Codex, 2026-07-31):
+//   * it renewed TALK receipts too, so one consumed credit yielded a fresh draft/critique/aux budget
+//     every 30 minutes — the unbounded-minting defect returning through the door opened for refine;
+//   * fixed windows OVERLAP: a receipt minted a second before a boundary stays live for 30 minutes while
+//     a second full receipt is mintable a second after it, so two complete budgets coexist.
+//
+// So the id is permanent, and renewal is a separate, explicit, ATOMIC operation that applies only to
+// refine and only once the previous receipt has genuinely expired (receipt_renew_refine).
+async function deterministicReceiptId(userId, jobId, kind) {
+  const data = new TextEncoder().encode(`ct-receipt:v3:${userId}:${jobId}:${kind}`);
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", data));
+  // Format the first 16 bytes as a UUID so it satisfies the uuid column and the client's id checks.
+  const h = [...digest.slice(0, 16)].map(b => b.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20,32)}`;
+}
+
 async function mintReceipt(env, { userId, jobId, kind }) {
   const budgets = RECEIPT_STAGE_BUDGETS[kind];
   if (!budgets) throw new Error("mintReceipt: unknown receipt kind " + kind);
-  const receipt = crypto.randomUUID();
+  // ── MINTING MUST BE IDEMPOTENT PER JOB (self-audit, 2026-07-31) ──────────────────────────────────
+  // This was crypto.randomUUID(), so every call produced a NEW receipt with a FULL budget. The
+  // reservation is exactly-once per job, but the authorisation it pays for was not: calling /session ten
+  // times with one jobId took one credit and returned ten receipts, each good for draft 2 / critique 2 /
+  // aux 10. One credit became unbounded paid calls. /refine-session was worse — free by design, so a
+  // loop over a talk you own minted unlimited refine authorisations.
+  //
+  // Deriving the id from (user, job, kind) means the FIRST mint creates the budget and every repeat is a
+  // no-op returning that same receipt, partly spent. A duplicate submit or a reload gets working
+  // authorisation without getting a second allowance.
+  const receipt = jobId
+    ? await deterministicReceiptId(userId, jobId, kind)
+    : crypto.randomUUID();   // no job to key on (bare /consume of an aux credit) — one-shot as before
   const stages = {};
-  for (const [name, max] of Object.entries(budgets)) stages[name] = { max, used: 0 };
+  for (const [name, max] of Object.entries(budgets)) {
+    // `models` per stage is what receipt_redeem checks. Without it the flat allowed_models applies and a
+    // draft could run on an aux model.
+    stages[name] = { max, used: 0, models: stageModelsFor(name) };
+  }
+  if (kind === "refine") {
+    // RENEWABLE, ATOMICALLY, ONLY AFTER EXPIRY. A refine of a saved talk must work days later, but a
+    // loop must not be able to replenish the budget — so the decision "has it expired?" and the reset
+    // live in ONE locked statement rather than in two round trips that can interleave.
+    const rows = await supaServiceRPC(env, "receipt_renew_refine", {
+      p_id: receipt, p_user_id: userId, p_job: jobId || null,
+      p_allowed_models: receiptModelsFor(kind),
+      p_stages: stages, p_ttl_seconds: RECEIPT_TTL_SECONDS,
+    });
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if (!row || row.ok !== true) throw new Error("receipt_renew_refine refused: " + ((row && row.outcome) || "unknown"));
+    return { receipt, stages, models: receiptModelsFor(kind), ttlSeconds: RECEIPT_TTL_SECONDS,
+             outcome: row.outcome };
+  }
+  // TALK receipts are insert-once and NEVER renewed. The credit was consumed once, so the authorisation
+  // it bought exists once. `on conflict (id) do nothing` makes a duplicate submit a no-op that returns
+  // the same partly-spent receipt.
   await supaServiceRPC(env, "receipt_issue", {
     p_id: receipt, p_user_id: userId, p_job: jobId || null,
     p_kind: kind, p_allowed_models: receiptModelsFor(kind),

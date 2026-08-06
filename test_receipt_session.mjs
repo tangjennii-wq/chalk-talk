@@ -42,6 +42,17 @@ function harness({ owns = true, reserveOutcome = null, talkOwner = "u-1" } = {})
       try { seen.issued.push(JSON.parse(init.body)); } catch (_) {}
       return json(null);
     }
+    // Refine receipts go through the ATOMIC RENEWAL rather than insert-once, because they must work days
+    // later without ever letting a loop replenish the budget. Counted as an issue so the existing
+    // assertions about stages and models still see it.
+    if (u.includes("/rpc/receipt_renew_refine")) {
+      try {
+        const b = JSON.parse(init.body);
+        seen.issued.push({ p_id: b.p_id, p_stages: b.p_stages, p_allowed_models: b.p_allowed_models,
+                           p_kind: "refine" });
+      } catch (_) {}
+      return json([{ ok: true, outcome: "created" }]);
+    }
     if (u.includes("/rpc/refund_talk_once")) { seen.refunds++; return json([{ refunded: true, outcome: "refunded" }]); }
     if (u.includes("/rpc/free_tier_remaining")) return json([{ talks_remaining: 9, images_remaining: 5 }]);
     return json([]);
@@ -256,6 +267,116 @@ const post = (path, body) => new Request("https://p.test" + path, {
      `enforced: the same call is REFUSED (got ${enforced.status})`);
   ok(afterEnforced === allowedCalls,
      "…and reached Anthropic zero additional times once the flag is set");
+}
+
+// ── 12 · MINTING IS IDEMPOTENT PER JOB ───────────────────────────────────────
+// The reservation is exactly-once per job; the AUTHORISATION it pays for was not. mintReceipt used
+// crypto.randomUUID(), so ten /session calls with one jobId took one credit and returned TEN receipts,
+// each with a full draft 2 / critique 2 / aux 10 budget. One credit, unbounded paid calls. /refine-session
+// was worse: free by design, so a loop over a talk you own minted unlimited refine authorisations.
+{
+  const h = harness();
+  const JOB = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+  const r1 = await (await worker.fetch(post("/v1/free-tier/session", { jobId: JOB }), h.env, ctx)).json();
+  const r2 = await (await worker.fetch(post("/v1/free-tier/session", { jobId: JOB }), h.env, ctx)).json();
+  const r3 = await (await worker.fetch(post("/v1/free-tier/session", { jobId: JOB }), h.env, ctx)).json();
+  globalThis.fetch = realFetch;
+
+  ok(r1.receipt === r2.receipt && r2.receipt === r3.receipt,
+     "repeat sessions for one job return the SAME receipt id, not fresh budgets");
+  const ids = new Set(h.seen.issued.map(i => i.p_id));
+  ok(ids.size === 1, `…and only one receipt id ever reached the store (got ${ids.size})`);
+  ok(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(r1.receipt),
+     "…still a well-formed uuid, so the column and the client checks are satisfied");
+}
+{
+  // Same for the free refine path, where the incentive to loop is strongest.
+  const h = harness({ owns: true });
+  const body = { talkId: "019f71d1-972b-4bce-b19a-0d04fec960bb" };
+  const a = await (await worker.fetch(post("/v1/free-tier/refine-session", body), h.env, ctx)).json();
+  const b = await (await worker.fetch(post("/v1/free-tier/refine-session", body), h.env, ctx)).json();
+  globalThis.fetch = realFetch;
+  ok(a.receipt === b.receipt, "repeat refine sessions for one talk return the SAME receipt");
+  ok(new Set(h.seen.issued.map(i => i.p_id)).size === 1,
+     "…so a loop cannot replenish the refine budget");
+}
+
+// ── 13 · MODELS ARE AUTHORISED PER STAGE, NOT PER RECEIPT ────────────────────
+// The flat union was the FIRST fix for the 402s and it broke something worse: a talk receipt must
+// authorise Opus for draft AND Haiku for the citation audit, so the flat list held both — authorising
+// HAIKU FOR THE DRAFT. That defeats WRITER_CLEARED, whose whole purpose is that clinical prose comes
+// from a benchmarked writer.
+//
+// Verified against the live database as well:
+//   draft + Opus  -> ok
+//   draft + Haiku -> model_not_authorised_for_stage
+//   aux   + Haiku -> ok
+{
+  const h = harness();
+  await worker.fetch(post("/v1/free-tier/session", {}), h.env, ctx);
+  globalThis.fetch = realFetch;
+
+  const stages = h.seen.issued[0].p_stages;
+  ok(Array.isArray(stages.draft.models), "each stage carries its own model list");
+  ok(!stages.draft.models.includes("claude-haiku-4-5-20251001"),
+     "…and the DRAFT stage does NOT authorise the aux model");
+  ok(!stages.refine.models.includes("claude-haiku-4-5-20251001"),
+     "…nor does REFINE, which is also medical prose");
+  ok(stages.aux.models.includes("claude-haiku-4-5-20251001"),
+     "…while AUX does, because classification on a cheap model is appropriate");
+  ok(stages.draft.models.includes("claude-opus-5"), "…and draft still authorises the writer");
+
+  const wsrc = readFileSync(new URL("./worker.js", import.meta.url), "utf8");
+  const code = wsrc.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
+  ok(/models: stageModelsFor\(name\)/.test(code), "the stage's models are written into the receipt");
+  ok(/draft:\s*WRITER_CLEARED/.test(code) && /refine:\s*WRITER_CLEARED/.test(code),
+     "…with draft and refine pinned to the benchmarked writers");
+}
+
+// ── 14 · TALK RECEIPTS ARE PERMANENT; REFINE RENEWS ATOMICALLY ────────────────
+// The time-window derivation this replaced renewed TALK budgets too (one credit, a fresh draft budget
+// every 30 minutes) and produced OVERLAPPING valid receipts across boundaries. Both were worse than the
+// expired-refine bug it fixed. The id is now permanent; renewal is explicit, refine-only, and atomic.
+{
+  const wsrc = readFileSync(new URL("./worker.js", import.meta.url), "utf8");
+  const code = wsrc.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
+
+  ok(!/receiptWindow/.test(code), "the time-window derivation is GONE, not merely unused");
+  ok(/ct-receipt:v3:\$\{userId\}:\$\{jobId\}:\$\{kind\}/.test(code),
+     "…the id is derived from (user, job, kind) with no time component");
+  ok(/kind === "refine"/.test(code) && /receipt_renew_refine/.test(code),
+     "…and only REFINE goes through the atomic renewal");
+  const mint = code.slice(code.indexOf("async function mintReceipt"));
+  const idxRenew = mint.indexOf("receipt_renew_refine");
+  const idxIssue = mint.indexOf('"receipt_issue"');
+  ok(idxRenew > 0 && idxIssue > idxRenew,
+     "…while talk receipts stay on insert-once receipt_issue, never renewed");
+
+  // Verified live: created -> still_valid (used stays 1) -> renewed (used 0) -> not_owner.
+  // The renewal lives in its own migration — one migration, one transaction, one concern (the atomicity
+  // guard enforces that, and caught it when this was appended to the file above).
+  const sql = readFileSync(new URL("./supabase/migrations/receipt_renew_refine.sql", import.meta.url), "utf8");
+  const scode = sql.split("\n").filter(l => !/^\s*--/.test(l)).join("\n");
+  ok(/expires_at <= now\(\)/.test(scode),
+     "the checked-in renewal only fires once the previous receipt has EXPIRED");
+  ok(/update public\.generation_receipts[\s\S]{0,400}expires_at <= now\(\)/.test(scode),
+     "…in a single UPDATE, so two renewals cannot both win and overlap");
+  ok(/not_owner/.test(scode), "…and refuses a renewal requested by anyone else");
+}
+
+// ── 15 · THE MIGRATION CARRIES THE PER-STAGE ENFORCEMENT ─────────────────────
+// Applied to production with apply_migration but the CHECKED-IN file is what a rebuild replays. This is
+// the third time repo-vs-production drift has been the finding, hence the assertion rather than trust.
+{
+  const sql = readFileSync(new URL("./supabase/migrations/receipt_redeem_per_stage_models.sql", import.meta.url), "utf8");
+  const code = sql.split("\n").filter(l => !/^\s*--/.test(l)).join("\n");
+  ok(/stages -> p_stage\) \? 'models'/.test(code),
+     "the checked-in redeem prefers the STAGE's own model list");
+  ok(/model_not_authorised_for_stage/.test(code),
+     "…and reports a stage-specific refusal");
+  ok(/p_model = any\(r\.allowed_models\)/.test(code),
+     "…while keeping the flat fallback for receipts already in flight");
+  ok(/begin;[\s\S]*commit;/.test(code), "…and the migration is transactional");
 }
 
 console.log("\n" + (failures === 0 ? "✔ RECEIPT SESSION OK" : "✗ " + failures + " FAILURE(S)"));

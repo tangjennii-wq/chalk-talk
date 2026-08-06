@@ -202,6 +202,12 @@ jobs:
       - name: Generation session / receipt lifecycle
         run: node test_receipt_session.mjs
 
+      # Client half of the receipt lifecycle: session before drafting, receipt returned from the async
+      # path, and a resume that restores BOTH job id and receipt. Every earlier 402 came from holding one
+      # half of that pair.
+      - name: Client receipt wiring (session, async receipt, resume)
+        run: node test_client_receipt_wiring.mjs
+
       # Syntax gates for the two files CI never executes. Cheap, and they catch a broken commit
       # before it reaches a deploy or a calibration run.
       - name: Syntax check the Worker and the evaluator

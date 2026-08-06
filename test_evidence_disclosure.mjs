@@ -115,7 +115,9 @@ const GROUNDED = /found to cite from|guidelines on hand/i;
   // produced a talk with _ragStatus === null, because the resume path stamped provenance from the
   // stored job handle and the handle never carried the status. The evidence digest survived the reload;
   // the DISCLOSURE did not. A retrieval outage plus a reconnect would have silently dropped the warning.
-  ok(/ragStatus: S\.ragStatus \|\| null, at: Date\.now\(\)/.test(code),
+  // The RECEIPT was added to this same record on 2026-07-31, so `at: Date.now()` no longer sits on the
+  // adjacent line. Assert the two properties separately rather than pinning their adjacency.
+  ok(/ragStatus: S\.ragStatus \|\| null/.test(code) && /receipt: S\.genReceipt \|\| null/.test(code),
      "the job handle persists ragStatus at submit, so it survives a reload");
   ok(/ragStatus: \(stored && stored\.ragStatus\) \|\| null/.test(code),
      "…and the resume path stamps it back onto the reconnected talk");

@@ -759,6 +759,102 @@ function _newGenJobId(){
   S.genJobId = id;
   return id;
 }
+// ══ GENERATION CREDENTIALS ══════════════════════════════════════════════════════════════════════════
+// ONE holder for {jobId, receipt}. They were scattered — S.genJobId set in one place, S.genReceipt in
+// another, and neither persisted — which is how the async path ended up with a job and no receipt, and
+// how a reload lost authorisation for the citation audit on a talk that was already paid for.
+//
+// Persisted ALONGSIDE ct_active_job, not separately: a reconnect needs both or neither. Losing the
+// receipt while keeping the job is the shape that produced 402s on follow-up calls after a reload.
+var GEN_CRED_KEY = "ct_active_cred";
+
+function setGenCredentials(jobId, receipt, extra){
+  S.genJobId = jobId || null;
+  S.genReceipt = receipt || null;
+  try{
+    if(jobId && receipt){
+      localStorage.setItem(GEN_CRED_KEY, JSON.stringify(Object.assign({
+        jobId: jobId, receipt: receipt, at: Date.now()
+      }, extra || {})));
+    }
+  }catch(_){}
+}
+function loadGenCredentials(){
+  try{
+    var c = JSON.parse(localStorage.getItem(GEN_CRED_KEY) || "null");
+    if(!c || !c.jobId || !c.receipt) return null;
+    // A receipt lives 30 minutes server-side. Treat anything older as gone rather than sending a dead
+    // credential and reading the 402 as a permissions problem.
+    if(Date.now() - (c.at || 0) > 30 * 60 * 1000) return null;
+    return c;
+  }catch(_){ return null; }
+}
+// CLEARED ONLY ON DELIVERY, CONFIRMED CANCELLATION, OR EXPIRY — never on a transient failure, for the
+// same reason the reconnect handle is not: the work may still be running and already paid for.
+function clearGenCredentials(why){
+  S.genJobId = null; S.genReceipt = null;
+  try{ localStorage.removeItem(GEN_CRED_KEY); }catch(_){}
+  if(why) console.info("Cleared generation credentials: " + why);
+}
+
+// ── CREATE A GENERATION SESSION ──────────────────────────────────────────────────────────────────────
+// Reserves the credit AND mints the receipt in one server call, BEFORE any model call. The old order was
+// draft-then-consume, so the very first request had no receipt and 402'd: the client and the Worker
+// disagreed about when authorisation comes into existence.
+async function createGenSession(jobId){
+  if(!freeTierActive()) return {ok:true, skipped:true};
+  var id = jobId || _newGenJobId();
+  try{
+    var r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/v1/free-tier/session", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "X-Supabase-Auth": freeTierToken() },
+      body: JSON.stringify({ jobId: id })
+    });
+    var data = {}; try{ data = await r.json(); }catch(_){}
+    if(r.ok && data.receipt){
+      setGenCredentials(data.jobId || id, data.receipt);
+      if(data.remaining) S.freeTier = Object.assign({}, S.freeTier, {
+        talks_remaining: data.remaining.talks_remaining,
+        images_remaining: data.remaining.images_remaining,
+        signed_in: true
+      });
+      return {ok:true, jobId: data.jobId || id, receipt: data.receipt, charged: !!data.charged};
+    }
+    return {ok:false,
+            code:(data.error&&data.error.type)||"session_error",
+            message:(data.error&&data.error.message)||"Couldn't start your generation."};
+  }catch(e){
+    return {ok:false, code:"network",
+            message:"Couldn't reach the generation service. Try again, or set your own key."};
+  }
+}
+
+// ── A NARROW, FREE SESSION FOR REFINING A SAVED TALK ────────────────────────────────────────────────
+// A generation receipt lives 30 minutes and cannot authorise a refine three days later. This mints a
+// fresh one bound to refine/critique/aux — never draft — after the server verifies the caller owns that
+// saved talk. Free by product decision: refinement is part of the talk already paid for.
+async function createRefineSession(talkId){
+  if(!freeTierActive()) return {ok:true, skipped:true};
+  if(!talkId) return {ok:false, code:"no_talk_id", message:"Save this talk before refining it."};
+  try{
+    var r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/v1/free-tier/refine-session", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "X-Supabase-Auth": freeTierToken() },
+      body: JSON.stringify({ talkId: talkId })
+    });
+    var data = {}; try{ data = await r.json(); }catch(_){}
+    if(r.ok && data.receipt){
+      setGenCredentials(data.jobId, data.receipt, { refineOf: talkId });
+      return {ok:true, jobId: data.jobId, receipt: data.receipt};
+    }
+    return {ok:false,
+            code:(data.error&&data.error.type)||"refine_session_error",
+            message:(data.error&&data.error.message)||"Couldn't authorise this refinement."};
+  }catch(e){
+    return {ok:false, code:"network", message:"Couldn't reach the generation service."};
+  }
+}
+
 async function consumeFreeTier(kind){
   if(!freeTierActive()) return {ok:true, skipped:true};
   try{
@@ -1348,7 +1444,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-13";
+var BUILD_ID = "2026-07-31-15";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1458,11 +1554,19 @@ function asyncGenApplicable(){
   // Use the BACKGROUND (async) path on MOBILE: it survives the user leaving the tab / locking the phone,
   // AND now streams a live partial draft back via polling so they still watch it build. On DESKTOP, prefer
   // the SYNC path for the smoother token-by-token stream (backgrounding is rare there). (Jenni 2026-07-10)
-  try{
-    var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-    var narrow = (window.matchMedia && window.matchMedia("(max-width: 820px)").matches) || ((window.innerWidth||1024) < 820);
-    return !!(coarse || narrow);
-  }catch(_){ return false; }
+  // ── FREE TIER IS ALWAYS DURABLE (Codex, 2026-07-31) ──────────────────────────────────────────────
+  // This used to return true only on mobile, so desktop free-tier generation ran the SYNCHRONOUS path —
+  // which meant the browser owned billing reconciliation: it reserved a credit before drafting, and if
+  // drafting, parsing or review then failed, nothing refunded it. The durable path already has terminal
+  // reconciliation that is server-owned, exactly-once and tested.
+  //
+  // Routing every free-tier generation through it DELETES that problem instead of solving it: no sync
+  // session lifecycle, no finalize endpoint, no client-requested refund to make exactly-once, and no
+  // permanent talk receipt stranded on a job that failed client-side.
+  //
+  // BYOK still takes the sync path — it spends the user's own key, so there is no reservation, no
+  // receipt and nothing to reconcile.
+  return true;
 }
 
 // Submit a background job. Returns { jobId } on success, or null to signal "fall back to sync".
@@ -1633,6 +1737,18 @@ async function resumeAsyncJobIfAny(){
   S.genId = (S.genId || 0) + 1;
   var _myGenId = S.genId;
   S.genCancelled = false;
+  // RESTORE THE CREDENTIALS FIRST. Everything below this point may make authorised calls (the critique
+  // retry, the citation audit), and without the receipt they would 402 on work already paid for.
+  // Prefer the receipt stored with the job; fall back to the standalone credential record.
+  var _cred = loadGenCredentials();
+  var _resumeReceipt = stored.receipt || (_cred && _cred.jobId === stored.jobId ? _cred.receipt : null);
+  if(_resumeReceipt){
+    setGenCredentials(stored.jobId, _resumeReceipt);
+  } else {
+    S.genJobId = stored.jobId;
+    console.warn("Resumed job " + stored.jobId + " without a receipt — the citation audit and diagram "
+               + "prompts will not be authorised for this talk.");
+  }
   if(stored.topic) S.topic = stored.topic;
   if(stored.style) S.style = stored.style;
   if(stored.depth) S.depth = stored.depth;
@@ -1756,6 +1872,8 @@ async function resumeAsyncJobIfAny(){
     // SAFE TO RELEASE NOW: the finished talk is in S.talk and rendered, so there is another way back
     // to this work. Compare-and-delete, in case a newer generation already claimed the slot.
     _clearActiveJob(stored && stored.jobId, "resumed talk delivered");
+    // Same reasoning as the synchronous delivery above: the post-delivery citation audit needs the
+    // receipt, so the credential outlives the handle and ends only at expiry or replacement.
     if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
   }catch(err){
     // PRESERVE THE HANDLE ON ANYTHING RECOVERABLE. This unconditionally deleted it, so a parse or
@@ -7484,16 +7602,49 @@ async function generate(){
     // to know which one actually ran. Declared HERE with the other draft flags to avoid the var-hoisting
     // trap that has bitten this function twice. (Codex 2026-07-26)
     var txt, _asyncCritTxt = null, _asyncCritModel = "", _useAsync = false, _draftWebSearched = false, _draftModel = "";
+
+    // ── AUTHORISE BEFORE SPENDING (Codex, 2026-07-31) ────────────────────────────────────────────
+    // The session reserves the credit AND mints the receipt in one server call, before the first model
+    // call. The old order drafted first and consumed afterwards, so the very first /v1/messages request
+    // carried no receipt and was rejected 402 — the client and the Worker disagreed about when
+    // authorisation comes into existence.
+    //
+    // DECIDED ONCE. asyncGenApplicable() was evaluated before AND after an await, so a viewport change
+    // in between could reserve a sync session and then start a separately reserved async job — two
+    // credits for one talk. (Codex, 2026-07-31)
+    var _wantAsync = asyncGenApplicable();
+    // The ASYNC path reserves server-side and returns its own receipt, so it skips this: taking a
+    // session here as well would reserve the same credit twice under two different job ids.
+    if(genUsesFreeTier() && !_wantAsync){
+      var _sess = await createGenSession(S.genJobId || null);
+      if(!_sess.ok && !_sess.skipped){
+        clearInterval(loadTimer); S.loading = false;
+        S.error = _sess.code === "quota_exceeded"
+          ? (_sess.message || "You've used all your free talks.")
+          : (_sess.message || "Couldn't start your generation. Please try again.");
+        if(typeof render === "function") render();
+        return;
+      }
+    }
     // Held at generate() scope so the catch can compare-and-delete against the job it actually
     // submitted, rather than deleting whatever happens to be in the slot.
     var _asyncJobId = null;
-    if (asyncGenApplicable()) {
+    if (_wantAsync) {
       var _job = await submitAsyncGeneration({
         draft:    { sys: sys, content: uc, maxTok: maxTok, models: mainModels, tools: (mainOpts.tools || null) },
         critique: { sys: critiqueSystem, prefix: critiquePrefix, maxTok: critMaxTok, models: criticModels }
       });
       if (_job && _job.jobId) {
         _useAsync = true;
+        // THE RECEIPT COMES BACK FROM THE SERVER HERE. Background generation reserves the credit
+        // server-side, so the browser never saw an authorisation — and every follow-up call (citation
+        // audit, diagram prompt, refine) 402'd on a talk that had been correctly paid for.
+        if (_job.receipt) {
+          setGenCredentials(_job.jobId, _job.receipt);
+        } else {
+          console.warn("Background generation returned no receipt — follow-up calls (citation audit, "
+                     + "diagrams) will not be authorised for this talk.");
+        }
         // Persist for reload-reconnect: if the user reloads mid-gen, boot logic resumes this job.
         // Persist the RETRIEVED-SOURCE DIGEST too. resumeAsyncJobIfAny() runs after a page reload, where
         // S.ragChunks is empty — so its critique retry was rebuilding the reviewer's ground-truth context
@@ -7510,7 +7661,12 @@ async function generate(){
           // The DISCLOSURE has to survive the reload too, not just the evidence. Without this a
           // resumed talk stamped _ragStatus=null and the "Evidence retrieval unavailable" warning
           // silently vanished on reconnect — found in a live reconnect test, 2026-07-31.
-          ragStatus: S.ragStatus || null, at: Date.now() })); } catch(_){}
+          ragStatus: S.ragStatus || null,
+          // THE RECEIPT TRAVELS WITH THE JOB. Stored here as well as in ct_active_cred because a
+          // reconnect needs BOTH or neither — a restored job with no receipt is exactly the state that
+          // 402'd every follow-up call after a reload.
+          receipt: S.genReceipt || null,
+          at: Date.now() })); } catch(_){}
         _asyncJobId = _job.jobId;
         S.genBackgroundSafe = true;   // async path survives backgrounding → swap the "keep tab open" warning
         S.loadMsg = "Generating on our servers — safe to switch tabs or lock your phone.";
@@ -7712,8 +7868,11 @@ async function generate(){
   // ASYNC EXCEPTION: the background path consumes quota SERVER-SIDE (see worker runGeneration), so the
   // charge happens even if the user never reconnects. Skip the client consume here to avoid
   // double-charging. Only the synchronous path consumes on the client. (Jenni 2026-07-03)
+  // NO LONGER CONSUMES HERE. The session above already reserved the credit and minted the receipt
+  // before drafting; consuming again would charge twice for one talk. Kept as a refresh of the badge so
+  // the remaining count still updates at the moment the talk lands.
   if(genUsesFreeTier() && !_useAsync){
-    try{ await consumeFreeTier("talk"); }catch(_){}
+    try{ if(typeof refreshFreeTierStatus === "function") await refreshFreeTierStatus(); }catch(_){}
   } else if(_useAsync && typeof refreshFreeTierStatus === "function"){
     // Quota was decremented on the server — refresh the badge so the client count stays in sync.
     try{ refreshFreeTierStatus(); }catch(_){}
@@ -7726,6 +7885,14 @@ async function generate(){
   // Everything between the Workflow returning and this assignment can throw, and while it can, the
   // handle is the only route back to a result the user has already paid for.
   if (_useAsync) _clearActiveJob(_asyncJobId, "talk delivered");
+  // CREDENTIALS ARE **NOT** CLEARED HERE (Codex, 2026-07-31).
+  // The citation audit starts AFTER this point, and so do user-triggered diagrams and podcast scripts.
+  // Clearing on delivery meant every one of them sent no receipt and would 402 the moment enforcement is
+  // enabled — on a talk that had just been paid for.
+  //
+  // The reconnect HANDLE is released here (the talk is delivered, so there is nothing to reconnect to),
+  // but the AUTHORISATION outlives it: it expires on its own after 30 minutes, and a new generation
+  // replaces it. Those are the only two ways it should end.
     S.sec=0;S.dg=null;S.dgErr="";S.podScript="";
     if (glRef) { S.glRef = glRef; } else { S.glRef = null; }
     // Always cache the depth we just generated so an immediate flip back is instant AND both variants
@@ -7900,6 +8067,7 @@ function cancelGen(){
         if(cr.ok && cj && cj.cancelled === true && _refundSettled){
           _cancelResolved = true;
           _clearActiveJob(jobId, "server confirmed cancellation and refund");
+          clearGenCredentials("cancellation and refund confirmed");
         } else if(cr.ok && cj && cj.already_complete === true){
           _cancelResolved = true;   // nothing left running; the finished talk is collectable
           // Too late to cancel — the talk finished. Keep the handle so a reload collects the work that
