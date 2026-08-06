@@ -68,7 +68,13 @@ ok(/web_search_tool_result/.test(html) && /opts\.__webSearched\s*=\s*true/.test(
 ok(/webSearched:\s*!!modelOpts\.__webSearched/.test(html), "callAPIWithFallback returns the real webSearched signal");
 ok(/S\.reviewPending\.charged/.test(html) && /retrying the review won/.test(html), "withheld-draft copy is conditional on whether a credit was already charged");
 ok(/charged:\s*!!_useAsync/.test(html), "async (Worker-reserved credit) is tracked as charged on the withheld draft");
-ok(/if\s*\(\s*genUsesFreeTier\(\)\s*&&\s*!rp\.charged\s*\)/.test(html), "retry does NOT re-charge a credit");
+// SUPERSEDED: this asserted the guard `genUsesFreeTier() && !rp.charged`, which stopped a review retry
+// from charging a SECOND credit. Retrying a review now charges nothing at all — it re-reviews a draft the
+// user already paid for — so the guard it was checking is gone along with the charge. The stronger property
+// (no refinement path consumes a credit anywhere) is asserted in test_refine_is_free.mjs.
+ok(!/consumeFreeTier\("talk"\)/.test(html.slice(html.indexOf("async function retryReview()"),
+                                                html.indexOf("async function retryReview()") + 3000)),
+   "retry does not charge a credit at all, let alone re-charge one");
 ok(/guidelinesLoaded: !!glRef/.test(html), "_guidelinesLoaded is derived from an actual guideline match (passed to the provenance stamp)");
 
 // ---- Worker → browser web-search propagation (Codex 2026-07) ----------------

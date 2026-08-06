@@ -74,13 +74,23 @@ const signOutSrc = html.slice(html.indexOf("async function signOut()"), html.ind
 ok(/removeItem\("ct_review_pending"\)/.test(signOutSrc), "sign-out deletes the persisted withheld draft");
 ok(/resetAll\(\)/.test(signOutSrc), "sign-out clears the signed-out user's talk from the screen");
 
-// ── 6) refine must charge only when the talk is actually replaced ───────────────
+// ── 6) refine must not charge AT ALL ────────────────────────────────────────────
+// SUPERSEDED, and the old version is worth recording. This asserted that the charge sat in the branch
+// which actually replaces S.talk — a real fix at the time, because charging before the guard branches let a
+// user pay a credit and get nothing. But the premise underneath it was wrong: refinement is part of the
+// talk already paid for and must not be charged in ANY branch (Jenni, 2026-07-31). Production confirmed the
+// cost on 2026-08-06 — one refine took talks_used from 6 to 7, through the legacy user-scoped consume that
+// writes no reservation row, so it could not even be refunded job-keyed.
+//
+// "Charge in the right branch" is now "charge in no branch". See test_refine_is_free.mjs for the full
+// property, including that a refusal makes no model call.
 const weaveIdx = html.indexOf("var parsed = JSON.parse(fixJSON(txt));");
 const weaveWindow = html.slice(weaveIdx, weaveIdx + 500);
-ok(!/consumeFreeTier\("talk"\)/.test(weaveWindow), "weaveFeedbackTalk no longer charges on mere parse success");
+ok(!/consumeFreeTier\("talk"\)/.test(weaveWindow), "weaveFeedbackTalk does not charge on parse success");
 const applyIdx = html.indexOf("S.talk = revised;");
 const applyWindow = html.slice(applyIdx, applyIdx + 400);
-ok(/consumeFreeTier\("talk"\)/.test(applyWindow), "the charge now sits in the branch that actually replaces S.talk");
+ok(!/consumeFreeTier\("talk"\)/.test(applyWindow),
+   "and the branch that replaces S.talk does not charge either — refinement is free");
 // the four guard branches must remain uncharged
 const guardBlock = html.slice(html.indexOf("would have dropped content"), applyIdx);
 ok(!/consumeFreeTier/.test(guardBlock), "none of the discard guards (content/ref/section/no-op) charge a credit");

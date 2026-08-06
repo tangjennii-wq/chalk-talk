@@ -873,6 +873,41 @@ async function createGenSession(jobId){
   }
 }
 
+// ── AUTHORISE A REFINEMENT. NEVER CHARGE FOR ONE. ───────────────────────────────────────────────────
+// Refinement is part of the talk the user already paid for (Jenni, 2026-07-31: "let's just not charge for
+// refine"). All five refinement operations nevertheless called consumeFreeTier("talk") — a FULL talk
+// credit, taken through the legacy user-scoped path that writes no job_reservations row, so the
+// exactly-once refund machinery could not even see it. Meanwhile createRefineSession(), built for exactly
+// this and free by design, was never called from anywhere. Verified in production 2026-08-06: one refine
+// took talks_used from 6 to 7.
+//
+// Two legitimate sources of authority, in order:
+//   1. the receipt already in hand, for a talk generated moments ago and not yet saved
+//   2. the narrow, ownership-checked refine receipt for a SAVED talk, which costs nothing
+//
+// THERE IS DELIBERATELY NO FALLBACK TO consumeFreeTier. If authorisation cannot be obtained we refuse and
+// leave the talk untouched, because the alternative is an outage quietly re-pricing a free action at one
+// credit — which is worse than a visible error, and invisible to the user until their quota is gone.
+async function ensureRefineAuth(){
+  if(!freeTierActive()) return { ok:true, skipped:true };   // BYOK: the user's own key pays for it
+
+  var c = loadGenCredentials();
+  if(c && c.receipt && (!c.expiresAt || Date.parse(c.expiresAt) > Date.now() + 5000)){
+    return { ok:true, reused:true };
+  }
+  var talkId = (S.talk && (S.talk.id || S.talk.talkId)) || null;
+  if(talkId){
+    var sess = await createRefineSession(talkId);
+    if(sess && sess.ok) return { ok:true, refineSession:true };
+    // Keep the server's reason — "That talk isn't yours" is more useful than a generic failure — but always
+    // append the reassurance, because the first thing a user wonders is whether their talk survived.
+    var why = (sess && sess.message) || "Couldn't authorise this refinement.";
+    return { ok:false, message: why.replace(/\s*$/, "") + " Your talk is unchanged." };
+  }
+  return { ok:false, message:"Couldn't authorise this refinement, so your talk is unchanged. "
+    + "Save the talk first, then refine it." };
+}
+
 // ── A NARROW, FREE SESSION FOR REFINING A SAVED TALK ────────────────────────────────────────────────
 // A generation receipt lives 30 minutes and cannot authorise a refine three days later. This mints a
 // fresh one bound to refine/critique/aux — never draft — after the server verifies the caller owns that
@@ -1488,7 +1523,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-18";
+var BUILD_ID = "2026-07-31-19";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -8689,6 +8724,12 @@ async function weaveFeedbackTalk(userMsg){
 // Orchestrator: history snapshot, model call, safety guard (keep original if content dropped),
 // messaging, Undo, and staleness flags — mirrors the restructure block's conventions exactly.
 async function applyProofreadFeedback(userMsg){
+  // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
+  var _ra = await ensureRefineAuth();
+  if(!_ra.ok){
+    S.msgs.push({ r:"a", t:_ra.message });
+    S._proofreadRunning = false; S.chatBusy = false; render(); return;
+  }
   if(!S.talk) return;
   pushTalkHistory("proofread");
   S.chatBusy = true;
@@ -8725,10 +8766,8 @@ async function applyProofreadFeedback(userMsg){
           if(refineTimer){ clearInterval(refineTimer); refineTimer=null; } S._proofreadRunning=false; S.chatBusy=false; render(); return;
         }
         S.talk = revised;
-        // CHARGE HERE, not on parse (2026-07-26): this is the only branch that actually changes the
-        // user's talk. The four guard branches above keep the original untouched, and charging before
-        // them meant a user could pay a credit and get nothing.
-        if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
+        // NO CHARGE. Refinement is part of the talk already paid for; authorisation was obtained at the
+        // top of this function via ensureRefineAuth(). This line used to take a full talk credit.
         if(S.dg && S.dg.imgB64) S.visualStale = true;
         else { S.dg = null; S.dgErr = ""; }
         S.podScript = ""; S.talkIsSaved = false;
@@ -8783,6 +8822,9 @@ async function applyProofreadFeedback(userMsg){
 // rewrites bullets/pearls/tips in fewer words. Returns the full updated talk JSON.
 // Uses Sonnet 4.6 with high max_tokens so nothing gets squeezed out. (Jenni 2026-06-11)
 async function compressTalk(userMsg){
+  // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
+  var _ra = await ensureRefineAuth();
+  if(!_ra.ok){ var _e = new Error(_ra.message); _e.code = "refine_unauthorised"; throw _e; }
   if(!S.talk) return null;
   var existingJson = JSON.stringify(S.talk);
   var sectionList = (S.talk.sections||[]).map(function(s,i){return (i+1)+". "+(s.heading||"(no heading)")}).join("\n  ");
@@ -8826,7 +8868,7 @@ async function compressTalk(userMsg){
   var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk", stage: "refine" });
   // parse before charging — malformed OR incomplete = no charge, no render (Codex 2026-07-26)
   var compressed = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "compressed talk");
-  if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }   // was a free full generation with no consume (quota bypass)
+  // NO CHARGE: authorised at the top of this function, and refinement is free by policy.
   if(typeof deepCleanCitations === "function") compressed = deepCleanCitations(compressed);
   if(typeof pruneFakeReferences === "function") compressed = pruneFakeReferences(compressed);
   return compressed;
@@ -8836,6 +8878,9 @@ async function compressTalk(userMsg){
 // bullet/pearl/tip with more depth (mechanism, rationale, examples, doses, evidence). Mirror of
 // compressTalk. Used when the user says "more detailed" / "go deeper" / "expand". (Jenni 2026-06-11)
 async function expandTalk(userMsg){
+  // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
+  var _ra = await ensureRefineAuth();
+  if(!_ra.ok){ var _e = new Error(_ra.message); _e.code = "refine_unauthorised"; throw _e; }
   if(!S.talk) return null;
   var existingJson = JSON.stringify(S.talk);
   var sectionList = (S.talk.sections||[]).map(function(s,i){return (i+1)+". "+(s.heading||"(no heading)")}).join("\n  ");
@@ -8884,7 +8929,7 @@ async function expandTalk(userMsg){
   var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk", stage: "refine" });
   // parse before charging — malformed OR incomplete = no charge, no render (Codex 2026-07-26)
   var expanded = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "expanded talk");
-  if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }   // was a free full generation with no consume (quota bypass)
+  // NO CHARGE: authorised at the top of this function, and refinement is free by policy.
   if(typeof deepCleanCitations === "function") expanded = deepCleanCitations(expanded);
   if(typeof pruneFakeReferences === "function") expanded = pruneFakeReferences(expanded);
   return expanded;
@@ -8934,6 +8979,9 @@ function undoLastEdit(){
 // reshapes (rewrite / shorten / expand / restructure) still route to their dedicated paths.
 // (Surgical add/edit/delete: Jenni 2026-06-22. Was add-only before.)
 async function weaveRevision(userMsg){
+  // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
+  var _ra = await ensureRefineAuth();
+  if(!_ra.ok){ var _e = new Error(_ra.message); _e.code = "refine_unauthorised"; throw _e; }
   if(!S.talk) return null;
   // Refines count as 1 talk (FREE_TIER_SPEC.md). Charge-AFTER (Jenni 2026-07-03): pre-check only if
   // visibly exhausted; the actual consume happens after the model call succeeds (see below).
@@ -9032,8 +9080,7 @@ async function weaveRevision(userMsg){
   // task where Haiku was occasionally dropping bullets. Worth ~$0.02/refine for the bump in
   // reliability. (Jenni 2026-06-10 "increase the cap for refine".)
   var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind: "talk", stage: "refine" });
-  // Charge-after: the refine model call succeeded (owner billed), so consume 1 talk now.
-  if(genUsesFreeTier()){ try{ await consumeFreeTier("talk"); }catch(_){} }
+  // NO CHARGE: authorised at the top of this function, and refinement is free by policy.
   var patch = JSON.parse(fixJSON(txt));
   // Returns the patch — caller applies it via applyWeavePatch().
   return { kind: "patch", patch: patch };
@@ -9879,6 +9926,9 @@ function rebuildLesson(){
 // retryReview re-runs ONLY the review (no re-draft, no extra credit) on the same draft; on success it
 // finalizes + charges once + shows the talk. Switching provider retries the review via the new model.
 async function retryReview(){
+  // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
+  var _ra = await ensureRefineAuth();
+  if(!_ra.ok){ S.error = _ra.message; S.reviewRetrying = false; render(); return; }
   var rp = S.reviewPending;
   if(!rp || S.reviewRetrying) return;
   S.reviewRetrying = true; S.error = ""; render();
@@ -9911,7 +9961,7 @@ async function retryReview(){
     ragStatus: rp.ragStatus || null,
     guidelinesLoaded: (rp.guidelinesLoaded != null ? rp.guidelinesLoaded : !!getGuidelinesForTopic(rp.topic))
   });
-  if (genUsesFreeTier() && !rp.charged){ try{ await consumeFreeTier("talk"); }catch(_){} }
+  // NO CHARGE: a review retry re-reviews a draft the user already paid for.
   S.reviewPending = null; _saveReviewPending();
   S.topic = rp.topic; S.style = rp.style || S.style; if(rp.depth) S.depth = rp.depth;
   S.citationAuditPending = true; S.talk = finalTalk; S.sec = 0; S.dg = null; S.dgErr = ""; S.podScript = "";
