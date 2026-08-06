@@ -2067,7 +2067,18 @@ async function handleGenerateAsync(request, env, ctx, origin) {
         console.error(JSON.stringify({ event: "job_id_collision", where: "kv_resume", jobId, claimant: user.id }));
         return jsonError(404, "job_not_found", "Job expired or not found.", origin);
       }
-      return jsonOK({ jobId, createdAt: ex.createdAt || new Date().toISOString(), resumed: true }, origin);
+      // A DUPLICATE SUBMIT IS A SUCCESSFUL START FROM THE BROWSER'S SIDE, so it must come back with a
+      // working receipt (invariant 2). This branch returned only {jobId, resumed} — fine while the client
+      // still held its stored credential, and a dead end when it didn't: a reload on a different tab, or
+      // cleared storage, left a paid running job the browser could not authorise a single call against.
+      // The credit was taken at the first submit; minting is idempotent, so this charges nothing.
+      let exReceipt = null, exExpiry = null;
+      try {
+        const m = await mintReceipt(env, { userId: user.id, jobId, kind: "talk" });
+        exReceipt = m.receipt; exExpiry = m.expiresAt;
+      } catch (_) { console.error(JSON.stringify({ event: "async_receipt_mint_failed", jobId, where: "kv_resume" })); }
+      return jsonOK({ jobId, createdAt: ex.createdAt || new Date().toISOString(), resumed: true,
+                      durable: true, receipt: exReceipt, receiptExpiresAt: exExpiry }, origin);
     }
   } catch (_) { /* KV read hiccup — proceed to create */ }
 

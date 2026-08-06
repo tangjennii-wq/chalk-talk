@@ -7,6 +7,16 @@ import { readFileSync } from "fs";
 import vm from "vm";
 
 // Extract the guard functions straight from index.html so this test always exercises live code.
+// ── ASSERTIONS THAT CAN ACTUALLY FAIL ────────────────────────────────────────────────────────────────
+// Every check in this file was a assert(). That prints "Assertion failed" to stderr and returns —
+// it does not throw, does not set an exit code, and does not stop the run. The file then ended with
+// "✔ ALL TESTS PASSED" printed UNCONDITIONALLY and exited 0. This suite could not fail. It was counted as
+// passing 39 times today on that basis, and the assertion below is the first thing that can contradict it.
+let failures = 0;
+const assert = (cond, msg) => {
+  if (!cond) { failures++; console.log("✗ FAIL — " + String(msg || "assertion")); }
+};
+
 const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
 function extractFn(name){
   let i = html.indexOf("function " + name + "(");
@@ -59,32 +69,32 @@ const addRefs = [
   { id: 9, source: "Memory Society Guideline", year: 2023, society: "AHA", url: "https://fake.example.org/x", type: "guideline" } // NOT in paste
 ];
 const g = vm.runInContext("_filterRefsToPaste", ctx)(addRefs, PASTE);
-console.assert(g.kept.length === 1 && g.kept[0].id === 7, "FAIL: paste filter kept wrong refs", JSON.stringify(g));
-console.assert(g.droppedIds.join(",") === "8,9", "FAIL: droppedIds wrong", g.droppedIds);
+assert(g.kept.length === 1 && g.kept[0].id === 7, "FAIL: paste filter kept wrong refs", JSON.stringify(g));
+assert(g.droppedIds.join(",") === "8,9", "FAIL: droppedIds wrong", g.droppedIds);
 console.log("✓ Option A: 1 paste-sourced ref kept, 2 invented refs dropped");
 
 // ── Test 2: Option B pubmed verify (mocked eutils)
 const pm = await vm.runInContext("_esummaryBatch", ctx)(["30926722", "99999999"]);
-console.assert(pm["30926722"].ok === true && pm["30926722"].year === 2021 && pm["30926722"].journal === "Chest", "FAIL: esummary parse", JSON.stringify(pm));
-console.assert(pm["99999999"].ok === false, "FAIL: bad pmid should be ok:false");
-console.assert(pm["30926722"].title.endsWith("Guideline"), "FAIL: trailing period not stripped");
+assert(pm["30926722"].ok === true && pm["30926722"].year === 2021 && pm["30926722"].journal === "Chest", "FAIL: esummary parse", JSON.stringify(pm));
+assert(pm["99999999"].ok === false, "FAIL: bad pmid should be ok:false");
+assert(pm["30926722"].title.endsWith("Guideline"), "FAIL: trailing period not stripped");
 console.log("✓ Option B: real PMID resolves w/ metadata, fake PMID flagged, title cleaned");
 
 // ── Test 3: fail-open when eutils is down
 const ctxDown = { ...ctx, fetch: async () => { throw new Error("network down"); } };
 vm.createContext(ctxDown); vm.runInContext(fns, ctxDown);
 const pmDown = await vm.runInContext("_esummaryBatch", ctxDown)(["30926722"]);
-console.assert(pmDown === null, "FAIL: should return null on network error (fail open)");
+assert(pmDown === null, "FAIL: should return null on network error (fail open)");
 console.log("✓ fail-open: lookup returns null on network error");
 
 // ── Test 4: chip strip removes only dropped ids, keeps others
 const talk = { sections: [{ heading:"Tx", points: ["Use DOACs first [7]", "Steroids x5 days [8]", "Combo claim [7,8] stays partial", "Old bullet [2]"] }], references: [] };
 const stripped = vm.runInContext("_stripChipIds", ctx)(talk, ["8","9"]);
 const pts = stripped.sections[0].points;
-console.assert(pts[0].includes("[7]"), "FAIL: kept chip removed");
-console.assert(!pts[1].includes("[8]") && !pts[1].includes("["), "FAIL: dropped chip survives: " + pts[1]);
-console.assert(pts[2].includes("[7]") && !pts[2].includes("8"), "FAIL: partial chip wrong: " + pts[2]);
-console.assert(pts[3].includes("[2]"), "FAIL: unrelated chip removed");
+assert(pts[0].includes("[7]"), "FAIL: kept chip removed");
+assert(!pts[1].includes("[8]") && !pts[1].includes("["), "FAIL: dropped chip survives: " + pts[1]);
+assert(pts[2].includes("[7]") && !pts[2].includes("8"), "FAIL: partial chip wrong: " + pts[2]);
+assert(pts[3].includes("[2]"), "FAIL: unrelated chip removed");
 console.log("✓ chip strip: dangling chips removed, surviving + unrelated chips intact");
 
 // ── Test 5: _normalizeInlinePmids with extraMeta turns pasted PMID into a chip + verified ref
@@ -92,18 +102,21 @@ const talk2 = { sections: [{ heading:"Tx", points: ["DOACs preferred (PMID 30926
 const extra = { "30926722": { title: "Antithrombotic Therapy for VTE Disease: CHEST Guideline", journal: "Chest", year: 2021 } };
 const norm = vm.runInContext("_normalizeInlinePmids", ctx)(talk2, extra);
 const p2 = norm.sections[0].points;
-console.assert(p2[0].includes("[2]"), "FAIL: verified inline PMID not converted to chip: " + p2[0]);
-console.assert(!p2[1].includes("11111111"), "FAIL: unverifiable inline PMID not dropped: " + p2[1]);
+assert(p2[0].includes("[2]"), "FAIL: verified inline PMID not converted to chip: " + p2[0]);
+assert(!p2[1].includes("11111111"), "FAIL: unverifiable inline PMID not dropped: " + p2[1]);
 const newRef = norm.references.find(r => r.pmid === "30926722");
-console.assert(newRef && newRef.src_verified === "pubmed" && newRef.society === "Chest", "FAIL: ref meta", JSON.stringify(newRef));
+assert(newRef && newRef.src_verified === "pubmed" && newRef.society === "Chest", "FAIL: ref meta", JSON.stringify(newRef));
 console.log("✓ normalize: pasted+verified PMID → chip [2] with PubMed metadata; invented inline PMID dropped");
 
 // ── Test 6: pruneFakeReferences keeps src_verified refs (no ragChunks, title not in prose)
 const pruned = vm.runInContext("pruneFakeReferences", ctx)(JSON.parse(JSON.stringify(norm)));
-console.assert(pruned.references.some(r => r.pmid === "30926722"), "FAIL: verified ref was pruned");
+assert(pruned.references.some(r => r.pmid === "30926722"), "FAIL: verified ref was pruned");
 console.log("✓ prune: src_verified ref survives pruneFakeReferences");
 
 // ── Test 7 (acceptance): net effect = exactly ONE new reference, uncited correction has no chip
 const finalRefs = pruned.references.filter(r => r.pmid === "30926722");
-console.assert(finalRefs.length === 1, "FAIL: expected exactly one new verified ref");
-console.log("\n✔ ALL TESTS PASSED — acceptance criteria met: one real PMID → one chip; no citation → no chip.");
+assert(finalRefs.length === 1, "FAIL: expected exactly one new verified ref");
+console.log("\n" + (failures === 0
+  ? "✔ ALL TESTS PASSED — acceptance criteria met: one real PMID → one chip; no citation → no chip."
+  : "✗ " + failures + " FAILURE(S)"));
+process.exit(failures === 0 ? 0 : 1);

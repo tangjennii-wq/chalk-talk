@@ -118,10 +118,23 @@ const post = (path, body) => new Request("https://p.test" + path, {
 {
   const wsrc = readFileSync(new URL("./worker.js", import.meta.url), "utf8");
   const code = wsrc.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
-  ok(/durable: true, receipt: asyncReceipt/.test(code),
-     "/generate-async returns a receipt alongside {jobId, durable}");
-  ok(/resumed: true, receipt: resumeReceipt/.test(code),
-     "…and so does the resumed-duplicate response, so a reload keeps authorisation");
+  // THE PROPERTY, NOT THE PHRASING. These were exact source-text matches on one formatting of one object
+  // literal. Adding receiptExpiresAt broke both, reporting a regression in code that had just been made
+  // more correct — and my first repair matched only the FIRST of three durable returns, so a path missing
+  // its receipt could still have passed.
+  //
+  // What actually has to hold: EVERY response that tells the browser a durable job is running also hands
+  // it something to authorise with. Enumerate them and require it of each.
+  const durableReturns = [...code.matchAll(/return jsonOK\(\{[\s\S]{0,400}?\}, origin\);/g)]
+    .map(m => m[0]).filter(t => /durable: true/.test(t));
+  ok(durableReturns.length >= 3,
+     `found every durable-start response (${durableReturns.length}: fresh, workflow-duplicate, KV-resume)`);
+  const receiptless = durableReturns.filter(t => !/receipt/.test(t));
+  ok(receiptless.length === 0,
+     "EVERY durable-start response carries a receipt — none reports a running paid job the browser " +
+     `cannot authorise a single call against (${receiptless.length} without)`);
+  ok(durableReturns.every(t => /receiptExpiresAt/.test(t)),
+     "…each with its real absolute expiry, so a resume cannot reset a clock the database did not reset");
 }
 
 // ── 5 · REFINE OF A SAVED TALK IS FREE, AND GATED ON OWNERSHIP ───────────────

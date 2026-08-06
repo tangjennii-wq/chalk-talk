@@ -23,7 +23,7 @@ const realFetch = globalThis.fetch;
 /** Counts every quota RPC by name, so a refund cannot happen without this seeing it. */
 function makeHarness({ createBehaviour, instanceExists }) {
   const kv = new Map();
-  const rpc = { consume: 0, refund: 0, viaBonus: 0, viaJobKey: 0, viaUserScoped: 0 };
+  const rpc = { consume: 0, refund: 0, viaBonus: 0, viaJobKey: 0, viaUserScoped: 0, revoked: 0 };
   const reservedJobs = new Set();   // stands in for public.job_reservations
   const created = [];
   const env = {
@@ -77,6 +77,11 @@ function makeHarness({ createBehaviour, instanceExists }) {
     // is what production now calls. The property under test — exactly one refund — is unchanged.
     if (u.includes("/rpc/free_tier_grant_bonus")) { rpc.refund++; rpc.viaBonus++; return new Response("true", { status: 200, headers: { "Content-Type": "application/json" } }); }
     if (u.includes("/rpc/refund_talk_once")) { rpc.refund++; rpc.viaJobKey++; return new Response(JSON.stringify([{ refunded: true, outcome: "refunded" }]), { status: 200, headers: { "Content-Type": "application/json" } }); }
+    // abort_generation SUPERSEDES a bare refund on the start-failure path. Once the receipt is minted
+    // BEFORE Workflow.create(), refunding alone leaves a refunded job holding live authorisation — so the
+    // cleanup revokes and refunds in one transaction. It is still job-keyed and still exactly-once, which
+    // is what this suite exists to protect; it now also counts as a revocation.
+    if (u.includes("/rpc/abort_generation")) { rpc.refund++; rpc.viaJobKey++; rpc.revoked++; return new Response(JSON.stringify([{ aborted: true, refunded: true, outcome: "aborted_and_refunded" }]), { status: 200, headers: { "Content-Type": "application/json" } }); }
     if (u.includes("/rpc/") || u.includes("/rest/")) return new Response("[]", { status: 200, headers: { "Content-Type": "application/json" } });
     return new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } });
   };
@@ -134,6 +139,8 @@ const JOB = "abcdef0123456789abcdef0123456789";
   ok(res.status === 503, "a real start failure returns 503");
   ok(h.rpc.consume === 1 && h.rpc.refund === 1,
      "…refunding exactly one talk — the one this request reserved, no more");
+  ok(h.rpc.revoked === 1,
+     "…and REVOKING the receipt minted a moment earlier, so no refunded job keeps authorisation");
   ok(h.rpc.viaJobKey === 1 && h.rpc.viaBonus === 0,
      "…through the JOB-KEYED atomic refund, not the email-keyed bonus grant");
   ok((await h.env.JOBS_KV.get("job:" + JOB)) === null,

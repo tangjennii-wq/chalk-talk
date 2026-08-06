@@ -98,8 +98,12 @@ const grab = (name) => {
 // ── 3 · ASYNC STORES THE RECEIPT THE SERVER RETURNS ──────────────────────────
 {
   ok(/_job\.receipt/.test(code), "the async submit result is inspected for a receipt");
-  ok(/setGenCredentials\(_job\.jobId, _job\.receipt\)/.test(code),
+  // Match the CALL, not its exact argument list: adding the third argument (the server's absolute expiry)
+  // broke the closed-paren version of this pattern and reported a regression in a strict improvement.
+  ok(/setGenCredentials\(_job\.jobId, _job\.receipt\b/.test(code),
      "…and stored as a credential pair");
+  ok(/setGenCredentials\(_job\.jobId, _job\.receipt,[\s\S]{0,80}receiptExpiresAt/.test(code),
+     "…together with the server's absolute expiry, not the browser's arrival time");
   ok(/returned no receipt/.test(html),
      "…with an explicit warning when the server could not mint one, rather than silence");
 }
@@ -111,14 +115,20 @@ const grab = (name) => {
   const resume = code.slice(rStart, rEnd > rStart ? rEnd : code.length);
   ok(/loadGenCredentials\(\)/.test(resume), "resume consults the persisted credentials");
   ok(/stored\.receipt/.test(resume), "…and the receipt stored with the job record");
-  ok(/setGenCredentials\(stored\.jobId, _resumeReceipt\)/.test(resume),
+  ok(/setGenCredentials\(stored\.jobId, _resumeReceipt\b/.test(resume),
      "…restoring the pair together");
+  // A resume must PRESERVE the original expiry. Recomputing it here is precisely how a dead receipt looked
+  // live: the 402 that followed read as a permissions problem rather than an expiry.
+  ok(/expiresAt: stored\.receiptExpiresAt/.test(resume),
+     "…carrying the ORIGINAL absolute expiry rather than restamping it to now");
   ok(/without a receipt/.test(resume),
      "…and saying so when only the job survived, instead of silently 402-ing later");
 
   // The receipt must be written INTO the job record at submit, so the two cannot drift apart.
   ok(/receipt: S\.genReceipt \|\| null/.test(code),
      "the active-job record carries the receipt alongside the job id");
+  ok(/receiptExpiresAt: \(loadGenCredentials\(\) \|\| \{\}\)\.expiresAt/.test(code),
+     "…and its expiry, so the two cannot drift apart across a reload");
 
   // Restoration must happen before anything that could make an authorised call.
   const idxRestore = resume.indexOf("setGenCredentials");
