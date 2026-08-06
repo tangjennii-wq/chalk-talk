@@ -379,5 +379,151 @@ const post = (path, body) => new Request("https://p.test" + path, {
   ok(/begin;[\s\S]*commit;/.test(code), "…and the migration is transactional");
 }
 
+// ══ THE THREE MINIMAL-PASS INVARIANTS (Codex, frozen scope) ═════════════════════════════════════════
+//
+// ── I · FREE TIER IS WORKFLOW-ONLY, AND REFUSES BEFORE CHARGING ──────────────
+{
+  const mk = (bindings) => ({
+    ALLOWED_ORIGINS: ORIGIN, SUPABASE_URL: "https://x.test", SUPABASE_SERVICE_ROLE_KEY: "k",
+    SUPABASE_ANON_KEY: "a", ANTHROPIC_API_KEY: "sk", FREE_TALKS: "10", ...bindings,
+  });
+  const submit = () => new Request("https://p.test/generate-async", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Origin: ORIGIN, "X-Supabase-Auth": "t" },
+    body: JSON.stringify({ clientJobId: "11111111-2222-3333-4444-555555555555", topic: "x",
+                           style: "lecture", depth: "concise", system: "s",
+                           messages: [{ role: "user", content: "go" }], model: "claude-opus-5" }),
+  });
+  const kv = () => ({ get: async () => null, put: async () => {}, delete: async () => {} });
+
+  for (const [label, bindings] of [
+    ["GEN_WORKFLOW missing", { JOBS_KV: kv() }],
+    ["JOBS_KV missing",      { GEN_WORKFLOW: { create: async () => {}, get: async () => null } }],
+    ["both missing",         {}],
+  ]) {
+    let reserved = 0;
+    globalThis.fetch = async (u) => {
+      if (String(u).includes("/auth/v1/user")) return json({ id: "u-1", email: "j@t.dev" });
+      if (String(u).includes("/rpc/reserve_talk_for_job")) { reserved++; return json([{ reserved: true, outcome: "reserved" }]); }
+      return json([]);
+    };
+    const res = await worker.fetch(submit(), mk(bindings), ctx);
+    const b = await res.json();
+    globalThis.fetch = realFetch;
+    ok(res.status === 503, `${label} -> 503 (got ${res.status})`);
+    ok((b.error && b.error.type) === "async_unconfigured", `…as async_unconfigured`);
+    ok(reserved === 0, `…and ZERO credits reserved — refused before charging`);
+  }
+}
+
+// ── II · A SUCCESSFUL START RETURNS ONE WORKING RECEIPT WITH ITS REAL EXPIRY ──
+{
+  const created = [];
+  let mintedBeforeStart = null;
+  globalThis.fetch = async (u, i) => {
+    const su = String(u);
+    if (su.includes("/auth/v1/user")) return json({ id: "u-1", email: "j@t.dev" });
+    if (su.includes("/rpc/reserve_talk_for_job")) return json([{ reserved: true, outcome: "reserved", owner_id: "u-1" }]);
+    if (su.includes("/rpc/receipt_issue")) { mintedBeforeStart = created.length === 0; return json(null); }
+    return json([]);
+  };
+  const env = {
+    ALLOWED_ORIGINS: ORIGIN, SUPABASE_URL: "https://x.test", SUPABASE_SERVICE_ROLE_KEY: "k",
+    SUPABASE_ANON_KEY: "a", ANTHROPIC_API_KEY: "sk", FREE_TALKS: "10",
+    JOBS_KV: { get: async () => null, put: async () => {}, delete: async () => {} },
+    GEN_WORKFLOW: { create: async (o) => { created.push(o); }, get: async () => null },
+  };
+  const res = await worker.fetch(new Request("https://p.test/generate-async", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Origin: ORIGIN, "X-Supabase-Auth": "t" },
+    body: JSON.stringify({ clientJobId: "22222222-3333-4444-5555-666666666666", topic: "x",
+                           style: "lecture", depth: "concise", system: "s",
+                           messages: [{ role: "user", content: "go" }], model: "claude-opus-5" }),
+  }), env, ctx);
+  const b = await res.json();
+  globalThis.fetch = realFetch;
+
+  ok(res.status === 200, `a good start succeeds (got ${res.status})`);
+  ok(!!b.receipt, "…returning a receipt");
+  ok(b.durable === true, "…on the durable path");
+  ok(mintedBeforeStart === true,
+     "…MINTED BEFORE Workflow.create(), so a mint failure cannot leave a paid job unauthorised");
+  ok(!!b.receiptExpiresAt && !Number.isNaN(Date.parse(b.receiptExpiresAt)),
+     `…with an ABSOLUTE expiry (${b.receiptExpiresAt})`);
+  ok(Date.parse(b.receiptExpiresAt) > Date.now(), "…in the future");
+  ok(created.length === 1, "…and exactly one Workflow instance created");
+}
+
+// ── III · STARTUP FAILURE LEAVES NO AUTHORISED ORPHAN ────────────────────────
+{
+  for (const [label, failAt] of [["receipt mint fails", "mint"], ["Workflow.create fails", "create"]]) {
+    const calls = { aborts: [], deleted: [] };
+    globalThis.fetch = async (u, i) => {
+      const su = String(u);
+      if (su.includes("/auth/v1/user")) return json({ id: "u-1", email: "j@t.dev" });
+      if (su.includes("/rpc/reserve_talk_for_job")) return json([{ reserved: true, outcome: "reserved", owner_id: "u-1" }]);
+      if (su.includes("/rpc/receipt_issue")) {
+        if (failAt === "mint") return json({ message: "store down" }, 500);
+        return json(null);
+      }
+      if (su.includes("/rpc/abort_generation")) {
+        try { calls.aborts.push(JSON.parse(i.body)); } catch (_) {}
+        return json([{ aborted: true, refunded: true, outcome: "aborted_and_refunded" }]);
+      }
+      return json([]);
+    };
+    const env = {
+      ALLOWED_ORIGINS: ORIGIN, SUPABASE_URL: "https://x.test", SUPABASE_SERVICE_ROLE_KEY: "k",
+      SUPABASE_ANON_KEY: "a", ANTHROPIC_API_KEY: "sk", FREE_TALKS: "10",
+      JOBS_KV: { get: async () => null, put: async () => {},
+                 delete: async (k) => { calls.deleted.push(k); } },
+      GEN_WORKFLOW: {
+        create: async () => { if (failAt === "create") throw new Error("workflows down"); },
+        get: async () => { throw new Error("unknown id"); },   // confirms it is NOT a duplicate
+      },
+    };
+    const res = await worker.fetch(new Request("https://p.test/generate-async", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: ORIGIN, "X-Supabase-Auth": "t" },
+      body: JSON.stringify({ clientJobId: "33333333-4444-5555-6666-777777777777", topic: "x",
+                             style: "lecture", depth: "concise", system: "s",
+                             messages: [{ role: "user", content: "go" }], model: "claude-opus-5" }),
+    }), env, ctx);
+    globalThis.fetch = realFetch;
+
+    ok(res.status >= 500, `${label} -> non-2xx (got ${res.status})`);
+    ok(calls.aborts.length === 1,
+       `…abort_generation called exactly once (got ${calls.aborts.length})`);
+    ok(calls.deleted.some(k => k.startsWith("job:")),
+       "…the job record removed, so nothing runnable is left");
+    ok(calls.deleted.some(k => k.startsWith("jobbody:")),
+       "…and the stored prompt removed too");
+  }
+
+  // The cleanup RPC must revoke the receipt AND refund in one transaction, not two.
+  const sql = readFileSync(new URL("./supabase/migrations/abort_generation.sql", import.meta.url), "utf8");
+  const scode = sql.split("\n").filter(l => !/^\s*--/.test(l)).join("\n");
+  ok(/delete from public\.generation_receipts/.test(scode), "abort revokes the receipt");
+  ok(/insert into public\.refunded_jobs/.test(scode), "…and refunds, exactly once");
+  ok(/already_delivered/.test(scode), "…refusing to refund a delivered job");
+  ok(/not_owner/.test(scode), "…or another user's job");
+  ok(/begin;[\s\S]*commit;/.test(scode), "…in one transaction");
+}
+
+// ── IV · THE CLIENT NEVER FALLS BACK TO A RECEIPTLESS SYNC CALL ──────────────
+{
+  const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
+  const hcode = html.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
+  ok(/if \(!\(_job && _job\.jobId\)\)/.test(hcode),
+     "a failed async submit STOPS the generation instead of continuing");
+  ok(/Nothing was charged/.test(hcode), "…telling the user nothing was charged");
+  const sub = hcode.slice(hcode.indexOf("async function submitAsyncGeneration"));
+  const subBody = sub.slice(0, sub.indexOf("\nasync function"));
+  ok(!/return null/.test(subBody),
+     "…and submitAsyncGeneration returns a tagged error rather than null for every failure");
+  ok((subBody.match(/error:true/g) || []).length >= 3,
+     "…covering unconfigured, quota, and generic HTTP failures");
+}
+
 console.log("\n" + (failures === 0 ? "✔ RECEIPT SESSION OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

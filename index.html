@@ -1604,18 +1604,29 @@ async function submitAsyncGeneration(payload){
     if(r.status === 503){
       var e503 = {}; try{ e503 = await r.json(); }catch(_){}
       if(((e503.error && e503.error.type) || "") === "async_unconfigured"){ _asyncUnavailable = true; } // KV not set up yet
-      return null; // includes free_tier_paused: let the SYNC path surface it consistently
+      // TAGGED, not null. `null` was read by the caller as "fall back to sync", which on the free tier
+      // means a receiptless model call. There is no sync fallback any more, so the reason must travel.
+      return { error:true, code:(e503.error&&e503.error.type)||"async_unconfigured",
+               message:(e503.error&&e503.error.message)
+                 || "Generation is temporarily unavailable. Nothing was charged." };
     }
     // Out of quota: the worker RESERVED and found none left. Don't fall back to sync (that would
     // generate one more on the owner's key) — surface the paywall.
     if(r.status === 403){
       var e403 = {}; try{ e403 = await r.json(); }catch(_){}
       if(((e403.error && e403.error.type) || "") === "quota_exceeded"){ var qe = new Error((e403.error && e403.error.message) || "You've used all your free talks."); qe.code = "quota_exceeded"; throw qe; }
-      return null;
+      return { error:true, code:(e403.error&&e403.error.type)||"quota_exceeded",
+               message:(e403.error&&e403.error.message)
+                 || "You've used all your free talks. Add your own key to keep generating." };
     }
     // ANY other non-success (401 auth, 4xx, 5xx) → fall back to the synchronous path, which owns the
     // real error handling (auth_invalid, paused) and keeps one code path for user-facing errors.
-    if(!r.ok){ return null; }
+    if(!r.ok){
+      var eo = {}; try{ eo = await r.json(); }catch(_){}
+      return { error:true, code:(eo.error&&eo.error.type)||("http_"+r.status),
+               message:(eo.error&&eo.error.message)
+                 || "Couldn't start your generation. Nothing was charged — please try again." };
+    }
     var data = await r.json();
     return (data && data.jobId) ? data : { jobId: clientJobId };
   }catch(err){
@@ -1628,7 +1639,13 @@ async function submitAsyncGeneration(payload){
       try{
         var sr = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-status/" + encodeURIComponent(clientJobId), { headers:{ "X-Supabase-Auth": freeTierToken() } });
         if(sr.ok){ return { jobId: clientJobId, recovered:true }; }  // job exists → poll it, don't sync
-        if(sr.status === 404){ return null; }                        // CONFIRMED never created → safe to sync
+        // CONFIRMED never created. Previously "safe to sync" — but a sync free-tier call has no receipt,
+        // so the honest answer is to say the start failed and let the user retry, which re-reserves
+        // nothing (the job id is idempotent) and costs nothing.
+        if(sr.status === 404){
+          return { error:true, code:"start_failed",
+                   message:"Couldn't start your generation. Nothing was charged — please try again." };
+        }
       }catch(_){ /* status check itself failed — keep trying */ }
     }
     // Inconclusive (couldn't get a definitive 404): the POST may have reached the server and reserved a
@@ -1761,7 +1778,10 @@ async function resumeAsyncJobIfAny(){
   var _cred = loadGenCredentials();
   var _resumeReceipt = stored.receipt || (_cred && _cred.jobId === stored.jobId ? _cred.receipt : null);
   if(_resumeReceipt){
-    setGenCredentials(stored.jobId, _resumeReceipt);
+    // Carry the ORIGINAL absolute expiry. Restamping it here is exactly how a dead receipt looked fresh.
+    setGenCredentials(stored.jobId, _resumeReceipt, {
+      expiresAt: stored.receiptExpiresAt || (_cred && _cred.expiresAt) || null,
+    });
   } else {
     S.genJobId = stored.jobId;
     console.warn("Resumed job " + stored.jobId + " without a receipt — the citation audit and diagram "
@@ -7698,6 +7718,7 @@ async function generate(){
           // reconnect needs BOTH or neither — a restored job with no receipt is exactly the state that
           // 402'd every follow-up call after a reload.
           receipt: S.genReceipt || null,
+          receiptExpiresAt: (loadGenCredentials() || {}).expiresAt || null,
           at: Date.now() })); } catch(_){}
         _asyncJobId = _job.jobId;
         S.genBackgroundSafe = true;   // async path survives backgrounding → swap the "keep tab open" warning
