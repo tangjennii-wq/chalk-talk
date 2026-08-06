@@ -773,9 +773,18 @@ function setGenCredentials(jobId, receipt, extra){
   S.genReceipt = receipt || null;
   try{
     if(jobId && receipt){
+      var ex = extra || {};
+      // ── THE SERVER'S ABSOLUTE EXPIRY, NOT THE BROWSER'S ARRIVAL TIME (Codex, 2026-07-31) ────────
+      // This stamped at: Date.now() on every write, so returning the SAME receipt on resume reset a
+      // 30-minute clock the database had not reset — an expired receipt looked fresh, and its 402 read
+      // as a permissions problem. `expiresAt` is carried through unchanged from the server; a resume
+      // must preserve it, never recompute it.
+      var prior = loadGenCredentials();
+      var expiresAt = ex.expiresAt
+        || (prior && prior.jobId === jobId && prior.receipt === receipt ? prior.expiresAt : null);
       localStorage.setItem(GEN_CRED_KEY, JSON.stringify(Object.assign({
-        jobId: jobId, receipt: receipt, at: Date.now()
-      }, extra || {})));
+        jobId: jobId, receipt: receipt, expiresAt: expiresAt || null, at: Date.now()
+      }, ex)));
     }
   }catch(_){}
 }
@@ -783,8 +792,13 @@ function loadGenCredentials(){
   try{
     var c = JSON.parse(localStorage.getItem(GEN_CRED_KEY) || "null");
     if(!c || !c.jobId || !c.receipt) return null;
-    // A receipt lives 30 minutes server-side. Treat anything older as gone rather than sending a dead
-    // credential and reading the 402 as a permissions problem.
+    // Prefer the SERVER's absolute expiry. Fall back to the arrival-time heuristic only for a credential
+    // written before expiresAt existed — and never let the heuristic override a real timestamp, which is
+    // how a resume made a dead receipt look live.
+    if(c.expiresAt){
+      if(Date.parse(c.expiresAt) <= Date.now()) return null;
+      return c;
+    }
     if(Date.now() - (c.at || 0) > 30 * 60 * 1000) return null;
     return c;
   }catch(_){ return null; }
@@ -812,7 +826,7 @@ async function createGenSession(jobId){
     });
     var data = {}; try{ data = await r.json(); }catch(_){}
     if(r.ok && data.receipt){
-      setGenCredentials(data.jobId || id, data.receipt);
+      setGenCredentials(data.jobId || id, data.receipt, { expiresAt: data.receiptExpiresAt || null });
       if(data.remaining) S.freeTier = Object.assign({}, S.freeTier, {
         talks_remaining: data.remaining.talks_remaining,
         images_remaining: data.remaining.images_remaining,
@@ -844,7 +858,7 @@ async function createRefineSession(talkId){
     });
     var data = {}; try{ data = await r.json(); }catch(_){}
     if(r.ok && data.receipt){
-      setGenCredentials(data.jobId, data.receipt, { refineOf: talkId });
+      setGenCredentials(data.jobId, data.receipt, { refineOf: talkId, expiresAt: data.receiptExpiresAt || null });
       return {ok:true, jobId: data.jobId, receipt: data.receipt};
     }
     return {ok:false,
@@ -1573,6 +1587,10 @@ function asyncGenApplicable(){
 // A client-generated jobId is sent so the submit is IDEMPOTENT: if the POST reaches the server (reserving
 // a talk + starting the job) but the RESPONSE is lost, we don't blindly fall back to sync (which would
 // double-generate) — we recover by checking that job's status first. (Codex bug #2)
+// Returns {jobId, receipt, receiptExpiresAt} on success, or {error:true, code, message} on failure.
+// It used to return NULL for every failure, which the caller could only interpret as "fall back to sync" —
+// and that fallback is exactly what must never happen on the free tier. A tagged failure lets generate()
+// surface the reason and stop.
 async function submitAsyncGeneration(payload){
   var clientJobId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
     : (Date.now().toString(16) + "-" + Math.random().toString(16).slice(2,10) + "-" + Math.random().toString(16).slice(2,10));
@@ -7634,13 +7652,27 @@ async function generate(){
         draft:    { sys: sys, content: uc, maxTok: maxTok, models: mainModels, tools: (mainOpts.tools || null) },
         critique: { sys: critiqueSystem, prefix: critiquePrefix, maxTok: critMaxTok, models: criticModels }
       });
+      // ── NO SYNC FALLBACK FOR THE FREE TIER (Codex, 2026-07-31) ──────────────────────────────────
+      // submitAsyncGeneration() returns null on 503/401/404/any non-OK, and generate() then reached
+      // `if (!_useAsync) callAPIWithFallback(...)` — a SYNC model call with no receipt, because the
+      // session step was skipped for the async path. With enforcement on that 402s; with it off it spends
+      // through the temporary bypass. Either way the user gets a confusing failure or an unmetered talk.
+      //
+      // Free tier is durable or it is an honest error. BYOK is unaffected: it never reaches this branch.
+      if (!(_job && _job.jobId)) {
+        clearInterval(loadTimer); S.loading = false;
+        S.error = (_job && _job.message)
+          || "Generation is temporarily unavailable. Nothing was charged — please try again in a moment.";
+        if (typeof render === "function") render();
+        return;
+      }
       if (_job && _job.jobId) {
         _useAsync = true;
         // THE RECEIPT COMES BACK FROM THE SERVER HERE. Background generation reserves the credit
         // server-side, so the browser never saw an authorisation — and every follow-up call (citation
         // audit, diagram prompt, refine) 402'd on a talk that had been correctly paid for.
         if (_job.receipt) {
-          setGenCredentials(_job.jobId, _job.receipt);
+          setGenCredentials(_job.jobId, _job.receipt, { expiresAt: _job.receiptExpiresAt || null });
         } else {
           console.warn("Background generation returned no receipt — follow-up calls (citation audit, "
                      + "diagrams) will not be authorised for this talk.");

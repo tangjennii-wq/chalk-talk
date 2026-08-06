@@ -661,6 +661,18 @@ async function mintReceipt(env, { userId, jobId, kind }) {
   const receipt = jobId
     ? await deterministicReceiptId(userId, jobId, kind)
     : crypto.randomUUID();   // no job to key on (bare /consume of an aux credit) — one-shot as before
+
+  // ── AN ABSOLUTE EXPIRY, FROM THE SERVER'S CLOCK ─────────────────────────────────────────────────
+  // The client used to infer expiry from when the browser RECEIVED the receipt, and setGenCredentials
+  // stamped at: Date.now() on every write — so returning the same receipt on resume reset a 30-minute
+  // clock that the database had not reset. An expired receipt then looked fresh, and the 402 read as a
+  // permissions problem rather than an expiry.
+  //
+  // Computed here rather than read back from Postgres to avoid a second round trip. That means it can
+  // differ from the row's expires_at by the Worker/DB clock skew (milliseconds in practice). The client
+  // treats it as advisory — the DATABASE is authoritative, and receipt_redeem answers `expired` — so a
+  // small skew shows a stale credential as usable a moment longer, not a live one as dead.
+  const expiresAt = new Date(Date.now() + RECEIPT_TTL_SECONDS * 1000).toISOString();
   const stages = {};
   for (const [name, max] of Object.entries(budgets)) {
     // `models` per stage is what receipt_redeem checks. Without it the flat allowed_models applies and a
@@ -679,7 +691,7 @@ async function mintReceipt(env, { userId, jobId, kind }) {
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (!row || row.ok !== true) throw new Error("receipt_renew_refine refused: " + ((row && row.outcome) || "unknown"));
     return { receipt, stages, models: receiptModelsFor(kind), ttlSeconds: RECEIPT_TTL_SECONDS,
-             outcome: row.outcome };
+             expiresAt, outcome: row.outcome };
   }
   // TALK receipts are insert-once and NEVER renewed. The credit was consumed once, so the authorisation
   // it bought exists once. `on conflict (id) do nothing` makes a duplicate submit a no-op that returns
@@ -689,7 +701,29 @@ async function mintReceipt(env, { userId, jobId, kind }) {
     p_kind: kind, p_allowed_models: receiptModelsFor(kind),
     p_stages: stages, p_ttl_seconds: RECEIPT_TTL_SECONDS,
   });
-  return { receipt, stages, models: receiptModelsFor(kind), ttlSeconds: RECEIPT_TTL_SECONDS };
+  return { receipt, stages, models: receiptModelsFor(kind), ttlSeconds: RECEIPT_TTL_SECONDS, expiresAt };
+}
+
+// ── ABORT: REVOKE THE RECEIPT **AND** REFUND, IN ONE TRANSACTION ────────────────────────────────────
+// Used for every failure AFTER the reservation and BEFORE the Workflow is confirmed running. Separate
+// refund and revoke calls could leave a refunded job still holding live authorisation, which is worse
+// than either failure alone.
+async function abortGeneration(env, jobId, userId, reason) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return { aborted: false, outcome: "no_store" };
+  try {
+    const rows = await supaServiceRPC(env, "abort_generation", {
+      p_job_id: String(jobId), p_user_id: userId, p_reason: reason || "startup_failed",
+    });
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    const out = { aborted: !!(row && row.aborted), refunded: !!(row && row.refunded),
+                  outcome: (row && row.outcome) || "no_result" };
+    console.error(JSON.stringify({ event: "generation_aborted", jobId, reason, ...out }));
+    return out;
+  } catch (err) {
+    console.error(JSON.stringify({ event: "abort_failed", jobId, reason,
+                                   detail: String((err && err.message) || err).slice(0, 200) }));
+    return { aborted: false, outcome: "abort_error" };
+  }
 }
 
 async function refundTalkOnce(env, jobId, userId, reason) {
@@ -1028,6 +1062,7 @@ async function handleFreeTierSession(request, env, origin) {
     receipt: minted.receipt,
     stages: Object.keys(minted.stages),
     expiresInSeconds: minted.ttlSeconds,
+    receiptExpiresAt: minted.expiresAt,     // absolute; never inferred from browser arrival time
     charged: reservation.reserved,        // false on a duplicate — the credit was taken earlier
     remaining,
   }, origin);
@@ -1081,7 +1116,7 @@ async function handleRefineSession(request, env, origin) {
   }
   return jsonOK({
     jobId, receipt: minted.receipt, stages: Object.keys(minted.stages),
-    expiresInSeconds: minted.ttlSeconds, charged: false,
+    expiresInSeconds: minted.ttlSeconds, receiptExpiresAt: minted.expiresAt, charged: false,
   }, origin);
 }
 
@@ -1980,7 +2015,20 @@ async function runGeneration(jobId, body, env) {
 }
 
 async function handleGenerateAsync(request, env, ctx, origin) {
-  if (!env.JOBS_KV) return jsonError(503, "async_unconfigured", "Background generation isn't configured (missing JOBS_KV binding).", origin);
+  // ── WORKFLOW-ONLY, AND REFUSED BEFORE ANYTHING IS CHARGED (Codex, 2026-07-31) ────────────────────
+  // Free-tier generation is durable or it does not happen. The old handler fell back to ctx.waitUntil
+  // when GEN_WORKFLOW was missing, returned `durable: false` and no receipt, and the client accepted any
+  // response containing a jobId — which reinstated the ~30-second termination bug AND produced a paid job
+  // the browser could not authorise follow-up work against.
+  //
+  // Checked FIRST, before the reservation, so a misconfigured Worker cannot consume a credit.
+  if (!env.JOBS_KV || !env.GEN_WORKFLOW) {
+    console.error(JSON.stringify({ event: "async_unconfigured",
+      jobsKv: !!env.JOBS_KV, genWorkflow: !!env.GEN_WORKFLOW }));
+    return jsonError(503, "async_unconfigured",
+      "Generation is temporarily unavailable. Nothing was charged.", origin,
+      { missing: [!env.JOBS_KV ? "JOBS_KV" : null, !env.GEN_WORKFLOW ? "GEN_WORKFLOW" : null].filter(Boolean) });
+  }
   if (!env.ANTHROPIC_API_KEY) return jsonError(503, "no_key", "Server key not configured.", origin);
   const token = request.headers.get("X-Supabase-Auth");
   const user = token ? await verifySupabaseUser(env, token) : null;
@@ -2093,23 +2141,31 @@ async function handleGenerateAsync(request, env, ctx, origin) {
       if (reservedNow) {
         await env.JOBS_KV.put("jobbody:" + jobId, JSON.stringify(body), { expirationTtl: 3600 });
       }
+
+      // ── MINT BEFORE STARTING (Codex, 2026-07-31) ────────────────────────────────────────────────
+      // Minting came AFTER create(), so a mint failure left a paid Workflow running and returned success
+      // with receipt:null — the talk arrives and its citation audit, diagrams and refine cannot run.
+      // Now the receipt exists before any work does, and a mint failure aborts before anything runs.
+      let minted;
+      try {
+        minted = await mintReceipt(env, { userId: user.id, jobId, kind: "talk" });
+      } catch (err) {
+        if (reservedNow) await abortGeneration(env, jobId, user.id, "receipt_mint_failed");
+        try { await env.JOBS_KV.delete("job:" + jobId); } catch (_) {}
+        try { await env.JOBS_KV.delete("jobbody:" + jobId); } catch (_) {}
+        return jsonError(503, "receipt_store_unavailable",
+          "Generation is temporarily unavailable. Nothing was charged.", origin);
+      }
+
       await env.GEN_WORKFLOW.create({
         id: jobId,
         params: { jobId, userEmail: body.userEmail || null, wantCritique: !!(body.critique && body.critique.sys) },
       });
-      // RETURN THE RECEIPT (Codex, 2026-07-31). Background generation reserved the credit server-side
-      // and returned nothing the browser could authorise with, so every follow-up call — citation audit,
-      // diagram prompt, refine — 402'd on a talk that had been correctly paid for.
-      let asyncReceipt = null;
-      try {
-        asyncReceipt = (await mintReceipt(env, { userId: user.id, jobId, kind: "talk" })).receipt;
-      } catch (_) {
-        // The generation itself is authorised server-side and still runs; only the client's follow-up
-        // work loses authorisation. Logged rather than swallowed, so the UI can say the citation audit
-        // is unavailable instead of failing mysteriously.
-        console.error(JSON.stringify({ event: "async_receipt_mint_failed", jobId }));
-      }
-      return jsonOK({ jobId, createdAt: now, durable: true, receipt: asyncReceipt }, origin);
+      // The REAL expiry, not the browser's arrival time. A resume that reset the clock to
+      // now + 30 minutes made an expired receipt look fresh client-side.
+      return jsonOK({ jobId, createdAt: now, durable: true,
+                     receipt: minted.receipt,
+                     receiptExpiresAt: minted.expiresAt }, origin);
     } catch (err) {
       // DISTINGUISH "ALREADY RUNNING" FROM "FAILED TO START" BY ASKING, NOT BY READING THE MESSAGE.
       // create() throws when the id is already live, and Cloudflare documents no stable error class or
@@ -2123,17 +2179,23 @@ async function handleGenerateAsync(request, env, ctx, origin) {
           // A resumed duplicate needs authorisation for its follow-up calls just as much as a fresh
           // submit. The credit was already taken, so minting here charges nothing — and without it a
           // reload mid-generation loses the ability to run the citation audit.
-          let resumeReceipt = null;
-          try { resumeReceipt = (await mintReceipt(env, { userId: user.id, jobId, kind: "talk" })).receipt; }
-          catch (_) { console.error(JSON.stringify({ event: "async_receipt_mint_failed", jobId, resumed: true })); }
-          return jsonOK({ jobId, createdAt: now, durable: true, resumed: true, receipt: resumeReceipt }, origin);
+          let resumeReceipt = null, resumeExpiry = null;
+          try {
+            const m = await mintReceipt(env, { userId: user.id, jobId, kind: "talk" });
+            resumeReceipt = m.receipt; resumeExpiry = m.expiresAt;
+          } catch (_) { console.error(JSON.stringify({ event: "async_receipt_mint_failed", jobId, resumed: true })); }
+          return jsonOK({ jobId, createdAt: now, durable: true, resumed: true,
+                          receipt: resumeReceipt, receiptExpiresAt: resumeExpiry }, origin);
         }
       } catch (_) { /* get() throws when the id is unknown — a genuine start failure. Fall through. */ }
 
       // Do NOT fall through to waitUntil on an unknown failure: that would silently downgrade to the
       // path we are trying to retire, and the response would claim success either way. Refund and say so.
-      if (reservedNow) await refundTalkOnce(env, jobId, user.id, "workflow_start_failed");
+      // ABORT, not merely refund: the receipt was minted a moment ago and must be revoked with the
+      // refund, or a refunded job keeps usable authorisation. One transaction does both.
+      if (reservedNow) await abortGeneration(env, jobId, user.id, "workflow_start_failed");
       try { await env.JOBS_KV.delete("job:" + jobId); } catch (_) {}
+      try { await env.JOBS_KV.delete("jobbody:" + jobId); } catch (_) {}
       return jsonError(503, "workflow_start_failed",
         "Couldn't start background generation. Please try again.", origin);
     }
