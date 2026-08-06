@@ -393,6 +393,56 @@ const post = (path, body) => new Request("https://p.test" + path, {
   ok(/begin;[\s\S]*commit;/.test(code), "…and the migration is transactional");
 }
 
+// ══ A VOID RPC ANSWERS 204 WITH NO BODY, AND THAT IS SUCCESS ════════════════════════════════════════
+//
+// FOUND IN PRODUCTION, 2026-08-06, on the first real free-tier generation ever attempted.
+// `receipt_issue` is declared `returns void`. PostgREST replies 204 No Content. supaServiceRPC checked
+// `res.ok` (204 passes) and then called `res.json()`, which throws SyntaxError on an empty body. The mint
+// therefore "failed" AFTER the row had been inserted, and the failure handler called abort_generation,
+// which deleted the receipt and refunded the credit. Three consecutive attempts: three refunds, zero
+// receipts, and a 503 that said only "temporarily unavailable".
+//
+// No test caught it because every suite in this repo stubs the RPC layer and returns JSON. This one drives
+// the REAL helper against a 204, which is the only way to see it.
+{
+  let issued = 0;
+  globalThis.fetch = async (u, i) => {
+    const su = String(u);
+    if (su.includes("/auth/v1/user")) return json({ id: "u-1", email: "j@t.dev" });
+    if (su.includes("/rpc/reserve_talk_for_job")) return json([{ reserved: true, outcome: "reserved", owner_id: "u-1" }]);
+    // EXACTLY what PostgREST sends for a void function: 204, no body, no content-type.
+    if (su.includes("/rpc/receipt_issue")) { issued++; return new Response(null, { status: 204 }); }
+    if (su.includes("/generation_receipts") && su.includes("select=expires_at")) {
+      return json([{ expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() }]);
+    }
+    if (su.includes("/rpc/abort_generation")) return json([{ aborted: true, refunded: true, outcome: "aborted_and_refunded" }]);
+    return json([]);
+  };
+  const aborts = [];
+  const env = {
+    ALLOWED_ORIGINS: ORIGIN, SUPABASE_URL: "https://x.test", SUPABASE_SERVICE_ROLE_KEY: "k",
+    SUPABASE_ANON_KEY: "a", ANTHROPIC_API_KEY: "sk", FREE_TALKS: "10",
+    JOBS_KV: { get: async () => null, put: async () => {}, delete: async (k) => aborts.push(k) },
+    GEN_WORKFLOW: { create: async () => {}, get: async () => null },
+  };
+  const res = await worker.fetch(new Request("https://p.test/generate-async", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Origin: ORIGIN, "X-Supabase-Auth": "t" },
+    body: JSON.stringify({ clientJobId: "66666666-7777-8888-9999-aaaaaaaaaaaa", topic: "x",
+                           style: "lecture", depth: "concise", system: "s",
+                           messages: [{ role: "user", content: "go" }], model: "claude-opus-5" }),
+  }), env, ctx);
+  const b = await res.json();
+  globalThis.fetch = realFetch;
+
+  ok(issued === 1, "receipt_issue was called");
+  ok(res.status === 200,
+     `a 204 from a void RPC is SUCCESS, not a mint failure (got ${res.status} ${b.error ? b.error.type : ""})`);
+  ok(!!b.receipt, "…so the response carries a receipt");
+  ok(aborts.length === 0,
+     `…and nothing was aborted, so the row that was just inserted is not deleted (${aborts.join(",") || "none"})`);
+}
+
 // ══ THE EXPIRY THE BROWSER GETS IS THE EXPIRY THE DATABASE HOLDS ════════════════════════════════════
 //
 // The source-text assertion below (every durable response mentions receiptExpiresAt) is necessary and

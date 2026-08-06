@@ -1488,7 +1488,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-17";
+var BUILD_ID = "2026-07-31-18";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -1621,6 +1621,38 @@ function asyncGenApplicable(){
 // It used to return NULL for every failure, which the caller could only interpret as "fall back to sync" —
 // and that fallback is exactly what must never happen on the free tier. A tagged failure lets generate()
 // surface the reason and stop.
+// ── RECOVER A LOST RESPONSE BY RE-SUBMITTING THE SAME clientJobId ───────────────────────────────────
+// A POST can start a job server-side and then lose its response — a dropped connection, a backgrounded
+// tab, a tunnel that stalls. The browser is left knowing only the job id it chose, and the earlier code
+// returned exactly that: {jobId, recovered} with no receipt, so the talk it had already paid for could not
+// authorise its citation audit.
+//
+// The fix is to ask the same question again. /generate-async is idempotent per clientJobId by design:
+//   · reserve_talk_for_job is job-keyed, so the second call answers `already_reserved` and takes NO credit
+//   · the KV record already exists, so the handler returns it with `resumed: true`
+//   · if KV missed, GEN_WORKFLOW.create() throws for a live id and the handler asks get() rather than
+//     string-matching the error, so it still resolves to the SAME instance — never a second Workflow
+//   · mintReceipt derives the receipt id from (user, job, kind), so a repeat mint returns the SAME
+//     receipt, partly spent, with the row's own expires_at
+//
+// So a re-submit is not "try again" — it is "tell me what happened to the request I already made".
+async function resubmitForCredentials(clientJobId, payload){
+  try{
+    var body = Object.assign({}, payload, { clientJobId: clientJobId });
+    var r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-async", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "X-Supabase-Auth": freeTierToken() },
+      body: JSON.stringify(body)
+    });
+    if(!r.ok) return null;
+    var data = {}; try{ data = await r.json(); }catch(_){ return null; }
+    if(!data || !data.jobId) return null;
+    console.info("[gen] recovered lost response for job " + data.jobId
+               + (data.resumed ? " (resumed)" : "") + (data.receipt ? " with receipt" : " WITHOUT receipt"));
+    return data;
+  }catch(_){ return null; }
+}
+
 async function submitAsyncGeneration(payload){
   var clientJobId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
     : (Date.now().toString(16) + "-" + Math.random().toString(16).slice(2,10) + "-" + Math.random().toString(16).slice(2,10));
@@ -1668,7 +1700,13 @@ async function submitAsyncGeneration(payload){
       await new Promise(function(res){ setTimeout(res, attempt===0?600:1400); });
       try{
         var sr = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-status/" + encodeURIComponent(clientJobId), { headers:{ "X-Supabase-Auth": freeTierToken() } });
-        if(sr.ok){ return { jobId: clientJobId, recovered:true }; }  // job exists → poll it, don't sync
+        if(sr.ok){
+          // The job EXISTS. Re-submit the same clientJobId to collect the credentials that the lost
+          // response was carrying. No second reservation, no second Workflow — see resubmitForCredentials.
+          var again = await resubmitForCredentials(clientJobId, payload);
+          if(again) return Object.assign({ recovered:true }, again);
+          return { jobId: clientJobId, recovered:true };   // couldn't re-submit: poll it, never sync
+        }
         // CONFIRMED never created. Previously "safe to sync" — but a sync free-tier call has no receipt,
         // so the honest answer is to say the start failed and let the user retry, which re-reserves
         // nothing (the job id is idempotent) and costs nothing.
@@ -1682,6 +1720,12 @@ async function submitAsyncGeneration(payload){
     // talk. Do NOT fall back to sync — that would reserve+consume a SECOND talk and generate twice. Instead
     // return the clientJobId so the caller polls it: if the job exists it connects, and if it truly never
     // started the poll 404s into a clean "try again" — either way, no double-charge. (Audit fix)
+    // INCONCLUSIVE: the status check never returned a definitive answer, so the POST may or may not have
+    // started a job. Re-submitting the SAME clientJobId is safe either way and settles it: if the job
+    // exists we get it back with its credentials; if it never started, this creates it once, against the
+    // same job-keyed reservation. What must not happen — a second credit or a second Workflow — cannot.
+    var settled = await resubmitForCredentials(clientJobId, payload);
+    if(settled) return Object.assign({ unconfirmed:true }, settled);
     return { jobId: clientJobId, unconfirmed:true };
   }
 }

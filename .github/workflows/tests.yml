@@ -246,6 +246,12 @@ jobs:
       - name: Writer allowlist + quota receipt (server-side)
         run: node test_writer_and_quota_gates.mjs
 
+      # A POST can start a job and lose its response. The browser then holds a job id and no credential, so
+      # a talk it already paid for cannot authorise its own citation audit. Re-submitting the same
+      # clientJobId must return the SAME job, receipt and expiry — and never a second credit or Workflow.
+      - name: Lost-response recovery (idempotent re-submit)
+        run: node test_lost_response_recovery.mjs
+
       # THE TEST SYSTEM ITSELF. Two counting failures in one day, both in the instrument: a local runner
       # built from `ls | head -18` plus `| tail -17` skipped positions 19-22 and reported "35 suites pass"
       # when there were 39, and test_refine_guard.mjs made all 15 of its checks with console.assert, which

@@ -567,7 +567,21 @@ async function supaServiceRPC(env, fn, params) {
     body: JSON.stringify(params),
   });
   if (!res.ok) throw new Error(`RPC ${fn} ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  return await res.json();
+  // ── AN EMPTY BODY IS A SUCCESSFUL ANSWER, NOT A PARSE ERROR ──────────────────────────────────────
+  // `receipt_issue` is declared `returns void`, so PostgREST replies 204 No Content with NO body. 204 is
+  // ok, so the check above passes and `res.json()` then throws SyntaxError on the empty string — which the
+  // caller could only read as "minting failed". It had already succeeded: the row was inserted, and the
+  // failure handler then called abort_generation, which deleted the receipt and refunded the credit.
+  //
+  // Every talk receipt was destroyed a few milliseconds after being created. The database made this
+  // legible — reserve_talk_for_job and receipt_renew_refine both return TABLE and both worked, and
+  // receipt_issue is the only `returns void` function in the set — while the 503 said only "temporarily
+  // unavailable". It also explains why the FIRST real free-tier generation could never have worked, and
+  // why nothing caught it: every test stubs this helper, so no test has ever seen a 204.
+  if (res.status === 204) return null;
+  const text = await res.text();
+  if (!text) return null;
+  return JSON.parse(text);
 }
 
 async function getMonthlySpendCents(env, monthKey) {
@@ -1074,7 +1088,9 @@ async function handleFreeTierSession(request, env, origin) {
   try {
     minted = await mintReceipt(env, { userId: user.id, jobId, kind: "talk" });
   } catch (err) {
-    // FAIL CLOSED, and only refund a credit THIS request took.
+    // FAIL CLOSED, and only refund a credit THIS request took. Log WHY: see generate_async above.
+    console.error(JSON.stringify({ event: "receipt_mint_failed", where: "free_tier_session", jobId,
+                                   detail: String((err && err.message) || err).slice(0, 300) }));
     if (reservation.reserved) await refundTalkOnce(env, jobId, user.id, "session_mint_failed");
     return jsonError(503, "receipt_store_unavailable",
       "Generation is temporarily unavailable. Nothing was charged.", origin);
@@ -2193,6 +2209,12 @@ async function handleGenerateAsync(request, env, ctx, origin) {
       try {
         minted = await mintReceipt(env, { userId: user.id, jobId, kind: "talk" });
       } catch (err) {
+        // LOG THE CAUSE. This catch was silent, so a production 503 said "temporarily unavailable" and gave
+        // no way to learn what was unavailable — I burned two wrong guesses (RPC grants, then a stale
+        // PostgREST schema cache) on a failure the Worker already had the answer to. supaServiceRPC throws
+        // with the HTTP status and response body in its message, which is precisely what is needed.
+        console.error(JSON.stringify({ event: "receipt_mint_failed", where: "generate_async", jobId,
+                                       detail: String((err && err.message) || err).slice(0, 300) }));
         if (reservedNow) await abortGeneration(env, jobId, user.id, "receipt_mint_failed");
         try { await env.JOBS_KV.delete("job:" + jobId); } catch (_) {}
         try { await env.JOBS_KV.delete("jobbody:" + jobId); } catch (_) {}
