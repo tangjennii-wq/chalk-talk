@@ -29,6 +29,11 @@ const slice = (name) => {
   return code.slice(i, j > i ? j : code.length);
 };
 
+// ── 0 · THE HELPER READS THE FIELD THIS APP ACTUALLY USES ────────────────────
+ok(/S\.loadedTalkId/.test(code.slice(code.indexOf("async function ensureRefineAuth"),
+                                      code.indexOf("async function ensureRefineAuth") + 1200)),
+   "ensureRefineAuth reads S.loadedTalkId, where a library-opened talk's id actually lives");
+
 // ── 1 · NO REFINEMENT OPERATION CHARGES A TALK CREDIT ────────────────────────
 for (const op of OPS) {
   const body = slice(op);
@@ -76,7 +81,11 @@ for (const op of OPS) {
     if (cred) store["ct_active_cred"] = JSON.stringify(cred);
     const calls = [];
     const ctx = {
-      S: { talk: { id: "talk-42", title: "T" }, freeTier: {} },
+      // THE REAL SHAPE. The first version of this stub was `S.talk = { id: "talk-42" }` — an id field this
+      // app has never had. The helper read the same invented field, so stub and code agreed with each other
+      // and disagreed with production: every refine of a saved talk was refused. A saved talk's id lives in
+      // S.loadedTalkId; S.talk holds only content.
+      S: { loadedTalkId: "talk-42", talk: { title: "T" }, talkIsSaved: true, freeTier: {} },
       localStorage: {
         getItem: (k) => (k in store ? store[k] : null),
         setItem: (k, v) => { store[k] = String(v); },

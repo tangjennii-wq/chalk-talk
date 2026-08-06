@@ -895,7 +895,11 @@ async function ensureRefineAuth(){
   if(c && c.receipt && (!c.expiresAt || Date.parse(c.expiresAt) > Date.now() + 5000)){
     return { ok:true, reused:true };
   }
-  var talkId = (S.talk && (S.talk.id || S.talk.talkId)) || null;
+  // S.loadedTalkId is where this app keeps the id of a talk opened from the library. S.talk carries the
+  // CONTENT and has no id field at all — I assumed `S.talk.id`, then stubbed that same invented shape in
+  // the test, so the suite passed while every real refine was refused with "Save the talk first" on a talk
+  // that was already saved. The fallbacks stay for defensiveness, but the first term is the real one.
+  var talkId = (S && S.loadedTalkId) || (S.talk && (S.talk.id || S.talk.talkId)) || null;
   if(talkId){
     var sess = await createRefineSession(talkId);
     if(sess && sess.ok) return { ok:true, refineSession:true };
@@ -1523,7 +1527,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-19";
+var BUILD_ID = "2026-07-31-20";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
