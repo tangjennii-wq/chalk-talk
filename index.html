@@ -1527,7 +1527,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-06-03";
+var BUILD_ID = "2026-08-06-04";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -7939,6 +7939,11 @@ async function generate(){
   // checks for this case and renders a small banner instead of a full takeover. New draft swaps in
   // when ready (or on cancel/error, the old content stays).
   var _hadExistingTalk = !!S.talk;
+  // "Safe to close the tab" is a property of the PATH, not of how far the request has got. It was set
+  // only after /generate-async returned, so the first seconds of a durable run told the user to keep the
+  // tab open — the exact opposite of the truth — and nothing ever reset it, so a stale true could leak
+  // into a later synchronous BYOK run and promise something that path cannot deliver.
+  S.genBackgroundSafe = false;
   S.loading=true;S.error="";S.loadSec=0;S.loadMsg="Reasoning through physiology...";S.genPhase="drafting";S.sec=0;S.dg=null;S.dgErr="";S.podScript="";S.podPlaying=false;S.podShow=false;S.showAns=false;S.userPick="";S.isSampleTalk=false;S.sampleSlug="";S.sharedTalk=false;S.vmcStale=false;S.modelPickerOpen=false;S.genBackgroundSafe=false;
   S.streamingTitle="";S.streamingSubtitle="";S.streamingSections=[];S.streamingStem="";S.streamingChars=0;  // clear stale preview from prior gen (Jenni 2026)
   speechSynthesis.cancel();
@@ -8172,6 +8177,9 @@ async function generate(){
     // in between could reserve a sync session and then start a separately reserved async job — two
     // credits for one talk. (Codex, 2026-07-31)
     var _wantAsync = asyncGenApplicable();
+    // Known before the request is even sent: the free tier is durable-only, so the tab can be closed from
+    // the first second rather than from whenever the submit happens to return.
+    S.genBackgroundSafe = _wantAsync;
     // The ASYNC path reserves server-side and returns its own receipt, so it skips this: taking a
     // session here as well would reserve the same credit twice under two different job ids.
     if(genUsesFreeTier() && !_wantAsync){
@@ -8248,7 +8256,7 @@ async function generate(){
           at: Date.now() })); } catch(_){}
         _asyncJobId = _job.jobId;
         S.genBackgroundSafe = true;   // async path survives backgrounding → swap the "keep tab open" warning
-        S.loadMsg = "Generating on our servers — safe to switch tabs or lock your phone.";
+        S.loadMsg = "Generating on our servers \u2014 safe to close this tab.";
         if (typeof render === "function") render();
         var _res = await pollAsyncGeneration(_job.jobId,
           function(stage){ S.genPhase = (stage === "critique") ? "reviewing" : "drafting"; S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Drafting your talk (server-side)…"; if (typeof render === "function") render(); },
@@ -12168,6 +12176,21 @@ function markGeneratedOnce(){
 // A quiet one-liner under a control, shown only on the first run. Deliberately not a tooltip, a coach
 // mark or a modal: the compose screen has three controls and they fit on one screen, so the honest
 // version is a sentence that explains and then goes away for good.
+// WHAT TO DO WHEN A GENERATION FAILS. During the beta the honest answer is "reopen this page — the work
+// is on our servers and the credit is tracked per job, so a failure that never produced a talk is
+// refunded automatically." Saying nothing leaves people assuming they have been charged for nothing,
+// which is the impression that loses a beta tester permanently.
+//
+// Shown only for generation failures, and only on the free tier: a BYOK failure costs the user their own
+// API call and none of this applies.
+function generationRecoveryNoteHTML(){
+  if(!freeTierActive()) return "";
+  return '<div style="margin-top:10px;padding:10px 12px;background:var(--cream);border:1px solid var(--line);border-radius:10px;font-size:11.5px;color:var(--ink-muted);line-height:1.5;text-align:left">'
+       + '<b style="color:var(--ink)">Didn\'t get your talk?</b> Reload this page \u2014 if it is still running on our servers you will reconnect to it. '
+       + 'A generation that never produced a talk does not use a credit; if your count looks wrong, tell us and we will put it back.'
+       + '</div>';
+}
+
 function firstRunHint(text){
   if(!isFirstRun()) return "";
   return '<div class="firstrun-hint" style="font-size:11.5px;color:var(--plum-deep);line-height:1.45;margin:5px 0 0 4px;display:flex;gap:5px;align-items:flex-start">'
@@ -12429,7 +12452,7 @@ h+='</div>';
     h+='<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><span class="spinner" style="width:22px;height:22px;border-width:3px'+(_reviewing?';border-top-color:#2d8a2d':'')+'"></span><span style="font-size:14px;font-weight:700;color:'+(_reviewing?"#2d6a2d":"var(--plum-deep)")+'">'+esc(_genLabel)+'</span></div>';
     h+='<div style="font-size:12px;color:var(--ink);margin-bottom:6px">'+esc(S.loadMsg||"Working…")+'</div>';
     if(_reviewing) h+='<div style="font-size:11px;color:var(--ink-muted);line-height:1.45;margin-bottom:6px;max-width:340px;margin-left:auto;margin-right:auto">A second pass re-reads the draft and checks the numbers, doses, drug names and guideline claims. Always read it yourself before you teach from it.</div>';
-    h+='<div style="font-size:10.5px;color:var(--ink-muted);letter-spacing:0.04em;text-transform:uppercase">'+S.loadSec+'s elapsed'+((!_reviewing&&S.streamingChars)?(' · ~'+Math.round(S.streamingChars/5)+' words drafted'):'')+'</div>';
+    h+='<div style="font-size:10.5px;color:var(--ink-muted);letter-spacing:0.04em;text-transform:uppercase">'+S.loadSec+'s elapsed'+(S.loadSec < 150 ? ' \u00b7 usually 60\u201390s' : ' \u00b7 taking longer than usual')+((!_reviewing&&S.streamingChars)?(' · ~'+Math.round(S.streamingChars/5)+' words drafted'):'')+'</div>';
     // Progress bar — uses streamed-char count when available (real activity); falls back to
     // wall-clock interpolation. Both cap at ~95% until response completes.
     var _pct;
@@ -12446,8 +12469,8 @@ h+='</div>';
     // Mobile backgrounding warning (Jenni 2026-06-09) — iOS Safari kills fetch when tab is
     // backgrounded. No way around it without a service worker. Tell the user proactively.
     h+= S.genBackgroundSafe
-      ? '<div style="margin-top:10px;font-size:10.5px;color:var(--ink-muted);line-height:1.45">☁️ Generating on our servers · safe to switch tabs or lock your phone — it keeps going.</div>'
-      : '<div style="margin-top:10px;font-size:10.5px;color:var(--ink-muted);line-height:1.45">📱 Keep this tab open while generating · backgrounding pauses the connection.</div>';
+      ? '<div style="margin-top:10px;font-size:10.5px;color:var(--ink-muted);line-height:1.45">\u2601\ufe0f Generating on our servers \u00b7 close this tab or lock your phone if you like \u2014 it keeps going, and reopening brings it back.</div>'
+      : '<div style="margin-top:10px;font-size:10.5px;color:var(--ink-muted);line-height:1.45">\ud83d\udcf1 Keep this tab open \u00b7 this one runs in your browser, so backgrounding it pauses the connection.</div>'
     h+='</div>';
 
     // ─── Live preview: sections appear as they draft (progressive rendering, Jenni 2026) ───
@@ -12523,7 +12546,12 @@ h+='</div>';
     var _genOff = !_gReady || !S.topic.trim();
     h+='<button id="genBtn" '+(_genOff?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich) 0%,var(--plum-deep) 100%);border:none;border-radius:18px;padding:16px 20px;color:#fff;font-size:15px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(75,17,111,0.28);opacity:'+(_genOff?"0.45":"1")+';cursor:'+(_genOff?"not-allowed":"pointer")+';transition:all .15s ease"><span style="font-size:14px">'+(_gReady?"✨":"⏳")+'</span>'+_genLabel+(_gReady?'<span style="font-size:14px">→</span>':'')+'</button>';
   }
-  if(S.error)h+='<p style="color:#c0392b;font-size:12px;text-align:center;margin-top:6px">'+esc(S.error)+'</p>';
+  if(S.error){
+    h+='<p style="color:#c0392b;font-size:12px;text-align:center;margin-top:6px">'+esc(S.error)+'</p>';
+    // Tell people what to DO about it, not just that it happened. Silence here reads as "you were charged
+    // for nothing", which is the impression that loses a beta tester for good.
+    h+=generationRecoveryNoteHTML();
+  }
   h+='<p class="compose-cta-note"><span style="opacity:.7">🔒</span> Your content is private and never shared.</p>';
   h+='</div></div>';
 
