@@ -283,6 +283,11 @@ jobs:
       - name: Refinement is free (and refuses rather than charging)
         run: node test_refine_is_free.mjs
 
+      # The composer used to clear the text, write the outcome to an unrendered S.msgs array, and look
+      # exactly like a dead button on refusal or parse failure. Exercise failure, success and double-send.
+      - name: Refine submit is visible and preserves failed input
+        run: node test_refine_submit_feedback.mjs
+
       # A POST can start a job and lose its response. The browser then holds a job id and no credential, so
       # a talk it already paid for cannot authorise its own citation audit. Re-submitting the same
       # clientJobId must return the SAME job, receipt and expiry — and never a second credit or Workflow.

@@ -251,6 +251,9 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
 .composer-bubble .send-btn{background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:50%;width:36px;height:36px;color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(112,43,157,0.3)}
 .composer-bubble .send-btn:disabled{background:#c9c3d6;box-shadow:none;cursor:not-allowed}
 .composer-bubble .composer-hint{font-size:10.5px;color:var(--ink-muted);margin:6px 4px 0 4px;line-height:1.3;flex-shrink:0;text-align:right}
+.composer-bubble .refine-notice{margin:0 0 9px;padding:8px 10px;border-radius:10px;background:var(--lavender-bg);border:1px solid var(--lavender-soft);color:var(--plum-deep);font-size:11.5px;line-height:1.45;white-space:pre-wrap}
+.composer-bubble .refine-notice.error{background:#fff4f1;border-color:#efc6bc;color:#8b2f22}
+.composer-bubble .refine-notice.success{background:#f0f7f0;border-color:#c8e0c8;color:#2d6a2d}
 /* Mobile composer — tightened 2026-06-08 (Jenni).
    Previous: fixed 420px min-height + vh sizing ignored the iOS keyboard, causing the panel to slide
    under the keyboard and feel "glitchy + too big." Fix: edge-to-edge with 8px gutters, content-sized
@@ -1527,7 +1530,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-06-07";
+var BUILD_ID = "2026-08-07-01";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3704,7 +3707,8 @@ var S = {
   // Default stays false (single-section accordion behavior preserved) — only
   // the toggle pill in the capsule header flips this.
   allExpanded:false,
-  showAns:false, userPick:"", reviseIn:"", chatIn:"", chatBusy:false, msgs:[], refineSec:0, _proofreadRunning:false,
+  showAns:false, userPick:"", reviseIn:"", chatIn:"", chatBusy:false, refineSubmitting:false,
+  refineNotice:null, msgs:[], refineSec:0, _proofreadRunning:false,
   boardsDifficulty:4,   // Boards target difficulty 1-5 (default Board-level); restored from localStorage on load
   guidelinesError:"",   // set when guidelines.json fails to load — blocks generation with a visible error
 
@@ -9731,6 +9735,46 @@ function describePatchChanges(patch){
   return bits.length === 0 ? "no changes" : bits.join(", ");
 }
 
+// One submit path for both the arrow and Cmd/Ctrl+Enter. Refine used to call sendChat() as a
+// floating promise, clear the textarea, and write every outcome to S.msgs — a collection no current
+// view renders. A refusal or parse failure therefore looked exactly like a dead button. Keep the
+// submitted text until we know the operation worked, expose the final outcome in the composer, and
+// prevent a double pointer/key event from issuing two paid model calls.
+function _refineOutcomeFromMessages(fallback){
+  for(var i=(S.msgs||[]).length-1;i>=0;i--){
+    if(S.msgs[i] && S.msgs[i].r === "a" && S.msgs[i].t) return String(S.msgs[i].t);
+  }
+  return fallback || "Refinement finished.";
+}
+function _refineOutcomeKind(text){
+  text=String(text||"");
+  if(/^\s*✓/.test(text)) return "success";
+  if(/failed|couldn.?t|unchanged|nothing landed|no changes|dropped|incomplete|try again|not found|unavailable/i.test(text)) return "error";
+  return "info";
+}
+async function submitRefineFromComposer(){
+  var submitted=String(S.reviseIn||"").trim();
+  if(!submitted || S.refineSubmitting || S.chatBusy || S.loading) return;
+  S.refineSubmitting=true;
+  S.refineNotice={kind:"info",text:"Starting your refinement…"};
+  S.chatIn=submitted;
+  S.reviseIn="";
+  render();
+  try{
+    await sendChat();
+    var outcome=_refineOutcomeFromMessages("Refinement finished.");
+    var kind=_refineOutcomeKind(outcome);
+    S.refineNotice={kind:kind,text:outcome};
+    if(kind === "error" && !String(S.reviseIn||"").trim()) S.reviseIn=submitted;
+  }catch(e){
+    S.refineNotice={kind:"error",text:"Refine failed — "+humanizeError(e)+" Your original is intact."};
+    if(!String(S.reviseIn||"").trim()) S.reviseIn=submitted;
+  }finally{
+    S.refineSubmitting=false;
+    render();
+  }
+}
+
 async function sendChat(){
   if(!S.chatIn.trim())return;
   // SILENT-EAT FIX (Jenni 2026-07-15): the send handlers move the text reviseIn→chatIn BEFORE calling
@@ -10965,7 +11009,7 @@ function _clearTalkScoped(opts){
   S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview"; S.allExpanded=false;
   S.files=[];                                   // uploaded references are per-talk
   S.dg=null; S.dgErr=""; S.dgBusy=false; S.visualStale=false; S.vmcStale=false;
-  S.msgs=[]; S.error="";
+  S.msgs=[]; S.error=""; S.refineNotice=null; S.refineSubmitting=false;
   S.podScript=""; S.podBusy=false; S.podPlaying=false; S.podShow=false;
   S.showAns=false; S.userPick=""; S.reviseIn="";
   S.chatIn=""; S.chatBusy=false;
@@ -13430,7 +13474,7 @@ h+='</div>';
     // === Floating refine composer (Jenni 2026-06-04 redesign) ===
     // Collapsed: 48px circular FAB with ✎ icon.
     // Expanded: 360 × 520 portrait card. Header (label + ×), textarea fills middle, footer (+ Reference, send).
-    var _refineBusy = !!(S.chatBusy || (S.loading && S.talk));
+    var _refineBusy = !!(S.refineSubmitting || S.chatBusy || (S.loading && S.talk));
     // Jenni 2026-06-11: don't force-open the composer panel during refine. The talk content
     // should stay readable while refining. Spinner shows on the FAB; user can tap to expand
     // if they want the busy details. After refine completes, the composer stays where it was.
@@ -13456,6 +13500,9 @@ h+='</div>';
       else { _busyTitle='Weaving in your update…'; _busySub='Preserving existing content'; }
       h+='    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px;color:var(--plum);font-weight:500"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span><span style="font-size:13px;line-height:1.5">'+_busyTitle+'</span><span style="font-size:11px;color:var(--ink-muted);max-width:220px;line-height:1.45">'+_busySub+'</span></div>';
     } else {
+      if(S.refineNotice && S.refineNotice.text){
+        h+='    <div class="refine-notice '+(S.refineNotice.kind==="error"?'error':(S.refineNotice.kind==="success"?'success':''))+'" role="status" aria-live="polite">'+esc(S.refineNotice.text)+'</div>';
+      }
       // ── UPDATE AN OLD TALK TO THE CURRENT PIPELINE ────────────────────────────────────────────────
       // Talks generated weeks ago were written by an older version of this app: before the journal-acronym
       // fix that stopped landmark trials being dropped from the citation audit, before the retrieval
@@ -14006,6 +14053,8 @@ function bindMain(){
   var rin=document.getElementById("reviseIn");if(rin){
     rin.oninput=function(e){
       S.reviseIn=e.target.value;
+      S.refineNotice=null;
+      var rn=document.querySelector(".refine-notice");if(rn)rn.style.display="none";
       var has=!!e.target.value.trim();
       var sb=document.getElementById("reviseSend");if(sb)sb.disabled=!has;
       // Also refresh the Apply-proofread button live (Jenni 2026-07-03 bug fix — typing updated only
@@ -14017,8 +14066,7 @@ function bindMain(){
       if(modSend && String(S.reviseIn||"").trim()){
         e.preventDefault();
         if(S.proofreadArmed){ S._applyProofreadMode = true; S.proofreadArmed = false; }
-        S.chatIn=S.reviseIn;S.reviseIn="";
-        if(typeof sendChat==="function")sendChat();
+        if(typeof submitRefineFromComposer==="function") void submitRefineFromComposer();
       }
     };
   }
@@ -14039,8 +14087,7 @@ function bindMain(){
       e.preventDefault(); // keep focus state stable; we're handling the action now
       if(!String(S.reviseIn||"").trim()) return;
       if(S.proofreadArmed){ S._applyProofreadMode = true; S.proofreadArmed = false; }
-      S.chatIn=S.reviseIn; S.reviseIn="";
-      if(typeof sendChat==="function") sendChat();
+      if(typeof submitRefineFromComposer==="function") void submitRefineFromComposer();
     });
   }
 
