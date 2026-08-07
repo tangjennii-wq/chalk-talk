@@ -72,5 +72,39 @@ ok(/function _flipDepthTo\(/.test(code),
    "_flipDepthTo still exists, so cached depth variants remain usable if the feature returns");
 ok(/function rebuildLesson\(/.test(code), "rebuildLesson still exists and is what the new button calls");
 
+// ── 4 · TYPING "UPDATE" REBUILDS — AND ONLY WHEN IT CLEARLY MEANS THAT ───────
+// "Update" is an ordinary English word. Treating every message containing it as a rebuild would spend a
+// credit on "update the dose to 5 mg". The matcher is executed here rather than pattern-matched, because
+// what matters is which sentences it accepts.
+{
+  const src = code.slice(code.indexOf("var UPDATE_INTENT_RE"), code.indexOf("function isRadicalRevision"));
+  const isUpdate = new Function("S", src + "; return isUpdateToLatestIntent;")({ topic: "" });
+
+  for (const yes of ["update", "Update", "update this talk", "please update the lesson",
+                     "refresh with the latest guidelines", "rebuild with new citations",
+                     "regenerate this talk with the newest evidence", "update.", "re-run this lecture"]) {
+    ok(isUpdate(yes) === true, `rebuilds on: "${yes}"`);
+  }
+  for (const no of ["update the dose to 5 mg", "update section 3 with the new target",
+                    "update the aspirin bullet", "add an update about the 2025 trial and rewrite the intro",
+                    "can you update the part about statins to mention the new LDL threshold and also tighten section 2",
+                    "make it shorter", "update slide 4"]) {
+    ok(isUpdate(no) === false, `stays a normal refine: "${no}"`);
+  }
+}
+
+// ── 5 · AND IT CONFIRMS, LIKE EVERY OTHER PAID ACTION ────────────────────────
+{
+  // Anchor on the CALL SITE, not the definition — indexOf found "function isUpdateToLatestIntent(msg)"
+  // first, so the slice covered the matcher's body, which of course contains no confirm.
+  const callIdx = code.indexOf("!_isSurgicalEdit && isUpdateToLatestIntent(msg)");
+  const branch = code.slice(callIdx, callIdx + 1400);
+  ok(/window\.confirm\(/.test(branch), "the update intent confirms before spending");
+  ok(/uses one of your free talks/.test(branch), "…stating the credit cost on the free tier");
+  ok(/stays until the new one is ready/.test(branch), "…and that the current talk survives until it lands");
+  ok(branch.indexOf("window.confirm") < branch.indexOf("rebuildLesson()"), "…strictly before the rebuild");
+  ok(/nothing was rebuilt/.test(branch), "…and declining says so rather than failing silently");
+}
+
 console.log("\n" + (failures === 0 ? "✔ NO HIDDEN REGENERATION" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

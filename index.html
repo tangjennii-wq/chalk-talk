@@ -1536,7 +1536,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-06";
+var BUILD_ID = "2026-08-07-07";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -8935,6 +8935,30 @@ async function genDiagram(){
 // Detect when the user wants a RADICAL rewrite (full regenerate) vs. a normal additive refine.
 // Default is additive \u2014 only trigger a full regen when they clearly say so. Keeps the user's good content
 // intact when they're just adding context (e.g. "include EGPA" or "add a pregnancy section").
+// ── "UPDATE THIS TALK" — REBUILD ON THE CURRENT PIPELINE ────────────────────────────────────────────
+// Typing "update" should do what the Refine button's "Update to the latest version" does: rebuild the
+// talk from its topic through today's retrieval, live check and citation handling. A talk written before
+// the journal-acronym fix lost its landmark trials to the audit; one written before the review-pass search
+// never saw a society site. Refining such a talk edits stale text instead of refreshing it.
+//
+// DELIBERATELY NARROW. "Update" is an ordinary English word: "update the dose to 5 mg" and "update
+// section 3 with the new target" are surgical edits and must stay that way. So this matches only a
+// message that is ESSENTIALLY JUST the command — a bare verb, optionally with "this talk" and a phrase
+// about newness — and bails the moment it carries other content. When ambiguous, refine; a wrong refine
+// is free to undo, a wrong rebuild spends a credit and a minute. (Jenni 2026-08-07)
+var UPDATE_INTENT_RE = /^\s*(?:please\s+)?(?:update|refresh|rebuild|regenerate|re-?run)\b(?:\s+(?:this|the|my))?(?:\s+(?:talk|lesson|lecture))?(?:\s+(?:with|using|to(?:\s+the)?|for)\b[\s\S]{0,60}?\b(?:new|newest|latest|current|updated?)\b[\s\S]{0,40})?[\s.!]*$/i;
+
+function isUpdateToLatestIntent(msg){
+  var m = String(msg || "").trim();
+  if(!m) return false;
+  // A long message is carrying instructions, whatever verb it opens with.
+  if(m.split(/\s+/).length > 12) return false;
+  // Anything naming a section, a number or a dose is an edit, not a rebuild.
+  if(/\b(section|bullet|slide|pearl|line|paragraph)\b/i.test(m)) return false;
+  if(/\d/.test(m) && !/\b(2\d{3})\b/.test(m)) return false;   // a year is fine; any other number is an edit
+  return UPDATE_INTENT_RE.test(m);
+}
+
 function isRadicalRevision(msg){
   var m = String(msg||"").toLowerCase();
   // Rewrite-from-scratch intents:
@@ -10012,6 +10036,21 @@ async function sendChat(){
     S.chatBusy = false;
     S._composerOpen = false;
     render();
+    return;
+  }
+  // "Update" means rebuild on the CURRENT pipeline, which is a generation and is priced like one.
+  if(!_isSurgicalEdit && isUpdateToLatestIntent(msg)){
+    var _updMsg = freeTierActive()
+      ? "Rebuild this talk from scratch with current retrieval, live guideline checking and citation rules?\n\nThis uses one of your free talks and takes about a minute. Your current version stays until the new one is ready."
+      : "Rebuild this talk from scratch with current retrieval, live guideline checking and citation rules?\n\nThis takes about a minute and makes new API calls on your key. Your current version stays until the new one is ready.";
+    if(!window.confirm(_updMsg)){
+      S.msgs.push({r:"a",t:"Left as is \u2014 nothing was rebuilt."});
+      render();
+      return;
+    }
+    S.msgs.push({r:"a",t:"Rebuilding this talk with current retrieval and citation checking\u2026"});
+    render();
+    rebuildLesson();
     return;
   }
   if(!_isSurgicalEdit && isRadicalRevision(msg)){
