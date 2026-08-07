@@ -709,7 +709,7 @@ function buildImagePrompt(topicSummary){
 // Allowlist for web_search_20250305 tool. MUST be duplicate-free (Anthropic API rejects dups).
 // Keep alphabetized so accidental re-adds jump out visually. The runtime guard in generate()
 // (see "allowed_domains has duplicates" throw) is belt-and-suspenders for the same reason.
-var ALLOWED_SEARCH_DOMAINS = ["aaaai.org","aad.org","aahpm.org","aan.com","aasld.org","academic.oup.com","acc.org","ahajournals.org","ajkd.org","americangeriatrics.org","annals.org","asco.org","ascopubs.org","ash.org","ashpublications.org","asn-online.org","atsjournals.org","bmj.com","cdc.gov","cell.com","chestnet.org","cjasn.asnjournals.org","cochranelibrary.com","dailymed.nlm.nih.gov","diabetes.org","easd.org","endocrine.org","escardio.org","fda.gov","gastro.org","gastrojournal.org","gut.bmj.com","haematologica.org","heart.org","icite.od.nih.gov","idsociety.org","jacc.org","jamanetwork.com","journals.asm.org","kdigo.org","kidney-international.org","link.springer.com","medlineplus.gov","nature.com","ncbi.nlm.nih.gov","nejm.org","nhlbi.nih.gov","nice.org.uk","nih.gov","onlinelibrary.wiley.com","pmc.ncbi.nlm.nih.gov","psychiatry.org","pubmed.ncbi.nlm.nih.gov","rheumatology.org","sciencedirect.com","thelancet.com","thoracic.org","uspreventiveservicestaskforce.org","who.int"];
+var ALLOWED_SEARCH_DOMAINS = ["aaaai.org","aad.org","aafp.org","aahpm.org","aan.com","aasld.org","academic.oup.com","acc.org","ahajournals.org","ajkd.org","americangeriatrics.org","annals.org","asco.org","ascopubs.org","ash.org","ashpublications.org","asn-online.org","atsjournals.org","bmj.com","cdc.gov","cell.com","chestnet.org","cjasn.asnjournals.org","cochranelibrary.com","dailymed.nlm.nih.gov","diabetes.org","diabetesjournals.org","easd.org","endocrine.org","escardio.org","fda.gov","gastro.org","gastrojournal.org","gut.bmj.com","haematologica.org","heart.org","icite.od.nih.gov","idsociety.org","jacc.org","jamanetwork.com","journals.asm.org","kdigo.org","kidney-international.org","link.springer.com","medlineplus.gov","nature.com","ncbi.nlm.nih.gov","nejm.org","nhlbi.nih.gov","nice.org.uk","nih.gov","onlinelibrary.wiley.com","pmc.ncbi.nlm.nih.gov","psychiatry.org","pubmed.ncbi.nlm.nih.gov","rheumatology.org","sciencedirect.com","thelancet.com","thoracic.org","uspreventiveservicestaskforce.org","who.int"];
 
 function getClaudeKey(){
   var k=localStorage.getItem("claude_api_key");
@@ -1536,7 +1536,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-08";
+var BUILD_ID = "2026-08-07-09";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
