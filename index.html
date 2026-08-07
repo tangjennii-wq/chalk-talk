@@ -1527,7 +1527,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-06-04";
+var BUILD_ID = "2026-08-06-05";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -12743,15 +12743,20 @@ h+='</div>';
 
       // ─── CHECK FOR UPDATES ───────────────────────────────────────────────
     // Drafting is deliberately offline (curated guidelines + verified corpus), so recency lives here.
-    var _uc = S.updateCheck, _fast = talkIsFastMoving(t);
+    // _fast is no longer read here — the pill it drove is gone. talkIsFastMoving still colours the
+    // Updates button in the action row above (line ~12638), which is where the signal belongs.
+    var _uc = S.updateCheck;
     if(!_uc){
       // The BUTTON now lives in the action row with Edit/Save — it is a talk-level action, and a second
       // floating button would just compete with Refine. What stays here is the part that has to catch the
       // eye: on fast-moving specialties, a one-line reason to go press it. Everything else is silent.
-      if(_fast || t._updateChecked){
+      // The "changes often" pill under the title was permanent furniture: it showed on every cardiology,
+      // ID and heme talk whether or not anything had actually changed, so it carried no information and
+      // became something to read past. The Updates BUTTON in the action row is the real affordance and it
+      // is always available. (Jenni 2026-08-06)
+      if(t._updateChecked){
         h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px;font-size:11px">';
-        if(_fast) h+='<span style="background:#fdf6ec;border:1px solid #e8c9a0;color:#7a5b1a;border-radius:999px;padding:3px 10px;font-weight:600">⚠️ This topic changes often — check for updates before teaching it</span>';
-        if(t._updateChecked) h+='<span style="color:var(--ink-muted)">Last checked '+esc(t._updateChecked)+'</span>';
+        h+='<span style="color:var(--ink-muted)">Last checked '+esc(t._updateChecked)+'</span>';
         h+='</div>';
       }
     } else {
