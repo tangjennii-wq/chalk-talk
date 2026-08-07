@@ -251,6 +251,12 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
 .composer-bubble .send-btn{background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:50%;width:36px;height:36px;color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;box-shadow:0 2px 8px rgba(112,43,157,0.3)}
 .composer-bubble .send-btn:disabled{background:#c9c3d6;box-shadow:none;cursor:not-allowed}
 .composer-bubble .composer-hint{font-size:10.5px;color:var(--ink-muted);margin:6px 4px 0 4px;line-height:1.3;flex-shrink:0;text-align:right}
+/* Live-check hourglass (Jenni 2026-08-07) — the review pass is searching society sites and journals.
+   A spinner would read as "still loading"; an hourglass that flips reads as "something is cooking".
+   Flips once every 2s rather than spinning, so it is calm at the edge of vision. */
+@keyframes ctFlip{0%,45%{transform:rotate(0deg)}55%,100%{transform:rotate(180deg)}}
+.ct-hourglass{display:inline-block;animation:ctFlip 2s ease-in-out infinite;transform-origin:50% 50%}
+@media (prefers-reduced-motion: reduce){ .ct-hourglass{animation:none} }
 .composer-bubble .refine-notice{margin:0 0 9px;padding:8px 10px;border-radius:10px;background:var(--lavender-bg);border:1px solid var(--lavender-soft);color:var(--plum-deep);font-size:11.5px;line-height:1.45;white-space:pre-wrap}
 .composer-bubble .refine-notice.error{background:#fff4f1;border-color:#efc6bc;color:#8b2f22}
 .composer-bubble .refine-notice.success{background:#f0f7f0;border-color:#c8e0c8;color:#2d6a2d}
@@ -1530,7 +1536,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-04";
+var BUILD_ID = "2026-08-07-05";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -5294,7 +5300,21 @@ function deleteCurrentTalk(){
     });
   });
 }
+// Every entry point calls this without awaiting it (library cards and the deep-link drain). Keep the
+// async failure boundary HERE so a network/parse exception cannot become an unhandled rejection while
+// leaving loadingFromHash=true — the permanent "Opening your talk…" screen.
 async function loadSavedTalk(id){
+  try { return await _loadSavedTalkUnchecked(id); }
+  catch(e){
+    console.error("loadSavedTalk failed:", e);
+    S.loadingFromHash = false;
+    if(typeof render === "function") render();
+    if(typeof _toast === "function") _toast("⚠ Couldn't open that talk — check your connection and try again.", 4200);
+    return false;
+  }
+}
+
+async function _loadSavedTalkUnchecked(id){
   // Guard unsaved work — but NOT on deep-link/hash loads (fresh page, nothing to lose). (Jenni 2026-06-22)
   if(!S.loadingFromHash && !confirmDiscardUnsaved()) return;
   var entry = null;
@@ -6471,6 +6491,25 @@ var UPDATE_CHECK_PROMPT = "You are a medical librarian checking whether a teachi
 // Specialties where being six months stale is a clinical problem, not a cosmetic one. On these the check
 // is offered prominently rather than left as a button nobody notices. (Codex 2026-07-26)
 var FAST_MOVING_RE = /infect|\bid\b|antibiot|antimicrob|hiv|hepatitis|covid|influenza|vaccin|immuniz|oncol|cancer|carcinoma|lymphoma|leukemia|myeloma|melanoma|chemotherap|immunotherap|checkpoint|car-?t|transplant|anticoagul|doac|gene therapy|biologic/i;
+// ── DOES THIS TOPIC NEED A LIVE CHECK? ──────────────────────────────────────────────────────────────
+// Default YES. Recommendations, thresholds, approvals and vaccine schedules move constantly, and the
+// model's training cutoff plus a corpus snapshot cannot keep up with either. The exception is topics that
+// are pure MECHANISM: the Henderson-Hasselbalch equation and the physiology of allorecognition did not
+// change this year, so searching for them spends time and adds nothing.
+//
+// Deliberately conservative — it only opts OUT when the topic reads as physiology with no management
+// component. "Acid-base physiology" skips the search; "Metabolic acidosis: physiology to workup" does
+// not, because the workup half can go stale. When in doubt, search. (Jenni 2026-08-07)
+var PURE_MECHANISM_RE = /\b(physiolog\w*|pathophysiolog\w*|mechanism\w*|biochem\w*|anatomy|histolog\w*|embryolog\w*|pharmacokinetic\w*|receptor\w*|signal\w*\s+transduction)\b/i;
+var MANAGEMENT_RE = /\b(management|treat\w*|therap\w*|guideline\w*|workup|work-up|diagnos\w*|screen\w*|prevent\w*|vaccin\w*|dose\w*|dosing|indication\w*|approval\w*|recommend\w*|trial\w*|update\w*)\b/i;
+
+function topicNeedsLiveCheck(topicStr){
+  var hay = String(topicStr || S.topic || "");
+  if(!hay.trim()) return true;
+  if(MANAGEMENT_RE.test(hay)) return true;          // anything actionable gets checked
+  return !PURE_MECHANISM_RE.test(hay);              // pure mechanism is the only opt-out
+}
+
 function talkIsFastMoving(t){
   var hay = ((t && t.title) || "") + " " + ((t && t.subtitle) || "") + " " + (S.topic || "");
   return FAST_MOVING_RE.test(hay);
@@ -8376,7 +8415,27 @@ async function generate(){
           _critiqueModel = _asyncCritModel || "";        // the Worker's reviewer ("" on an older Worker)
         }
         else {
-          var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels, { stage: "critique" });
+          // ── LIVE CHECK HAPPENS HERE, IN THE REVIEW PASS ──────────────────────────────────────────────
+          // Not during drafting. By this point the draft is already on screen and being read, so the
+          // search time is hidden behind something useful instead of extending the blank wait. The review
+          // is also where currency actually matters: it re-reads numbers, doses and guideline claims.
+          //
+          // Capped at 3 uses against the existing society/journal allowlist. It redeems the SAME critique
+          // stage on the same receipt, so it costs no extra credit — only wall-clock and API spend.
+          var _liveCheck = topicNeedsLiveCheck(S.topic);
+          var _critOpts = { stage: "critique" };
+          if(_liveCheck){
+            _critOpts.tools = [{ type: "web_search_20250305", name: "web_search", max_uses: 3,
+                                 allowed_domains: ALLOWED_SEARCH_DOMAINS }];
+            S.reviewLiveChecking = true;
+            if(typeof render === "function") render();
+          }
+          var critResult = await callAPIWithFallback(critiqueSystem, critiqueInput, critMaxTok, criticModels, _critOpts);
+          S.reviewLiveChecking = false;
+          // Record what ACTUALLY happened, not what was requested: __webSearched is set by callAPI only
+          // when a real web_search event comes back. A talk that claims a live check it never got is the
+          // provenance lie this app exists to avoid.
+          S._reviewSearched = !!(critResult && critResult.webSearched);
           critTxt = critResult.txt;
           _critiqueModel = critResult.modelUsed || "";
           if (critResult.fellBack) console.info("Critique via " + critResult.modelUsed);
@@ -10579,6 +10638,9 @@ function _stampProvenance(talk, o){
   //
   // Without this, the honest label was one refine away from silently becoming a grounding claim, which
   // is the same false-provenance failure as the retry upgrade, arriving by a slower route.
+  // A live check performed during REVIEW is still a live check: record it, so the talk can say honestly
+  // whether its claims were verified against current sources. Only ever set from a real search event.
+  if(S._reviewSearched) talk._webSearched = true;
   var _priorRag = talk._ragStatus || null;
   var _nextRag  = o.ragStatus || null;
   talk._ragStatus = (_priorRag === "sources_added_after_generation" && _nextRag === "ok")
@@ -12545,7 +12607,13 @@ h+='</div>';
     var _genLabel = _reviewing ? "🔎 Checking it" : (S.streamingTitle ? ("Writing: "+S.streamingTitle) : "Writing your talk");
     h+='<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><span class="spinner" style="width:22px;height:22px;border-width:3px'+(_reviewing?';border-top-color:#2d8a2d':'')+'"></span><span style="font-size:14px;font-weight:700;color:'+(_reviewing?"#2d6a2d":"var(--plum-deep)")+'">'+esc(_genLabel)+'</span></div>';
     h+='<div style="font-size:12px;color:var(--ink);margin-bottom:6px">'+esc(S.loadMsg||"Working…")+'</div>';
-    if(_reviewing) h+='<div style="font-size:11px;color:var(--ink-muted);line-height:1.45;margin-bottom:6px;max-width:340px;margin-left:auto;margin-right:auto">A second pass re-reads the draft and checks the numbers, doses, drug names and guideline claims. Always read it yourself before you teach from it.</div>';
+    if(_reviewing && S.reviewLiveChecking){
+      // The live check is the slowest part of the review and the least guessable, so name it.
+      h+='<div style="font-size:11.5px;color:var(--plum-deep);line-height:1.45;margin-bottom:6px;font-weight:600">'
+        + '<span class="ct-hourglass" aria-hidden="true">\u23f3</span> Checking society sites and journals for anything newer\u2026</div>';
+      h+='<div style="font-size:11px;color:var(--ink-muted);line-height:1.45;margin-bottom:6px;max-width:340px;margin-left:auto;margin-right:auto">Your draft is written \u2014 this pass re-reads the numbers, doses and guideline claims against live sources.</div>';
+    }
+    else if(_reviewing) h+='<div style="font-size:11px;color:var(--ink-muted);line-height:1.45;margin-bottom:6px;max-width:340px;margin-left:auto;margin-right:auto">A second pass re-reads the draft and checks the numbers, doses, drug names and guideline claims. Always read it yourself before you teach from it.</div>';
     h+='<div style="font-size:10.5px;color:var(--ink-muted);letter-spacing:0.04em;text-transform:uppercase">'+S.loadSec+'s elapsed'+(S.loadSec < 150 ? ' \u00b7 usually 60\u201390s' : ' \u00b7 taking longer than usual')+((!_reviewing&&S.streamingChars)?(' · ~'+Math.round(S.streamingChars/5)+' words drafted'):'')+'</div>';
     // Progress bar — uses streamed-char count when available (real activity); falls back to
     // wall-clock interpolation. Both cap at ~95% until response completes.

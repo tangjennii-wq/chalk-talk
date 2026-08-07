@@ -78,5 +78,22 @@ const saveBody = html.slice(html.indexOf("async function saveCurrentTalk"), html
 ok(/S\.loadedTalkId\s*=\s*entry\.id/.test(loadBody), "opening an old talk retains its library-row identity");
 ok(/cloudUpdateTalk\(S\.loadedTalkId\)/.test(saveBody), "Save changes updates that same old-talk row after refinement");
 
+// A saved-talk load is started from click/deep-link handlers without await. Its own boundary must consume
+// failures and clear the full-page spinner, otherwise one network rejection becomes the global generic
+// "background task failed" toast while "Opening your talk…" stays forever.
+{
+  const state = { loadingFromHash:true };
+  let rendered = 0, toasted = "";
+  const c = {};
+  new Function("S", "render", "_toast", "_loadSavedTalkUnchecked", "c",
+    grab("loadSavedTalk") + ";c.load=loadSavedTalk;"
+  )(state, () => { rendered++; }, m => { toasted = m; }, async () => { throw new Error("network down"); }, c);
+  let escaped = null, result;
+  try { result = await c.load("old-talk-id"); } catch(e) { escaped = e; }
+  ok(!escaped && result === false, "saved-talk failures resolve locally instead of becoming unhandled rejections");
+  ok(state.loadingFromHash === false && rendered === 1, "a failed saved-talk load always exits the full-page spinner");
+  ok(/Couldn't open that talk/.test(toasted), "the failure names the operation instead of saying only 'background task failed'");
+}
+
 console.log("\n" + (failures === 0 ? "✔ REFINE SUBMIT IS VISIBLE" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

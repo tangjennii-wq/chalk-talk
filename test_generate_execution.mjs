@@ -74,6 +74,12 @@ function runRegion({ verdict, useAsync, asyncCritModel, syncCritModel }) {
     line(/^function writerIsBenchmarked\(.*$/m), line(/^function writerModelKnown\(.*$/m),
     block(/^function talkWriterModels\(/m), block(/^function talkHasUnverifiedWriter\(/m),
     block(/^function _stampProvenance\(/m),
+    // The review pass now performs a live check, so the region references these. A sandbox that omits a
+    // dependency the region uses fails as a ReferenceError two assertions later, which reads like a
+    // provenance bug rather than a missing stub. (2026-08-07)
+    line(/^var PURE_MECHANISM_RE = .*$/m), line(/^var MANAGEMENT_RE = .*$/m),
+    block(/^function topicNeedsLiveCheck\(/m),
+    line(/^var ALLOWED_SEARCH_DOMAINS = .*$/m),
     "globalThis.__run = async function(){ " + REGION + " ; return finalTalk; };",
   ].join("\n"), ctx);
   return vm.runInContext("__run()", ctx).then((t) => ({ talk: t, S: ctx.S }));
