@@ -80,13 +80,17 @@ ok(/recovery/i.test(code) && /S\.authMode = "newpassword"/.test(code),
    "arriving from a reset link opens the set-a-new-password form");
 
 // ── 7 · ONE PANEL, NOT TWO COPIES ────────────────────────────────────────────
-ok((code.match(/h \+= authPanelHTML\(\);/g) || []).length === 2,
-   "both render sites call the same panel function");
+// One render site, not two. The old second copy was unreachable (`if(false && …)`) but still had to be
+// kept in step by hand, which is the cost this consolidation was meant to remove.
+ok((code.match(/h \+= authPanelHTML\(\);/g) || []).length === 1,
+   "the panel is rendered from exactly one place");
 ok((code.match(/googleSignInBtn' /g) || []).length <= 1 &&
    (code.match(/id="googleSignInBtn"/g) || []).length <= 1,
    "the Google button markup exists in exactly one place");
-ok((code.match(/wireAuthPanel\(\);/g) || []).length === 2,
-   "…and both wire it with the same handler function");
+// …and wired once, by the same function that renders it. A second wireAuthPanel() call ran in bindMain,
+// which executes BEFORE renderGlobalModals rebuilds the markup — so it bound the previous render's nodes.
+ok((code.match(/wireAuthPanel\(\);/g) || []).length === 1,
+   "…and wired once, in the function that renders it");
 ok(!/magicLinkForm/.test(code), "the old ambiguous magic-link form is gone");
 
 // ── 8 · ACCESSIBILITY BASICS ─────────────────────────────────────────────────

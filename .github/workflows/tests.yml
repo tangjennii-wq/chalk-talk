@@ -258,6 +258,13 @@ jobs:
       - name: Authentication flow (distinct states, Supabase owns credentials)
         run: node test_auth_flow.mjs
 
+      # Every emailed auth link can come back dead — expired, reused, or opened in a browser that never
+      # held the PKCE verifier. Supabase reports that in the redirect params and the SDK swallows them, so
+      # the user landed on an ordinary signed-out page. An expired RESET link was worse: it still matched
+      # the #recovery test and opened a set-a-new-password form with no session to save it to.
+      - name: Failed sign-in / reset link recovery
+        run: node test_auth_link_recovery.mjs
+
       # Policy is that refinement is free — it is part of the talk already paid for. All five refinement
       # operations nevertheless consumed a full talk credit, through the legacy user-scoped path that
       # writes no reservation row, so the exactly-once refund machinery could not even see the charge.

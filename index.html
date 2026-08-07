@@ -3742,6 +3742,8 @@ window.onSupabaseReady = function(client){
       loadProfile();
       if(typeof refreshFreeTierStatus === "function") refreshFreeTierStatus();
     }
+    // Session state is known — say so if the link that brought them here failed. (2026-08-07)
+    if(typeof handleAuthReturn === "function") handleAuthReturn(!!(r && r.data && r.data.session));
     if(typeof render === "function") render();
     // Background-fetch featured talks for the landing page (Jenni 2026-06-08)
     if(typeof loadLandingFeatured === "function") loadLandingFeatured();
@@ -4662,13 +4664,83 @@ function wireAuthPanel(){
   };
 }
 
+// ── Failed sign-in / reset links ─────────────────────────────────────────────
+// Supabase bounces a dead link back with error params (query under PKCE, hash under implicit) and the
+// SDK swallows them: detectSessionInUrl strips the URL and resolves with no session. Worse for reset —
+// redirectTo ends in "#recovery", so an EXPIRED reset link still matches the /recovery/ test below and
+// used to open "Set a new password" with no session behind it. The user picks a password, submits, and
+// updateUser fails on a session that was never established. Read the params at boot, before the
+// deferred Supabase module runs, and send them to the one screen that can actually fix it. (2026-08-07)
+var _ctAuthReturn = { err:null, wantedRecovery:false, settled:false };
+
+function _readAuthErrorFromUrl(){
+  var found = null;
+  function scan(raw){
+    if(!raw || raw.length < 2) return;
+    var q;
+    try{ q = new URLSearchParams(String(raw).replace(/^[#?]/, "")); }catch(_){ return; }
+    if(!q.get("error") && !q.get("error_code")) return;
+    found = { error:q.get("error")||"", code:q.get("error_code")||"", desc:q.get("error_description")||"" };
+  }
+  try{ scan(window.location.search); }catch(_){}
+  try{ scan(window.location.hash); }catch(_){}
+  return found;
+}
+
+// Strip only the auth error keys. #t=/#u//#share/ deep-link routes must survive.
+function _clearAuthErrorFromUrl(){
+  try{
+    var KEYS = ["error","error_code","error_description"], k;
+    var url = new URL(window.location.href);
+    for(k=0;k<KEYS.length;k++) url.searchParams.delete(KEYS[k]);
+    var hash = String(url.hash||"");
+    if(/(^|[#&])error(_code|_description)?=/.test(hash)){
+      var hp = new URLSearchParams(hash.replace(/^#/, ""));
+      for(k=0;k<KEYS.length;k++) hp.delete(KEYS[k]);
+      var rest = hp.toString();
+      url.hash = rest ? "#"+rest : "";
+    }
+    window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+  }catch(_){}
+}
+
+function authLinkErrorMessage(e){
+  var code = String((e&&e.code)||"").toLowerCase();
+  var desc = String((e&&e.desc)||"").toLowerCase();
+  var err  = String((e&&e.error)||"").toLowerCase();
+  if(code === "otp_expired" || /expired/.test(desc))
+    return "That link has expired. Links work once, and only for about an hour — send yourself a new one.";
+  if(/verifier|pkce/.test(desc))
+    return "That link was opened in a different browser from the one that requested it. Send a new one and open it here.";
+  if(code === "access_denied" || err === "access_denied")
+    return "That link didn't work — it may already have been used. Send yourself a new one.";
+  var d = String((e&&e.desc)||"").replace(/\s+/g," ").trim();
+  return d ? ("Sign-in didn't complete: " + d + ".") : "Sign-in didn't complete. Send yourself a new link.";
+}
+
+// Called once the SDK has settled the session — or from the boot fallback if it never loads.
+function handleAuthReturn(hasSession){
+  if(_ctAuthReturn.settled) return;
+  if(_ctAuthReturn.err){
+    _ctAuthReturn.settled = true;
+    var e = _ctAuthReturn.err; _ctAuthReturn.err = null;
+    // A dead reset link belongs on the reset form, not the password form it can no longer submit.
+    openAuth(_ctAuthReturn.wantedRecovery ? "reset" : "signin", "", authLinkErrorMessage(e));
+    return;
+  }
+  if(_ctAuthReturn.wantedRecovery && !hasSession){
+    _ctAuthReturn.settled = true;
+    openAuth("reset", "", "That reset link is no longer valid. Enter your email and we'll send a new one.");
+  }
+}
+
 // Opening the panel resets it to a known state. Without this, a drawer closed mid-"Check your email"
 // reopens showing that same message with no form under it, which reads as the app being stuck.
-function openAuth(mode, msg){
+function openAuth(mode, msg, err){
   S.signInOpen = true;
   S.authMode = mode || "choose";
   S.authMsg = msg || "";
-  S.authErr = "";
+  S.authErr = err || "";
   S.authPassword = ""; S.authPassword2 = "";
   render();
 }
@@ -4712,20 +4784,31 @@ function _authTextBtn(id, label){
 
 // One panel, six states. Replaces two near-identical copies of the old markup which had already drifted
 // apart in font size and wording — fixing anything meant remembering to fix it twice.
+// Google is the ONLY method two of the three existing accounts have ever used, and it rendered only on
+// the chooser. Generate opens "signup" directly, and no mode routed back to choose — so a returning
+// Google user who pressed Generate landed on a create-a-password form with no way to reach the button
+// they actually use. Same markup, offered on every mode where signing in is the point. (2026-08-07)
+function _authGoogleBlock(){
+  var h = '';
+  h += '<button id="googleSignInBtn" '+(S.authBusy?"disabled":"")+' style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;transition:all .15s ease;opacity:'+(S.authBusy?"0.5":"1")+'"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.32A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3.01 2.33A5.4 5.4 0 0 1 9 3.58z"/></svg>Continue with Google</button>';
+  h += '<div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--ink-soft);font-size:11px;letter-spacing:.05em"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>';
+  return h;
+}
+
 function authPanelHTML(){
   var mode = S.authMode || "choose";
   var h = "";
 
   if(mode === "choose"){
     h += '<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">An account saves your talks across devices and comes with <strong>10 free generations</strong> — no API key needed.</p>';
-    h += '<button id="googleSignInBtn" '+(S.authBusy?"disabled":"")+' style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;transition:all .15s ease;opacity:'+(S.authBusy?"0.5":"1")+'"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.32A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3.01 2.33A5.4 5.4 0 0 1 9 3.58z"/></svg>Continue with Google</button>';
-    h += '<div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--ink-soft);font-size:11px;letter-spacing:.05em"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>';
+    h += _authGoogleBlock();
     h += '<button type="button" id="authGoSignup" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-bottom:10px">Create account</button>';
     h += '<button type="button" id="authGoSignin" style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer">Sign in</button>';
   }
 
   else if(mode === "signup"){
     h += '<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 14px">We\'ll email you a link to confirm your address. Your talks are private and never shared.</p>';
+    h += _authGoogleBlock();
     h += '<form id="authForm" style="display:flex;flex-direction:column;gap:8px">';
     h += _authField("authEmailInput","email","Email",S.authEmail,"","email");
     h += _authField("authPasswordInput","password","Password",S.authPassword,"At least "+AUTH_MIN_PASSWORD+" characters","new-password");
@@ -4736,6 +4819,7 @@ function authPanelHTML(){
   }
 
   else if(mode === "signin"){
+    h += _authGoogleBlock();
     h += '<form id="authForm" style="display:flex;flex-direction:column;gap:8px">';
     h += _authField("authEmailInput","email","Email",S.authEmail,"","email");
     h += _authField("authPasswordInput","password","Password",S.authPassword,"","current-password");
@@ -4849,15 +4933,6 @@ async function sendPasswordReset(email){
 async function setNewPassword(password){
   var sb = await _waitForSb();
   var r = await sb.auth.updateUser({ password: password });
-  if(r.error) throw r.error;
-  return r;
-}
-
-async function signInWithMagicLink(email){
-  _stashPendingTopic();
-  var sb = await _waitForSb();
-  var redirectTo = window.location.origin + window.location.pathname;
-  var r = await sb.auth.signInWithOtp({ email: email, options: { emailRedirectTo: redirectTo } });
   if(r.error) throw r.error;
   return r;
 }
@@ -13452,15 +13527,8 @@ h+='</div>';
     h+='</div></div>';
   }
 
-  if(false && S.signInOpen){
-    h+='<div class="drawer-backdrop open" id="signInBackdrop"></div>';
-    h+='<div class="drawer open" style="max-height:auto" id="signInDrawer">';
-    h+='<div class="drawer-handle"></div>';
-    h+='<div class="drawer-head"><div class="drawer-title">'+esc(authTitle())+'</div><button class="drawer-close" id="signInCloseBtn">×</button></div>';
-    h+='<div class="drawer-body" style="padding:18px 20px 28px">';
-    h += authPanelHTML();
-    h+='</div></div>';
-  }
+  // The sign-in drawer lives in renderGlobalModals so it survives a view change. A second copy sat
+  // here behind `if(false && …)`, unreachable but still counted as a render site. Removed. (2026-08-07)
 
   // === Account dropdown menu (when logged in + accountMenuOpen) ===
   if(S.accountMenuOpen && S.user){
@@ -13875,13 +13943,8 @@ function bindMain(){
   var sib=document.getElementById("signInBtn");if(sib)sib.onclick=function(){openAuth("choose")};
   var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){closeAuth()};
   var sibd=document.getElementById("signInBackdrop");if(sibd)sibd.onclick=function(){S.signInOpen=false;render()};
-  wireAuthPanel();
-  // Don't render() before initiating OAuth (Jenni 2026-07-03 mobile fix) — rebuilding the DOM in the
-  // tap handler breaks Safari's user-activation and the redirect silently fails. Kick off directly;
-  // only re-render if it errors (to show the message).
-  var gsb=document.getElementById("googleSignInBtn");if(gsb)gsb.onclick=function(){
-    signInWithGoogle().catch(function(err){ S.authMsg=(err&&err.message)||"Google sign-in failed — try the email link below."; S.authBusy=false; render(); });
-  };
+  // The auth panel is wired in renderGlobalModals, which runs AFTER this function and replaces the
+  // markup this would have bound to. Binding here hit the previous render's dead nodes.
   // J / account avatar click → open the full profile drawer (was: small dropdown)
   var acb=document.getElementById("accountBtn");if(acb)acb.onclick=function(e){e.stopPropagation();S.accountMenuOpen=false;S.profileEditOpen=true;S.profileForm=Object.assign({},S.profile||{});render()};
   var ftcChip=document.getElementById("freeTierChip");if(ftcChip)ftcChip.onclick=function(){ if(S.freeTier && S.freeTier.talks_remaining<=0){ S.showOutOfFreeModal=true; render(); } };
@@ -14529,7 +14592,16 @@ try{ if(localStorage.getItem("ct_compose_options")==="1") S.composeOptionsOpen =
 // A password-reset link lands here with #recovery (plus Supabase's own token fragment). The SDK consumes
 // that token and establishes a session, so without this the user arrives signed IN, sees the normal home
 // screen, and is never asked for the new password they came here to set.
-try{ if(/recovery/i.test(String(window.location.hash||""))){ S.signInOpen = true; S.authMode = "newpassword"; } }catch(_){}
+// Read link-failure params BEFORE Supabase's deferred module strips them. This classic script finishes
+// during parse; type="module" scripts run after, so we always get here first.
+try{
+  _ctAuthReturn.err = _readAuthErrorFromUrl();
+  _ctAuthReturn.wantedRecovery = /recovery/i.test(String(window.location.hash||""));
+  if(_ctAuthReturn.err) _clearAuthErrorFromUrl();
+}catch(_){}
+// Only offer "Set a new password" for a recovery landing that did NOT come back with an error. With an
+// error there is no session, so the form could never have saved the password it asked for.
+try{ if(_ctAuthReturn.wantedRecovery && !_ctAuthReturn.err){ S.signInOpen = true; S.authMode = "newpassword"; } }catch(_){}
 // Restore a topic the user typed before being bounced to sign-in (which reloads the page). (fix #2)
 try{ var _pendTopic = localStorage.getItem("ct_pending_topic"); if(_pendTopic){ S.topic = _pendTopic; localStorage.removeItem("ct_pending_topic"); } }catch(_){}
 // Restore the Boards difficulty preference (Jenni 2026-07-21). Default stays 4 (Board-level).
@@ -14561,6 +14633,10 @@ loadGuidelines();
 // so the deep-link at least tries the localStorage path. No-op if already drained.
 setTimeout(function(){ if(typeof drainPendingHashLoad==="function" && window._pendingHashLoad) drainPendingHashLoad(); }, 3000);
 // Stale-cache nudge: check the deployed build shortly after load and whenever the tab regains focus.
+// If the Supabase module never loads (blocked CDN, hospital firewall, offline), onSupabaseReady never
+// fires and a user who clicked a dead link would sit on a silently signed-out page — the exact failure
+// this code exists to remove.
+setTimeout(function(){ try{ if(!window.sbReady) handleAuthReturn(false); }catch(_){} }, 6000);
 setTimeout(checkForUpdate, 4000);
 window.addEventListener("focus", function(){ if(!document.getElementById("ctUpdatePill")) checkForUpdate(); });
 </script>
