@@ -1530,7 +1530,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-01";
+var BUILD_ID = "2026-08-07-02";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -12637,8 +12637,11 @@ h+='</div>';
       var _authorName = (S.sharedAuthor && S.sharedAuthor.name) ? S.sharedAuthor.name : "a Chalk Talk author";
       var _shareInfoOpen = !!S.shareInfoOpen;
       var _isOwnSharedTalk = !!(S.user && S.sharedAuthorUserId && S.user.id === S.sharedAuthorUserId);
+      // The "Shared by a Chalk Talk author" chip sat above the title on every shared talk, telling the
+      // reader something they already knew from the link they clicked, and pushing the actual content
+      // down. What matters on a shared talk is the one action a visitor can take — save a copy — so only
+      // that survives. The expandable attribution panel goes with it. (Jenni 2026-08-06)
       h+='<div class="tk-shared-banner" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
-      h+='<button id="sharedInfoToggle" title="About this shared talk" style="background:var(--lavender-bg);border:1px solid #d4baea;border-radius:10px;padding:5px 10px;color:var(--plum-deep);font-size:11.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit">🔗 <span style="font-size:11px;color:var(--ink-muted);font-weight:500">Shared by '+esc(_authorName)+'</span></button>';
       // Promoted Save copy CTA — only when the viewer is NOT the original author. (Jenni 2026-06-09)
       if(!_isOwnSharedTalk){
         if(S.user && S.sharedCopySaved){
@@ -12650,12 +12653,6 @@ h+='</div>';
         }
       }
       h+='</div>';
-      if(_shareInfoOpen){
-        h+='<div style="background:linear-gradient(135deg,#f5edfa,#ede6f5);border:1px solid #d4baea;border-radius:12px;padding:11px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
-        h+='<div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--plum-deep);font-weight:600;line-height:1.3">Shared by '+esc(_authorName)+'</div><div style="font-size:10.5px;color:var(--ink-muted);margin-top:2px;line-height:1.4">Public chalk talk · Review for accuracy · Not medical advice</div></div>';
-        h+='<a href="'+esc(window.location.pathname)+'" style="background:var(--plum);color:#fff;border:none;border-radius:9px;padding:6px 12px;font-size:11.5px;font-weight:600;cursor:pointer;text-decoration:none;flex-shrink:0">Make your own →</a>';
-        h+='</div>';
-      }
     }
 
     // === Capsule header (Jenni 2026-06-03: stripped — left=New talk only, right=Save/Edit/⋮ horizontal) ===
@@ -12715,14 +12712,18 @@ h+='</div>';
         }
       }
     } else if(S.talkIsSaved && !S.isSampleTalk){
-      h+='<button id="saveTalkBtnTop" class="cap-save" title="Already saved — tap to confirm" style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;box-shadow:none;cursor:pointer">✓ <span class="hide-mobile-text">Saved</span></button>';
+      h+='<button id="saveTalkBtnTop" class="cap-save" title="Saved to your library" style="background:transparent;color:#2d6a2d;border:1px solid #c8e0c8;box-shadow:none;cursor:pointer;font-weight:500">✓ <span class="hide-mobile-text">Saved</span></button>';
     } else if(S.loadedTalkId && !S.isSampleTalk && !String(S.loadedTalkId).startsWith("shared")){
       // A previously-saved talk that's now been EDITED (depth toggle, refine, etc.) → prompt to save the
       // changes, not a passive "Saved". Amber so it reads as an action. (Jenni 2026-07)
-      h+='<button id="saveTalkBtnTop" class="cap-save" title="You have unsaved changes — save them to this talk" style="background:#fff6dd;color:#7a5b1a;border:1px solid #e6d49a;box-shadow:none;cursor:pointer">↻ <span class="hide-mobile-text">Save changes</span></button>';
+      // UNSAVED CHANGES ARE THE ONE STATE WORTH SHOUTING ABOUT. This was a pale amber outline reading
+      // "Save", indistinguishable at a glance from the green "Saved" beside it — so a refined talk looked
+      // filed away when it wasn't, and closing the tab lost the work. Filled, high-contrast, and it says
+      // what it will do rather than naming a state. (Jenni 2026-08-06)
+      h+='<button id="saveTalkBtnTop" class="cap-save" title="You have unsaved changes — save them to this talk" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;box-shadow:0 2px 10px rgba(75,17,111,.28);cursor:pointer;font-weight:600">\u2193 <span class="hide-mobile-text">Save changes</span></button>';
     } else {
       var _saveTitle = S.isSampleTalk ? "Save this as a new talk in your library" : "Save to library";
-      h+='<button id="saveTalkBtnTop" class="cap-save" title="'+_saveTitle+'">★ <span class="hide-mobile-text">Save</span></button>';
+      h+='<button id="saveTalkBtnTop" class="cap-save" title="'+_saveTitle+'" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;box-shadow:0 2px 10px rgba(75,17,111,.28);cursor:pointer;font-weight:600">\u2605 <span class="hide-mobile-text">Save to library</span></button>';
     }
     if(!S.sharedTalk){
       h+='<button id="overflowBtn" class="cap-more" title="More options" aria-label="More options">⋮</button>';
