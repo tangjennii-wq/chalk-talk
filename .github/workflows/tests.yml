@@ -246,6 +246,11 @@ jobs:
       - name: Writer allowlist + quota receipt (server-side)
         run: node test_writer_and_quota_gates.mjs
 
+      # The steps described the product while the screen asked for a topic, a style and references. They
+      # now mirror the controls in order, and the hints disappear once a talk has actually been delivered.
+      - name: First-run onboarding (steps mirror the controls)
+        run: node test_first_run_onboarding.mjs
+
       # The first screen a new user sees. One ambiguous email field labelled "Sign in or sign up", no
       # password, no reset, no acknowledgement that a link had been sent — and rendered from two copies of
       # the markup that had already drifted. Asserts the distinct states and that no password is stored,

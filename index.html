@@ -1527,7 +1527,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-06-01";
+var BUILD_ID = "2026-08-06-02";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -2013,7 +2013,7 @@ async function resumeAsyncJobIfAny(){
     // (worker runGeneration). We only refresh the badge below. (Jenni 2026-07-03)
     S.citationAuditPending = true;
     S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";   // preview retired — the real talk is on screen now
-    S.talk = finalTalk;
+    markGeneratedOnce(); S.talk = finalTalk;   // first run is over once a talk actually arrives
     S.glRef = getGuidelinesForTopic(S.topic) || null;
     clearInterval(loadTimer); S.loading = false; render();
     var ts = document.getElementById("talkStart"); if(ts) ts.scrollIntoView({behavior:"smooth", block:"start"});
@@ -8347,7 +8347,7 @@ async function generate(){
   }
   S.citationAuditPending = true;
   S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";   // preview retired — the real talk is on screen now
-  S.talk = finalTalk;
+  markGeneratedOnce(); S.talk = finalTalk;   // first run is over once a talk actually arrives
   // THE HANDLE IS RELEASED HERE, and not one line earlier. The talk is parsed, reviewed, stamped and
   // assigned — so the work is recoverable by other means and the reconnect key has done its job.
   // Everything between the Workflow returning and this assignment can throw, and while it can, the
@@ -10267,7 +10267,7 @@ async function retryReview(){
   // NO CHARGE: a review retry re-reviews a draft the user already paid for.
   S.reviewPending = null; _saveReviewPending();
   S.topic = rp.topic; S.style = rp.style || S.style; if(rp.depth) S.depth = rp.depth;
-  S.citationAuditPending = true; S.talk = finalTalk; S.sec = 0; S.dg = null; S.dgErr = ""; S.podScript = "";
+  markGeneratedOnce(); S.citationAuditPending = true; S.talk = finalTalk; S.sec = 0; S.dg = null; S.dgErr = ""; S.podScript = "";
   S.glRef = getGuidelinesForTopic(S.topic) || null;
   render();
   var ts = document.getElementById("talkStart"); if(ts) ts.scrollIntoView({behavior:"smooth", block:"start"});
@@ -12045,6 +12045,24 @@ function renderMain(){
   h+='</div>';
   }   // end if(!S.loading) — hero hidden during generation
 
+// FIRST RUN = has never finished a generation on this device. Not "has never visited": someone who
+// bounced off the landing page and came back still needs the hints, and someone who has made a talk does
+// not. The flag is set when a talk is actually delivered, not when one is started.
+function isFirstRun(){
+  try{ return !localStorage.getItem("ct_generated_once"); }catch(_){ return false; }
+}
+function markGeneratedOnce(){
+  try{ localStorage.setItem("ct_generated_once","1"); }catch(_){}
+}
+// A quiet one-liner under a control, shown only on the first run. Deliberately not a tooltip, a coach
+// mark or a modal: the compose screen has three controls and they fit on one screen, so the honest
+// version is a sentence that explains and then goes away for good.
+function firstRunHint(text){
+  if(!isFirstRun()) return "";
+  return '<div class="firstrun-hint" style="font-size:11.5px;color:var(--plum-deep);line-height:1.45;margin:5px 0 0 4px;display:flex;gap:5px;align-items:flex-start">'
+       + '<span aria-hidden="true" style="opacity:.7">\u2192</span><span>' + esc(text) + '</span></div>';
+}
+
   // === "How this works" — inline expandable, closed by default ===
   // Open state tracked in S.howitOpen so unrelated render() calls don't collapse it.
   // Hide while generating so the focus card has the screen (Jenni 2026-06-08).
@@ -12054,11 +12072,11 @@ function renderMain(){
     h+='<div class="howit-body">';
     // Free-tier pitch — front and center (combines the "10 free talks" message; fix #1 + #4).
     h+='<div style="background:#fff6dd;border:1px solid #e6d49a;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#7a5b1a;line-height:1.5;text-align:center"><b>✨ Free to try — 10 talks + 5 images.</b> Just sign in — after that, bring your own API key: Claude, ChatGPT, or Gemini (Gemini is free).</div>';
-    h+='<div class="howit-step"><span class="howit-num">1</span><div><b>Enter a topic</b> — as a lecture or a boards question. Optional: upload your own reference materials.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>AI drafts it with retrieval</b> — grounded in PubMed abstracts retrieved for your topic plus condensed society-guideline summaries, with inline citations. A separate AI review pass then re-reads the draft for accuracy.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">3</span><div><b>View it</b> as an <i>Overview</i>, <i>📊 Slides</i>, or a <i>🎧 Audio</i> podcast.</div></div>';
-    h+='<div class="howit-step"><span class="howit-num">4</span><div><b>Refine anytime</b> to make edits.</div></div>';
-    h+='</div>';
+    h+='<div class="howit-step"><span class="howit-num">1</span><div><b>Type a topic</b> \u2014 as specific as you like. \u201cHyponatremia\u201d works; \u201cHypotonic hyponatremia in cirrhosis\u201d works better.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">2</span><div><b>Pick a style</b> \u2014 <i>Lecture</i> for a 10-minute teaching talk, <i>Boards</i> for practice questions with explanations.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">3</span><div><b>Add references</b> \u2014 optional. Drop in a PDF or paste a PMID and it will be used as source material alongside retrieved evidence.</div></div>';
+    h+='<div class="howit-step"><span class="howit-num">4</span><div><b>Generate</b> \u2014 about a minute. It runs on our servers, so you can close the tab and come back; a second pass checks the numbers, doses and citations before you see it.</div></div>';
+h+='</div>';
     h+='</details>';
   }
 
@@ -12226,6 +12244,7 @@ function renderMain(){
   // Style
   h+='<div style="flex:1 1 220px;min-width:0">';
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Style<span tabindex="0" class="opt-hint" aria-label="What is Style?">i<span class="opt-hint-pop"><b>Lecture:</b> structured 10-min teaching — sections, mechanism, evidence, clinical pearls.<br><b>Boards:</b> a single ABIM-style practice question with answer rationales.</span></span></div>';
+  h+=firstRunHint("Lecture = a 10-minute teaching talk. Boards = practice questions with explanations.");
   h+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
   h+=segBtn("styleBtn","s","lecture",S.style,"🎓","Lecture");
   h+=segBtn("styleBtn","s","boards",S.style,"📋","Boards");
@@ -12247,6 +12266,7 @@ function renderMain(){
   // is "show the talk, then let them expand it".
   h+='<div style="flex:1 1 220px;min-width:0">';
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">References<span tabindex="0" class="opt-hint" aria-label="About references">i<span class="opt-hint-pop">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.<br>&#128274; Not stored, not used for training.</span></span></div>';
+  h+=firstRunHint("Optional. Your own PDFs or PMIDs are used alongside the evidence we retrieve.");
   h+='<div id="dropZone" style="min-height:48px;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:10px 14px;background:var(--cream);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-soft);cursor:pointer;transition:background .15s ease">';
   h+='<span aria-hidden="true" style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:400;flex-shrink:0">+</span>';
   h+='<span style="font-size:13px;font-weight:600;color:var(--ink)">Add references</span>';
@@ -12269,6 +12289,7 @@ function renderMain(){
   if(S.style==="boards"){   // boards keeps Difficulty in the slot above, so references get their own row
   h+='<div class="compose-ref-row" style="margin-bottom:14px">';
   h+='<div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">References<span tabindex="0" class="opt-hint" aria-label="About references">i<span class="opt-hint-pop">PDFs, slides, or notes (e.g. MKSAP) to shape the lesson.<br>&#128274; Not stored, not used for training.</span></span></div>';
+  h+=firstRunHint("Optional. Your own PDFs or PMIDs are used alongside the evidence we retrieve.");
   h+='<div id="dropZone" style="min-height:48px;box-sizing:border-box;display:flex;align-items:center;gap:9px;padding:10px 14px;background:var(--cream);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-soft);cursor:pointer;transition:background .15s ease">';
   h+='<span aria-hidden="true" style="background:var(--lavender-soft);color:var(--plum);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:400;flex-shrink:0">+</span>';
   h+='<span style="font-size:13px;font-weight:600;color:var(--ink)">Add references</span>';
