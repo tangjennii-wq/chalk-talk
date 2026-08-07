@@ -1530,7 +1530,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-02";
+var BUILD_ID = "2026-08-07-04";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -8010,7 +8010,10 @@ async function generate(){
       : (S.depth === 'concise'
       ? '\n\nDEPTH: CONCISE (~6-min summary, denser than a quick skim). Cover the substance — about 25% more content than a bare outline so each bullet teaches something. Same overall structure, ~30-40% reduction vs Detailed.\n- Each section: 4-5 substantive bullets (each <=22 words). Each bullet should make a teaching point, not just a header.\n- Subtitle: <=12 words\n- Teaching pearl: 1-2 sentences, up to ~30 words — leave room for the "why"\n- Board tip: 1 sentence, <=20 words\n- Visual memory card quadrants: <=10 words each, center: <=8 words\n- Summary points: 4-5 points, <=25 words each\nNo redundancy. No flowery language. Each bullet should carry a fact a resident could not have guessed. Aim for "tight but actually informative," not "headline-only."'
       : '\n\nDEPTH: DETAILED (full 10-min talk). Go deep. 5-7 substantive bullets per section exploring mechanism, evidence, clinical application. Teaching pearls and board tips can be 1-2 sentences with nuance. Aim for the full 10-min chalk talk experience.');
-    var refineHint = (S.refineContext && S.refineContext.trim()) ? "\n\nUSER CONTEXT/REFINEMENT: " + S.refineContext.trim() : "";
+    var refineParts = [];
+    if(S.refineContext && S.refineContext.trim()) refineParts.push(S.refineContext.trim());
+    if(S._generationConstraint && S._generationConstraint.trim()) refineParts.push(S._generationConstraint.trim());
+    var refineHint = refineParts.length ? "\n\nUSER CONTEXT/REFINEMENT: " + refineParts.join("\n\n") : "";
     // Inject NEJM/NephJC/CardioNerds-grounded trial context when the topic mentions a curated landmark trial.
     var trialContext = buildTrialExpansionContext(S.topic, S.refineContext);
     var uc=[{type:"text",text:'Create content on: "'+S.topic+'"' + refineHint + guidelineContext + trialContext + ragContext + depthHint + searchHint + '\nONLY JSON. Plain-text values with NO XML/HTML tags — [N] inline citation markers are plain text, not markup: keep them wherever a listed source genuinely supports the claim, and omit them elsewhere.\nCRITICAL: Your response MUST start with { and end with }. Do NOT write any preamble like "Looking at the references" or "Here is the talk" — start immediately with the opening brace. Any text before { will break the parser.'}].concat(buildReferenceParts(S.files));
@@ -9985,8 +9988,9 @@ async function sendChat(){
           var warnMsg = (merge.warnings && merge.warnings.length) ? " \u2014 " + merge.warnings.join("; ") : "";
           S.msgs.push({r:"a",t:"\u2139\ufe0f Nothing landed" + warnMsg + ". Try a more specific phrasing or say \"rewrite\" for a full regenerate."});
         } else {
-          // same gate for a weave-patch merge — validate what will be displayed (Codex 2026-07-26)
-          try { _assertCompleteTalk(merge.talk, S.style, "weave-merged talk"); }
+          // Current talks retain the full schema bar; legacy talks may retain pre-existing schema gaps,
+          // but this surgical edit may not create any new one.
+          try { _assertRefinePreservesCompleteness(S.talk, merge.talk, S.style, "weave-merged talk"); }
           catch(_inc){
             S.msgs.push({r:"a",t:"⚠ That edit would have left the talk incomplete (" + (_inc.missing||[]).join(", ") + "), so I kept your original. Try a narrower change."});
             S.chatBusy=false; render(); return;
@@ -10370,7 +10374,21 @@ function safeResetAll(){
 //   (b) a stale depthVariantsCache from the loaded talk could shadow the fresh draft;
 //   (c) "verify with current literature" (web search) wasn't re-armed, so fresh citations didn't return.
 // It re-arms fresh-talk conditions but KEEPS loadedTalkId so the rebuild updates the same library entry.
-function rebuildLesson(){
+function _modernizeStructureConstraint(talk, style){
+  if(!talk || typeof talk !== "object") return "";
+  if(style === "boards"){
+    return "MODERNIZE THIS SAVED BOARD QUESTION through the current pipeline. Keep the same tested clinical concept and the same five-choice structure, but rewrite it to current guidance, evidence, citation formatting, and today's complete board-question schema. Do not silently change what competency the question tests.";
+  }
+  var headings = (Array.isArray(talk.sections) ? talk.sections : []).map(function(sec){
+    return String((sec && (sec.heading || sec.title)) || "").trim();
+  }).filter(Boolean);
+  var structure = headings.length
+    ? headings.map(function(h, i){ return (i + 1) + ". " + h; }).join("\n")
+    : "(The legacy talk has no reliable section headings; infer the smallest current-schema outline from its title.)";
+  return "MODERNIZE THIS SAVED TALK through the current pipeline. Preserve its teaching architecture: keep the same section count, order, and headings listed below. Rewrite the bullets inside that structure using current society guidance and current evidence; replace outdated recommendations; rebuild references and inline [N] citations in today's Chalk Talk format; and emit today's complete schema (including summary points and visual memory card). Do not add, remove, merge, rename, or reorder sections.\n\nSTRUCTURE TO PRESERVE:\n" + structure;
+}
+
+async function rebuildLesson(){
   S.editSettings=false; S.overflowOpen=false; S.modelPickerOpen=false;
   // Topic fallback so an older saved talk with no stored topic still rebuilds (from its title/subtitle).
   if(!S.topic || !S.topic.trim()){
@@ -10384,7 +10402,12 @@ function rebuildLesson(){
   S.updateCheck=null;   // update proposals are talk-scoped — never show one talk's results on another
   S.depth="concise";   // every new talk starts on the fast path; Detailed is a post-generation expansion
   S.wantWebSearch=false;
-  generate();
+  // Topic-only rebuilding changed the outline of old talks. Carry a transient, non-persisted structural
+  // contract into this one generation: current retrieval/citations and schema, same teaching architecture.
+  var priorConstraint = S._generationConstraint || "";
+  S._generationConstraint = _modernizeStructureConstraint(S.talk, S.style);
+  try { await generate(); }
+  finally { S._generationConstraint = priorConstraint; }
 }
 
 // ── Withheld-draft recovery (Jenni 2026-07 medical-safety) ───────────────────
@@ -10692,6 +10715,33 @@ function _assertCompleteTalk(talk, style, label){
     throw e;
   }
   return talk;
+}
+
+// Surgical refinement must not make a talk less complete. Older saved talks pre-date fields such as
+// summary_points and the four-quadrant memory card, so requiring today's entire schema here rejects an
+// otherwise-valid one-bullet correction. Compare schema GAP FAMILIES instead: a legacy gap may survive
+// (and may be repaired), but an edit cannot create a gap in a field/section that was previously usable.
+// Newly generated and current-schema talks have no baseline gaps, so this is exactly as strict as
+// _assertCompleteTalk for them.
+function _assertRefinePreservesCompleteness(beforeTalk, afterTalk, style, label){
+  _normalizeTalkInPlace(afterTalk, style);
+  function family(m){
+    m = String(m || "");
+    if(/^visual_memory_card(?:\.|$)/.test(m)) return "visual_memory_card";
+    if(/^question(?:\.|$)/.test(m)) return "question";
+    var sec = m.match(/^sections\[(\d+)\]/);
+    if(sec) return "sections[" + sec[1] + "]";
+    return m.replace(/\(.*$/, "").replace(/[.+/].*$/, "");
+  }
+  var existing = {};
+  _missingTalkFields(beforeTalk, style).forEach(function(m){ existing[family(m)] = true; });
+  var newlyMissing = _missingTalkFields(afterTalk, style).filter(function(m){ return !existing[family(m)]; });
+  if(newlyMissing.length){
+    var e = new Error((label || "refined talk") + " is incomplete, newly missing " + newlyMissing.join(", "));
+    e.code = "incomplete_talk"; e.missing = newlyMissing;
+    throw e;
+  }
+  return afterTalk;
 }
 
 // Parse a model response the way production must: repair, then VERIFY. Throws on anything incomplete so
@@ -13516,7 +13566,7 @@ h+='</div>';
       // minutes on 2026-08-06. State the cost, ask once, then do it.
       h+='    <button id="rebuildToLatestBtn" style="margin:2px 12px 0;padding:9px 12px;background:var(--cream);border:1px dashed var(--line);border-radius:10px;font-family:inherit;font-size:11.5px;color:var(--ink-muted);cursor:pointer;text-align:left;line-height:1.45;width:calc(100% - 24px)">'
         + '<b style="color:var(--ink);font-weight:600">\u21bb Update to the latest version</b><br>'
-        + 'Rebuilds this talk from its topic with current retrieval and citation checking \u00b7 about a minute'
+        + 'Keeps this outline, updates guidance, and rebuilds citations with the current pipeline \u00b7 about a minute'
         + (freeTierActive() ? ' \u00b7 uses one of your free talks' : '')
         + '</button>';
       h+='    <textarea class="revise-input" id="reviseIn" placeholder="Add detail, paste an MKSAP question, or drop a PDF — your existing content stays, only new content is added.&#10;&#10;Pasting a big chunk of reviewer feedback (e.g. from OpenEvidence)? Hit “Apply proofread” below to fold its corrections into the talk while keeping everything else.">'+esc(S.reviseIn||"")+'</textarea>';
@@ -13986,8 +14036,8 @@ function bindMain(){
   var _rbl = document.getElementById("rebuildToLatestBtn");
   if(_rbl) _rbl.onclick = function(){
     var msg = freeTierActive()
-      ? "Rebuild this talk from scratch with current retrieval and citation checking?\n\nThis uses one of your free talks and takes about a minute. Your current version stays until the new one is ready."
-      : "Rebuild this talk from scratch with current retrieval and citation checking?\n\nThis takes about a minute and makes new API calls on your key. Your current version stays until the new one is ready.";
+      ? "Update this talk with current guidance and citations while keeping its section structure?\n\nThis uses one of your free talks and takes about a minute. Your current version stays until the new one is ready."
+      : "Update this talk with current guidance and citations while keeping its section structure?\n\nThis takes about a minute and makes new API calls on your key. Your current version stays until the new one is ready.";
     if(!window.confirm(msg)) return;
     S._composerOpen = false;
     rebuildLesson();

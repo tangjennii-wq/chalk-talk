@@ -30,6 +30,7 @@ vm.runInContext([
   line(/^var _REQUIRED_LECTURE_FIELDS = .*$/m), line(/^var _REQUIRED_BOARDS_FIELDS  = .*$/m),
   block(/^function _missingTalkFields\(/m), block(/^function _normalizeTalkInPlace\(/m),
   block(/^function _assertCompleteTalk\(/m),
+  block(/^function _assertRefinePreservesCompleteness\(/m),
   line(/^var PATCH_MAX_COUNT = .*$/m), line(/^var PATCH_MAX_TOTAL_CHARS = .*$/m), line(/^var _PATCH_PATH_RE = .*$/m),
   block(/^function _resolvePatchPath\(/m), block(/^function applyTalkPatches\(/m),
   "function deepCleanCitations(t){ return t; }",
@@ -37,6 +38,7 @@ vm.runInContext([
 ].join("\n"), ctx);
 const apply = vm.runInContext("applyTalkPatches", ctx);
 const accept = vm.runInContext("acceptCritique", ctx);
+const preserveRefine = vm.runInContext("_assertRefinePreservesCompleteness", ctx);
 
 const VMC = () => ({ top_left: "Na <120", top_right: "Check urine osm", bottom_left: "SIADH", bottom_right: "Correct <8/24h" });
 const talk = () => ({
@@ -121,6 +123,36 @@ ok(({}).polluted === undefined, "no prototype was polluted by the attempted patc
   ok(!r.ok && /incomplete/.test(r.error), "a patch that BLANKS a required field is rejected by the schema gate");
   const r2 = apply(talk(), [{ op: "delete", path: "sections[0]" }, { op: "delete", path: "sections[0]" }], "lecture");
   ok(!r2.ok, "a patch set that empties sections[] is rejected");
+}
+
+// ── 6b) LEGACY SAVED TALKS CAN BE EDITED WITHOUT WAIVING SAFETY ──────────────
+// Old library rows can pre-date summary_points and the memory card. A surgical correction must not be
+// rejected merely because those gaps already existed, but it still cannot damage a field that was sound.
+{
+  const legacy = {
+    title: "Old hyponatremia talk",
+    sections: [{ heading: "Treatment", points: ["Correct sodium slowly"] }],
+  };
+  const corrected = JSON.parse(JSON.stringify(legacy));
+  corrected.sections[0].points[0] = "Correct sodium by no more than 8 mEq/L in 24 hours";
+  let legacyError = null;
+  try { preserveRefine(legacy, corrected, "lecture", "legacy refine"); } catch(e) { legacyError = e; }
+  ok(!legacyError, "a valid surgical edit lands on a legacy talk with pre-existing schema gaps");
+
+  const damaged = JSON.parse(JSON.stringify(legacy));
+  damaged.sections[0].points = [];
+  let damageError = null;
+  try { preserveRefine(legacy, damaged, "lecture", "legacy refine"); } catch(e) { damageError = e; }
+  ok(damageError && /sections\[0\]/.test((damageError.missing || []).join(",")),
+     "a legacy edit is still rejected when it creates a new completeness gap");
+
+  const current = talk();
+  const brokenCurrent = JSON.parse(JSON.stringify(current));
+  brokenCurrent.visual_memory_card.bottom_right = "";
+  let currentError = null;
+  try { preserveRefine(current, brokenCurrent, "lecture", "current refine"); } catch(e) { currentError = e; }
+  ok(currentError && /visual_memory_card/.test((currentError.missing || []).join(",")),
+     "current-schema talks retain the full completeness bar");
 }
 
 // ── 7) acceptCritique(): the three shapes, one path ───────────────────────────

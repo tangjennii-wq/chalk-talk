@@ -169,8 +169,8 @@ for (const [needle, what] of [
 // (e) PATCH merges — the merged RESULT is what the reader sees
 ok(/_assertCompleteTalk\(revised, S\.style, "proofread-merged talk"\)/.test(html),
    "the proofread-merged talk is validated before assignment");
-ok(/_assertCompleteTalk\(merge\.talk, S\.style, "weave-merged talk"\)/.test(html),
-   "the weave-merged talk is validated before assignment");
+ok(/_assertRefinePreservesCompleteness\(S\.talk, merge\.talk, S\.style, "weave-merged talk"\)/.test(html),
+   "the weave-merged talk is checked against its pre-edit completeness before assignment");
 // and a rejected merge must keep the original rather than blanking the talk
 const revIdx = html.indexOf('"proofread-merged talk"');
 ok(/kept your original untouched/.test(html.slice(revIdx, revIdx + 700)),

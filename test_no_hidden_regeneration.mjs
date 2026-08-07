@@ -15,6 +15,16 @@ let failures = 0;
 const ok = (c, m) => { console.log((c ? "✓" : "✗ FAIL") + " — " + m); if (!c) failures++; };
 const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
 const code = html.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
+function grab(name){
+  const from = html.indexOf("function " + name + "(");
+  if(from < 0) throw new Error("not found: " + name);
+  let depth = 0;
+  for(let i=html.indexOf("{", from); i<html.length; i++){
+    if(html[i] === "{") depth++;
+    else if(html[i] === "}") { depth--; if(depth === 0) return html.slice(from, i+1); }
+  }
+  throw new Error("unbalanced: " + name);
+}
 
 // ── 1 · NO DEPTH CONTROL IS RENDERED ANYWHERE ────────────────────────────────
 // _flipDepthTo is only ever reached from a click, so removing every button removes the leak entirely.
@@ -38,7 +48,26 @@ ok(/stays until the new one is ready/.test(handler),
 ok(handler.indexOf("window.confirm") < handler.indexOf("rebuildLesson()"),
    "…with the confirm strictly before the rebuild call");
 
-// ── 3 · THE MECHANISM SURVIVES, ONLY THE SILENT ENTRY POINTS ARE GONE ────────
+// ── 3 · AN OLD TALK IS MODERNIZED, NOT RE-OUTLINED ───────────────────────────
+const modernize = new Function(grab("_modernizeStructureConstraint") + ";return _modernizeStructureConstraint;")();
+const constraint = modernize({ sections:[
+  { heading:"Mechanism" }, { heading:"Diagnosis" }, { heading:"Treatment" }
+]}, "lecture");
+ok(/1\. Mechanism[\s\S]*2\. Diagnosis[\s\S]*3\. Treatment/.test(constraint),
+   "the modernization contract carries the old section order and headings");
+ok(/same section count, order, and headings/.test(constraint) && /Do not add, remove, merge, rename, or reorder sections/.test(constraint),
+   "the model is explicitly forbidden from silently changing the teaching structure");
+ok(/current society guidance/.test(constraint) && /inline \[N\] citations/.test(constraint) && /complete schema/.test(constraint),
+   "the same pass requests current guidance, current citation formatting, and today's schema");
+const rebuild = code.slice(code.indexOf("async function rebuildLesson"), code.indexOf("// ── Withheld-draft recovery"));
+ok(/S\._generationConstraint\s*=\s*_modernizeStructureConstraint\(S\.talk, S\.style\)/.test(rebuild),
+   "rebuildLesson derives the constraint from the talk being replaced");
+ok(/try \{ await generate\(\); \}[\s\S]*finally \{ S\._generationConstraint = priorConstraint; \}/.test(rebuild),
+   "the constraint lives for exactly one generation and is restored afterwards");
+ok(/refineParts\.push\(S\._generationConstraint\.trim\(\)\)/.test(code),
+   "the current generation prompt actually receives the modernization contract");
+
+// ── 4 · THE MECHANISM SURVIVES, ONLY THE SILENT ENTRY POINTS ARE GONE ────────
 ok(/function _flipDepthTo\(/.test(code),
    "_flipDepthTo still exists, so cached depth variants remain usable if the feature returns");
 ok(/function rebuildLesson\(/.test(code), "rebuildLesson still exists and is what the new button calls");
