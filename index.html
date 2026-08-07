@@ -1527,7 +1527,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-20";
+var BUILD_ID = "2026-07-31-21";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -8518,6 +8518,9 @@ function isRestructureIntent(msg){
 // bullet, pearl, fact, or citation. The model returns the talk with reorganized sections; JS
 // validates that every original citation [N] and every bullet survives somewhere.
 async function restructureTalk(userMsg){
+  // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
+  var _ra = await ensureRefineAuth();
+  if(!_ra.ok){ var _e = new Error(_ra.message); _e.code = "refine_unauthorised"; throw _e; }
   if(!S.talk) return null;
   var existingJson = JSON.stringify(S.talk);
   var sectionList = (S.talk.sections||[]).map(function(s,i){
@@ -8574,7 +8577,10 @@ async function restructureTalk(userMsg){
     type: "text",
     text: "USER REQUEST: " + userMsg + "\n\nEXISTING TALK JSON (restructure per the user's request; preserve every bullet, fact, and citation):\n" + existingJson
   }];
-  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel() });
+  // STAGE IT. This call passed no meterKind/stage, so it could not be redeemed against a receipt even
+  // when one existed — under enforcement it would be refused as an unstaged paid call. Every other
+  // refinement path already declares stage: "refine".
+  var txt = await callAPI(sys, contentParts, 32768, { model: refineWriterModel(), meterKind:"talk", stage:"refine" });
   // full-talk replacement → same schema gate as a draft (Codex 2026-07-26)
   var restructured = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "restructured talk");
   if(typeof deepCleanCitations === "function") restructured = deepCleanCitations(restructured);
@@ -8603,6 +8609,9 @@ function isProofreadFeedback(msg){
 // Model call: apply the feedback, return the FULL corrected talk in the same schema. Returns
 // { talk, applied[], vmcTouched }. Consumes 1 free-tier talk (a refine = 1 talk), guarded.
 async function weaveFeedbackTalk(userMsg){
+  // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
+  var _ra = await ensureRefineAuth();
+  if(!_ra.ok){ var _e = new Error(_ra.message); _e.code = "refine_unauthorised"; throw _e; }
   if(!S.talk) return { talk:null };
   // Charge-after pre-check (Jenni 2026-07-03): block only if visibly exhausted; consume after success.
   if(genUsesFreeTier() && S.freeTier && typeof S.freeTier.talks_remaining === "number" && S.freeTier.talks_remaining <= 0){

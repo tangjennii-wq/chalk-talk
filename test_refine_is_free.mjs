@@ -21,7 +21,12 @@ const ok = (c, m) => { console.log((c ? "✓" : "✗ FAIL") + " — " + m); if (
 const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
 const code = html.split("\n").map(l => l.replace(/^\s*\/\/.*$/, "")).join("\n");
 
-const OPS = ["applyProofreadFeedback", "compressTalk", "expandTalk", "weaveRevision", "retryReview"];
+// SEVEN, not five. My first sweep found the five that CHARGED and stopped there — but restructureTalk and
+// weaveFeedbackTalk also make refine-stage model calls, and an ungated paid call is refused the moment
+// RECEIPTS_REQUIRED is on. "Which functions charge?" and "which functions need authorisation?" are
+// different questions, and I had only asked the first.
+const OPS = ["applyProofreadFeedback", "compressTalk", "expandTalk", "weaveRevision", "retryReview",
+             "restructureTalk", "weaveFeedbackTalk"];
 const slice = (name) => {
   const i = code.indexOf("async function " + name + "(");
   if (i < 0) throw new Error("not found: " + name);
@@ -135,6 +140,15 @@ for (const op of OPS) {
   ok(/unchanged/i.test(r.message || ""), `…telling the user the talk is unchanged ("${r.message}")`);
   ok(!h.calls.some(u => u.includes("/consume")),
      "…and does NOT fall back to consuming a credit, which would re-price a free action during an outage");
+}
+
+// ── 4 · EVERY REFINE-STAGE MODEL CALL IS STAGED ──────────────────────────────
+// A paid call with no stage cannot be redeemed against a receipt at all, so under enforcement it is
+// refused however valid the receipt is. restructureTalk passed no stage for months.
+for (const op of OPS) {
+  const body = slice(op);
+  if (!/callAPI\(/.test(body)) continue;
+  ok(/stage:\s*"refine"/.test(body), `${op}: its model call declares stage "refine"`);
 }
 
 console.log("\n" + (failures === 0 ? "✔ REFINE IS FREE" : "✗ " + failures + " FAILURE(S)"));
