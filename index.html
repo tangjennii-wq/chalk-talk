@@ -1536,7 +1536,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-05";
+var BUILD_ID = "2026-08-07-06";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -13699,13 +13699,9 @@ h+='</div>';
     // hidden for the beta. Removed outright rather than left unreachable: an unreachable control that
     // spends a credit is one UI change away from being reachable again. _flipDepthTo survives, so cached
     // variants remain usable if depth comes back as an explicit, priced action. (Jenni 2026-08-06)
-    h+='<div style="font-size:10.5px;color:var(--ink-muted);line-height:1.45;margin:5px 0 0 4px">'
-      + (_dvCached
-          ? "Both versions are already generated \u2014 switching is instant."
-          : "Detailed rewrites the whole talk at full depth: about a minute"
-            + (freeTierActive() ? ", and it uses one of your free talks." : "."))
-      + '</div>';
-    h+='</div>';
+    // (The depth explanation that used to sit here went with the control. Its variable did not, which
+    // threw a ReferenceError inside render() on every saved-talk open — the "Opening your talk" hang.
+    // Deleting markup is not done until the values it referenced are gone too. 2026-08-07)
     }
     // Model picker — lets you rebuild with a different provider (Jenni 2026-07)
     h+=renderModelPicker();
