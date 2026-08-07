@@ -1527,7 +1527,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-07-31-21";
+var BUILD_ID = "2026-08-06-01";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -4563,6 +4563,296 @@ function _waitForSb(){
 // Stash the current topic before any auth redirect so a signed-out user who typed a topic and hit
 // Generate gets it back after the sign-in round-trip (fix #2). Restored on init.
 function _stashPendingTopic(){ try{ if(S.topic && S.topic.trim()) localStorage.setItem("ct_pending_topic", S.topic); }catch(_){} }
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// AUTHENTICATION: DISTINCT STATES, NOT ONE AMBIGUOUS FORM
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// The old panel offered "Continue with Google" and a single email field labelled "Sign in or sign up",
+// which is the first thing a new user sees and gives them no way to tell which one is happening. It also
+// had no password, no reset, and no verification state — a magic link arrived and the screen never
+// acknowledged it, so people clicked the button again.
+//
+// Modes: choose -> signin | signup -> verify, plus reset -> reset_sent, plus newpassword for the landing
+// after a recovery link. One panel function renders all of them; it replaces TWO near-identical copies of
+// the old markup that had already drifted apart in font size and wording.
+//
+// PASSWORD HANDLING IS ENTIRELY SUPABASE'S: signUp, signInWithPassword, resetPasswordForEmail,
+// updateUser. Nothing here stores, hashes, compares or transmits a password anywhere except into the
+// Supabase SDK over TLS, and no password is ever written to state that persists.
+var AUTH_MIN_PASSWORD = 8;
+
+// The heading changes with the mode, so the user is never guessing which action they are taking.
+// One wiring function for the auth panel, called from both places that render it. The old code had two
+// copies of the handler as well as two copies of the markup.
+function wireAuthPanel(){
+  var email = document.getElementById("authEmailInput");
+  if(email) email.oninput = function(e){ S.authEmail = e.target.value; };
+  var pw = document.getElementById("authPasswordInput");
+  if(pw) pw.oninput = function(e){ S.authPassword = e.target.value; };
+  var pw2 = document.getElementById("authPassword2Input");
+  if(pw2) pw2.oninput = function(e){ S.authPassword2 = e.target.value; };
+
+  var go = function(id, mode){ var b = document.getElementById(id); if(b) b.onclick = function(){ authSetMode(mode); }; };
+  go("authGoSignup", "signup"); go("authGoSignin", "signin"); go("authGoReset", "reset");
+
+  var resend = document.getElementById("authResend");
+  if(resend) resend.onclick = async function(){
+    var em = (S.authEmail || "").trim();
+    if(!em){ S.authErr = "Enter your email first."; render(); return; }
+    S.authBusy = true; S.authErr = ""; S.authMsg = ""; render();
+    try{
+      if(S.authMode === "verify" && S.authLastPassword) await signUpWithPassword(em, S.authLastPassword);
+      else await sendPasswordReset(em);
+      S.authMsg = "Sent again to " + em + ".";
+    }catch(err){ S.authErr = authHumanError(err); }
+    S.authBusy = false; render();
+  };
+
+  var form = document.getElementById("authForm");
+  if(!form) return;
+  form.onsubmit = async function(e){
+    e.preventDefault();
+    var em = (S.authEmail || "").trim();
+    var p1 = S.authPassword || "", p2 = S.authPassword2 || "";
+    var mode = S.authMode || "choose";
+
+    // VALIDATE BEFORE ASKING THE SERVER. A mismatch or a short password is something the user can see and
+    // fix here; a round trip to be told so is just latency plus a scarier-sounding error.
+    if(mode !== "newpassword" && !em){ S.authErr = "Enter your email."; render(); return; }
+    if(mode === "signup" || mode === "newpassword"){
+      if(p1.length < AUTH_MIN_PASSWORD){ S.authErr = "Use at least " + AUTH_MIN_PASSWORD + " characters."; render(); return; }
+      if(p1 !== p2){ S.authErr = "Those passwords don't match."; render(); return; }
+    }
+    if(mode === "signin" && !p1){ S.authErr = "Enter your password."; render(); return; }
+
+    S.authBusy = true; S.authErr = ""; S.authMsg = ""; render();
+    try{
+      if(mode === "signup"){
+        var r = await signUpWithPassword(em, p1);
+        // Supabase returns a session immediately when email confirmation is OFF, and none when it is ON.
+        // Read which happened rather than assuming: telling someone to check their inbox when they are
+        // already signed in is the kind of small lie that makes people distrust the whole flow.
+        if(r && r.data && r.data.session){
+          S.authMsg = "Account created — you're signed in.";
+          S.signInOpen = false;
+        } else {
+          S.authLastPassword = p1;      // for Resend only
+          authSetMode("verify");
+        }
+      }
+      else if(mode === "signin"){
+        await signInWithPassword(em, p1);
+        S.signInOpen = false;
+      }
+      else if(mode === "reset"){
+        await sendPasswordReset(em);
+        authSetMode("reset_sent");
+      }
+      else if(mode === "newpassword"){
+        await setNewPassword(p1);
+        S.authMsg = "Password updated — you're signed in.";
+        S.signInOpen = false;
+        try{ history.replaceState(null, "", window.location.pathname + window.location.search); }catch(_){}
+      }
+    }catch(err){
+      S.authErr = authHumanError(err);
+    }
+    S.authBusy = false;
+    S.authPassword = ""; S.authPassword2 = "";   // never linger in state
+    render();
+  };
+}
+
+// Opening the panel resets it to a known state. Without this, a drawer closed mid-"Check your email"
+// reopens showing that same message with no form under it, which reads as the app being stuck.
+function openAuth(mode, msg){
+  S.signInOpen = true;
+  S.authMode = mode || "choose";
+  S.authMsg = msg || "";
+  S.authErr = "";
+  S.authPassword = ""; S.authPassword2 = "";
+  render();
+}
+
+function closeAuth(){
+  S.signInOpen = false;
+  S.authPassword = ""; S.authPassword2 = ""; S.authLastPassword = "";
+  S.authErr = "";
+  render();
+}
+
+function authTitle(){
+  switch(S.authMode){
+    case "signup":      return "Create your account";
+    case "signin":      return "Sign in";
+    case "reset":       return "Reset your password";
+    case "reset_sent":  return "Check your email";
+    case "verify":      return "Confirm your email";
+    case "newpassword": return "Set a new password";
+    default:            return "Save your talks";
+  }
+}
+
+function _authField(id, type, label, value, hint, autocomplete){
+  var h = '<label for="'+id+'" style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.09em;margin:2px 0 0 4px">'+esc(label)+'</label>';
+  if(hint) h += '<span style="font-size:11.5px;color:var(--ink-soft);line-height:1.4;margin:0 0 2px 4px">'+esc(hint)+'</span>';
+  // 16px keeps iOS from zooming the viewport on focus. Anything smaller and the whole layout jumps.
+  h += '<input id="'+id+'" type="'+type+'" value="'+esc(value||"")+'" required autocomplete="'+autocomplete+'" '
+     + 'style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:16px;color:var(--ink);outline:none;font-family:inherit;width:100%;box-sizing:border-box">';
+  return h;
+}
+
+function _authPrimaryBtn(label, busyLabel){
+  return '<button type="submit" '+(S.authBusy?"disabled":"")+' style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:'+(S.authBusy?"wait":"pointer")+';opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease;width:100%;margin-top:4px">'
+    + esc(S.authBusy ? busyLabel : label) + '</button>';
+}
+
+function _authTextBtn(id, label){
+  return '<button type="button" id="'+id+'" style="background:none;border:none;padding:6px 4px;font-size:12.5px;color:var(--plum-rich);cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:2px">'+esc(label)+'</button>';
+}
+
+// One panel, six states. Replaces two near-identical copies of the old markup which had already drifted
+// apart in font size and wording — fixing anything meant remembering to fix it twice.
+function authPanelHTML(){
+  var mode = S.authMode || "choose";
+  var h = "";
+
+  if(mode === "choose"){
+    h += '<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 16px">An account saves your talks across devices and comes with <strong>10 free generations</strong> — no API key needed.</p>';
+    h += '<button id="googleSignInBtn" '+(S.authBusy?"disabled":"")+' style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;transition:all .15s ease;opacity:'+(S.authBusy?"0.5":"1")+'"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.32A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3.01 2.33A5.4 5.4 0 0 1 9 3.58z"/></svg>Continue with Google</button>';
+    h += '<div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--ink-soft);font-size:11px;letter-spacing:.05em"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>';
+    h += '<button type="button" id="authGoSignup" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-bottom:10px">Create account</button>';
+    h += '<button type="button" id="authGoSignin" style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer">Sign in</button>';
+  }
+
+  else if(mode === "signup"){
+    h += '<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 14px">We\'ll email you a link to confirm your address. Your talks are private and never shared.</p>';
+    h += '<form id="authForm" style="display:flex;flex-direction:column;gap:8px">';
+    h += _authField("authEmailInput","email","Email",S.authEmail,"","email");
+    h += _authField("authPasswordInput","password","Password",S.authPassword,"At least "+AUTH_MIN_PASSWORD+" characters","new-password");
+    h += _authField("authPassword2Input","password","Confirm password",S.authPassword2,"","new-password");
+    h += _authPrimaryBtn("Create account →","Creating…");
+    h += '</form>';
+    h += '<div style="margin-top:10px;text-align:center">'+_authTextBtn("authGoSignin","Already have an account? Sign in")+'</div>';
+  }
+
+  else if(mode === "signin"){
+    h += '<form id="authForm" style="display:flex;flex-direction:column;gap:8px">';
+    h += _authField("authEmailInput","email","Email",S.authEmail,"","email");
+    h += _authField("authPasswordInput","password","Password",S.authPassword,"","current-password");
+    h += _authPrimaryBtn("Sign in →","Signing in…");
+    h += '</form>';
+    h += '<div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">';
+    h += _authTextBtn("authGoReset","Forgot password?");
+    h += _authTextBtn("authGoSignup","Create an account");
+    h += '</div>';
+  }
+
+  else if(mode === "reset"){
+    h += '<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 14px">Enter your email and we\'ll send you a link to set a new password.</p>';
+    h += '<form id="authForm" style="display:flex;flex-direction:column;gap:8px">';
+    h += _authField("authEmailInput","email","Email",S.authEmail,"","email");
+    h += _authPrimaryBtn("Send reset link →","Sending…");
+    h += '</form>';
+    h += '<div style="margin-top:10px;text-align:center">'+_authTextBtn("authGoSignin","Back to sign in")+'</div>';
+  }
+
+  else if(mode === "reset_sent" || mode === "verify"){
+    var isVerify = (mode === "verify");
+    h += '<div style="text-align:center;padding:6px 0 2px"><div style="font-size:34px;line-height:1;margin-bottom:12px" aria-hidden="true">✉️</div>';
+    h += '<p style="font-size:14px;color:var(--ink);line-height:1.55;margin:0 0 8px">We sent a link to <strong>'+esc(S.authEmail||"your email")+'</strong>.</p>';
+    h += '<p style="font-size:12.5px;color:var(--ink-muted);line-height:1.5;margin:0 0 4px">'
+       + (isVerify ? "Open it to finish creating your account, then come back and sign in."
+                   : "Open it to choose a new password.") + '</p>';
+    // Said plainly because it is the single most common reason a link "doesn't work".
+    h += '<p style="font-size:12px;color:var(--ink-soft);line-height:1.5;margin:10px 0 0">Open the link in <strong>this same browser</strong>. If it opens somewhere else you\'ll be asked to sign in again. Not there? Check spam.</p></div>';
+    h += '<div style="margin-top:14px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap">';
+    h += _authTextBtn("authResend","Resend email");
+    h += _authTextBtn("authGoSignin","Back to sign in");
+    h += '</div>';
+  }
+
+  else if(mode === "newpassword"){
+    h += '<p style="font-size:13px;color:var(--ink-muted);line-height:1.55;margin:0 0 14px">Choose a new password for your account.</p>';
+    h += '<form id="authForm" style="display:flex;flex-direction:column;gap:8px">';
+    h += _authField("authPasswordInput","password","New password",S.authPassword,"At least "+AUTH_MIN_PASSWORD+" characters","new-password");
+    h += _authField("authPassword2Input","password","Confirm new password",S.authPassword2,"","new-password");
+    h += _authPrimaryBtn("Update password →","Updating…");
+    h += '</form>';
+  }
+
+  // One message region for every mode, announced to screen readers rather than silently appearing.
+  if(S.authErr || S.authMsg){
+    var isErr = !!S.authErr;
+    h += '<p role="status" aria-live="polite" style="margin-top:14px;padding:10px 12px;background:'+(isErr?"#fdf0ee":"#f0f7f0")+';border:1px solid '+(isErr?"#e8c8c0":"#b8d8b8")+';border-radius:10px;font-size:12.5px;color:'+(isErr?"#c0392b":"#2d6a2d")+';line-height:1.45">'+esc(S.authErr||S.authMsg)+'</p>';
+  }
+  return h;
+}
+
+
+function authSetMode(mode){
+  S.authMode = mode;
+  S.authMsg = ""; S.authErr = "";
+  // Passwords never survive a mode change. They live in S only while the form is on screen.
+  S.authPassword = ""; S.authPassword2 = "";
+  render();
+  // Focus the first field so the keyboard lands somewhere useful. Deferred past the DOM rebuild.
+  setTimeout(function(){
+    var el = document.getElementById(mode === "signup" || mode === "signin" || mode === "reset"
+      ? "authEmailInput" : "authPasswordInput");
+    if(el && el.focus) el.focus();
+  }, 30);
+}
+
+// Supabase's messages are accurate and unfriendly. Translate the ones a user can actually act on, and
+// pass anything unrecognised through rather than inventing a reassuring lie about what went wrong.
+function authHumanError(err){
+  var m = String((err && err.message) || err || "").toLowerCase();
+  if(/invalid login credentials/.test(m)) return "That email and password don't match. Check them, or use Forgot password.";
+  if(/email not confirmed/.test(m))       return "Confirm your email first — open the link we sent you, then sign in.";
+  if(/user already registered|already been registered/.test(m))
+    return "There's already an account with that email. Sign in instead, or use Forgot password.";
+  if(/password should be at least/.test(m)) return "Use at least " + AUTH_MIN_PASSWORD + " characters.";
+  if(/rate limit|too many/.test(m))       return "Too many attempts just now. Wait a minute and try again.";
+  if(/network|fetch/.test(m))             return "Couldn't reach the server. Check your connection and try again.";
+  return (err && err.message) || "Something went wrong. Please try again.";
+}
+
+async function signUpWithPassword(email, password){
+  _stashPendingTopic();
+  var sb = await _waitForSb();
+  var r = await sb.auth.signUp({
+    email: email, password: password,
+    options: { emailRedirectTo: window.location.origin + window.location.pathname },
+  });
+  if(r.error) throw r.error;
+  return r;
+}
+
+async function signInWithPassword(email, password){
+  _stashPendingTopic();
+  var sb = await _waitForSb();
+  var r = await sb.auth.signInWithPassword({ email: email, password: password });
+  if(r.error) throw r.error;
+  return r;
+}
+
+async function sendPasswordReset(email){
+  var sb = await _waitForSb();
+  // #recovery lets init() recognise the landing and show the set-a-new-password form.
+  var r = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname + "#recovery",
+  });
+  if(r.error) throw r.error;
+  return r;
+}
+
+async function setNewPassword(password){
+  var sb = await _waitForSb();
+  var r = await sb.auth.updateUser({ password: password });
+  if(r.error) throw r.error;
+  return r;
+}
+
 async function signInWithMagicLink(email){
   _stashPendingTopic();
   var sb = await _waitForSb();
@@ -7504,9 +7794,9 @@ async function generate(){
   if(_gp === "openai" && !getOpenAIKeyRaw()){ if(typeof openKeyModal==="function") openKeyModal("openai"); return; }
   if(_gp === "gemini" && !getGeminiKeyRaw()){ if(typeof openKeyModal==="function") openKeyModal("gemini"); return; }
   if(_gp === "claude" && FREE_TIER_CONFIG.enabled && !S.user && !hasOwnClaudeKey() && !S.useByok){
-    S.signInOpen = true;
-    S.authMsg = "Sign in to use your 10 free talks — no API key needed.";
-    if(typeof render === "function") render();
+    // Straight to Create account: someone who just hit Generate with no account needs to make one, and
+    // landing them on a chooser costs an extra click at the exact moment they wanted to start.
+    openAuth("signup", "Create a free account to use your 10 free talks \u2014 no API key needed.");
     return;
   }
   // Free tier — CHARGE-AFTER model (Jenni 2026-07-03, quality fix #1 option 3): quota is NOT
@@ -10905,21 +11195,9 @@ function renderGlobalModals(){
     h+='<div class="drawer-backdrop open" id="signInBackdrop"></div>';
     h+='<div class="drawer open" style="max-height:auto" id="signInDrawer">';
     h+='<div class="drawer-handle"></div>';
-    h+='<div class="drawer-head"><div class="drawer-title">Sign in or sign up</div><button class="drawer-close" id="signInCloseBtn">×</button></div>';
+    h+='<div class="drawer-head"><div class="drawer-title">'+esc(authTitle())+'</div><button class="drawer-close" id="signInCloseBtn">×</button></div>';
     h+='<div class="drawer-body" style="padding:18px 20px 28px">';
-    h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.5;margin:0 0 18px">Sign in \u2014 or create a free account \u2014 to save your library across devices and personalize your profile. New here? Either option below sets you up instantly. Anonymous use still works without an account.</p>';
-    h+='<button id="googleSignInBtn" '+(S.authBusy?"disabled":"")+' style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease"><svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.32A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3.01 2.33A5.4 5.4 0 0 1 9 3.58z"/></svg>Continue with Google</button>';
-    h+='<div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--ink-soft);font-size:11px;letter-spacing:0.05em"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>';
-    h+='<form id="magicLinkForm" style="display:flex;flex-direction:column;gap:8px">';
-    h+='<label style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 0 4px">Continue with email</label>';
-    h+='<span style="font-size:11.5px;color:var(--ink-soft);line-height:1.4;margin:0 0 2px 4px">New or returning \u2014 we\'ll email you a one-time sign-in link. No password to set up or remember.</span>';
-    h+='<input id="authEmailInput" type="email" placeholder="you@hospital.edu" value="'+esc(S.authEmail||"")+'" required style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:16px;color:var(--ink);outline:none;font-family:inherit">';
-    h+='<button type="submit" '+(S.authBusy?"disabled":"")+' style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:'+(S.authBusy?"wait":"pointer")+';opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease">'+(S.authBusy?"Sending…":"Email me a sign-in link →")+'</button>';
-    h+='</form>';
-    if(S.authMsg){
-      var isErr = /error|fail|wrong|invalid/i.test(S.authMsg);
-      h+='<p style="margin-top:14px;padding:10px 12px;background:'+(isErr?"#fdf0ee":"#f0f7f0")+';border:1px solid '+(isErr?"#e8c8c0":"#b8d8b8")+';border-radius:10px;font-size:12.5px;color:'+(isErr?"#c0392b":"#2d6a2d")+';line-height:1.45">'+esc(S.authMsg)+'</p>';
-    }
+    h += authPanelHTML();
     h+='</div></div>';
   }
 
@@ -11043,10 +11321,9 @@ function renderGlobalModals(){
     }, 140);
   }});
   // Sign-in modal
-  var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){S.signInOpen=false;render()};
+  var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){closeAuth()};
   var sibd=document.getElementById("signInBackdrop");if(sibd)sibd.onclick=function(){S.signInOpen=false;render()};
-  var aei=document.getElementById("authEmailInput");if(aei)aei.oninput=function(e){S.authEmail=e.target.value};
-  var mlf=document.getElementById("magicLinkForm");if(mlf)mlf.onsubmit=async function(e){e.preventDefault();var em=(S.authEmail||"").trim();if(!em){S.authMsg="Enter your email";render();return}S.authBusy=true;S.authMsg="";render();try{await signInWithMagicLink(em);S.authMsg="Check "+em+" — we emailed you a one-time sign-in link.";S.authBusy=false;render()}catch(err){S.authMsg=err.message||"Could not send the sign-in link";S.authBusy=false;render()}};
+  wireAuthPanel();
   // Don't render() before initiating OAuth (Jenni 2026-07-03 mobile fix) — rebuilding the DOM in the
   // tap handler breaks Safari's user-activation and the redirect silently fails. Kick off directly;
   // only re-render if it errors (to show the message).
@@ -13158,24 +13435,9 @@ function renderMain(){
     h+='<div class="drawer-backdrop open" id="signInBackdrop"></div>';
     h+='<div class="drawer open" style="max-height:auto" id="signInDrawer">';
     h+='<div class="drawer-handle"></div>';
-    h+='<div class="drawer-head"><div class="drawer-title">Sign in or sign up</div><button class="drawer-close" id="signInCloseBtn">×</button></div>';
+    h+='<div class="drawer-head"><div class="drawer-title">'+esc(authTitle())+'</div><button class="drawer-close" id="signInCloseBtn">×</button></div>';
     h+='<div class="drawer-body" style="padding:18px 20px 28px">';
-    h+='<p style="font-size:13px;color:var(--ink-muted);line-height:1.5;margin:0 0 18px">Sign in \u2014 or create a free account \u2014 to save your library across devices and personalize your profile. New here? Either option below sets you up instantly. Anonymous use still works without an account.</p>';
-    // Google
-    h+='<button id="googleSignInBtn" '+(S.authBusy?"disabled":"")+' style="width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease"><svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.32A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.71A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.59A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3.01 2.33A5.4 5.4 0 0 1 9 3.58z"/></svg>Continue with Google</button>';
-    // Divider
-    h+='<div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--ink-soft);font-size:11px;letter-spacing:0.05em"><span style="flex:1;height:1px;background:var(--line)"></span>OR<span style="flex:1;height:1px;background:var(--line)"></span></div>';
-    // Email magic link
-    h+='<form id="magicLinkForm" style="display:flex;flex-direction:column;gap:8px">';
-    h+='<label style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 0 4px">Continue with email</label>';
-    h+='<span style="font-size:11.5px;color:var(--ink-soft);line-height:1.4;margin:0 0 2px 4px">New or returning \u2014 we\'ll email you a one-time sign-in link. No password to set up or remember.</span>';
-    h+='<input id="authEmailInput" type="email" placeholder="you@hospital.edu" value="'+esc(S.authEmail||"")+'" required style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--ink);outline:none;font-family:inherit">';
-    h+='<button type="submit" '+(S.authBusy?"disabled":"")+' style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:#fff;cursor:'+(S.authBusy?"wait":"pointer")+';opacity:'+(S.authBusy?"0.5":"1")+';transition:all .15s ease">'+(S.authBusy?"Sending…":"Email me a sign-in link →")+'</button>';
-    h+='</form>';
-    if(S.authMsg){
-      var isErr = /error|fail|wrong|invalid/i.test(S.authMsg);
-      h+='<p style="margin-top:14px;padding:10px 12px;background:'+(isErr?"#fdf0ee":"#f0f7f0")+';border:1px solid '+(isErr?"#e8c8c0":"#b8d8b8")+';border-radius:10px;font-size:12.5px;color:'+(isErr?"#c0392b":"#2d6a2d")+';line-height:1.45">'+esc(S.authMsg)+'</p>';
-    }
+    h += authPanelHTML();
     h+='</div></div>';
   }
 
@@ -13589,11 +13851,10 @@ function bindMain(){
   }
 
   // ─── Auth (sign-in modal + Google + account menu + profile editor) ─────
-  var sib=document.getElementById("signInBtn");if(sib)sib.onclick=function(){S.signInOpen=true;S.authMsg="";render()};
-  var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){S.signInOpen=false;render()};
+  var sib=document.getElementById("signInBtn");if(sib)sib.onclick=function(){openAuth("choose")};
+  var sicb=document.getElementById("signInCloseBtn");if(sicb)sicb.onclick=function(){closeAuth()};
   var sibd=document.getElementById("signInBackdrop");if(sibd)sibd.onclick=function(){S.signInOpen=false;render()};
-  var aei=document.getElementById("authEmailInput");if(aei)aei.oninput=function(e){S.authEmail=e.target.value};
-  var mlf=document.getElementById("magicLinkForm");if(mlf)mlf.onsubmit=async function(e){e.preventDefault();var em=(S.authEmail||"").trim();if(!em){S.authMsg="Enter your email";render();return}S.authBusy=true;S.authMsg="";render();try{await signInWithMagicLink(em);S.authMsg="Check "+em+" — we emailed you a one-time sign-in link.";S.authBusy=false;render()}catch(err){S.authMsg=err.message||"Could not send the sign-in link";S.authBusy=false;render()}};
+  wireAuthPanel();
   // Don't render() before initiating OAuth (Jenni 2026-07-03 mobile fix) — rebuilding the DOM in the
   // tap handler breaks Safari's user-activation and the redirect silently fails. Kick off directly;
   // only re-render if it errors (to show the message).
@@ -14103,7 +14364,7 @@ function bindMain(){
   };
   // Save copy when not signed in — open the sign-in modal
   var scsibt=document.getElementById("saveCopySignInBtnTop");if(scsibt)scsibt.onclick=function(){
-    S.signInOpen=true;S.authMsg="Sign in to save a copy of this talk to your library";render();
+    openAuth("choose","Sign in to save a copy of this talk to your library");
   };
   // Banner Save Copy CTA — same logic as the capsule one, promoted in the shared-talk header.
   // (Jenni 2026-06-09: coworkers were missing the capsule button.)
@@ -14124,7 +14385,7 @@ function bindMain(){
     }
   };
   var bscsi=document.getElementById("bannerSaveCopySignInBtn");if(bscsi)bscsi.onclick=function(){
-    S.signInOpen=true;S.authMsg="Sign in to save a copy of this talk to your library";render();
+    openAuth("choose","Sign in to save a copy of this talk to your library");
   };
   // Save button at the bottom (after the lesson outline) — same handler.
   var stbBot=document.getElementById("saveTalkBtnBottom");if(stbBot)stbBot.onclick=saveCurrentTalk;
@@ -14244,6 +14505,10 @@ try{ var _gp = localStorage.getItem("ct_gen_provider"); if(_gp==="gemini" && !ge
      if(_gp==="openai"||_gp==="gemini"||_gp==="claude") S.genProvider = _gp; }catch(_){}
 // Remember whether the compose "Options" (depth/model/verify) were expanded. Default collapsed.
 try{ if(localStorage.getItem("ct_compose_options")==="1") S.composeOptionsOpen = true; }catch(_){}
+// A password-reset link lands here with #recovery (plus Supabase's own token fragment). The SDK consumes
+// that token and establishes a session, so without this the user arrives signed IN, sees the normal home
+// screen, and is never asked for the new password they came here to set.
+try{ if(/recovery/i.test(String(window.location.hash||""))){ S.signInOpen = true; S.authMode = "newpassword"; } }catch(_){}
 // Restore a topic the user typed before being bounced to sign-in (which reloads the page). (fix #2)
 try{ var _pendTopic = localStorage.getItem("ct_pending_topic"); if(_pendTopic){ S.topic = _pendTopic; localStorage.removeItem("ct_pending_topic"); } }catch(_){}
 // Restore the Boards difficulty preference (Jenni 2026-07-21). Default stays 4 (Board-level).

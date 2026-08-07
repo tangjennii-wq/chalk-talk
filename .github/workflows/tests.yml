@@ -246,6 +246,13 @@ jobs:
       - name: Writer allowlist + quota receipt (server-side)
         run: node test_writer_and_quota_gates.mjs
 
+      # The first screen a new user sees. One ambiguous email field labelled "Sign in or sign up", no
+      # password, no reset, no acknowledgement that a link had been sent — and rendered from two copies of
+      # the markup that had already drifted. Asserts the distinct states and that no password is stored,
+      # logged or left in state.
+      - name: Authentication flow (distinct states, Supabase owns credentials)
+        run: node test_auth_flow.mjs
+
       # Policy is that refinement is free — it is part of the talk already paid for. All five refinement
       # operations nevertheless consumed a full talk credit, through the legacy user-scoped path that
       # writes no reservation row, so the exactly-once refund machinery could not even see the charge.
