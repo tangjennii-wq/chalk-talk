@@ -1536,7 +1536,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-07";
+var BUILD_ID = "2026-08-07-08";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -11157,7 +11157,12 @@ function _clearTalkScoped(opts){
     S.isSampleTalk=false; S.sampleSlug=""; S.sharedTalk=false; S.sharedCopySaved=false;
     S.wantWebSearch=false;   // fresh talks draft from the curated corpus; recency is a post-hoc check
   }
-  S.refineContext=""; S.sec=0; S.activeSection=0; S.tab="overview"; S.allExpanded=false;
+  // OPEN WHERE THEY WERE LOOKING. A talk opened from the Visuals tab of the library should land on its
+  // visual, not on the Overview — the user just told us which artefact they came for by browsing that
+  // list. Everything else still opens on Overview. (Jenni 2026-08-07)
+  S.refineContext=""; S.sec=0; S.activeSection=0;
+  S.tab = (S.libTab === "visuals") ? "visual" : "overview";
+  S.allExpanded=false;
   S.files=[];                                   // uploaded references are per-talk
   S.dg=null; S.dgErr=""; S.dgBusy=false; S.visualStale=false; S.vmcStale=false;
   S.msgs=[]; S.error=""; S.refineNotice=null; S.refineSubmitting=false;
