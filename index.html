@@ -130,6 +130,11 @@ body.scrolled-past-capsule .tk-capsule{padding:5px 10px;background:rgba(254,253,
 body.scrolled-past-capsule .tk-capsule #resetBtn{padding:5px 12px !important;font-size:11.5px !important}
 body.scrolled-past-capsule .tk-capsule .cap-actions button{padding:4px 6px}
 body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:none !important}
+/* …EXCEPT when there are unsaved changes. Scrolling collapses the action labels to icons, so a refined or
+   rebuilt talk showed a bare arrow and read as "there is no save option" — which is exactly what happened
+   after the first live rebuild. The one state where the word matters keeps its word. (Jenni 2026-08-07) */
+body.scrolled-past-capsule .tk-capsule .cap-actions .cap-save-unsaved .hide-mobile-text{display:inline !important}
+@media (max-width:640px){ .cap-save-unsaved .hide-mobile-text{display:inline !important} }
 .tk-capsule .cap-back{background:none;border:none;color:var(--ink-muted);font-size:16px;padding:2px 4px;cursor:pointer;flex-shrink:0;line-height:1}
 .tk-capsule .cap-meta{flex:1;min-width:0;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.005em}
 .tk-capsule .cap-meta b{font-weight:700;color:var(--ink)}
@@ -1536,7 +1541,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-09";
+var BUILD_ID = "2026-08-07-10";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -12882,7 +12887,7 @@ h+='</div>';
       // "Save", indistinguishable at a glance from the green "Saved" beside it — so a refined talk looked
       // filed away when it wasn't, and closing the tab lost the work. Filled, high-contrast, and it says
       // what it will do rather than naming a state. (Jenni 2026-08-06)
-      h+='<button id="saveTalkBtnTop" class="cap-save" title="You have unsaved changes — save them to this talk" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;box-shadow:0 2px 10px rgba(75,17,111,.28);cursor:pointer;font-weight:600">\u2193 <span class="hide-mobile-text">Save changes</span></button>';
+      h+='<button id="saveTalkBtnTop" class="cap-save cap-save-unsaved" title="You have unsaved changes — save them to this talk" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;box-shadow:0 2px 10px rgba(75,17,111,.28);cursor:pointer;font-weight:600">\u2193 <span class="hide-mobile-text">Save changes</span></button>';
     } else {
       var _saveTitle = S.isSampleTalk ? "Save this as a new talk in your library" : "Save to library";
       h+='<button id="saveTalkBtnTop" class="cap-save" title="'+_saveTitle+'" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));color:#fff;border:none;box-shadow:0 2px 10px rgba(75,17,111,.28);cursor:pointer;font-weight:600">\u2605 <span class="hide-mobile-text">Save to library</span></button>';
@@ -13666,22 +13671,10 @@ h+='</div>';
       if(S.refineNotice && S.refineNotice.text){
         h+='    <div class="refine-notice '+(S.refineNotice.kind==="error"?'error':(S.refineNotice.kind==="success"?'success':''))+'" role="status" aria-live="polite">'+esc(S.refineNotice.text)+'</div>';
       }
-      // ── UPDATE AN OLD TALK TO THE CURRENT PIPELINE ────────────────────────────────────────────────
-      // Talks generated weeks ago were written by an older version of this app: before the journal-acronym
-      // fix that stopped landmark trials being dropped from the citation audit, before the retrieval
-      // timeout was raised, before provenance was recorded honestly. Refining such a talk edits the old
-      // text; it does not re-retrieve or re-check anything.
-      //
-      // This rebuilds it from the same topic through the CURRENT pipeline — retrieval, safety review,
-      // citation audit — which is a full generation and says so. The depth toggle that used to sit in the
-      // talk view did exactly this and did NOT say so, which is how three credits disappeared in a few
-      // minutes on 2026-08-06. State the cost, ask once, then do it.
-      h+='    <button id="rebuildToLatestBtn" style="margin:2px 12px 0;padding:9px 12px;background:var(--cream);border:1px dashed var(--line);border-radius:10px;font-family:inherit;font-size:11.5px;color:var(--ink-muted);cursor:pointer;text-align:left;line-height:1.45;width:calc(100% - 24px)">'
-        + '<b style="color:var(--ink);font-weight:600">\u21bb Update to the latest version</b><br>'
-        + 'Keeps this outline, updates guidance, and rebuilds citations with the current pipeline \u00b7 about a minute'
-        + (freeTierActive() ? ' \u00b7 uses one of your free talks' : '')
-        + '</button>';
-      h+='    <textarea class="revise-input" id="reviseIn" placeholder="Add detail, paste an MKSAP question, or drop a PDF — your existing content stays, only new content is added.&#10;&#10;Pasting a big chunk of reviewer feedback (e.g. from OpenEvidence)? Hit “Apply proofread” below to fold its corrections into the talk while keeping everything else.">'+esc(S.reviseIn||"")+'</textarea>';
+      // The "Update to the latest version" card sat above the box competing with it: two ways to ask for
+      // a change, one of them a big dashed panel the eye lands on first. The capability is unchanged —
+      // typing "update" does it — so it belongs in the description, not as a second control. (2026-08-07)
+      h+='    <textarea class="revise-input" id="reviseIn" placeholder="Add detail, paste an MKSAP question, or drop a PDF — your existing content stays, only new content is added.&#10;&#10;Type “update” on its own to rebuild this talk with the latest guidance and citation checking.&#10;&#10;Pasting a big chunk of reviewer feedback (e.g. from OpenEvidence)? Hit “Apply proofread” below to fold its corrections into the talk while keeping everything else.">'+esc(S.reviseIn||"")+'</textarea>';
       // Big-paste nudge (Jenni 2026-07-03): if the box holds a large paste and proofread isn't armed,
       // suggest Apply proofread. Toggled live in the reviseIn oninput handler (no full re-render).
       var _showPr = (String(S.reviseIn||"").trim().length > 600) && !S.proofreadArmed;

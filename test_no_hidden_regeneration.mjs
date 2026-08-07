@@ -35,18 +35,13 @@ ok(!/id="editSettingsBtn"/.test(code),
    "the Edit settings button is hidden — everything in it was a regeneration wearing the clothes of a setting");
 
 // ── 2 · THE ONLY REMAINING WAY TO REGENERATE ASKS FIRST ──────────────────────
-ok(/id="rebuildToLatestBtn"/.test(code), "Refine offers an explicit 'Update to the latest version'");
-const btn = code.slice(code.indexOf('id="rebuildToLatestBtn"') - 200, code.indexOf('id="rebuildToLatestBtn"') + 900);
-ok(/about a minute/.test(btn), "…stating how long it takes");
-ok(/uses one of your free talks/.test(btn), "…and that it costs a credit on the free tier");
-ok(/freeTierActive\(\)/.test(btn), "…with that clause omitted for BYOK, where it is not true");
-
-const handler = code.slice(code.indexOf("_rbl.onclick"), code.indexOf("_rbl.onclick") + 900);
-ok(/window\.confirm\(/.test(handler), "…and it CONFIRMS before spending anything");
-ok(/stays until the new one is ready/.test(handler),
-   "…telling the user their current talk survives until the rebuild lands");
-ok(handler.indexOf("window.confirm") < handler.indexOf("rebuildLesson()"),
-   "…with the confirm strictly before the rebuild call");
+// SUPERSEDED. The dashed "Update to the latest version" card sat above the compose box competing with it
+// — two ways to ask for a change, and the big panel drew the eye first. The capability did not go away:
+// typing "update" runs the same rebuild with the same confirm and the same stated cost, and the
+// placeholder now says so. What must stay true is that the rebuild asks before spending, asserted below.
+ok(!/id="rebuildToLatestBtn"/.test(code), "the competing Update card is gone from the composer");
+ok(/Type .update. on its own to rebuild/.test(code),
+   "…and the placeholder tells the user how to trigger it instead");
 
 // ── 3 · AN OLD TALK IS MODERNIZED, NOT RE-OUTLINED ───────────────────────────
 const modernize = new Function(grab("_modernizeStructureConstraint") + ";return _modernizeStructureConstraint;")();
