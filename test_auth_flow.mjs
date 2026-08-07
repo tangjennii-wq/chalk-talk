@@ -75,6 +75,26 @@ ok(/r\.data && r\.data\.session/.test(wiring),
    "sign-up checks whether a session came back rather than always saying 'check your email'");
 ok(/authSetMode\("verify"\)/.test(wiring), "…and only shows the verify state when there is no session");
 
+// ── 5b · "ALREADY REGISTERED" IS NOT "CHECK YOUR EMAIL" ──────────────────────
+// Signing up with an email that already has an account returns SUCCESS from Supabase with no session and
+// no email sent — anti-enumeration behaviour in GoTrue. Taken at face value the user is told to check an
+// inbox for a message that will never arrive, which is precisely what happened on the first real test.
+// The tell is an empty identities array.
+ok(/identities\) && _u\.identities\.length === 0/.test(wiring),
+   "sign-up detects the obfuscated already-registered response");
+const already = wiring.slice(wiring.indexOf("_alreadyRegistered"));
+ok(/authSetMode\("signin"\)/.test(already.slice(0, 600)),
+   "…and sends the user to Sign in rather than to a phantom inbox");
+ok(/Forgot password/.test(already.slice(0, 600)), "…mentioning the reset path they probably want");
+
+// ── 5c · A RETURNING DEVICE OPENS ON SIGN IN ─────────────────────────────────
+const open = fn("openAuth");
+ok(/deviceHasSignedIn\(\) \? "signin" : "choose"/.test(open),
+   "a device that has signed in before opens on Sign in, not the chooser");
+ok(/ct_has_signed_in/.test(code), "…remembered by a flag that records no identity");
+ok(/authGoChoose/.test(fn("authPanelHTML")),
+   "…with a way back to Google for a shared machine");
+
 // ── 6 · A RECOVERY LINK LANDS ON THE SET-PASSWORD FORM ───────────────────────
 ok(/recovery/i.test(code) && /S\.authMode = "newpassword"/.test(code),
    "arriving from a reset link opens the set-a-new-password form");

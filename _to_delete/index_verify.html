@@ -1527,7 +1527,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-06-03";
+var BUILD_ID = "2026-08-06-02";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -3751,9 +3751,6 @@ window.onSupabaseReady = function(client){
     if(typeof drainPendingHashLoad === "function") drainPendingHashLoad();
   });
   client.auth.onAuthStateChange(function(event, session){
-    // Records that SOMEONE has signed in on this device, so the auth panel can default to Sign in rather
-    // than the chooser next time. No identity is stored.
-    if(session) { try{ markDeviceSignedIn(); }catch(_){} }
     var wasSignedIn = !!S.user;
     S.session = session || null;
     S.user = (session && session.user) || null;
@@ -4598,8 +4595,6 @@ function wireAuthPanel(){
 
   var go = function(id, mode){ var b = document.getElementById(id); if(b) b.onclick = function(){ authSetMode(mode); }; };
   go("authGoSignup", "signup"); go("authGoSignin", "signin"); go("authGoReset", "reset");
-  var chooseBtn = document.getElementById("authGoChoose");
-  if(chooseBtn) chooseBtn.onclick = function(){ S.authMode = "choose"; S.authMsg = ""; S.authErr = ""; render(); };
 
   var resend = document.getElementById("authResend");
   if(resend) resend.onclick = async function(){
@@ -4638,26 +4633,9 @@ function wireAuthPanel(){
         // Supabase returns a session immediately when email confirmation is OFF, and none when it is ON.
         // Read which happened rather than assuming: telling someone to check their inbox when they are
         // already signed in is the kind of small lie that makes people distrust the whole flow.
-        // ── SUPABASE HIDES "ALREADY REGISTERED", SO WE READ THE TELL ──────────────────────────────────
-        // Signing up with an email that already has an account returns SUCCESS with no session and no
-        // email sent — deliberate anti-enumeration behaviour in GoTrue. Taken at face value it produces
-        // the worst possible screen: "Check your email" for a message that will never arrive. That is
-        // exactly what happened on the first real test of this flow.
-        //
-        // The documented tell is an empty `identities` array on the returned user. Acting on it does
-        // reveal that an address is registered — the trade-off Supabase's default avoids — and for an
-        // invite-only tool aimed at colleagues, being honest with the person in front of us is worth more
-        // than hiding a fact they can already learn from the reset form. Revisit for public signup.
-        var _u = r && r.data && r.data.user;
-        var _alreadyRegistered = !!(_u && Array.isArray(_u.identities) && _u.identities.length === 0);
-
         if(r && r.data && r.data.session){
           S.authMsg = "Account created — you're signed in.";
           S.signInOpen = false;
-        } else if(_alreadyRegistered){
-          S.authEmail = em;
-          authSetMode("signin");
-          S.authMsg = "You already have an account with that email — sign in, or use Forgot password.";
         } else {
           S.authLastPassword = p1;      // for Resend only
           authSetMode("verify");
@@ -4758,21 +4736,9 @@ function handleAuthReturn(hasSession){
 
 // Opening the panel resets it to a known state. Without this, a drawer closed mid-"Check your email"
 // reopens showing that same message with no form under it, which reads as the app being stuck.
-// Over time there are far more sign-ins than sign-ups, so a device that has signed in before opens
-// straight on the Sign in form; one that never has gets the chooser. The flag records only THAT someone
-// signed in on this device, never who, and it survives sign-out on purpose — it is a UI default, not an
-// identity.
-function deviceHasSignedIn(){
-  try{ return localStorage.getItem("ct_has_signed_in") === "1"; }catch(_){ return false; }
-}
-function markDeviceSignedIn(){
-  try{ localStorage.setItem("ct_has_signed_in","1"); }catch(_){}
-}
-
 function openAuth(mode, msg, err){
   S.signInOpen = true;
-  if(!mode || mode === "choose") mode = deviceHasSignedIn() ? "signin" : "choose";
-  S.authMode = mode;
+  S.authMode = mode || "choose";
   S.authMsg = msg || "";
   S.authErr = err || "";
   S.authPassword = ""; S.authPassword2 = "";
@@ -4862,8 +4828,6 @@ function authPanelHTML(){
     h += '<div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">';
     h += _authTextBtn("authGoReset","Forgot password?");
     h += _authTextBtn("authGoSignup","Create an account");
-    h += '</div><div style="margin-top:2px;text-align:center">';
-    h += _authTextBtn("authGoChoose","Use Google instead");
     h += '</div>';
   }
 
@@ -12132,7 +12096,7 @@ function renderMain(){
     // Logged out: "Sign in" link with a small person icon so it's recognizable as an account affordance.
     h+='<button id="signInBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--plum);font-size:13px;font-weight:600;padding:2px 0;display:inline-flex;align-items:center;gap:6px">';
     h+='  <span style="background:var(--lavender-bg);color:var(--plum);width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px">👤</span>';
-    h+='  <span style="text-decoration:underline;text-underline-offset:2px">Sign in</span>';
+    h+='  <span style="text-decoration:underline;text-underline-offset:2px">Sign in / Sign up</span>';
     h+='</button>';
   }
   // Library — saved talks + Jenni's featured showcase lectures + pre-made Boards samples.
