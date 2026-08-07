@@ -1527,7 +1527,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-06-05";
+var BUILD_ID = "2026-08-06-06";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -12928,16 +12928,13 @@ h+='</div>';
         h+='<div class="outline-head"><span>Lesson outline</span>';
         // Right-side controls: Concise/Detailed toggle + Expand all (toggle reuses existing depthToggleBtn handler)
         h+='<div style="display:flex;align-items:center;gap:10px">';
-        if(S.style==="lecture"){
-          // Show a small two-button segmented control. Active depth highlighted; click the other to switch.
-          // For samples with the other depth cached, swap is instant. For user talks, click triggers regenerate.
-          var dC = (S.depth==="concise");
-          var dD = (S.depth==="detailed");
-          h+='<div style="display:inline-flex;background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:2px;font-size:10.5px;font-weight:600;text-transform:none;letter-spacing:0">';
-          h+='<button id="depthToggleBtnConcise"  title="Switch to Concise (~5 min)" style="background:'+(dC?"#fff":"transparent")+';color:'+(dC?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(dC?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:3px 9px;cursor:'+(dC?"default":"pointer")+';font-family:inherit;font-size:10.5px;font-weight:'+(dC?"700":"500")+'">Concise</button>';
-          h+='<button id="depthToggleBtnDetailed" title="Switch to Detailed (~10 min)" style="background:'+(dD?"#fff":"transparent")+';color:'+(dD?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(dD?"1px solid var(--line)":"1px solid transparent")+';border-radius:7px;padding:3px 9px;cursor:'+(dD?"default":"pointer")+';font-family:inherit;font-size:10.5px;font-weight:'+(dD?"700":"500")+'">Detailed</button>';
-          h+='</div>';
-        }
+        // DEPTH IS NOT A VIEW TOGGLE. This sat between Reorder and Expand all, looking exactly like a
+        // display option, but unless a Detailed variant was already cached it fired a full regeneration:
+        // about a minute, a model call, and on the free tier a credit. A control that looks like "show me
+        // more" and silently spends money is one people click once and never trust again.
+        //
+        // It lives in Edit now, where a deliberate, costly action belongs. _flipDepthTo is unchanged, so
+        // cached variants still swap instantly. (Jenni 2026-08-06)
         if(hasMultiSec){
           // Group Expand all + Copy all as a pair anchored right (margin-left:auto). On mobile the
           // outline-head label is hidden and the control row goes width:100% space-between — without
@@ -13510,9 +13507,22 @@ h+='</div>';
       h+='</div><div style="font-size:10.5px;color:var(--plum-deep);margin:5px 0 0 4px;font-weight:600"><span style="letter-spacing:1px">'+_bdInfo2.stars+'</span> '+esc(_bdInfo2.label)+'</div></div>';
     } else {
     h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth</div><div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px">';
+    // The Detailed version is a REGENERATION, not a view. Cached variants swap instantly and free; an
+    // uncached one costs a model call, about a minute, and a credit on the free tier. Say which of those
+    // is about to happen instead of leaving the user to find out by pressing it.
+    var _dvCached = !!(S.depthVariantsCache && S.depthVariantsCache[S.depth === "concise" ? "detailed" : "concise"]);
     h+=segBtn("flipDepthBtn","d","concise",S.depth,"⊜","Concise",{compact:true});
-    h+=segBtn("flipDepthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true,title:"~10 min — full depth, expands the talk you already have"});
-    h+='</div></div>';
+    h+=segBtn("flipDepthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true,
+      title: _dvCached ? "Already generated — switches instantly"
+                       : "Rewrites the whole talk at full depth · about a minute" + (freeTierActive() ? " · uses one credit" : "")});
+    h+='</div>';
+    h+='<div style="font-size:10.5px;color:var(--ink-muted);line-height:1.45;margin:5px 0 0 4px">'
+      + (_dvCached
+          ? "Both versions are already generated \u2014 switching is instant."
+          : "Detailed rewrites the whole talk at full depth: about a minute"
+            + (freeTierActive() ? ", and it uses one of your free talks." : "."))
+      + '</div>';
+    h+='</div>';
     }
     // Model picker — lets you rebuild with a different provider (Jenni 2026-07)
     h+=renderModelPicker();
