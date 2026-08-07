@@ -246,6 +246,11 @@ jobs:
       - name: Writer allowlist + quota receipt (server-side)
         run: node test_writer_and_quota_gates.mjs
 
+      # Three credits disappeared in minutes because Concise/Detailed looked like a display toggle and was
+      # a full generation. Any control that can start one must say so and ask first.
+      - name: No hidden regeneration (nothing spends a credit silently)
+        run: node test_no_hidden_regeneration.mjs
+
       # The loading card told durable-path users to keep the tab open, which is the opposite of what that
       # path does. The flag was set only after the submit returned and never reset, so the first seconds
       # lied and a stale true could leak into a synchronous run.

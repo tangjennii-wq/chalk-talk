@@ -1527,7 +1527,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-06-06";
+var BUILD_ID = "2026-08-06-07";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -12641,7 +12641,15 @@ h+='</div>';
         + (_ucFast && !S.updateCheck ? ' style="color:#7a5b1a"' : '')
         + '>'+(_ucBusy ? '<span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:-1px"></span>' : (_ucFast ? '⚠️' : '🔎'))
         + ' <span class="hide-mobile-text">Updates</span></button>';
-      h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit</span></button>';
+      // EDIT (SETTINGS) IS HIDDEN FOR THE BETA. Everything it offered — change the depth, rebuild with a
+      // different model, regenerate from the same topic — is a REGENERATION wearing the clothes of a
+      // setting, and each one silently costs a credit. Refine does the same jobs conversationally, is free,
+      // and says what it is doing. The per-section pencil is untouched: direct text editing stays.
+      //
+      // This is also the credit leak Jenni hit on 2026-08-06: opening a talk saved as Detailed and pressing
+      // Concise to get the short version regenerated it, because no concise variant was cached. Three
+      // talks opened, three credits gone. (Jenni 2026-08-06)
+      // h+='<button id="editSettingsBtn" title="Edit settings">✏️ <span class="hide-mobile-text">Edit</span></button>';
     }
     // Save button — three modes:
     //   (a) Public viewer + signed in + not the original author → "★ Save copy" (Phase 5 flywheel)
@@ -13448,6 +13456,21 @@ h+='</div>';
       else { _busyTitle='Weaving in your update…'; _busySub='Preserving existing content'; }
       h+='    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px;color:var(--plum);font-weight:500"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span><span style="font-size:13px;line-height:1.5">'+_busyTitle+'</span><span style="font-size:11px;color:var(--ink-muted);max-width:220px;line-height:1.45">'+_busySub+'</span></div>';
     } else {
+      // ── UPDATE AN OLD TALK TO THE CURRENT PIPELINE ────────────────────────────────────────────────
+      // Talks generated weeks ago were written by an older version of this app: before the journal-acronym
+      // fix that stopped landmark trials being dropped from the citation audit, before the retrieval
+      // timeout was raised, before provenance was recorded honestly. Refining such a talk edits the old
+      // text; it does not re-retrieve or re-check anything.
+      //
+      // This rebuilds it from the same topic through the CURRENT pipeline — retrieval, safety review,
+      // citation audit — which is a full generation and says so. The depth toggle that used to sit in the
+      // talk view did exactly this and did NOT say so, which is how three credits disappeared in a few
+      // minutes on 2026-08-06. State the cost, ask once, then do it.
+      h+='    <button id="rebuildToLatestBtn" style="margin:2px 12px 0;padding:9px 12px;background:var(--cream);border:1px dashed var(--line);border-radius:10px;font-family:inherit;font-size:11.5px;color:var(--ink-muted);cursor:pointer;text-align:left;line-height:1.45;width:calc(100% - 24px)">'
+        + '<b style="color:var(--ink);font-weight:600">\u21bb Update to the latest version</b><br>'
+        + 'Rebuilds this talk from its topic with current retrieval and citation checking \u00b7 about a minute'
+        + (freeTierActive() ? ' \u00b7 uses one of your free talks' : '')
+        + '</button>';
       h+='    <textarea class="revise-input" id="reviseIn" placeholder="Add detail, paste an MKSAP question, or drop a PDF — your existing content stays, only new content is added.&#10;&#10;Pasting a big chunk of reviewer feedback (e.g. from OpenEvidence)? Hit “Apply proofread” below to fold its corrections into the talk while keeping everything else.">'+esc(S.reviseIn||"")+'</textarea>';
       // Big-paste nudge (Jenni 2026-07-03): if the box holds a large paste and proofread isn't armed,
       // suggest Apply proofread. Toggled live in the reviseIn oninput handler (no full re-render).
@@ -13506,16 +13529,10 @@ h+='</div>';
       for(var _dl2=1;_dl2<=5;_dl2++){ var _di2=BOARDS_DIFFICULTY[_dl2]; h+=segBtn("difficultyBtn","lvl",String(_dl2),String(_bdCur2),"",String(_dl2),{compact:true,title:_di2.stars+" "+_di2.label}); }
       h+='</div><div style="font-size:10.5px;color:var(--plum-deep);margin:5px 0 0 4px;font-weight:600"><span style="letter-spacing:1px">'+_bdInfo2.stars+'</span> '+esc(_bdInfo2.label)+'</div></div>';
     } else {
-    h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em;margin:0 0 6px 4px">Depth</div><div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px">';
-    // The Detailed version is a REGENERATION, not a view. Cached variants swap instantly and free; an
-    // uncached one costs a model call, about a minute, and a credit on the free tier. Say which of those
-    // is about to happen instead of leaving the user to find out by pressing it.
-    var _dvCached = !!(S.depthVariantsCache && S.depthVariantsCache[S.depth === "concise" ? "detailed" : "concise"]);
-    h+=segBtn("flipDepthBtn","d","concise",S.depth,"⊜","Concise",{compact:true});
-    h+=segBtn("flipDepthBtn","d","detailed",S.depth,"≣","Detailed",{compact:true,
-      title: _dvCached ? "Already generated — switches instantly"
-                       : "Rewrites the whole talk at full depth · about a minute" + (freeTierActive() ? " · uses one credit" : "")});
-    h+='</div>';
+    // The depth control lived here after being pulled out of the outline row, then Edit itself was
+    // hidden for the beta. Removed outright rather than left unreachable: an unreachable control that
+    // spends a credit is one UI change away from being reachable again. _flipDepthTo survives, so cached
+    // variants remain usable if depth comes back as an explicit, priced action. (Jenni 2026-08-06)
     h+='<div style="font-size:10.5px;color:var(--ink-muted);line-height:1.45;margin:5px 0 0 4px">'
       + (_dvCached
           ? "Both versions are already generated \u2014 switching is instant."
@@ -13918,6 +13935,15 @@ function bindMain(){
     generate();
   }
   // Post-talk depth switch — expands/collapses the EXISTING talk. Never wipes it. (2026-07-26)
+  var _rbl = document.getElementById("rebuildToLatestBtn");
+  if(_rbl) _rbl.onclick = function(){
+    var msg = freeTierActive()
+      ? "Rebuild this talk from scratch with current retrieval and citation checking?\n\nThis uses one of your free talks and takes about a minute. Your current version stays until the new one is ready."
+      : "Rebuild this talk from scratch with current retrieval and citation checking?\n\nThis takes about a minute and makes new API calls on your key. Your current version stays until the new one is ready.";
+    if(!window.confirm(msg)) return;
+    S._composerOpen = false;
+    rebuildLesson();
+  };
   document.querySelectorAll(".flipDepthBtn").forEach(function(b){ b.onclick=function(){ if(b.disabled) return; _flipDepthTo(b.dataset.d); }; });
   // ── Check for updates ──
   // CLASS, not id: the action-row button and the panel's "Check again" can both be on screen at once,
