@@ -1541,7 +1541,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-11";
+var BUILD_ID = "2026-08-07-12";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6515,6 +6515,45 @@ function topicNeedsLiveCheck(topicStr){
   return !PURE_MECHANISM_RE.test(hay);              // pure mechanism is the only opt-out
 }
 
+// ── HOISTED TO TOP LEVEL (2026-08-07) ───────────────────────────────────────────────────────────────
+// These were defined INSIDE the render function, so firstRunHint() worked — it is called from render —
+// while markGeneratedOnce() was invisible to the delivery paths that call it, and every generation ended
+// in "markGeneratedOnce is not defined". A function declaration nested in another function is not a
+// global, and nothing in the syntax check or the suites catches the difference.
+// FIRST RUN = has never finished a generation on this device. Not "has never visited": someone who
+// bounced off the landing page and came back still needs the hints, and someone who has made a talk does
+// not. The flag is set when a talk is actually delivered, not when one is started.
+function isFirstRun(){
+  try{ return !localStorage.getItem("ct_generated_once"); }catch(_){ return false; }
+}
+function markGeneratedOnce(){
+  try{ localStorage.setItem("ct_generated_once","1"); }catch(_){}
+}
+// A quiet one-liner under a control, shown only on the first run. Deliberately not a tooltip, a coach
+// mark or a modal: the compose screen has three controls and they fit on one screen, so the honest
+// version is a sentence that explains and then goes away for good.
+// WHAT TO DO WHEN A GENERATION FAILS. During the beta the honest answer is "reopen this page — the work
+// is on our servers and the credit is tracked per job, so a failure that never produced a talk is
+// refunded automatically." Saying nothing leaves people assuming they have been charged for nothing,
+// which is the impression that loses a beta tester permanently.
+//
+// Shown only for generation failures, and only on the free tier: a BYOK failure costs the user their own
+// API call and none of this applies.
+function generationRecoveryNoteHTML(){
+  if(!freeTierActive()) return "";
+  return '<div style="margin-top:10px;padding:10px 12px;background:var(--cream);border:1px solid var(--line);border-radius:10px;font-size:11.5px;color:var(--ink-muted);line-height:1.5;text-align:left">'
+       + '<b style="color:var(--ink)">Didn\'t get your talk?</b> Reload this page \u2014 if it is still running on our servers you will reconnect to it. '
+       + 'A generation that never produced a talk does not use a credit; if your count looks wrong, tell us and we will put it back.'
+       + '</div>';
+}
+
+function firstRunHint(text){
+  if(!isFirstRun()) return "";
+  return '<div class="firstrun-hint" style="font-size:11.5px;color:var(--plum-deep);line-height:1.45;margin:5px 0 0 4px;display:flex;gap:5px;align-items:flex-start">'
+       + '<span aria-hidden="true" style="opacity:.7">\u2192</span><span>' + esc(text) + '</span></div>';
+}
+
+  
 function talkIsFastMoving(t){
   var hay = ((t && t.title) || "") + " " + ((t && t.subtitle) || "") + " " + (S.topic || "");
   return FAST_MOVING_RE.test(hay);
@@ -12381,40 +12420,7 @@ function renderMain(){
   h+='</div>';
   }   // end if(!S.loading) — hero hidden during generation
 
-// FIRST RUN = has never finished a generation on this device. Not "has never visited": someone who
-// bounced off the landing page and came back still needs the hints, and someone who has made a talk does
-// not. The flag is set when a talk is actually delivered, not when one is started.
-function isFirstRun(){
-  try{ return !localStorage.getItem("ct_generated_once"); }catch(_){ return false; }
-}
-function markGeneratedOnce(){
-  try{ localStorage.setItem("ct_generated_once","1"); }catch(_){}
-}
-// A quiet one-liner under a control, shown only on the first run. Deliberately not a tooltip, a coach
-// mark or a modal: the compose screen has three controls and they fit on one screen, so the honest
-// version is a sentence that explains and then goes away for good.
-// WHAT TO DO WHEN A GENERATION FAILS. During the beta the honest answer is "reopen this page — the work
-// is on our servers and the credit is tracked per job, so a failure that never produced a talk is
-// refunded automatically." Saying nothing leaves people assuming they have been charged for nothing,
-// which is the impression that loses a beta tester permanently.
-//
-// Shown only for generation failures, and only on the free tier: a BYOK failure costs the user their own
-// API call and none of this applies.
-function generationRecoveryNoteHTML(){
-  if(!freeTierActive()) return "";
-  return '<div style="margin-top:10px;padding:10px 12px;background:var(--cream);border:1px solid var(--line);border-radius:10px;font-size:11.5px;color:var(--ink-muted);line-height:1.5;text-align:left">'
-       + '<b style="color:var(--ink)">Didn\'t get your talk?</b> Reload this page \u2014 if it is still running on our servers you will reconnect to it. '
-       + 'A generation that never produced a talk does not use a credit; if your count looks wrong, tell us and we will put it back.'
-       + '</div>';
-}
-
-function firstRunHint(text){
-  if(!isFirstRun()) return "";
-  return '<div class="firstrun-hint" style="font-size:11.5px;color:var(--plum-deep);line-height:1.45;margin:5px 0 0 4px;display:flex;gap:5px;align-items:flex-start">'
-       + '<span aria-hidden="true" style="opacity:.7">\u2192</span><span>' + esc(text) + '</span></div>';
-}
-
-  // === "How this works" — inline expandable, closed by default ===
+// === "How this works" — inline expandable, closed by default ===
   // Open state tracked in S.howitOpen so unrelated render() calls don't collapse it.
   // Hide while generating so the focus card has the screen (Jenni 2026-06-08).
   if(!S.talk && !S.loading){

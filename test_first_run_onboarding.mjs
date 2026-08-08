@@ -47,6 +47,17 @@ ok(deliveries >= 3, `every delivery path marks it (${deliveries} found), so the 
 ok(!/markGeneratedOnce\(\);\s*(await )?(submitAsyncGeneration|callAPI)/.test(code),
    "…and no path marks it merely because a generation STARTED");
 
+// ── 2b · THE HELPERS ARE TOP-LEVEL, NOT NESTED IN RENDER ─────────────────────
+// They were originally declared INSIDE the render function. firstRunHint() worked, because render calls
+// it; markGeneratedOnce() did not, because the delivery paths that call it live elsewhere — every
+// generation ended in "markGeneratedOnce is not defined". A function nested in another function is not a
+// global, and neither node --check nor any suite here can see the difference: the file parses, and the
+// pattern-matching tests find the text regardless of where it sits.
+for (const f of ["isFirstRun", "markGeneratedOnce", "firstRunHint"]) {
+  ok(new RegExp("^function " + f + "\\(", "m").test(html),
+     `${f} is declared at top level, reachable from every caller`);
+}
+
 // ── 3 · HINTS APPEAR ON THE COMPOSE CONTROLS ONLY ────────────────────────────
 const hintSites = [...code.matchAll(/h\+=firstRunHint\("([^"]{10,120})"\);/g)];
 ok(hintSites.length >= 2, `hints are attached to the compose controls (${hintSites.length})`);
