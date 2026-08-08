@@ -855,13 +855,21 @@ export function makeWorkflowDeps(env, { NonRetryableError }) {
     },
     callDraft: async function (jobId) {
       const p = await this.loadBody(jobId);
-      return callAnthropicText(env, p.draft.sys, p.draft.content, p.draft.maxTok || 16384, p.draft.models, p.draft.tools);
+      // Tools are deliberately NOT forwarded for the draft: live search belongs to the review pass, and a
+      // client that sends draft tools anyway must not be able to put that latency in front of first token.
+      return callAnthropicText(env, p.draft.sys, p.draft.content, p.draft.maxTok || 16384, p.draft.models, null);
     },
     callCritique: async function (jobId, draftText) {
       const p = await this.loadBody(jobId);
+      // ── THE LIVE CHECK RUNS HERE, ON THE MAIN PATH ────────────────────────────────────────────────
+      // Free-tier generation is durable-only, so this server-side critique is the one that runs for
+      // almost every user. The browser-side tools added first applied only to the synchronous path —
+      // effectively BYOK — so the live check reached the smallest audience and missed the one it was
+      // built for. Tools come from the submitted critique spec and are filtered by ALLOWED_TOOL_TYPES
+      // downstream, so a client cannot smuggle in a different tool. (Codex, 2026-08-07)
       return callAnthropicText(env, p.critique.sys,
         [{ type: "text", text: (p.critique.prefix || "") + "\n\nDraft chalk talk to review:\n" + draftText }],
-        p.critique.maxTok || 16384, p.critique.models);
+        p.critique.maxTok || 16384, p.critique.models, p.critique.tools || null);
     },
 
     // Idempotent at the ledger: the marker means a retry of the meter step cannot bill a second time.

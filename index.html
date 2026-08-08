@@ -1541,7 +1541,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-10";
+var BUILD_ID = "2026-08-07-11";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -8066,7 +8066,9 @@ async function generate(){
 
     // Step 1: Main generation with model fallback chain (Opus -> Sonnet -> Haiku)
     var mainOpts = { meterKind: "talk", stage: "draft" };   // stage picks the receipt budget the server spends
-    if (S.wantWebSearch) mainOpts.tools = [{type:"web_search_20250305",name:"web_search",max_uses:3,allowed_domains:ALLOWED_SEARCH_DOMAINS}];
+    // DRAFTING DOES NOT SEARCH. This branch put the search latency in front of the first token and was
+    // reachable through a toggle the compose screen no longer shows. Retrieval and the stored guideline
+    // corpus ground the draft; currency is the review's job. (Codex, 2026-08-07)
     // Guard: web-search allowed_domains must be duplicate-free, else Anthropic rejects the call.
     if (S.wantWebSearch) {
       var _dom = mainOpts.tools[0].allowed_domains;
@@ -8249,8 +8251,18 @@ async function generate(){
     var _asyncJobId = null;
     if (_wantAsync) {
       var _job = await submitAsyncGeneration({
-        draft:    { sys: sys, content: uc, maxTok: maxTok, models: mainModels, tools: (mainOpts.tools || null) },
-        critique: { sys: critiqueSystem, prefix: critiquePrefix, maxTok: critMaxTok, models: criticModels }
+        // THE DRAFT NEVER CARRIES SEARCH TOOLS. Live search belongs to the review, where the draft is
+        // already on screen; adding it here puts the latency back in front of the blank wait, which is the
+        // whole thing this design avoids. (Codex, 2026-08-07)
+        draft:    { sys: sys, content: uc, maxTok: maxTok, models: mainModels, tools: null },
+        // …and the SERVER-SIDE critique is where it goes. The free tier is durable-only, so its critique
+        // runs in the Workflow — the browser-side tools I added first never applied to it, which meant the
+        // live check reached BYOK users and nobody else. This is the main path. (Codex, 2026-08-07)
+        critique: { sys: critiqueSystem, prefix: critiquePrefix, maxTok: critMaxTok, models: criticModels,
+                    tools: (topicNeedsLiveCheck(S.topic)
+                      ? [{ type: "web_search_20250305", name: "web_search", max_uses: 3,
+                           allowed_domains: ALLOWED_SEARCH_DOMAINS }]
+                      : null) }
       });
       // ── NO SYNC FALLBACK FOR THE FREE TIER (Codex, 2026-07-31) ──────────────────────────────────
       // submitAsyncGeneration() returns null on 503/401/404/any non-OK, and generate() then reached

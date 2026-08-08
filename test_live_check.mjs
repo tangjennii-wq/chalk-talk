@@ -22,9 +22,27 @@ const critBlock = code.slice(critIdx - 700, critIdx + 700);
 ok(/stage: "critique"/.test(critBlock), "…on the critique stage");
 ok(/max_uses: 3/.test(critBlock), "…capped at 3 searches");
 ok(/allowed_domains: ALLOWED_SEARCH_DOMAINS/.test(critBlock), "…restricted to the society/journal allowlist");
-// The draft must stay clean: adding search there is what makes the blank wait longer.
-const draftCall = code.slice(code.indexOf("var searchHint"), code.indexOf("var searchHint") + 1500);
-ok(!/max_uses: 3/.test(draftCall), "the DRAFT call is untouched, so the blank wait does not grow");
+// ── THE DRAFT MUST NOT SEARCH, ANYWHERE ──────────────────────────────────────
+// The first version of this assertion looked at a 1500-character slice around searchHint and concluded
+// "the draft is untouched" — while `if (S.wantWebSearch) mainOpts.tools = [...]` sat outside that window
+// and would have put search latency back in front of the first token. A slice narrow enough to pass is
+// not evidence. Assert over the WHOLE file instead. (Codex, 2026-08-07)
+ok(!/mainOpts\.tools\s*=\s*\[/.test(code),
+   "no drafting path attaches search tools — the blank wait cannot grow");
+ok(/draft:\s*\{[^}]*tools:\s*null/.test(code),
+   "…and the async submit sends the draft with tools explicitly null");
+
+// ── THE FREE TIER'S CRITIQUE IS SERVER-SIDE, SO THE TOOLS MUST TRAVEL ────────
+// Free-tier generation is durable-only: its critique runs in the Workflow, not the browser. Tools added
+// only to the browser critique reached BYOK users and nobody else.
+ok(/critique:\s*\{[\s\S]{0,400}?tools:\s*\(topicNeedsLiveCheck/.test(code),
+   "the submitted critique spec carries the search tools when the topic needs a live check");
+
+const worker = readFileSync(new URL("./worker.js", import.meta.url), "utf8");
+ok(/p\.critique\.maxTok \|\| 16384, p\.critique\.models, p\.critique\.tools/.test(worker),
+   "the Workflow's critique call forwards those tools — the main path actually searches");
+ok(/p\.draft\.maxTok \|\| 16384, p\.draft\.models, null\)/.test(worker),
+   "…and the Workflow's draft call forwards none, whatever a client submits");
 
 // ── 2 · PURE MECHANISM TOPICS SKIP IT ────────────────────────────────────────
 const fn = code.slice(code.indexOf("function topicNeedsLiveCheck"), code.indexOf("function talkIsFastMoving"));
