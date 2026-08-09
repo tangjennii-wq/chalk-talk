@@ -12004,7 +12004,7 @@ function renderSaved(){
     var bg = active ? "#fff6dd" : "transparent";
     var fg = active ? "#a07d1a" : "var(--ink-muted)";
     var br = active ? "#e6d49a" : "var(--line)";
-    return '<button id="libProfileBtn" class="libProfileBtn" title="Show only talks published on your public profile" aria-pressed="'+active+'" style="background:'+bg+';color:'+fg+';border:1px solid '+br+';border-radius:14px;padding:5px 11px;font-size:11.5px;font-weight:'+(active?"700":"500")+';cursor:pointer;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-family:inherit;line-height:1.3">⭐ On profile <span style="opacity:0.65;font-size:10.5px;font-weight:500">'+count+'</span></button>';
+    return '<button id="libProfileBtn" class="libProfileBtn" title="Show only talks published on your public profile" aria-pressed="'+active+'" style="background:'+bg+';color:'+fg+';border:1px solid '+br+';border-radius:14px;padding:5px 11px;font-size:11.5px;font-weight:'+(active?"700":"500")+';cursor:pointer;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-family:inherit;line-height:1.3">⭐ Public <span style="opacity:0.65;font-size:10.5px;font-weight:500">'+count+'</span></button>';
   }
   h+='<div class="libSpecStrip" style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding:2px 0;scrollbar-width:none;-ms-overflow-style:none;mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 24px),transparent 100%);-webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 24px),transparent 100%)">';
   h+=specPill(null, "All", specSourceForCounts.length);
