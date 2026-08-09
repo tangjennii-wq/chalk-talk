@@ -294,14 +294,19 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .cap-save-unsaved .hide-mobi
 /* Edit-settings drawer (bottom sheet) */
 .drawer-backdrop{position:fixed;inset:0;background:rgba(20,10,28,0.45);z-index:90;backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .25s ease}
 .drawer-backdrop.open{opacity:1;pointer-events:auto}
-.drawer{position:fixed;left:0;right:0;bottom:0;max-height:90vh;background:var(--paper);border-top-left-radius:22px;border-top-right-radius:22px;z-index:91;transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;box-shadow:0 -8px 28px rgba(20,10,28,0.18)}
+/* --kb is the measured keyboard overlap (see trackKeyboardInset). The composer got this on
+   2026-08-07; these three bottom sheets did not, and each contains a text field — the sign-in
+   password, the profile handle, and the edit drawer whose Rebuild button sits at the very bottom.
+   Same defect, three more places. Also pad for the home indicator: .side-drawer, .tk-bottomnav and
+   .compose-cta all handle safe-area-inset-bottom; .drawer was missed. (audit, 2026-08-09) */
+.drawer{position:fixed;left:0;right:0;bottom:var(--kb,0px);max-height:90vh;padding-bottom:env(safe-area-inset-bottom);transition:bottom .18s ease;background:var(--paper);border-top-left-radius:22px;border-top-right-radius:22px;z-index:91;transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;box-shadow:0 -8px 28px rgba(20,10,28,0.18)}
 .drawer.open{transform:translateY(0)}
 .drawer-handle{align-self:center;width:42px;height:4px;background:var(--line);border-radius:2px;margin:8px 0 4px}
 .drawer-head{padding:8px 18px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line-soft)}
 .drawer-head .drawer-title{flex:1;font-family:Georgia,"Times New Roman",serif;font-size:17px;font-weight:600;color:var(--ink)}
 .drawer-head .drawer-close{background:none;border:none;color:var(--ink-muted);font-size:20px;width:44px;height:44px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .drawer-body{flex:1;overflow-y:auto;padding:14px 16px 20px;-webkit-overflow-scrolling:touch}
-@media (min-width:641px){.drawer{left:50%;right:auto;width:min(520px,calc(100% - 36px));transform:translate(-50%,100%);border-radius:22px;bottom:auto;top:50%;max-height:80vh}.drawer.open{transform:translate(-50%,-50%)}}
+@media (min-width:641px){.drawer{left:50%;right:auto;width:min(520px,calc(100% - 36px));transform:translate(-50%,100%);border-radius:22px;bottom:auto;padding-bottom:0;top:50%;max-height:80vh}.drawer.open{transform:translate(-50%,-50%)}}
 /* Right-side slide-in drawer (mobile Library). Reuses .drawer-backdrop/.drawer-head/.drawer-body. */
 .side-drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,86vw);background:var(--paper);z-index:91;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(20,10,28,0.20);padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);overscroll-behavior:contain}
 .side-drawer.open{transform:translateX(0)}
@@ -1564,7 +1569,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-09-01";
+var BUILD_ID = "2026-08-09-02";
 // ── THE iOS KEYBOARD, MEASURED RATHER THAN DECLARED ─────────────────────────────────────────────────
 // visualViewport is the only thing on iOS that knows the keyboard is up: window.innerHeight does not
 // change, and env(keyboard-inset-height) is a Chromium API. --kb is the number of pixels the keyboard
@@ -6396,13 +6401,60 @@ document.addEventListener("click", function(e){
     hideCitePop();
   }
 });
+// ── EVERY OVERLAY, IN THE ORDER A USER WOULD DISMISS THEM ───────────────────────────────────────────
+// Escape, background scroll-lock and focus-restore were wired for the mobile Library drawer and for
+// nothing else — seven other overlays had a backdrop and an × and neither of the other two. Listing them
+// once means the next overlay is added to a list rather than remembered in three places.
+//
+// Order matters: innermost/most-recent first, so Escape peels one layer at a time rather than closing the
+// sheet out from under a picker opened on top of it. (audit, 2026-08-09)
+var OVERLAY_FLAGS = [
+  { flag: "lightbox",         clear: function(){ S.lightbox = false; } },
+  { flag: "specPickerForId",  clear: function(){ S.specPickerForId = null; } },
+  { flag: "shareModalOpen",   clear: function(){ S.shareModalOpen = false; } },
+  { flag: "keyModalOpen",     clear: function(){ S.keyModalOpen = false; } },
+  { flag: "showOutOfFreeModal", clear: function(){ S.showOutOfFreeModal = false; } },
+  { flag: "profileEditOpen",  clear: function(){ S.profileEditOpen = false; } },
+  { flag: "editSettings",     clear: function(){ S.editSettings = false; } },
+  { flag: "signInOpen",       clear: function(){ if(typeof closeAuth === "function") closeAuth(); else S.signInOpen = false; } },
+];
+
+function anyOverlayOpen(){
+  if(typeof S === "undefined") return false;
+  if(S.mobileLibOpen) return true;
+  for(var i = 0; i < OVERLAY_FLAGS.length; i++){ if(S[OVERLAY_FLAGS[i].flag]) return true; }
+  return false;
+}
+
+// Locks the page behind whatever is open. Without this the page scrolls under a fixed sheet — and on a
+// bottom sheet the user is typing into, the content slides out from under them.
+function syncOverlayScrollLock(){
+  try{ document.body.classList.toggle("mobile-drawer-open", anyOverlayOpen()); }catch(_){}
+}
+
+// Closes the topmost overlay. Returns true if it closed something, so Escape can stop there.
+function closeTopOverlay(){
+  if(typeof S === "undefined") return false;
+  if(S.mobileLibOpen){ closeMobileLibraryDrawer(); return true; }
+  for(var i = 0; i < OVERLAY_FLAGS.length; i++){
+    var o = OVERLAY_FLAGS[i];
+    if(S[o.flag]){
+      o.clear();
+      syncOverlayScrollLock();
+      if(typeof render === "function") render();
+      // Put focus back where it came from, so a keyboard or screen-reader user is not dropped at the top
+      // of the document. Falls back silently when the opener is gone from the DOM after a re-render.
+      try{ var el = S._overlayOpener && document.getElementById(S._overlayOpener); if(el && el.focus) el.focus(); }catch(_){}
+      S._overlayOpener = null;
+      return true;
+    }
+  }
+  return false;
+}
+
 document.addEventListener("keydown", function(e){
   if(e.key !== "Escape") return;
-  if(typeof S !== "undefined" && S.mobileLibOpen){
-    e.preventDefault();
-    closeMobileLibraryDrawer();
-    return;
-  }
+  if(closeTopOverlay()){ e.preventDefault(); return; }
   hideCitePop();
 });
 
@@ -12092,7 +12144,7 @@ function renderSaved(){
     h+='<div style="text-align:center;padding:14px 20px;color:var(--ink-muted);font-size:12.5px"><span class="spinner" style="margin-right:8px"></span>Loading your library\u2026</div>';
   }
   // Search + export/import
-  h+='<input id="savedSearchIn" value="'+esc(S.savedSearch)+'" placeholder="Search the library\u2026" style="width:100%;background:#fff;border:1.5px solid #e2dfe8;border-radius:12px;padding:11px 16px;font-size:14px;outline:none;margin-bottom:10px">';
+  h+='<input type="search" id="savedSearchIn" value="'+esc(S.savedSearch)+'" placeholder="Search the library\u2026" style="width:100%;background:#fff;border:1.5px solid #e2dfe8;border-radius:12px;padding:11px 16px;font-size:14px;outline:none;margin-bottom:10px">';
   // Export / Import removed from the library header (Jenni 2026-08-07): two buttons of chrome above every
   // list, for an action almost nobody takes and never from a phone. The handlers stay wired in case the
   // capability returns behind the kebab.
@@ -12403,7 +12455,7 @@ function renderLib(){
   var lib=TOPICS;
   if(S.search.trim()){lib={};var ents=Object.entries(TOPICS);for(var i=0;i<ents.length;i++){var cn=ents[i][0],cd=ents[i][1],f={};var ss=Object.entries(cd.topics);for(var j=0;j<ss.length;j++){var m=ss[j][1].filter(function(t){return t.toLowerCase().indexOf(S.search.toLowerCase())>=0});if(m.length)f[ss[j][0]]=m}if(Object.keys(f).length)lib[cn]={color:cd.color,pct:cd.pct,topics:f}}}
   var h='<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px"><button id="libBack" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:8px 14px;color:#6b6780;font-size:13px">\u2190 Back</button><h2 style="font-size:20px;font-weight:700;color:#330662;margin:0">ABIM Topic Library</h2></div>';
-  h+='<input id="libSearch" value="'+esc(S.search)+'" placeholder="Search topics..." style="width:100%;background:#fff;border:1.5px solid #e2dfe8;border-radius:12px;padding:12px 16px;font-size:14px;outline:none;margin-bottom:16px">';
+  h+='<input type="search" id="libSearch" value="'+esc(S.search)+'" placeholder="Search topics..." style="width:100%;background:#fff;border:1.5px solid #e2dfe8;border-radius:12px;padding:12px 16px;font-size:14px;outline:none;margin-bottom:16px">';
   var le=Object.entries(lib);
   for(var li=0;li<le.length;li++){var cat=le[li][0],d=le[li][1];
     h+='<div style="border-radius:12px;overflow:hidden;border:1px solid #e2dfe8;margin-bottom:8px;background:#fff"><button class="catBtn" data-cat="'+esc(cat)+'" style="width:100%;display:flex;justify-content:space-between;align-items:center;background:#fff;border:none;border-left:4px solid '+d.color+';padding:14px 16px;text-align:left"><div><span style="font-size:14px;font-weight:600">'+esc(cat)+'</span><span style="font-size:12px;color:#702b9d;margin-left:10px;font-weight:600">'+d.pct+'</span></div><span style="color:#9490a6">'+(S.expCat===cat?"\u25BE":"\u25B8")+'</span></button>';
@@ -14514,7 +14566,7 @@ function bindMain(){
     else { S.showSaved=true;S.savedSearch="";render();refreshLibraryShowcaseSamples(); }
   };
   // Mobile Library drawer handlers
-  document.body.classList.toggle("mobile-drawer-open", !!S.mobileLibOpen);
+  syncOverlayScrollLock();   // every overlay, not just the library drawer
   var _mlbd=document.getElementById("mobileLibBackdrop");if(_mlbd)_mlbd.onclick=closeMobileLibraryDrawer;
   var _mlbc=document.getElementById("mobileLibClose");if(_mlbc){
     _mlbc.onclick=closeMobileLibraryDrawer;
