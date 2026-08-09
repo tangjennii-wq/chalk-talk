@@ -1541,7 +1541,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-13";
+var BUILD_ID = "2026-08-07-14";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -4441,13 +4441,13 @@ function renderLibCard(x){
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">✨</span>';
   if(isShowcase) h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Featured teaching sample from Jenni">✨ Sample</span>';
   // Privacy badge — only meaningful when the viewer OWNS the talk (saved branch + logged in).
-  // For showcase pull-ins or incognito browsing, "On profile" reads as the viewer's profile, which
+  // For showcase pull-ins or incognito browsing, "Public" reads as the viewer's profile, which
   // is misleading. (Jenni 2026-06-10) Unified: any public share now shows ⭐ On profile — Link tier
   // is still a thing under the hood, but the badge no longer distinguishes them, because Jenni's
   // mental model is "if I made it public, it's on my profile."
   var _isMyOwnTalk = !!(S.user && x._source === "saved");
   if(_isMyOwnTalk && (x._isFeatured || x._isPublic)) {
-    h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="On your public profile (or link-shared — either way, publicly viewable)">⭐ On profile</span>';
+    h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="On your public profile (or link-shared — either way, publicly viewable)">⭐ Public</span>';
   }
   // Attribution chip — Phase 5 (Jenni 2026-06-08). Now clickable: opens source curator's profile.
   // (Jenni 2026-06-09: was static text; coworkers had no way to discover the original library.)
@@ -11998,7 +11998,7 @@ function renderSaved(){
     return '<button class="libSpecBtn" data-spec="'+(specKey===null?"":esc(specKey))+'" '+(disabled?"disabled":"")+' style="background:'+bg+';color:'+fg+';border:1px solid '+br+';border-radius:14px;padding:5px 11px;font-size:11.5px;font-weight:'+(active?"600":"500")+';cursor:'+cursor+';opacity:'+op+';white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-family:inherit;line-height:1.3">'+esc(label)+(count!=null?' <span style="opacity:0.65;font-size:10.5px;font-weight:500">'+count+'</span>':'')+'</button>';
   }
   // Profile toggle (Jenni 2026-07-03) — sits right after "All". Distinct gold styling because it's a
-  // separate filter axis (a toggle) not another specialty; ⭐ matches the "On profile" card badge.
+  // separate filter axis (a toggle) not another specialty; ⭐ matches the "Public" card badge.
   function profilePill(count){
     var active = !!S.libProfileOnly;
     var bg = active ? "#fff6dd" : "transparent";
@@ -12018,7 +12018,7 @@ function renderSaved(){
   h+='<style>.libSpecStrip::-webkit-scrollbar{display:none}</style>';
   // "Showing X \u00B7 Clear" line when a filter is active
   if(S.libSpec || S.libProfileOnly){
-    var _showLbl = [S.libSpec?esc(S.libSpec):null, S.libProfileOnly?"On profile":null].filter(Boolean).join(" \u00B7 ");
+    var _showLbl = [S.libSpec?esc(S.libSpec):null, S.libProfileOnly?"Public":null].filter(Boolean).join(" \u00B7 ");
     h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding:6px 10px;background:var(--lavender-bg);border-radius:8px;font-size:11.5px"><span style="color:var(--ink)"><b style="color:var(--plum-deep)">Showing '+_showLbl+'</b> \u00B7 '+filtered.length+' '+(filtered.length===1?"item":"items")+'</span><button id="libSpecClearBtn" style="background:none;border:none;color:var(--plum);font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 6px;border-radius:6px">\u00D7 Clear</button></div>';
   }
 
@@ -12028,7 +12028,9 @@ function renderSaved(){
   }
   // Search + export/import
   h+='<input id="savedSearchIn" value="'+esc(S.savedSearch)+'" placeholder="Search the library\u2026" style="width:100%;background:#fff;border:1.5px solid #e2dfe8;border-radius:12px;padding:11px 16px;font-size:14px;outline:none;margin-bottom:10px">';
-  h+='<div style="display:flex;gap:8px;margin-bottom:14px;justify-content:flex-end"><button id="exportLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:7px 12px;color:#702b9d;font-size:11.5px;font-weight:600;cursor:pointer">\u2B07 Export</button><button id="importLibBtn" style="background:#fff;border:1px solid #e2dfe8;border-radius:8px;padding:7px 12px;color:#702b9d;font-size:11.5px;font-weight:600;cursor:pointer">\u2B06 Import</button><input type="file" id="importLibInput" accept=".json" style="display:none"></div>';
+  // Export / Import removed from the library header (Jenni 2026-08-07): two buttons of chrome above every
+  // list, for an action almost nobody takes and never from a phone. The handlers stay wired in case the
+  // capability returns behind the kebab.
   // Group filtered items by specialty, render in canonical order (SPEC_ORDER).
   if(filtered.length===0){
     var emptyMsg = (all.length===0) ? "No items yet" : (S.libProfileOnly ? "Nothing on your profile here yet" : "No matches in "+(tab==="all"?"the library":tab));
