@@ -312,6 +312,12 @@ jobs:
       - name: Lost-response recovery (idempotent re-submit)
         run: node test_lost_response_recovery.mjs
 
+      # Mobile is a distinct interaction surface: modal drawer semantics, 44px touch targets, safe-area
+      # insets, keyboard clearance, focus restoration, and reduced-motion behavior all regress without
+      # changing desktop output. This executes the close transaction and guards the responsive contract.
+      - name: Mobile interaction UX (drawer, touch, keyboard, accessibility)
+        run: node test_mobile_ux.mjs
+
       # THE TEST SYSTEM ITSELF. Two counting failures in one day, both in the instrument: a local runner
       # built from `ls | head -18` plus `| tail -17` skipped positions 19-22 and reported "35 suites pass"
       # when there were 39, and test_refine_guard.mjs made all 15 of its checks with console.assert, which
