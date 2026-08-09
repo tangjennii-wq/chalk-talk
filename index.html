@@ -1541,7 +1541,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-12";
+var BUILD_ID = "2026-08-07-13";
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -11506,19 +11506,19 @@ function renderGlobalModals(){
     var _smUrl = _smToken ? publicShareURL(_smToken) : "";
     var _smTier = _smIsFeatured ? "profile" : (_smIsPublic ? "link" : "private");
     h+='<div class="drawer-backdrop open" id="shareModalBackdrop" style="z-index:120"></div>';
-    h+='<div class="drawer open" id="shareModal" style="z-index:121;max-width:480px;margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
+    h+='<div class="drawer open" id="shareModal" style="z-index:121;max-width:480px;width:calc(100vw - 28px);margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
     h+='<div class="drawer-head" style="padding:18px 20px 10px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🔗</span> Share this talk</div><button class="drawer-close" id="shareModalCloseBtn">×</button></div>';
     h+='<div class="drawer-body" style="padding:0 20px 20px">';
     h+='<p style="font-size:12.5px;color:var(--ink-muted);margin:0 0 14px;line-height:1.5">Who can see this talk?</p>';
     var _t1Active = (_smTier==="private");
     h+='<button class="shareTierBtn" data-tier="private" style="width:100%;background:'+(_t1Active?"var(--lavender-bg)":"#fff")+';border:1.5px solid '+(_t1Active?"var(--plum)":"var(--line)")+';border-radius:14px;padding:13px 14px;margin-bottom:8px;text-align:left;cursor:pointer;display:flex;align-items:flex-start;gap:11px;font-family:inherit;transition:all .15s ease">';
     h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t1Active?"🔵":"⚪")+'</span>';
-    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔒 Just me</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">Stays in your library. No one else can see it.</span></span>';
+    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔒 Just me</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">Only you can see it.</span></span>';
     h+='</button>';
     var _t2Active = (_smTier==="link");
     h+='<button class="shareTierBtn" data-tier="link" style="width:100%;background:'+(_t2Active?"#e6efff":"#fff")+';border:1.5px solid '+(_t2Active?"#5781c9":"var(--line)")+';border-radius:14px;padding:13px 14px;margin-bottom:8px;text-align:left;cursor:pointer;display:flex;align-items:flex-start;gap:11px;font-family:inherit;transition:all .15s ease">';
     h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t2Active?"🔵":"⚪")+'</span>';
-    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔗 People I send the link to</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">I get a private URL to DM. Not listed anywhere.</span></span>';
+    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔗 People I send the link to</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">Anyone with the link can view it.</span></span>';
     h+='</button>';
     var _t3Active = (_smTier==="profile");
     // The profile tier lists the talk on the CURRENT USER's public portfolio at #u/<their handle> —
@@ -11529,7 +11529,7 @@ function renderGlobalModals(){
     h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t3Active?"🔵":"⚪")+'</span>';
     h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">⭐ Anyone who finds my profile</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">'+(_myHandle
       ? 'Shows up on your profile at <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--plum)">#u/'+esc(_myHandle)+'</span> alongside your other featured talks.'
-      : 'Lists it on your public profile. <b>Claim a handle in your profile</b> (avatar → Edit profile) to get your shareable link.')+'</span></span>';
+      : 'Listed on your public profile.')+'</span></span>';
     h+='</button>';
     if(_smUrl && (_t2Active || _t3Active)){
       h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--ink);word-break:break-all;margin-bottom:10px">'+esc(_smUrl)+'</div>';
@@ -13795,7 +13795,7 @@ h+='</div>';
     var _smUrl = _smToken ? publicShareURL(_smToken) : "";
     var _smTier = _smIsFeatured ? "profile" : (_smIsPublic ? "link" : "private");
     h+='<div class="drawer-backdrop open" id="shareModalBackdrop" style="z-index:120"></div>';
-    h+='<div class="drawer open" id="shareModal" style="z-index:121;max-width:480px;margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
+    h+='<div class="drawer open" id="shareModal" style="z-index:121;max-width:480px;width:calc(100vw - 28px);margin:0 auto;left:50%;bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:18px">';
     h+='<div class="drawer-head" style="padding:18px 20px 10px"><div class="drawer-title" style="display:flex;align-items:center;gap:8px"><span>🔗</span> Share this talk</div><button class="drawer-close" id="shareModalCloseBtn">×</button></div>';
     h+='<div class="drawer-body" style="padding:0 20px 20px">';
     h+='<p style="font-size:12.5px;color:var(--ink-muted);margin:0 0 14px;line-height:1.5">Who can see this talk?</p>';
@@ -13804,14 +13804,14 @@ h+='</div>';
     var _t1Active = (_smTier==="private");
     h+='<button class="shareTierBtn" data-tier="private" style="width:100%;background:'+(_t1Active?"var(--lavender-bg)":"#fff")+';border:1.5px solid '+(_t1Active?"var(--plum)":"var(--line)")+';border-radius:14px;padding:13px 14px;margin-bottom:8px;text-align:left;cursor:pointer;display:flex;align-items:flex-start;gap:11px;font-family:inherit;transition:all .15s ease">';
     h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t1Active?"🔵":"⚪")+'</span>';
-    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔒 Just me</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">Stays in your library. No one else can see it.</span></span>';
+    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔒 Just me</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">Only you can see it.</span></span>';
     h+='</button>';
 
     // Tier 2 — Link-only (default-selected when private and modal first opens)
     var _t2Active = (_smTier==="link");
     h+='<button class="shareTierBtn" data-tier="link" style="width:100%;background:'+(_t2Active?"#e6efff":"#fff")+';border:1.5px solid '+(_t2Active?"#5781c9":"var(--line)")+';border-radius:14px;padding:13px 14px;margin-bottom:8px;text-align:left;cursor:pointer;display:flex;align-items:flex-start;gap:11px;font-family:inherit;transition:all .15s ease">';
     h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t2Active?"🔵":"⚪")+'</span>';
-    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔗 People I send the link to</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">I get a private URL to DM. Not listed anywhere.</span></span>';
+    h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">🔗 People I send the link to</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">Anyone with the link can view it.</span></span>';
     h+='</button>';
 
     // Tier 3 — On profile (hero only for now — Phase 3 will add handles for other users)
@@ -13824,7 +13824,7 @@ h+='</div>';
     h+='<span style="font-size:18px;flex-shrink:0;line-height:1.3">'+(_t3Active?"🔵":"⚪")+'</span>';
     h+='<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:2px">⭐ Anyone who finds my profile</span><span style="display:block;font-size:11.5px;color:var(--ink-muted);line-height:1.4">'+(_myHandle
       ? 'Shows up on your profile at <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--plum)">#u/'+esc(_myHandle)+'</span> alongside your other featured talks.'
-      : 'Lists it on your public profile. <b>Claim a handle in your profile</b> (avatar → Edit profile) to get your shareable link.')+'</span></span>';
+      : 'Listed on your public profile.')+'</span></span>';
     h+='</button>';
 
     // URL display + copy (only when public or featured)
