@@ -246,6 +246,12 @@ jobs:
       - name: Writer allowlist + quota receipt (server-side)
         run: node test_writer_and_quota_gates.mjs
 
+      # Layout audit of the 390px viewport. Two of these had a fix COMMENT already in the file: the
+      # composer claimed an iOS keyboard fix using a Chromium-only API, and the 16px zoom guard was
+      # scoped to .app while every modal renders outside it.
+      - name: Mobile layout (keyboard, zoom, horizontal overflow)
+        run: node test_mobile_layout.mjs
+
       # Deleting a control left an explanatory line still referencing its local. render() threw
       # ReferenceError, the overlay never cleared, and every saved-talk open hung on "Opening your talk".
       # node --check cannot see it: an undeclared identifier is valid syntax until it executes.

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <!-- Ask browsers to revalidate index.html instead of silently serving a stale cached build (Jenni 2026-07-03). -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -44,6 +44,7 @@
   --shadow-soft:0 1px 2px rgba(36,18,47,0.04);--shadow-card:0 2px 8px rgba(36,18,47,0.06);
 }
 body{font-family:system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+button:focus-visible,a:focus-visible,[role="button"]:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--lavender);outline-offset:2px}
 .app{max-width:430px;margin:0 auto;padding:18px 16px 48px}
 @media (min-width:640px){.app{max-width:640px;padding:22px 24px 56px}}
 @media (min-width:1024px){.app{max-width:720px}}
@@ -101,6 +102,7 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 .tk-bottomnav button.active{color:var(--plum);font-weight:600}
 @media (max-width:640px){
   .tk-bottomnav{display:flex}
+  .tk-bottomnav button{min-height:48px}
   .app.has-talk{padding-bottom:84px}
 }
 .tk-acc{background:var(--cream);border:1px solid var(--line);border-radius:14px;margin-bottom:8px;overflow:hidden;box-shadow:var(--shadow-soft)}
@@ -176,6 +178,7 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .cap-save-unsaved .hide-mobi
   .tk-capsule{padding:7px 10px;gap:6px}
   /* Mode tabs: shrink padding so 4 fit comfortably on narrow viewports */
   .mode-card{padding:7px 4px;font-size:12px;gap:4px}
+  .mode-card{min-height:44px}
   .mode-card .mc-ico{font-size:13px}
   /* Hide text labels in capsule action buttons on mobile — icons only.
      Without this, "Save" / "Edit settings" labels overflow on a 375px iPhone
@@ -269,16 +272,23 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .cap-save-unsaved .hide-mobi
    Previous: fixed 420px min-height + vh sizing ignored the iOS keyboard, causing the panel to slide
    under the keyboard and feel "glitchy + too big." Fix: edge-to-edge with 8px gutters, content-sized
    height up to 50dvh (dynamic viewport excludes keyboard on Safari 15.4+), lift above iOS keyboard
-   via env(keyboard-inset-height), textarea defaults to a tight 2-line input that grows with content.
+   via visualViewport (--kb), textarea defaults to a tight 2-line input that grows with content.
    font-size:16px on the textarea suppresses iOS Safari's auto-zoom-on-focus. */
 @media (max-width:640px){
-  .composer-bubble{bottom:max(12px, env(keyboard-inset-height, 0px) + 8px);right:8px;left:8px}
+  /* env(keyboard-inset-height) is the Chromium Virtual Keyboard API and needs
+     navigator.virtualKeyboard.overlaysContent — neither exists here, so on iOS it always resolved to the
+     0px fallback and the composer sat 12px off the LAYOUT viewport, which does not shrink for the
+     keyboard. The send button and Proofread toggle were therefore unreachable behind it, on the one
+     surface a physician uses one-handed. --kb is set from visualViewport below. (audit, 2026-08-07) */
+  .composer-bubble{bottom:calc(12px + var(--kb, 0px));right:8px;left:8px;transition:bottom .18s ease}
   .composer-bubble .composer-pill{position:absolute;right:0;bottom:0}
   .composer-bubble .composer-panel{width:auto;height:auto;max-height:50dvh;min-height:0;padding:12px;border-radius:18px}
   .composer-bubble .revise-input{flex:0 1 auto;min-height:44px;max-height:30dvh;font-size:16px;padding:10px 12px;border-radius:12px;line-height:1.45}
   .composer-bubble .composer-panel-head{margin-bottom:6px;height:auto}
   .composer-bubble .composer-footer{margin-top:8px}
   .composer-bubble .composer-hint{display:none}
+  .composer-bubble .cp-close,.composer-bubble .send-btn{width:44px;height:44px;min-width:44px}
+  .composer-bubble .ref-btn,.composer-bubble .composer-footer label{min-height:44px}
 }
 .app.has-talk{padding-bottom:24px}
 /* Edit-settings drawer (bottom sheet) */
@@ -289,12 +299,14 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .cap-save-unsaved .hide-mobi
 .drawer-handle{align-self:center;width:42px;height:4px;background:var(--line);border-radius:2px;margin:8px 0 4px}
 .drawer-head{padding:8px 18px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line-soft)}
 .drawer-head .drawer-title{flex:1;font-family:Georgia,"Times New Roman",serif;font-size:17px;font-weight:600;color:var(--ink)}
-.drawer-head .drawer-close{background:none;border:none;color:var(--ink-muted);font-size:20px;width:32px;height:32px;border-radius:8px;cursor:pointer}
+.drawer-head .drawer-close{background:none;border:none;color:var(--ink-muted);font-size:20px;width:44px;height:44px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .drawer-body{flex:1;overflow-y:auto;padding:14px 16px 20px;-webkit-overflow-scrolling:touch}
 @media (min-width:641px){.drawer{left:50%;right:auto;width:min(520px,calc(100% - 36px));transform:translate(-50%,100%);border-radius:22px;bottom:auto;top:50%;max-height:80vh}.drawer.open{transform:translate(-50%,-50%)}}
 /* Right-side slide-in drawer (mobile Library). Reuses .drawer-backdrop/.drawer-head/.drawer-body. */
-.side-drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,86vw);background:var(--paper);z-index:91;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(20,10,28,0.20)}
+.side-drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,86vw);background:var(--paper);z-index:91;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(20,10,28,0.20);padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);overscroll-behavior:contain}
 .side-drawer.open{transform:translateX(0)}
+body.mobile-drawer-open{overflow:hidden;touch-action:none}
+body.mobile-drawer-open .side-drawer{touch-action:pan-y}
 /* Overflow ⋯ menu */
 .overflow-menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,10,28,0.12);min-width:200px;z-index:70;overflow:hidden}
 .overflow-menu button{width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft)}
@@ -424,6 +436,11 @@ body.lib-is-reordering .lib-sort-fallback{transition:none !important;pointer-eve
 /* Small mobile body tweaks (non-hero) */
 @media (max-width: 640px) {
   .app { padding: 10px 10px 16px !important; max-width: 100% !important; }
+  #myLibBtn,details.howit > summary{min-height:44px !important}
+  .drawer-body button,.overflow-menu button{min-height:44px}
+  /* .compose-cta bleeds by -16px to match the DESKTOP .app padding; mobile padding is 10px, so the sticky
+     bar was 402px wide in a 390px viewport and the home screen scrolled sideways. (audit, 2026-08-07) */
+  .compose-cta{margin-left:-10px !important;margin-right:-10px !important}
   [data-msample-grid] { grid-template-columns: 1fr 1fr !important; gap: 7px !important; }
   [data-msample-grid] > div { padding: 8px 9px !important; min-height: 64px !important; gap: 5px !important; }
   [data-msample-grid] > div > div:first-child > span:last-child { font-size: 11.5px !important; -webkit-line-clamp: 2 !important; }
@@ -474,10 +491,16 @@ body.lib-is-reordering .lib-sort-fallback{transition:none !important;pointer-eve
   .tk-capsule .cap-actions button.cap-save { padding: 7px 13px !important; font-size: 12px !important; }
   /* iOS auto-zoom-on-focus suppression — Safari zooms into any input/textarea with computed
      font-size < 16px. Force 16px on all text inputs + textareas mobile-wide. (Jenni 2026-06-08) */
-  .app input[type="text"],
-  .app input[type="search"],
-  .app input[type="email"],
-  .app textarea { font-size: 16px !important; }
+  /* NOT scoped to .app: renderGlobalModals() appends #globalModals to document.body, so the key modal,
+     the share sheet and the auth panel all sat outside this rule and still zoomed the viewport on focus.
+     password and select were missing too. (audit, 2026-08-07) */
+  input[type="text"], input[type="search"], input[type="email"],
+  input[type="password"], input[type="number"], input[type="url"],
+  select, textarea { font-size: 16px !important; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
 }
 /* Aggressive landing-only compaction so mobile fits in one viewport (no scroll) */
 @media (max-width: 640px) {
@@ -1541,7 +1564,28 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-07-14";
+var BUILD_ID = "2026-08-07-15";
+// ── THE iOS KEYBOARD, MEASURED RATHER THAN DECLARED ─────────────────────────────────────────────────
+// visualViewport is the only thing on iOS that knows the keyboard is up: window.innerHeight does not
+// change, and env(keyboard-inset-height) is a Chromium API. --kb is the number of pixels the keyboard
+// covers, and the composer sits above it. Passive listeners, one rAF-coalesced write, no layout reads in
+// the handler. (audit, 2026-08-07)
+(function trackKeyboardInset(){
+  var vv = window.visualViewport;
+  if(!vv) return;                       // desktop and old browsers: --kb stays 0 and nothing moves
+  var pending = false;
+  function apply(){
+    pending = false;
+    // How much of the layout viewport the keyboard (and any browser chrome) is covering.
+    var covered = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    document.documentElement.style.setProperty("--kb", covered > 40 ? covered + "px" : "0px");
+  }
+  function onChange(){ if(!pending){ pending = true; requestAnimationFrame(apply); } }
+  vv.addEventListener("resize", onChange, { passive: true });
+  vv.addEventListener("scroll", onChange, { passive: true });
+  apply();
+})();
+
 function _showUpdatePill(){
   if(document.getElementById("ctUpdatePill")) return;
   var b=document.createElement("button");
@@ -6352,7 +6396,15 @@ document.addEventListener("click", function(e){
     hideCitePop();
   }
 });
-document.addEventListener("keydown", function(e){ if (e.key === "Escape") hideCitePop(); });
+document.addEventListener("keydown", function(e){
+  if(e.key !== "Escape") return;
+  if(typeof S !== "undefined" && S.mobileLibOpen){
+    e.preventDefault();
+    closeMobileLibraryDrawer();
+    return;
+  }
+  hideCitePop();
+});
 
 // Sticky capsule scroll listener (Jenni 2026-06-09).
 // Toggles a body class once user has scrolled past the capsule's natural top position, so the
@@ -11417,6 +11469,19 @@ function linkifyPMIDs(root) {
 // so users recognize it instantly. Sized to inherit the parent button's color via currentColor.
 var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 
+// Keep the mobile Library's close behavior identical for its X, backdrop, and Escape key. Focus returns
+// to the opener after the DOM rebuild so keyboard and switch-control users do not land at document start.
+function closeMobileLibraryDrawer(){
+  if(!S.mobileLibOpen) return false;
+  S.mobileLibOpen = false;
+  render();
+  setTimeout(function(){
+    var opener = document.getElementById("myLibBtn");
+    if(opener && opener.focus) opener.focus();
+  }, 0);
+  return true;
+}
+
 // Focus/caret/scroll-preserving wrapper (Jenni 2026-07-03 quality fix #2). The app rebuilds the
 // whole DOM on every render(), which otherwise drops the focused input and its caret whenever a
 // BACKGROUND render fires while you're typing (loading-timer tick, free-tier poll, citation audit,
@@ -12416,7 +12481,7 @@ function renderMain(){
   (getDisplayLibrary()||[]).forEach(function(e){ if(e && e.id) savedCloudIdsForCount[e.id]=true; });
   var showcaseSampleCount=(S.landingFeatured||[]).filter(function(row){return row && row.share_token && !savedCloudIdsForCount[row.id]}).length;
   var libCount = boardSampleCount + showcaseSampleCount + savedCount;
-  h+='<button id="myLibBtn" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--ink);font-size:12px;font-weight:600;padding:2px 0;display:inline-flex;align-items:center;gap:5px"><span style="opacity:.7;font-size:13px">📖</span>Library'+(libCount>0?' <span style="color:var(--ink-muted);font-size:11px;font-weight:500">('+libCount+')</span>':'')+'</button>';
+  h+='<button id="myLibBtn" aria-haspopup="dialog" aria-controls="mobileLibDrawer" aria-expanded="'+(S.mobileLibOpen?'true':'false')+'" style="background:none;border:none;cursor:pointer;font-family:inherit;color:var(--ink);font-size:12px;font-weight:600;padding:2px 0;display:inline-flex;align-items:center;gap:5px"><span style="opacity:.7;font-size:13px">📖</span>Library'+(libCount>0?' <span style="color:var(--ink-muted);font-size:11px;font-weight:500">('+libCount+')</span>':'')+'</button>';
   h+='</div>';
   h+='</div>';
   h+='</div>';
@@ -12696,7 +12761,7 @@ h+='</div>';
     } else {
       _pct = Math.min(90, Math.round((S.loadSec/45)*100));
     }
-    h+='<div style="margin-top:10px;height:4px;background:var(--lavender-bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,var(--plum-rich),var(--plum-deep));transition:width 0.6s ease"></div></div>';
+    h+='<div role="progressbar" aria-label="Talk generation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+_pct+'" style="margin-top:10px;height:4px;background:var(--lavender-bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+_pct+'%;background:linear-gradient(90deg,var(--plum-rich),var(--plum-deep));transition:width 0.6s ease"></div></div>';
     // Mobile backgrounding warning (Jenni 2026-06-09) — iOS Safari kills fetch when tab is
     // backgrounded. No way around it without a service worker. Tell the user proactively.
     h+= S.genBackgroundSafe
@@ -13889,9 +13954,9 @@ h+='</div>';
       }
     }
     var _libHasOwn = _libRecent.length > 0;
-    h+='<div class="drawer-backdrop open" id="mobileLibBackdrop"></div>';
-    h+='<div class="side-drawer open" id="mobileLibDrawer">';
-    h+='<div class="drawer-head" style="padding-top:16px"><div class="drawer-title">📖 '+(_libHasOwn?"Your lectures":"Sample lectures")+'</div><button class="drawer-close" id="mobileLibClose" aria-label="Close">×</button></div>';
+    h+='<div class="drawer-backdrop open" id="mobileLibBackdrop" aria-hidden="true"></div>';
+    h+='<div class="side-drawer open" id="mobileLibDrawer" role="dialog" aria-modal="true" aria-labelledby="mobileLibTitle" tabindex="-1">';
+    h+='<div class="drawer-head"><div class="drawer-title" id="mobileLibTitle">📖 '+(_libHasOwn?"Your lectures":"Sample lectures")+'</div><button class="drawer-close" id="mobileLibClose" aria-label="Close library">×</button></div>';
     h+='<div class="drawer-body">';
     if(_libHasOwn){
       for(var mli=0; mli<_libRecent.length; mli++){
@@ -14449,8 +14514,15 @@ function bindMain(){
     else { S.showSaved=true;S.savedSearch="";render();refreshLibraryShowcaseSamples(); }
   };
   // Mobile Library drawer handlers
-  var _mlbd=document.getElementById("mobileLibBackdrop");if(_mlbd)_mlbd.onclick=function(){S.mobileLibOpen=false;render();};
-  var _mlbc=document.getElementById("mobileLibClose");if(_mlbc)_mlbc.onclick=function(){S.mobileLibOpen=false;render();};
+  document.body.classList.toggle("mobile-drawer-open", !!S.mobileLibOpen);
+  var _mlbd=document.getElementById("mobileLibBackdrop");if(_mlbd)_mlbd.onclick=closeMobileLibraryDrawer;
+  var _mlbc=document.getElementById("mobileLibClose");if(_mlbc){
+    _mlbc.onclick=closeMobileLibraryDrawer;
+    var _mld=document.getElementById("mobileLibDrawer");
+    if(S.mobileLibOpen && _mld && !_mld.contains(document.activeElement)){
+      setTimeout(function(){ var closeBtn=document.getElementById("mobileLibClose"); if(closeBtn) closeBtn.focus(); },0);
+    }
+  }
   var _mlsa=document.getElementById("mobileLibSeeAll");if(_mlsa)_mlsa.onclick=function(){S.mobileLibOpen=false;S.showSaved=true;S.savedSearch="";render();refreshLibraryShowcaseSamples();};
   document.querySelectorAll(".mobileLibItem").forEach(function(b){b.onclick=function(){S.mobileLibOpen=false;loadSavedTalk(b.dataset.id);}});
   document.querySelectorAll(".mobileLibFeatured").forEach(function(b){b.onclick=function(){var tk=b.dataset.token;S.mobileLibOpen=false;if(tk)loadPublicTalkByToken(tk);else render();}});
