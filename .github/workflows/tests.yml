@@ -18,6 +18,9 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Install dev dependencies (eslint — needed by the inline-scope suite)
+        run: npm install --no-audit --no-fund
+
       - name: JS syntax check (all inline script blocks)
         run: |
           node --input-type=module -e '
@@ -317,6 +320,19 @@ jobs:
       # changing desktop output. This executes the close transaction and guards the responsive contract.
       - name: Mobile interaction UX (drawer, touch, keyboard, accessibility)
         run: node test_mobile_ux.mjs
+
+      # The mobile drawer scopes to lectures, sorts most-recent, and only reveals the specialty axis on
+      # request. Executed in a vm rather than pattern-matched: every one of these assertions was checked by
+      # deliberately breaking the behaviour it names, and all ten mutations failed the suite.
+      - name: Mobile library filter (lecture scope, most-recent order, specialty disclosure)
+        run: node test_library_filter.mjs
+
+      # node --check cannot see scope, so an undeclared identifier is valid syntax until it executes.
+      # ROLES was declared inside the profile-edit branch and read by a top-level function: it threw on
+      # every call, a bare catch swallowed it, and profiles rendered "resident" instead of "Resident".
+      # eslint no-undef parses the inline blocks properly and found it on the first run.
+      - name: Inline-script scope (eslint no-undef, what node --check cannot see)
+        run: node test_inline_scope.mjs
 
       # THE TEST SYSTEM ITSELF. Two counting failures in one day, both in the instrument: a local runner
       # built from `ls | head -18` plus `| tail -17` skipped positions 19-22 and reported "35 suites pass"
