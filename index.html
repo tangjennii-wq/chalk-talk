@@ -1980,7 +1980,7 @@ async function resumeAsyncJobIfAny(){
   loadTimer = setInterval(function(){ S.loadSec++; render(); }, 1000);
   try{
     var res = await pollAsyncGeneration(stored.jobId,
-      function(stage){ S.genPhase = (stage === "critique") ? "reviewing" : "drafting"; S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Finishing your talk (server-side)…"; render(); },
+      function(stage){ S.genPhase = (stage === "critique") ? "reviewing" : "drafting"; S.reviewLiveChecking = (stage === "critique") && topicNeedsLiveCheck(S.topic); S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Finishing your talk (server-side)…"; render(); },
       function(){ return S.genCancelled || _myGenId !== S.genId; },
       function(partial){ if(S.genCancelled || _myGenId !== S.genId) return; _applyStreamingPartial(partial); }
     );
@@ -2050,7 +2050,7 @@ async function resumeAsyncJobIfAny(){
       // review" can recover it without the reconnect handle. That — not the poll returning — is what
       // makes it safe to release.
       _clearActiveJob(stored && stored.jobId, "withheld draft saved to reviewPending");
-      S.citationAuditPending = false; S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
+      S.citationAuditPending = false; S.loading = false; S.reviewLiveChecking = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
       render();
       return;   // NO S.talk — an unreviewed draft is never displayed
     }
@@ -8470,7 +8470,7 @@ async function generate(){
         S.loadMsg = "Generating on our servers \u2014 safe to close this tab.";
         if (typeof render === "function") render();
         var _res = await pollAsyncGeneration(_job.jobId,
-          function(stage){ S.genPhase = (stage === "critique") ? "reviewing" : "drafting"; S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Drafting your talk (server-side)…"; if (typeof render === "function") render(); },
+          function(stage){ S.genPhase = (stage === "critique") ? "reviewing" : "drafting"; S.reviewLiveChecking = (stage === "critique") && topicNeedsLiveCheck(S.topic); S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Drafting your talk (server-side)…"; if (typeof render === "function") render(); },
           function(){ return S.genCancelled || _myGenId !== S.genId; },
           function(partial){ if (S.genCancelled || _myGenId !== S.genId) return; _applyStreamingPartial(partial); }
         );
@@ -8638,7 +8638,7 @@ async function generate(){
       _saveReviewPending();
       // Same reasoning as the resume path: durably saved, therefore recoverable without the handle.
       if (_useAsync) _clearActiveJob(_asyncJobId, "withheld draft saved to reviewPending");
-      S.citationAuditPending = false; S.loading = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
+      S.citationAuditPending = false; S.loading = false; S.reviewLiveChecking = false; try{ clearInterval(loadTimer); }catch(_){} S.loadMsg = "";
       render();
       return;   // NO charge, NO S.talk
     }

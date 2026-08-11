@@ -82,7 +82,13 @@ const worker = readFileSync(new URL("./worker.js", import.meta.url), "utf8");
 ok(/web_search_tool_result/.test(worker) && /webSearched\s*=\s*true/.test(worker), "worker.js detects an ACTUAL web_search event (stream + non-stream)");
 ok(/return \{ text, modelUsed: models\[i\], usage, webSearched \}/.test(worker), "worker streaming path returns webSearched");
 ok(/usage: d\.usage \|\| \{\}, webSearched \}/.test(worker), "worker non-streaming path returns webSearched");
-ok(/webSearched:\s*!!draft\.webSearched/.test(worker), "worker runGeneration includes webSearched in the job result");
+// THIS ASSERTION USED TO PIN THE BUG. It required exactly `webSearched: !!draft.webSearched`, which is
+// structurally false forever — callDraft passes tools:null by design (920773e), so only the CRITIQUE can
+// search. The suite was green the whole time the free tier could not report a live check, because the
+// pattern it demanded WAS the defect. It now asserts the contract instead of the current text.
+// (Behaviour is executed in test_live_check_propagation.mjs; this is the worker-side shape.)
+ok(/webSearched:\s*!!\(draft\.webSearched \|\| critSearched\)/.test(worker),
+   "worker runGeneration reports webSearched from EITHER call — the critique is the one that searches");
 ok(/_draftWebSearched\s*=\s*!!\(_res\s*&&\s*_res\.webSearched\)/.test(html), "client sets _draftWebSearched from the async Worker result");
 // _draftWebSearched must be DECLARED before the async read, or a later `var` would reset it to false.
 const _declIdx = html.indexOf("_useAsync = false, _draftWebSearched = false");

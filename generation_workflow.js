@@ -227,7 +227,7 @@ export async function runGenerationWorkflow({ step, payload, deps }) {
   // ── 2 · CRITIQUE ───────────────────────────────────────────────────────────
   // Optional. Separate step so a critique failure never re-runs the draft — the entire reason this is
   // a Workflow rather than one long promise.
-  let critique = { text: "", modelUsed: "", usage: null };
+  let critique = { text: "", modelUsed: "", usage: null, webSearched: false };
   if (payload.wantCritique) {
     critique = await step.do("critique", PAID_RETRY, async () => {
       // The most valuable of the two checks: the draft has ALREADY been billed by this point, so
@@ -239,7 +239,11 @@ export async function runGenerationWorkflow({ step, payload, deps }) {
         jobId, stepName: "critique",
         call: () => deps.callCritique(jobId, draft.text),
       });
-      return { text: (c && c.text) || "", modelUsed: (c && c.modelUsed) || "", usage: (c && c.usage) || null };
+      // webSearched MUST survive this return. callAnthropicText computes it from the response blocks, and
+      // dropping it here is why the live check reported false for every free-tier talk after it started
+      // working: the flag existed one frame earlier and the step threw it away.
+      return { text: (c && c.text) || "", modelUsed: (c && c.modelUsed) || "", usage: (c && c.usage) || null,
+               webSearched: !!(c && c.webSearched) };
     });
   }
 
@@ -269,7 +273,11 @@ export async function runGenerationWorkflow({ step, payload, deps }) {
         critText: critique.text,
         modelUsed: draft.modelUsed,
         critModelUsed: critique.modelUsed,
-        webSearched: draft.webSearched,
+        // THE CRITIQUE IS THE ONE THAT SEARCHES. callDraft passes tools:null deliberately (920773e), so
+        // draft.webSearched is structurally always false — reporting it alone meant the result said "no
+        // live check" no matter what the review actually did. OR-ed so the field keeps meaning "a real
+        // web_search event came back", whichever call produced it.
+        webSearched: !!(draft.webSearched || critique.webSearched),
       },
     });
     if (!wrote) {

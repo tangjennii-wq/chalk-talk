@@ -267,6 +267,14 @@ jobs:
       - name: Live check runs in the review pass (and only where it pays)
         run: node test_live_check.mjs
 
+      # The live check searched and every result said it had not: the Workflow's critique step dropped
+      # webSearched, finalize reported draft.webSearched (structurally false — callDraft sends tools:null by
+      # design), and the legacy waitUntil critique was passed no tools at all. test_live_check.mjs passed
+      # throughout because it pattern-matches the client. This one EXECUTES the workflow and asserts the
+      # record it writes; it fails 5/9 against the code as it stood at 5ea4dd5.
+      - name: Live-check provenance survives the durable path
+        run: node test_live_check_propagation.mjs
+
       # Three credits disappeared in minutes because Concise/Detailed looked like a display toggle and was
       # a full generation. Any control that can start one must say so and ask first.
       - name: No hidden regeneration (nothing spends a credit silently)

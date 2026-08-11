@@ -1989,7 +1989,7 @@ async function runGeneration(jobId, body, env) {
       await updateJob({ status: "error", error: { code: "empty_draft", message: "The model returned an empty draft. Please try again." } });
       return;
     }
-    let critText = "", critUsage = null, critModel = null;
+    let critText = "", critUsage = null, critModel = null, critSearched = false;
     if (body.critique && body.critique.sys) {
       if (!(await updateJob({ stage: "critique" }))) { await refundOnce(); return; }
       const critInput = (body.critique.prefix || "") + "\n\nDraft chalk talk to review:\n" + draft.text;
@@ -2037,7 +2037,9 @@ async function runGeneration(jobId, body, env) {
       }, CRITIQUE_HEARTBEAT_MS);
       let crit;
       try {
-        crit = await callAnthropicText(env, body.critique.sys, [{ type: "text", text: critInput }], body.critique.maxTok || 16384, body.critique.models);
+        // Tools were missing entirely here: five arguments, so this path's critique never received the
+        // web_search tool even after the Workflow's did. Filtered downstream by ALLOWED_TOOL_TYPES.
+        crit = await callAnthropicText(env, body.critique.sys, [{ type: "text", text: critInput }], body.critique.maxTok || 16384, body.critique.models, body.critique.tools || null);
       } finally {
         critAlive = false;          // checked by any tick already queued, and inside the chain
         clearInterval(beatTimer);   // synchronous — schedules nothing further
@@ -2045,7 +2047,7 @@ async function runGeneration(jobId, body, env) {
         // write again, so every later write — including `done` — is strictly last.
         try { await beatChain; } catch (_) {}
       }
-      critText = crit.text; critUsage = crit.usage; critModel = crit.modelUsed;
+      critText = crit.text; critUsage = crit.usage; critModel = crit.modelUsed; critSearched = !!crit.webSearched;
     }
     // Final cancel check before we finalize — a cancel that landed during critique refunds + bails.
     let curFinal = {};
@@ -2060,7 +2062,7 @@ async function runGeneration(jobId, body, env) {
     } catch (_) {}
     // updateJob returns false if a cancel landed between the final check and this write — in that race
     // the result is discarded, so refund the reservation too.
-    const wrote = await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed, critModelUsed: critModel || "", webSearched: !!draft.webSearched }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
+    const wrote = await updateJob({ status: "done", result: { draftText: draft.text, critText: critText, modelUsed: draft.modelUsed, critModelUsed: critModel || "", webSearched: !!(draft.webSearched || critSearched) }, elapsedSec: Math.round((Date.now() - t0) / 1000) });
     if (!wrote) await refundOnce();
   } catch (err) {
     await refundOnce();   // job failed — don't burn the reserved talk (no-op if already refunded)
