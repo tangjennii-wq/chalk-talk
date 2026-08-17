@@ -267,6 +267,14 @@ jobs:
       - name: Live check runs in the review pass (and only where it pays)
         run: node test_live_check.mjs
 
+      # guidelines.json named trials as bare acronyms and the prompt told the model to cite them "by name
+      # with their PMID/DOI URL" while nothing supplied the paper: documents has no acronym column and
+      # PubMed titles carry none, so PEITHO/DAPA-HF/EMPEROR-Reduced/PROSEVA return zero rows against a
+      # corpus holding all four. PEITHO came back with its arms reversed in two separate evals. A trial
+      # that cannot be resolved to a verified PMID is now not named to the model at all.
+      - name: Landmark trial grounding (resolved or not named)
+        run: node test_landmark_grounding.mjs
+
       # The live check searched and every result said it had not: the Workflow's critique step dropped
       # webSearched, finalize reported draft.webSearched (structurally false — callDraft sends tools:null by
       # design), and the legacy waitUntil critique was passed no tools at all. test_live_check.mjs passed

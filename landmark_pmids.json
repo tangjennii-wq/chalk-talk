@@ -1,0 +1,2802 @@
+{
+  "schema_version": 1,
+  "generated": "by rag/build_landmark_index.mjs from rag/landmark_trials.json",
+  "note": "Acronym (alphanumerics only, upper case) -> verified PMID. A trial absent from here has no verified source, and the prompt must NOT instruct the model to cite it.",
+  "trials": {
+    "DCCT": {
+      "name": "DCCT",
+      "pmid": "8366922",
+      "year": 1993
+    },
+    "UKPDS33": {
+      "name": "UKPDS 33",
+      "pmid": "9742976",
+      "year": 1998
+    },
+    "UKPDS34": {
+      "name": "UKPDS 34",
+      "pmid": "9742977",
+      "year": 1998
+    },
+    "ACCORD": {
+      "name": "ACCORD",
+      "pmid": "18539917",
+      "year": 2008
+    },
+    "ADVANCE": {
+      "name": "ADVANCE",
+      "pmid": "18539916",
+      "year": 2008
+    },
+    "VADT": {
+      "name": "VADT",
+      "pmid": "19092145",
+      "year": 2009
+    },
+    "EMPAREGOUTCOME": {
+      "name": "EMPA-REG OUTCOME",
+      "pmid": "26378978",
+      "year": 2015
+    },
+    "LEADER": {
+      "name": "LEADER",
+      "pmid": "27295427",
+      "year": 2016
+    },
+    "SUSTAIN6": {
+      "name": "SUSTAIN-6",
+      "pmid": "27633186",
+      "year": 2016
+    },
+    "REWIND": {
+      "name": "REWIND",
+      "pmid": "31189511",
+      "year": 2019
+    },
+    "DECLARETIMI58": {
+      "name": "DECLARE-TIMI 58",
+      "pmid": "30415602",
+      "year": 2019
+    },
+    "STEP1": {
+      "name": "STEP-1",
+      "pmid": "33567185",
+      "year": 2021
+    },
+    "SELECT": {
+      "name": "SELECT",
+      "pmid": "37952131",
+      "year": 2023
+    },
+    "SURMOUNT1": {
+      "name": "SURMOUNT-1",
+      "pmid": "35658024",
+      "year": 2022
+    },
+    "CREDENCE": {
+      "name": "CREDENCE",
+      "pmid": "30990260",
+      "year": 2019
+    },
+    "DAPACKD": {
+      "name": "DAPA-CKD",
+      "pmid": "32970396",
+      "year": 2020
+    },
+    "EMPAKIDNEY": {
+      "name": "EMPA-KIDNEY",
+      "pmid": "36331190",
+      "year": 2023
+    },
+    "FIDELIODKD": {
+      "name": "FIDELIO-DKD",
+      "pmid": "33264825",
+      "year": 2020
+    },
+    "FIGARODKD": {
+      "name": "FIGARO-DKD",
+      "pmid": "34449181",
+      "year": 2021
+    },
+    "FLOW": {
+      "name": "FLOW",
+      "pmid": "38785209",
+      "year": 2024
+    },
+    "STOPIGAN": {
+      "name": "STOP-IgAN",
+      "pmid": "26630142",
+      "year": 2015
+    },
+    "TESTING": {
+      "name": "TESTING",
+      "pmid": "35579642",
+      "year": 2022
+    },
+    "PROTECT": {
+      "name": "PROTECT",
+      "pmid": "37931634",
+      "year": 2023
+    },
+    "ISIS2": {
+      "name": "ISIS-2",
+      "pmid": "2899772",
+      "year": 1988
+    },
+    "4S": {
+      "name": "4S",
+      "pmid": "7968073",
+      "year": 1994
+    },
+    "CARE": {
+      "name": "CARE",
+      "pmid": "8801446",
+      "year": 1996
+    },
+    "HPS": {
+      "name": "HPS",
+      "pmid": "12114036",
+      "year": 2002
+    },
+    "JUPITER": {
+      "name": "JUPITER",
+      "pmid": "18997196",
+      "year": 2008
+    },
+    "IMPROVEIT": {
+      "name": "IMPROVE-IT",
+      "pmid": "26039521",
+      "year": 2015
+    },
+    "FOURIER": {
+      "name": "FOURIER",
+      "pmid": "28304224",
+      "year": 2017
+    },
+    "ODYSSEYOUTCOMES": {
+      "name": "ODYSSEY OUTCOMES",
+      "pmid": "30403574",
+      "year": 2018
+    },
+    "HOPE": {
+      "name": "HOPE",
+      "pmid": "10639539",
+      "year": 2000
+    },
+    "ALLHAT": {
+      "name": "ALLHAT",
+      "pmid": "12479763",
+      "year": 2002
+    },
+    "SPRINT": {
+      "name": "SPRINT",
+      "pmid": "26551272",
+      "year": 2015
+    },
+    "CONSENSUS": {
+      "name": "CONSENSUS",
+      "pmid": "2883575",
+      "year": 1987
+    },
+    "SOLVD": {
+      "name": "SOLVD",
+      "pmid": "2057034",
+      "year": 1991
+    },
+    "MERITHF": {
+      "name": "MERIT-HF",
+      "pmid": "10376614",
+      "year": 1999
+    },
+    "COPERNICUS": {
+      "name": "COPERNICUS",
+      "pmid": "11386263",
+      "year": 2001
+    },
+    "EMPHASISHF": {
+      "name": "EMPHASIS-HF",
+      "pmid": "21073363",
+      "year": 2011
+    },
+    "PARADIGMHF": {
+      "name": "PARADIGM-HF",
+      "pmid": "25176015",
+      "year": 2014
+    },
+    "DAPAHF": {
+      "name": "DAPA-HF",
+      "pmid": "31535829",
+      "year": 2019
+    },
+    "EMPERORREDUCED": {
+      "name": "EMPEROR-Reduced",
+      "pmid": "32865377",
+      "year": 2020
+    },
+    "EMPERORPRESERVED": {
+      "name": "EMPEROR-Preserved",
+      "pmid": "34449189",
+      "year": 2021
+    },
+    "AFFIRM": {
+      "name": "AFFIRM",
+      "pmid": "12466506",
+      "year": 2002
+    },
+    "RACEII": {
+      "name": "RACE II",
+      "pmid": "20231232",
+      "year": 2010
+    },
+    "RELY": {
+      "name": "RE-LY",
+      "pmid": "19717844",
+      "year": 2009
+    },
+    "ARISTOTLE": {
+      "name": "ARISTOTLE",
+      "pmid": "21870978",
+      "year": 2011
+    },
+    "ROCKETAF": {
+      "name": "ROCKET AF",
+      "pmid": "21830957",
+      "year": 2011
+    },
+    "ENGAGEAF": {
+      "name": "ENGAGE AF",
+      "pmid": "24251359",
+      "year": 2013
+    },
+    "CABANA": {
+      "name": "CABANA",
+      "pmid": "30874766",
+      "year": 2019
+    },
+    "COURAGE": {
+      "name": "COURAGE",
+      "pmid": "17387127",
+      "year": 2007
+    },
+    "ISCHEMIA": {
+      "name": "ISCHEMIA",
+      "pmid": "32227755",
+      "year": 2020
+    },
+    "PARTNER": {
+      "name": "PARTNER",
+      "pmid": "21639811",
+      "year": 2010
+    },
+    "COMPASS": {
+      "name": "COMPASS",
+      "pmid": "28844192",
+      "year": 2017
+    },
+    "NINDS": {
+      "name": "NINDS",
+      "pmid": "7477192",
+      "year": 1995
+    },
+    "ECASSIII": {
+      "name": "ECASS-III",
+      "pmid": "18815396",
+      "year": 2008
+    },
+    "MRCLEAN": {
+      "name": "MR CLEAN",
+      "pmid": "25517348",
+      "year": 2015
+    },
+    "DAWN": {
+      "name": "DAWN",
+      "pmid": "29129157",
+      "year": 2018
+    },
+    "DEFUSE3": {
+      "name": "DEFUSE 3",
+      "pmid": "29364767",
+      "year": 2018
+    },
+    "ARDSNETWORK": {
+      "name": "ARDS Network",
+      "pmid": "10793162",
+      "year": 2000
+    },
+    "PROSEVA": {
+      "name": "PROSEVA",
+      "pmid": "23688302",
+      "year": 2013
+    },
+    "ROSE": {
+      "name": "ROSE",
+      "pmid": "31112383",
+      "year": 2019
+    },
+    "EOLIA": {
+      "name": "EOLIA",
+      "pmid": "29791822",
+      "year": 2018
+    },
+    "CESAR": {
+      "name": "CESAR",
+      "pmid": "19762075",
+      "year": 2009
+    },
+    "ADRENAL": {
+      "name": "ADRENAL",
+      "pmid": "29347874",
+      "year": 2018
+    },
+    "APROCCHSS": {
+      "name": "APROCCHSS",
+      "pmid": "29490185",
+      "year": 2018
+    },
+    "VASST": {
+      "name": "VASST",
+      "pmid": "18305265",
+      "year": 2008
+    },
+    "SMART": {
+      "name": "SMART",
+      "pmid": "29485925",
+      "year": 2018
+    },
+    "BASICS": {
+      "name": "BaSICS",
+      "pmid": "34375394",
+      "year": 2021
+    },
+    "PLUS": {
+      "name": "PLUS",
+      "pmid": "35041780",
+      "year": 2022
+    },
+    "ANDROMEDASHOCK": {
+      "name": "ANDROMEDA-SHOCK",
+      "pmid": "30772908",
+      "year": 2019
+    },
+    "LOVIT": {
+      "name": "LOVIT",
+      "pmid": "35704292",
+      "year": 2022
+    },
+    "POET": {
+      "name": "POET",
+      "pmid": "30152252",
+      "year": 2019
+    },
+    "RECOVERY": {
+      "name": "RECOVERY",
+      "pmid": "32678530",
+      "year": 2020
+    },
+    "ACTT1": {
+      "name": "ACTT-1",
+      "pmid": "32445440",
+      "year": 2020
+    },
+    "REMAPCAP": {
+      "name": "REMAP-CAP",
+      "pmid": "33631065",
+      "year": 2021
+    },
+    "ION1": {
+      "name": "ION-1",
+      "pmid": "24725239",
+      "year": 2014
+    },
+    "ASTRAL1": {
+      "name": "ASTRAL-1",
+      "pmid": "26571066",
+      "year": 2015
+    },
+    "PALISADE": {
+      "name": "PALISADE",
+      "pmid": "30449234",
+      "year": 2018
+    },
+    "OUTMATCH": {
+      "name": "OUtMATCH",
+      "pmid": "38407394",
+      "year": 2024
+    },
+    "CHECKMATE067": {
+      "name": "CHECKMATE 067",
+      "pmid": "26027431",
+      "year": 2015
+    },
+    "KEYNOTE024": {
+      "name": "KEYNOTE-024",
+      "pmid": "27718847",
+      "year": 2016
+    },
+    "CLL14": {
+      "name": "CLL14",
+      "pmid": "31166681",
+      "year": 2019
+    },
+    "MAIA": {
+      "name": "MAIA",
+      "pmid": "31141632",
+      "year": 2019
+    },
+    "ALCYONE": {
+      "name": "ALCYONE",
+      "pmid": "29231133",
+      "year": 2018
+    },
+    "TEMEL": {
+      "name": "TEMEL",
+      "pmid": "20818875",
+      "year": 2010
+    },
+    "IDEAL": {
+      "name": "IDEAL",
+      "pmid": "20581422",
+      "year": 2010
+    },
+    "HEMO": {
+      "name": "HEMO",
+      "pmid": "12490682",
+      "year": 2002
+    },
+    "4D": {
+      "name": "4D",
+      "pmid": "16034009",
+      "year": 2005
+    },
+    "AURORA": {
+      "name": "AURORA",
+      "pmid": "19332456",
+      "year": 2009
+    },
+    "SHARP": {
+      "name": "SHARP",
+      "pmid": "21663949",
+      "year": 2011
+    },
+    "TIME": {
+      "name": "TiME",
+      "pmid": "31000566",
+      "year": 2019
+    },
+    "FHNDAILY": {
+      "name": "FHN Daily",
+      "pmid": "21091062",
+      "year": 2010
+    },
+    "PIVOTAL": {
+      "name": "PIVOTAL",
+      "pmid": "30365356",
+      "year": 2019
+    },
+    "EVOLVE": {
+      "name": "EVOLVE",
+      "pmid": "23121374",
+      "year": 2012
+    },
+    "ACTIVEDIALYSIS": {
+      "name": "ACTIVE Dialysis",
+      "pmid": "28151412",
+      "year": 2017
+    },
+    "ELITESYMPHONY": {
+      "name": "ELITE-Symphony",
+      "pmid": "18094377",
+      "year": 2007
+    },
+    "BENEFIT": {
+      "name": "BENEFIT",
+      "pmid": "20415897",
+      "year": 2010
+    },
+    "BENEFITEXT": {
+      "name": "BENEFIT-EXT",
+      "pmid": "20415898",
+      "year": 2010
+    },
+    "MDRD": {
+      "name": "MDRD",
+      "pmid": "8114857",
+      "year": 1994
+    },
+    "AASK": {
+      "name": "AASK",
+      "pmid": "12435255",
+      "year": 2002
+    },
+    "REIN": {
+      "name": "REIN",
+      "pmid": "9217756",
+      "year": 1997
+    },
+    "RENAAL": {
+      "name": "RENAAL",
+      "pmid": "11565518",
+      "year": 2001
+    },
+    "IDNT": {
+      "name": "IDNT",
+      "pmid": "11565517",
+      "year": 2001
+    },
+    "TREAT": {
+      "name": "TREAT",
+      "pmid": "19880844",
+      "year": 2009
+    },
+    "ATN": {
+      "name": "ATN",
+      "pmid": "18492867",
+      "year": 2008
+    },
+    "RENAL": {
+      "name": "RENAL",
+      "pmid": "19846848",
+      "year": 2009
+    },
+    "STARRTAKI": {
+      "name": "STARRT-AKI",
+      "pmid": "32668114",
+      "year": 2020
+    },
+    "AKIKI": {
+      "name": "AKIKI",
+      "pmid": "27181456",
+      "year": 2016
+    },
+    "AKIKI2": {
+      "name": "AKIKI-2",
+      "pmid": "33812488",
+      "year": 2021
+    },
+    "ELAIN": {
+      "name": "ELAIN",
+      "pmid": "27209269",
+      "year": 2016
+    },
+    "IDEALICU": {
+      "name": "IDEAL-ICU",
+      "pmid": "30304656",
+      "year": 2018
+    },
+    "PRESERVE": {
+      "name": "PRESERVE",
+      "pmid": "29130810",
+      "year": 2018
+    },
+    "IVOIRE": {
+      "name": "IVOIRE",
+      "pmid": "23740278",
+      "year": 2013
+    },
+    "PEXIVAS": {
+      "name": "PEXIVAS",
+      "pmid": "32053298",
+      "year": 2020
+    },
+    "RAVE": {
+      "name": "RAVE",
+      "pmid": "20647199",
+      "year": 2010
+    },
+    "MENTOR": {
+      "name": "MENTOR",
+      "pmid": "31269364",
+      "year": 2019
+    },
+    "NEFIGARD": {
+      "name": "NefIgArd",
+      "pmid": "37591292",
+      "year": 2023
+    },
+    "APPLAUSEIGAN": {
+      "name": "APPLAUSE-IgAN",
+      "pmid": "39453772",
+      "year": 2025
+    },
+    "REDUCEIT": {
+      "name": "REDUCE-IT",
+      "pmid": "30415628",
+      "year": 2019
+    },
+    "VITAL": {
+      "name": "VITAL",
+      "pmid": "30415637",
+      "year": 2019
+    },
+    "STRENGTH": {
+      "name": "STRENGTH",
+      "pmid": "33190147",
+      "year": 2020
+    },
+    "ASCEND": {
+      "name": "ASCEND",
+      "pmid": "30146932",
+      "year": 2018
+    },
+    "ADVOCATE": {
+      "name": "ADVOCATE",
+      "pmid": "33596356",
+      "year": 2021
+    },
+    "DELIVER": {
+      "name": "DELIVER",
+      "pmid": "36027570",
+      "year": 2022
+    },
+    "EASTAFNET4": {
+      "name": "EAST-AFNET 4",
+      "pmid": "32865375",
+      "year": 2020
+    },
+    "CASTLEAF": {
+      "name": "CASTLE-AF",
+      "pmid": "29385358",
+      "year": 2018
+    },
+    "COAPT": {
+      "name": "COAPT",
+      "pmid": "30280640",
+      "year": 2018
+    },
+    "CLEAROUTCOMES": {
+      "name": "CLEAR Outcomes",
+      "pmid": "36876740",
+      "year": 2023
+    },
+    "COLCOT": {
+      "name": "COLCOT",
+      "pmid": "31733140",
+      "year": 2019
+    },
+    "STICH": {
+      "name": "STICH",
+      "pmid": "21463150",
+      "year": 2011
+    },
+    "AFFIRMAHF": {
+      "name": "AFFIRM-AHF",
+      "pmid": "33197395",
+      "year": 2020
+    },
+    "LODOCO2": {
+      "name": "LoDoCo2",
+      "pmid": "32865380",
+      "year": 2020
+    },
+    "NOTT": {
+      "name": "NOTT",
+      "pmid": "6776858",
+      "year": 1980
+    },
+    "IMPACT": {
+      "name": "IMPACT",
+      "pmid": "29668352",
+      "year": 2018
+    },
+    "ETHOS": {
+      "name": "ETHOS",
+      "pmid": "32579807",
+      "year": 2020
+    },
+    "PEITHO": {
+      "name": "PEITHO",
+      "pmid": "24716681",
+      "year": 2014
+    },
+    "MIST2": {
+      "name": "MIST2",
+      "pmid": "21830966",
+      "year": 2011
+    },
+    "ACURASYS": {
+      "name": "ACURASYS",
+      "pmid": "20843245",
+      "year": 2010
+    },
+    "DEXAARDS": {
+      "name": "DEXA-ARDS",
+      "pmid": "32043986",
+      "year": 2020
+    },
+    "AMPLIFY": {
+      "name": "AMPLIFY",
+      "pmid": "23808982",
+      "year": 2013
+    },
+    "CARAVAGGIO": {
+      "name": "CARAVAGGIO",
+      "pmid": "32223112",
+      "year": 2020
+    },
+    "TRICC": {
+      "name": "TRICC",
+      "pmid": "9971864",
+      "year": 1999
+    },
+    "REALITY": {
+      "name": "REALITY",
+      "pmid": "33560322",
+      "year": 2021
+    },
+    "TRAPS": {
+      "name": "TRAPS",
+      "pmid": "30002145",
+      "year": 2018
+    },
+    "HOKUSAIVTECANCER": {
+      "name": "HOKUSAI-VTE Cancer",
+      "pmid": "29231094",
+      "year": 2018
+    },
+    "SELECTD": {
+      "name": "SELECT-D",
+      "pmid": "29746227",
+      "year": 2018
+    },
+    "WAKEUP": {
+      "name": "WAKE-UP",
+      "pmid": "29766770",
+      "year": 2018
+    },
+    "EXTEND": {
+      "name": "EXTEND",
+      "pmid": "31067369",
+      "year": 2019
+    },
+    "ACT": {
+      "name": "AcT",
+      "pmid": "35779553",
+      "year": 2022
+    },
+    "CHANCE": {
+      "name": "CHANCE",
+      "pmid": "23803136",
+      "year": 2013
+    },
+    "POINT": {
+      "name": "POINT",
+      "pmid": "29766750",
+      "year": 2018
+    },
+    "THALES": {
+      "name": "THALES",
+      "pmid": "32668111",
+      "year": 2020
+    },
+    "WATERFALL": {
+      "name": "WATERFALL",
+      "pmid": "36103415",
+      "year": 2022
+    },
+    "SONIC": {
+      "name": "SONIC",
+      "pmid": "20393175",
+      "year": 2010
+    },
+    "CALM": {
+      "name": "CALM",
+      "pmid": "29096949",
+      "year": 2017
+    },
+    "CONFIRM": {
+      "name": "CONFIRM",
+      "pmid": "33657294",
+      "year": 2021
+    },
+    "REPRIEVE": {
+      "name": "REPRIEVE",
+      "pmid": "37486775",
+      "year": 2023
+    },
+    "STUDY31A5349": {
+      "name": "Study 31 / A5349",
+      "pmid": "33951360",
+      "year": 2021
+    },
+    "BALANCEBACTEREMIA": {
+      "name": "BALANCE (bacteremia)",
+      "pmid": "39565030",
+      "year": 2025
+    },
+    "OVIVA": {
+      "name": "OVIVA",
+      "pmid": "30699315",
+      "year": 2019
+    },
+    "STOPIT": {
+      "name": "STOP-IT",
+      "pmid": "25992746",
+      "year": 2015
+    },
+    "MERINO": {
+      "name": "MERINO",
+      "pmid": "30208454",
+      "year": 2018
+    },
+    "SABATO": {
+      "name": "SABATO",
+      "pmid": "38244557",
+      "year": 2024
+    },
+    "DOTS": {
+      "name": "DOTS",
+      "pmid": "40802264",
+      "year": 2025
+    },
+    "SAFE": {
+      "name": "SAFE",
+      "pmid": "15163774",
+      "year": 2004
+    },
+    "FACTT": {
+      "name": "FACTT",
+      "pmid": "16714767",
+      "year": 2006
+    },
+    "CLOVERS": {
+      "name": "CLOVERS",
+      "pmid": "36688507",
+      "year": 2023
+    },
+    "CLASSIC": {
+      "name": "CLASSIC",
+      "pmid": "35709019",
+      "year": 2022
+    },
+    "TRISS": {
+      "name": "TRISS",
+      "pmid": "25270275",
+      "year": 2014
+    },
+    "MINDUSA": {
+      "name": "MIND-USA",
+      "pmid": "30346242",
+      "year": 2018
+    },
+    "RALES": {
+      "name": "RALES",
+      "pmid": "10471456",
+      "year": 1999
+    },
+    "EPHESUS": {
+      "name": "EPHESUS",
+      "pmid": "12668699",
+      "year": 2003
+    },
+    "COMPLETE": {
+      "name": "COMPLETE",
+      "pmid": "31475795",
+      "year": 2019
+    },
+    "FAME": {
+      "name": "FAME",
+      "pmid": "19144937",
+      "year": 2009
+    },
+    "FREEDOM": {
+      "name": "FREEDOM",
+      "pmid": "23121323",
+      "year": 2012
+    },
+    "AUGUSTUS": {
+      "name": "AUGUSTUS",
+      "pmid": "30883055",
+      "year": 2019
+    },
+    "INVICTUS": {
+      "name": "INVICTUS",
+      "pmid": "36036525",
+      "year": 2022
+    },
+    "TORCH": {
+      "name": "TORCH",
+      "pmid": "17314337",
+      "year": 2007
+    },
+    "FLAME": {
+      "name": "FLAME",
+      "pmid": "27181606",
+      "year": 2016
+    },
+    "LOTT": {
+      "name": "LOTT",
+      "pmid": "27783918",
+      "year": 2016
+    },
+    "HOTHMV": {
+      "name": "HOT-HMV",
+      "pmid": "28528348",
+      "year": 2017
+    },
+    "SAMMPRIS": {
+      "name": "SAMMPRIS",
+      "pmid": "21899409",
+      "year": 2011
+    },
+    "NASCET": {
+      "name": "NASCET",
+      "pmid": "1852179",
+      "year": 1991
+    },
+    "SPS3ANTIPLATELET": {
+      "name": "SPS3 (antiplatelet)",
+      "pmid": "22931315",
+      "year": 2012
+    },
+    "NAVIGATEESUS": {
+      "name": "NAVIGATE ESUS",
+      "pmid": "29766772",
+      "year": 2018
+    },
+    "SORTALBUMININSBP": {
+      "name": "SORT (albumin in SBP)",
+      "pmid": "10432325",
+      "year": 1999
+    },
+    "STOPAH": {
+      "name": "STOPAH",
+      "pmid": "25901427",
+      "year": 2015
+    },
+    "ATTIRE": {
+      "name": "ATTIRE",
+      "pmid": "33657293",
+      "year": 2021
+    },
+    "HALTIT": {
+      "name": "HALT-IT",
+      "pmid": "32563378",
+      "year": 2020
+    },
+    "DPP": {
+      "name": "DPP",
+      "pmid": "11832527",
+      "year": 2002
+    },
+    "WHIEP": {
+      "name": "WHI (E+P)",
+      "pmid": "12117397",
+      "year": 2002
+    },
+    "HERS": {
+      "name": "HERS",
+      "pmid": "9718051",
+      "year": 1998
+    },
+    "CATIE": {
+      "name": "CATIE",
+      "pmid": "16172203",
+      "year": 2005
+    },
+    "STICHES": {
+      "name": "STICHES",
+      "pmid": "27040723",
+      "year": 2016
+    },
+    "PROCESS": {
+      "name": "ProCESS",
+      "pmid": "24635773",
+      "year": 2014
+    },
+    "ARISE": {
+      "name": "ARISE",
+      "pmid": "25272316",
+      "year": 2014
+    },
+    "PROMISE": {
+      "name": "ProMISe",
+      "pmid": "25776532",
+      "year": 2015
+    },
+    "SPICEIII": {
+      "name": "SPICE III",
+      "pmid": "31112380",
+      "year": 2019
+    },
+    "SHIFT": {
+      "name": "SHIFT",
+      "pmid": "20801500",
+      "year": 2010
+    },
+    "MADITII": {
+      "name": "MADIT-II",
+      "pmid": "11907286",
+      "year": 2002
+    },
+    "SCDHEFT": {
+      "name": "SCD-HeFT",
+      "pmid": "15659722",
+      "year": 2005
+    },
+    "PIONEERAFPCI": {
+      "name": "PIONEER AF-PCI",
+      "pmid": "27959713",
+      "year": 2016
+    },
+    "REDUALPCI": {
+      "name": "RE-DUAL PCI",
+      "pmid": "28844193",
+      "year": 2017
+    },
+    "FAME2": {
+      "name": "FAME 2",
+      "pmid": "22924638",
+      "year": 2012
+    },
+    "UPLIFT": {
+      "name": "UPLIFT",
+      "pmid": "18836213",
+      "year": 2008
+    },
+    "NETT": {
+      "name": "NETT",
+      "pmid": "12759479",
+      "year": 2003
+    },
+    "CREST": {
+      "name": "CREST",
+      "pmid": "20505173",
+      "year": 2010
+    },
+    "RESPECTESUS": {
+      "name": "RE-SPECT ESUS",
+      "pmid": "31091372",
+      "year": 2019
+    },
+    "RESPECTPFO": {
+      "name": "RESPECT (PFO)",
+      "pmid": "23514286",
+      "year": 2013
+    },
+    "CLOSE": {
+      "name": "CLOSE",
+      "pmid": "28902593",
+      "year": 2017
+    },
+    "LOOKAHEAD": {
+      "name": "Look AHEAD",
+      "pmid": "23796131",
+      "year": 2013
+    },
+    "ORIGIN": {
+      "name": "ORIGIN",
+      "pmid": "22686416",
+      "year": 2012
+    },
+    "LIFEGERIATRICS": {
+      "name": "LIFE (geriatrics)",
+      "pmid": "24866862",
+      "year": 2014
+    },
+    "ATACH2": {
+      "name": "ATACH-2",
+      "pmid": "27276234",
+      "year": 2016
+    },
+    "INTERACT2": {
+      "name": "INTERACT2",
+      "pmid": "23713578",
+      "year": 2013
+    },
+    "ESETT": {
+      "name": "ESETT",
+      "pmid": "31774955",
+      "year": 2019
+    },
+    "CLARITYAD": {
+      "name": "CLARITY-AD",
+      "pmid": "36449413",
+      "year": 2023
+    },
+    "TRAILBLAZERALZ2": {
+      "name": "TRAILBLAZER-ALZ 2",
+      "pmid": "37459141",
+      "year": 2023
+    },
+    "ORATORIO": {
+      "name": "ORATORIO",
+      "pmid": "28002688",
+      "year": 2017
+    },
+    "MGTX": {
+      "name": "MGTX",
+      "pmid": "27509100",
+      "year": 2016
+    },
+    "EARLYSTIM": {
+      "name": "EARLYSTIM",
+      "pmid": "23406026",
+      "year": 2013
+    },
+    "LEAPLEVODOPAPD": {
+      "name": "LEAP (levodopa PD)",
+      "pmid": "30673543",
+      "year": 2019
+    },
+    "ADAPTEFGARTIGIMODGMG": {
+      "name": "ADAPT (efgartigimod gMG)",
+      "pmid": "34146511",
+      "year": 2021
+    },
+    "ORALSURVEILLANCE": {
+      "name": "ORAL Surveillance",
+      "pmid": "35081280",
+      "year": 2022
+    },
+    "GIACTA": {
+      "name": "GiACTA",
+      "pmid": "28745999",
+      "year": 2017
+    },
+    "BLISSLN": {
+      "name": "BLISS-LN",
+      "pmid": "32937045",
+      "year": 2020
+    },
+    "MAINRITSAN": {
+      "name": "MAINRITSAN",
+      "pmid": "25372085",
+      "year": 2014
+    },
+    "RITUXVAS": {
+      "name": "RITUXVAS",
+      "pmid": "20647198",
+      "year": 2010
+    },
+    "MIRRA": {
+      "name": "MIRRA",
+      "pmid": "28514601",
+      "year": 2017
+    },
+    "TULIP2": {
+      "name": "TULIP-2",
+      "pmid": "31851795",
+      "year": 2020
+    },
+    "SENSCIS": {
+      "name": "SENSCIS",
+      "pmid": "31112379",
+      "year": 2019
+    },
+    "FOCUSSCED": {
+      "name": "focuSSced",
+      "pmid": "32866440",
+      "year": 2020
+    },
+    "CARES": {
+      "name": "CARES",
+      "pmid": "29527974",
+      "year": 2018
+    },
+    "UNIFI": {
+      "name": "UNIFI",
+      "pmid": "31553833",
+      "year": 2019
+    },
+    "UACHIEVE": {
+      "name": "U-ACHIEVE",
+      "pmid": "35644166",
+      "year": 2022
+    },
+    "UEXCELUEXCEED": {
+      "name": "U-EXCEL / U-EXCEED",
+      "pmid": "37224198",
+      "year": 2023
+    },
+    "LIBERTYEOE": {
+      "name": "LIBERTY-EoE",
+      "pmid": "36546624",
+      "year": 2022
+    },
+    "MAESTRONASH": {
+      "name": "MAESTRO-NASH",
+      "pmid": "38324483",
+      "year": 2024
+    },
+    "MOTIVATERISANKIZUMABCD": {
+      "name": "MOTIVATE (risankizumab CD)",
+      "pmid": "35644154",
+      "year": 2022
+    },
+    "PLATO": {
+      "name": "PLATO",
+      "pmid": "19717846",
+      "year": 2009
+    },
+    "TRITONTIMI38": {
+      "name": "TRITON-TIMI 38",
+      "pmid": "17982182",
+      "year": 2007
+    },
+    "EXPLORERHCM": {
+      "name": "EXPLORER-HCM",
+      "pmid": "32871100",
+      "year": 2020
+    },
+    "RIVAL": {
+      "name": "RIVAL",
+      "pmid": "21470671",
+      "year": 2011
+    },
+    "MATRIX": {
+      "name": "MATRIX",
+      "pmid": "25791214",
+      "year": 2015
+    },
+    "LIPID": {
+      "name": "LIPID",
+      "pmid": "9841303",
+      "year": 1998
+    },
+    "EINSTEINDVT": {
+      "name": "EINSTEIN-DVT",
+      "pmid": "21128814",
+      "year": 2010
+    },
+    "EINSTEINPE": {
+      "name": "EINSTEIN-PE",
+      "pmid": "22449293",
+      "year": 2012
+    },
+    "RECOVER": {
+      "name": "RE-COVER",
+      "pmid": "19966341",
+      "year": 2009
+    },
+    "HOKUSAIVTE": {
+      "name": "HOKUSAI-VTE",
+      "pmid": "23991658",
+      "year": 2013
+    },
+    "HERCULES": {
+      "name": "HERCULES",
+      "pmid": "30625070",
+      "year": 2019
+    },
+    "AMBITION": {
+      "name": "AMBITION",
+      "pmid": "26308684",
+      "year": 2015
+    },
+    "STELLAR": {
+      "name": "STELLAR",
+      "pmid": "36877098",
+      "year": 2023
+    },
+    "BPALMTBPRACTECAL": {
+      "name": "BPaLM (TB-PRACTECAL)",
+      "pmid": "36546625",
+      "year": 2022
+    },
+    "MRCLTOT": {
+      "name": "MRC LTOT",
+      "pmid": "6110912",
+      "year": 1981
+    },
+    "AURORA1": {
+      "name": "AURORA-1",
+      "pmid": "33971155",
+      "year": 2021
+    },
+    "PATHWAY2": {
+      "name": "PATHWAY-2",
+      "pmid": "26414968",
+      "year": 2015
+    },
+    "TEMPO34": {
+      "name": "TEMPO 3:4",
+      "pmid": "23121377",
+      "year": 2012
+    },
+    "CANVAS": {
+      "name": "CANVAS",
+      "pmid": "28605608",
+      "year": 2017
+    },
+    "ASPREE": {
+      "name": "ASPREE",
+      "pmid": "30221596",
+      "year": 2018
+    },
+    "ARRIVE": {
+      "name": "ARRIVE",
+      "pmid": "30158069",
+      "year": 2018
+    },
+    "STARD": {
+      "name": "STAR*D",
+      "pmid": "17074942",
+      "year": 2006
+    },
+    "EAGLES": {
+      "name": "EAGLES",
+      "pmid": "27116918",
+      "year": 2016
+    },
+    "PIONEERIII": {
+      "name": "PIONEER I / II",
+      "pmid": "27518661",
+      "year": 2016
+    },
+    "SUNSHINESUNRISE": {
+      "name": "SUNSHINE / SUNRISE",
+      "pmid": "36746171",
+      "year": 2023
+    },
+    "AREDS": {
+      "name": "AREDS",
+      "pmid": "11594942",
+      "year": 2001
+    },
+    "AREDS2": {
+      "name": "AREDS2",
+      "pmid": "23644932",
+      "year": 2013
+    },
+    "ONTT": {
+      "name": "ONTT",
+      "pmid": "1734247",
+      "year": 1992
+    },
+    "LIGHT": {
+      "name": "LiGHT",
+      "pmid": "30862377",
+      "year": 2019
+    },
+    "UKGTS": {
+      "name": "UKGTS",
+      "pmid": "25533656",
+      "year": 2015
+    },
+    "PACIFIC": {
+      "name": "PACIFIC",
+      "pmid": "28885881",
+      "year": 2017
+    },
+    "FLAURA": {
+      "name": "FLAURA",
+      "pmid": "29151359",
+      "year": 2018
+    },
+    "ADAURA": {
+      "name": "ADAURA",
+      "pmid": "32955177",
+      "year": 2020
+    },
+    "KEYNOTE189": {
+      "name": "KEYNOTE-189",
+      "pmid": "29658856",
+      "year": 2018
+    },
+    "KEYNOTE522": {
+      "name": "KEYNOTE-522",
+      "pmid": "32101663",
+      "year": 2020
+    },
+    "CLEOPATRA": {
+      "name": "CLEOPATRA",
+      "pmid": "22149875",
+      "year": 2012
+    },
+    "CHAARTED": {
+      "name": "CHAARTED",
+      "pmid": "26244877",
+      "year": 2015
+    },
+    "LATITUDE": {
+      "name": "LATITUDE",
+      "pmid": "28578607",
+      "year": 2017
+    },
+    "DESTINYBREAST03": {
+      "name": "DESTINY-Breast03",
+      "pmid": "35320644",
+      "year": 2022
+    },
+    "VISION": {
+      "name": "VISION",
+      "pmid": "34161051",
+      "year": 2021
+    },
+    "CLOSUREAF": {
+      "name": "CLOSURE-AF",
+      "pmid": "41849741",
+      "year": 2026
+    },
+    "FINEARTSHF": {
+      "name": "FINEARTS-HF",
+      "pmid": "39225278",
+      "year": 2024
+    },
+    "SUMMITHFPEF": {
+      "name": "SUMMIT-HFpEF",
+      "pmid": "39555826",
+      "year": 2024
+    },
+    "STEPHFPEF": {
+      "name": "STEP-HFpEF",
+      "pmid": "37622681",
+      "year": 2023
+    },
+    "EARLYTAVR": {
+      "name": "EARLY TAVR",
+      "pmid": "39466903",
+      "year": 2024
+    },
+    "REDUCEAMI": {
+      "name": "REDUCE-AMI",
+      "pmid": "38587241",
+      "year": 2024
+    },
+    "DANGERSHOCK": {
+      "name": "DanGer Shock",
+      "pmid": "38587239",
+      "year": 2024
+    },
+    "OCEANICAF": {
+      "name": "OCEANIC-AF",
+      "pmid": "39225267",
+      "year": 2024
+    },
+    "AZALEATIMI71": {
+      "name": "AZALEA-TIMI 71",
+      "pmid": "39842011",
+      "year": 2025
+    },
+    "ARTESIA": {
+      "name": "ARTESIA",
+      "pmid": "37952132",
+      "year": 2024
+    },
+    "BAXHTN": {
+      "name": "BaxHTN",
+      "pmid": "40888730",
+      "year": 2025
+    },
+    "TRILUMINATEPIVOTAL": {
+      "name": "TRILUMINATE Pivotal",
+      "pmid": "36876753",
+      "year": 2023
+    },
+    "CLEARSYNERGY": {
+      "name": "CLEAR SYNERGY",
+      "pmid": "39555814",
+      "year": 2024
+    },
+    "EMPACTMI": {
+      "name": "EMPACT-MI",
+      "pmid": "38587237",
+      "year": 2024
+    },
+    "SOUL": {
+      "name": "SOUL",
+      "pmid": "40162642",
+      "year": 2025
+    },
+    "SURMOUNT2": {
+      "name": "SURMOUNT-2",
+      "pmid": "37385275",
+      "year": 2023
+    },
+    "RETATRUTIDEP2": {
+      "name": "Retatrutide-P2",
+      "pmid": "37366315",
+      "year": 2023
+    },
+    "SURMOUNTOSA": {
+      "name": "SURMOUNT-OSA",
+      "pmid": "38912654",
+      "year": 2024
+    },
+    "STEP9": {
+      "name": "STEP-9",
+      "pmid": "39476339",
+      "year": 2024
+    },
+    "STRIDE": {
+      "name": "STRIDE",
+      "pmid": "40169145",
+      "year": 2025
+    },
+    "SURMOUNT5": {
+      "name": "SURMOUNT-5",
+      "pmid": "40353578",
+      "year": 2025
+    },
+    "REDEFINE1": {
+      "name": "REDEFINE-1",
+      "pmid": "40544433",
+      "year": 2025
+    },
+    "ACHIEVE1": {
+      "name": "ACHIEVE-1",
+      "pmid": "40544435",
+      "year": 2025
+    },
+    "ATTAIN1": {
+      "name": "ATTAIN-1",
+      "pmid": "40960239",
+      "year": 2025
+    },
+    "ALIGN": {
+      "name": "ALIGN",
+      "pmid": "39460694",
+      "year": 2024
+    },
+    "CONFIDENCE": {
+      "name": "CONFIDENCE",
+      "pmid": "40470996",
+      "year": 2025
+    },
+    "APPEARC3G": {
+      "name": "APPEAR-C3G",
+      "pmid": "41016405",
+      "year": 2025
+    },
+    "ORIGIN3": {
+      "name": "ORIGIN-3",
+      "pmid": "41196369",
+      "year": 2025
+    },
+    "ESSENCE": {
+      "name": "ESSENCE",
+      "pmid": "40305708",
+      "year": 2025
+    },
+    "CAPECOD": {
+      "name": "CAPE COD",
+      "pmid": "36942789",
+      "year": 2023
+    },
+    "BOREAS": {
+      "name": "BOREAS",
+      "pmid": "37272521",
+      "year": 2023
+    },
+    "NOTUS": {
+      "name": "NOTUS",
+      "pmid": "38767614",
+      "year": 2024
+    },
+    "ASPEN": {
+      "name": "ASPEN",
+      "pmid": "40267423",
+      "year": 2025
+    },
+    "FIBRONEERIPF": {
+      "name": "FIBRONEER-IPF",
+      "pmid": "40387033",
+      "year": 2025
+    },
+    "ZENITHPAH": {
+      "name": "ZENITH-PAH",
+      "pmid": "40167274",
+      "year": 2025
+    },
+    "PREOXI": {
+      "name": "PREOXI",
+      "pmid": "38869091",
+      "year": 2024
+    },
+    "BLINGIII": {
+      "name": "BLING III",
+      "pmid": "38864155",
+      "year": 2024
+    },
+    "REVISE": {
+      "name": "REVISE",
+      "pmid": "38875111",
+      "year": 2024
+    },
+    "ARISEFLUIDS": {
+      "name": "ARISE FLUIDS",
+      "pmid": "42274006",
+      "year": 2025
+    },
+    "PURPOSE1": {
+      "name": "PURPOSE 1",
+      "pmid": "39046157",
+      "year": 2024
+    },
+    "PURPOSE2": {
+      "name": "PURPOSE 2",
+      "pmid": "39602624",
+      "year": 2024
+    },
+    "ENDTB": {
+      "name": "endTB",
+      "pmid": "39879593",
+      "year": 2024
+    },
+    "DOXYPEP": {
+      "name": "DoxyPEP",
+      "pmid": "37018493",
+      "year": 2023
+    },
+    "VIVID1": {
+      "name": "VIVID-1",
+      "pmid": "39581202",
+      "year": 2024
+    },
+    "QUASAR": {
+      "name": "QUASAR",
+      "pmid": "39706209",
+      "year": 2024
+    },
+    "GRAVITI": {
+      "name": "GRAVITI",
+      "pmid": "40113101",
+      "year": 2025
+    },
+    "ELATIVE": {
+      "name": "ELATIVE",
+      "pmid": "37962077",
+      "year": 2024
+    },
+    "RESPONSEPBC": {
+      "name": "RESPONSE-PBC",
+      "pmid": "38381664",
+      "year": 2024
+    },
+    "SYNERGYNASH": {
+      "name": "SYNERGY-NASH",
+      "pmid": "38856224",
+      "year": 2024
+    },
+    "SURVODUTIDEMASH": {
+      "name": "survodutide-MASH",
+      "pmid": "38847460",
+      "year": 2024
+    },
+    "HARMONYMASH": {
+      "name": "HARMONY-MASH",
+      "pmid": "40818852",
+      "year": 2025
+    },
+    "ELEVATEUC": {
+      "name": "ELEVATE-UC",
+      "pmid": "36871574",
+      "year": 2023
+    },
+    "EMERALD1": {
+      "name": "EMERALD-1",
+      "pmid": "39798579",
+      "year": 2025
+    },
+    "SELECTGCA": {
+      "name": "SELECT-GCA",
+      "pmid": "40174237",
+      "year": 2025
+    },
+    "REGENCY": {
+      "name": "REGENCY",
+      "pmid": "39927615",
+      "year": 2025
+    },
+    "MITIGATE": {
+      "name": "MITIGATE",
+      "pmid": "39541094",
+      "year": 2025
+    },
+    "BEMOBILE": {
+      "name": "BE-MOBILE",
+      "pmid": "36649967",
+      "year": 2023
+    },
+    "PRODERM": {
+      "name": "ProDERM",
+      "pmid": "36198179",
+      "year": 2022
+    },
+    "APPLYPNH": {
+      "name": "APPLY-PNH",
+      "pmid": "38477987",
+      "year": 2024
+    },
+    "IMROZ": {
+      "name": "IMROZ",
+      "pmid": "38832972",
+      "year": 2024
+    },
+    "AQUILA": {
+      "name": "AQUILA",
+      "pmid": "39652675",
+      "year": 2025
+    },
+    "NADINA": {
+      "name": "NADINA",
+      "pmid": "38828984",
+      "year": 2024
+    },
+    "EV302": {
+      "name": "EV-302",
+      "pmid": "38446675",
+      "year": 2024
+    },
+    "LAURA": {
+      "name": "LAURA",
+      "pmid": "38828946",
+      "year": 2024
+    },
+    "NATALEE": {
+      "name": "NATALEE",
+      "pmid": "38507751",
+      "year": 2024
+    },
+    "DESTINYBREAST06": {
+      "name": "DESTINY-Breast06",
+      "pmid": "39282896",
+      "year": 2024
+    },
+    "APICAT": {
+      "name": "API-CAT",
+      "pmid": "40162636",
+      "year": 2025
+    },
+    "CARTITUDE4": {
+      "name": "CARTITUDE-4",
+      "pmid": "37272512",
+      "year": 2023
+    },
+    "ANNEXAI": {
+      "name": "ANNEXA-I",
+      "pmid": "38749032",
+      "year": 2024
+    },
+    "ELAN": {
+      "name": "ELAN",
+      "pmid": "37222476",
+      "year": 2023
+    },
+    "OPTIMAS": {
+      "name": "OPTIMAS",
+      "pmid": "39491870",
+      "year": 2024
+    },
+    "SELECT2": {
+      "name": "SELECT2",
+      "pmid": "36762865",
+      "year": 2023
+    },
+    "ANGELASPECT": {
+      "name": "ANGEL-ASPECT",
+      "pmid": "36762852",
+      "year": 2023
+    },
+    "TIMELESS": {
+      "name": "TIMELESS",
+      "pmid": "38884324",
+      "year": 2024
+    },
+    "HERCULESMS": {
+      "name": "HERCULES-MS",
+      "pmid": "40202696",
+      "year": 2025
+    },
+    "MYCARING": {
+      "name": "MycarinG",
+      "pmid": "37059507",
+      "year": 2023
+    },
+    "STEM": {
+      "name": "STEM",
+      "pmid": "39565980",
+      "year": 2025
+    },
+    "FELZARTAMABAMR": {
+      "name": "Felzartamab AMR",
+      "pmid": "38804514",
+      "year": 2024
+    },
+    "SSASS": {
+      "name": "SSaSS",
+      "pmid": "34459569",
+      "year": 2021
+    },
+    "OPALHK": {
+      "name": "OPAL-HK",
+      "pmid": "25415805",
+      "year": 2015
+    },
+    "ZS9PACKHAM": {
+      "name": "ZS-9 (Packham)",
+      "pmid": "25415807",
+      "year": 2015
+    },
+    "SALSA": {
+      "name": "SALSA",
+      "pmid": "33104189",
+      "year": 2021
+    },
+    "REPRISE": {
+      "name": "REPRISE",
+      "pmid": "29105594",
+      "year": 2017
+    },
+    "STARMEN": {
+      "name": "STARMEN",
+      "pmid": "33166580",
+      "year": 2021
+    },
+    "CHAP": {
+      "name": "CHAP",
+      "pmid": "35363951",
+      "year": 2022
+    },
+    "STOPACEI": {
+      "name": "STOP-ACEi",
+      "pmid": "36326117",
+      "year": 2022
+    },
+    "CLICK": {
+      "name": "CLICK",
+      "pmid": "34739197",
+      "year": 2021
+    },
+    "KALM1": {
+      "name": "KALM-1",
+      "pmid": "31702883",
+      "year": 2020
+    },
+    "ADVOR": {
+      "name": "ADVOR",
+      "pmid": "36027559",
+      "year": 2022
+    },
+    "PERL": {
+      "name": "PERL",
+      "pmid": "32579810",
+      "year": 2020
+    },
+    "CKDFIX": {
+      "name": "CKD-FIX",
+      "pmid": "32579811",
+      "year": 2020
+    },
+    "ASCENDD": {
+      "name": "ASCEND-D",
+      "pmid": "34739194",
+      "year": 2021
+    },
+    "IMLIFIDASEIDES": {
+      "name": "Imlifidase (IdeS)",
+      "pmid": "28767349",
+      "year": 2017
+    },
+    "DUPLEX": {
+      "name": "DUPLEX",
+      "pmid": "37921461",
+      "year": 2023
+    },
+    "CONVINCE": {
+      "name": "CONVINCE",
+      "pmid": "37326323",
+      "year": 2023
+    },
+    "BESTFLUIDS": {
+      "name": "BEST-Fluids",
+      "pmid": "37343576",
+      "year": 2023
+    },
+    "DIAMOND": {
+      "name": "DIAMOND",
+      "pmid": "35900838",
+      "year": 2022
+    },
+    "VEVERIMERTRCA301": {
+      "name": "Veverimer (TRCA-301)",
+      "pmid": "30857647",
+      "year": 2019
+    },
+    "SPYRALHTNONMED": {
+      "name": "SPYRAL HTN-ON MED",
+      "pmid": "29803589",
+      "year": 2018
+    },
+    "RADIANCEHTNSOLO": {
+      "name": "RADIANCE-HTN SOLO",
+      "pmid": "29803590",
+      "year": 2018
+    },
+    "RENALRIP": {
+      "name": "RenalRIP",
+      "pmid": "26024502",
+      "year": 2015
+    },
+    "PREVAKI": {
+      "name": "PrevAKI",
+      "pmid": "28110412",
+      "year": 2017
+    },
+    "SIBEPRENLIMABENVISIONPH2": {
+      "name": "Sibeprenlimab ENVISION Ph2",
+      "pmid": "37916620",
+      "year": 2024
+    },
+    "VICTORIA": {
+      "name": "VICTORIA",
+      "pmid": "32222134",
+      "year": 2020
+    },
+    "GALACTICHF": {
+      "name": "GALACTIC-HF",
+      "pmid": "33185990",
+      "year": 2021
+    },
+    "TRANSFORMHF": {
+      "name": "TRANSFORM-HF",
+      "pmid": "36648467",
+      "year": 2023
+    },
+    "STRONGHF": {
+      "name": "STRONG-HF",
+      "pmid": "36356631",
+      "year": 2022
+    },
+    "IRONMAN": {
+      "name": "IRONMAN",
+      "pmid": "36347265",
+      "year": 2022
+    },
+    "SOLOISTWHF": {
+      "name": "SOLOIST-WHF",
+      "pmid": "33200892",
+      "year": 2021
+    },
+    "PIONEERHF": {
+      "name": "PIONEER-HF",
+      "pmid": "30415601",
+      "year": 2019
+    },
+    "ORION1011": {
+      "name": "ORION-10/11",
+      "pmid": "32187462",
+      "year": 2020
+    },
+    "ELIPSEHOFH": {
+      "name": "ELIPSE HoFH",
+      "pmid": "32813947",
+      "year": 2020
+    },
+    "EARLYAF": {
+      "name": "EARLY-AF",
+      "pmid": "33197159",
+      "year": 2021
+    },
+    "TWILIGHT": {
+      "name": "TWILIGHT",
+      "pmid": "31556978",
+      "year": 2019
+    },
+    "ISARREACT5": {
+      "name": "ISAR-REACT 5",
+      "pmid": "31475799",
+      "year": 2019
+    },
+    "MASTERDAPT": {
+      "name": "MASTER DAPT",
+      "pmid": "34449185",
+      "year": 2021
+    },
+    "EVOLUTLOWRISK": {
+      "name": "Evolut Low Risk",
+      "pmid": "30883053",
+      "year": 2019
+    },
+    "MITRAFR": {
+      "name": "MITRA-FR",
+      "pmid": "30145927",
+      "year": 2018
+    },
+    "TTM": {
+      "name": "TTM",
+      "pmid": "24237006",
+      "year": 2013
+    },
+    "TTM2": {
+      "name": "TTM2",
+      "pmid": "34133859",
+      "year": 2021
+    },
+    "HYPERION": {
+      "name": "HYPERION",
+      "pmid": "31577396",
+      "year": 2019
+    },
+    "CULPRITSHOCK": {
+      "name": "CULPRIT-SHOCK",
+      "pmid": "29083953",
+      "year": 2017
+    },
+    "IABPSHOCKII": {
+      "name": "IABP-SHOCK II",
+      "pmid": "22920912",
+      "year": 2012
+    },
+    "ECLSSHOCK": {
+      "name": "ECLS-SHOCK",
+      "pmid": "37634145",
+      "year": 2023
+    },
+    "ICAP": {
+      "name": "ICAP",
+      "pmid": "23992557",
+      "year": 2013
+    },
+    "CORP": {
+      "name": "CORP",
+      "pmid": "21873705",
+      "year": 2011
+    },
+    "ATTRACT": {
+      "name": "ATTR-ACT",
+      "pmid": "30145929",
+      "year": 2018
+    },
+    "ATTRIBUTECM": {
+      "name": "ATTRibute-CM",
+      "pmid": "38197816",
+      "year": 2024
+    },
+    "HELIOSB": {
+      "name": "HELIOS-B",
+      "pmid": "39213194",
+      "year": 2025
+    },
+    "VALORHCM": {
+      "name": "VALOR-HCM",
+      "pmid": "35798455",
+      "year": 2022
+    },
+    "SEQUOIAHCM": {
+      "name": "SEQUOIA-HCM",
+      "pmid": "38739079",
+      "year": 2024
+    },
+    "EXCEL": {
+      "name": "EXCEL",
+      "pmid": "31562798",
+      "year": 2019
+    },
+    "NOBLE": {
+      "name": "NOBLE",
+      "pmid": "27810312",
+      "year": 2016
+    },
+    "FAME3": {
+      "name": "FAME 3",
+      "pmid": "34735046",
+      "year": 2022
+    },
+    "REVIVEDBCIS2": {
+      "name": "REVIVED-BCIS2",
+      "pmid": "36027563",
+      "year": 2022
+    },
+    "ORBITA": {
+      "name": "ORBITA",
+      "pmid": "29103656",
+      "year": 2018
+    },
+    "ORBITA2": {
+      "name": "ORBITA-2",
+      "pmid": "38015442",
+      "year": 2023
+    },
+    "PROMINENT": {
+      "name": "PROMINENT",
+      "pmid": "36342113",
+      "year": 2022
+    },
+    "MENSA": {
+      "name": "MENSA",
+      "pmid": "25199059",
+      "year": 2014
+    },
+    "SIRIUS": {
+      "name": "SIRIUS",
+      "pmid": "25199060",
+      "year": 2014
+    },
+    "SIROCCO": {
+      "name": "SIROCCO",
+      "pmid": "27609408",
+      "year": 2016
+    },
+    "CALIMA": {
+      "name": "CALIMA",
+      "pmid": "27609406",
+      "year": 2016
+    },
+    "ZONDA": {
+      "name": "ZONDA",
+      "pmid": "28530840",
+      "year": 2017
+    },
+    "QUESTASTHMA": {
+      "name": "QUEST (asthma)",
+      "pmid": "29782217",
+      "year": 2018
+    },
+    "VENTURE": {
+      "name": "VENTURE",
+      "pmid": "29782224",
+      "year": 2018
+    },
+    "PATHWAYTEZEPELUMAB": {
+      "name": "PATHWAY (tezepelumab)",
+      "pmid": "28877011",
+      "year": 2017
+    },
+    "NAVIGATOR": {
+      "name": "NAVIGATOR",
+      "pmid": "33979488",
+      "year": 2021
+    },
+    "SUMMITCOPD": {
+      "name": "SUMMIT (COPD)",
+      "pmid": "27203508",
+      "year": 2016
+    },
+    "WISDOM": {
+      "name": "WISDOM",
+      "pmid": "25196117",
+      "year": 2014
+    },
+    "SERAPHIN": {
+      "name": "SERAPHIN",
+      "pmid": "23984728",
+      "year": 2013
+    },
+    "GRIPHON": {
+      "name": "GRIPHON",
+      "pmid": "26699168",
+      "year": 2015
+    },
+    "PATENT1": {
+      "name": "PATENT-1",
+      "pmid": "23883378",
+      "year": 2013
+    },
+    "CHEST1": {
+      "name": "CHEST-1",
+      "pmid": "23883377",
+      "year": 2013
+    },
+    "VX17445102": {
+      "name": "VX17-445-102",
+      "pmid": "31697873",
+      "year": 2019
+    },
+    "INBUILD": {
+      "name": "INBUILD",
+      "pmid": "31566307",
+      "year": 2019
+    },
+    "PANTHERIPF": {
+      "name": "PANTHER-IPF",
+      "pmid": "22607134",
+      "year": 2012
+    },
+    "ICUROX": {
+      "name": "ICU-ROX",
+      "pmid": "31613432",
+      "year": 2020
+    },
+    "LOCO2": {
+      "name": "LOCO2",
+      "pmid": "32160661",
+      "year": 2020
+    },
+    "HOTICU": {
+      "name": "HOT-ICU",
+      "pmid": "33471452",
+      "year": 2021
+    },
+    "PILOT": {
+      "name": "PILOT",
+      "pmid": "36278971",
+      "year": 2022
+    },
+    "SEDCOM": {
+      "name": "SEDCOM",
+      "pmid": "19188334",
+      "year": 2009
+    },
+    "ABCAWAKENINGBREATHING": {
+      "name": "ABC (awakening breathing)",
+      "pmid": "18191684",
+      "year": 2008
+    },
+    "EPANIC": {
+      "name": "EPaNIC",
+      "pmid": "21714640",
+      "year": 2011
+    },
+    "PERMIT": {
+      "name": "PermiT",
+      "pmid": "25992505",
+      "year": 2015
+    },
+    "TARGETNUTRITION": {
+      "name": "TARGET (nutrition)",
+      "pmid": "30346225",
+      "year": 2018
+    },
+    "NUTRIREA2": {
+      "name": "NUTRIREA-2",
+      "pmid": "29128300",
+      "year": 2018
+    },
+    "VANISH": {
+      "name": "VANISH",
+      "pmid": "27483065",
+      "year": 2016
+    },
+    "65TRIAL": {
+      "name": "65 trial",
+      "pmid": "32049269",
+      "year": 2020
+    },
+    "SOAPII": {
+      "name": "SOAP II",
+      "pmid": "20200382",
+      "year": 2010
+    },
+    "CORTICUS": {
+      "name": "CORTICUS",
+      "pmid": "18184957",
+      "year": 2008
+    },
+    "OSCILLATE": {
+      "name": "OSCILLATE",
+      "pmid": "23339639",
+      "year": 2013
+    },
+    "PNEUMA": {
+      "name": "PneumA",
+      "pmid": "14625336",
+      "year": 2003
+    },
+    "TRACMAN": {
+      "name": "TracMan",
+      "pmid": "23695482",
+      "year": 2013
+    },
+    "TRANSFUSE": {
+      "name": "TRANSFUSE",
+      "pmid": "28952891",
+      "year": 2017
+    },
+    "SUBIRASBT": {
+      "name": "Subira-SBT",
+      "pmid": "31184740",
+      "year": 2019
+    },
+    "CLOT": {
+      "name": "CLOT",
+      "pmid": "12853587",
+      "year": 2003
+    },
+    "ADAMVTE": {
+      "name": "ADAM-VTE",
+      "pmid": "31630479",
+      "year": 2020
+    },
+    "CASSINI": {
+      "name": "CASSINI",
+      "pmid": "30786186",
+      "year": 2019
+    },
+    "AVERT": {
+      "name": "AVERT",
+      "pmid": "30511879",
+      "year": 2019
+    },
+    "ANNEXA4": {
+      "name": "ANNEXA-4",
+      "pmid": "30730782",
+      "year": 2019
+    },
+    "ROMIPLOSTIMITP": {
+      "name": "Romiplostim ITP",
+      "pmid": "18242413",
+      "year": 2008
+    },
+    "RAISE": {
+      "name": "RAISE",
+      "pmid": "20739054",
+      "year": 2011
+    },
+    "FITFOSTAMATINIB": {
+      "name": "FIT (fostamatinib)",
+      "pmid": "29696684",
+      "year": 2018
+    },
+    "HOPEVOXELOTOR": {
+      "name": "HOPE (voxelotor)",
+      "pmid": "31199090",
+      "year": 2019
+    },
+    "SUSTAINCRIZANLIZUMAB": {
+      "name": "SUSTAIN (crizanlizumab)",
+      "pmid": "27959701",
+      "year": 2017
+    },
+    "LGLUTAMINESCD": {
+      "name": "L-Glutamine SCD",
+      "pmid": "30021096",
+      "year": 2018
+    },
+    "PROPPR": {
+      "name": "PROPPR",
+      "pmid": "25647203",
+      "year": 2015
+    },
+    "FAIRHF": {
+      "name": "FAIR-HF",
+      "pmid": "19920054",
+      "year": 2009
+    },
+    "RESONATE": {
+      "name": "RESONATE",
+      "pmid": "24881631",
+      "year": 2014
+    },
+    "MURANO": {
+      "name": "MURANO",
+      "pmid": "29562156",
+      "year": 2018
+    },
+    "ELEVATETN": {
+      "name": "ELEVATE-TN",
+      "pmid": "32305093",
+      "year": 2020
+    },
+    "ALPINE": {
+      "name": "ALPINE",
+      "pmid": "36511784",
+      "year": 2023
+    },
+    "POLARIX": {
+      "name": "POLARIX",
+      "pmid": "34904799",
+      "year": 2022
+    },
+    "ZUMA7": {
+      "name": "ZUMA-7",
+      "pmid": "34891224",
+      "year": 2022
+    },
+    "CASTOR": {
+      "name": "CASTOR",
+      "pmid": "27557302",
+      "year": 2016
+    },
+    "VIALEA": {
+      "name": "VIALE-A",
+      "pmid": "32786187",
+      "year": 2020
+    },
+    "UNITI": {
+      "name": "UNITI",
+      "pmid": "27959607",
+      "year": 2016
+    },
+    "TRUENORTH": {
+      "name": "TRUE NORTH",
+      "pmid": "34587385",
+      "year": 2021
+    },
+    "OCTAVE": {
+      "name": "OCTAVE",
+      "pmid": "28467869",
+      "year": 2017
+    },
+    "ACT1ACT2": {
+      "name": "ACT-1/ACT-2",
+      "pmid": "16339095",
+      "year": 2005
+    },
+    "LUCENT": {
+      "name": "LUCENT",
+      "pmid": "37379135",
+      "year": 2023
+    },
+    "OPT80FIDAXOMICIN": {
+      "name": "OPT-80 (fidaxomicin)",
+      "pmid": "21288078",
+      "year": 2011
+    },
+    "MODIFYIII": {
+      "name": "MODIFY I/II",
+      "pmid": "28121498",
+      "year": 2017
+    },
+    "FMTVANNOOD": {
+      "name": "FMT (Van Nood)",
+      "pmid": "23323867",
+      "year": 2013
+    },
+    "VILLANUEVATRANSFUSION": {
+      "name": "Villanueva Transfusion",
+      "pmid": "23281973",
+      "year": 2013
+    },
+    "PREEMPTIVETIPS": {
+      "name": "Preemptive TIPS",
+      "pmid": "20573925",
+      "year": 2010
+    },
+    "POISEOBETICHOLIC": {
+      "name": "POISE (obeticholic)",
+      "pmid": "27532829",
+      "year": 2016
+    },
+    "PYTHON": {
+      "name": "PYTHON",
+      "pmid": "25409371",
+      "year": 2014
+    },
+    "NORDICC": {
+      "name": "NordICC",
+      "pmid": "36214590",
+      "year": 2022
+    },
+    "DIABOLO": {
+      "name": "DIABOLO",
+      "pmid": "27686365",
+      "year": 2017
+    },
+    "STARTHIV": {
+      "name": "START (HIV)",
+      "pmid": "26192873",
+      "year": 2015
+    },
+    "SINGLE": {
+      "name": "SINGLE",
+      "pmid": "24195548",
+      "year": 2013
+    },
+    "IPREX": {
+      "name": "iPrEx",
+      "pmid": "21091279",
+      "year": 2010
+    },
+    "PARTNER2": {
+      "name": "PARTNER2",
+      "pmid": "31056293",
+      "year": 2019
+    },
+    "DISCOVER": {
+      "name": "DISCOVER",
+      "pmid": "32711800",
+      "year": 2020
+    },
+    "HPTN083": {
+      "name": "HPTN 083",
+      "pmid": "34379922",
+      "year": 2021
+    },
+    "HPTN084": {
+      "name": "HPTN 084",
+      "pmid": "35378077",
+      "year": 2022
+    },
+    "NIXTB": {
+      "name": "Nix-TB",
+      "pmid": "32130813",
+      "year": 2020
+    },
+    "ZENIX": {
+      "name": "ZeNix",
+      "pmid": "36053506",
+      "year": 2022
+    },
+    "ANIDULAFUNGINCANDIDEMIA": {
+      "name": "Anidulafungin-Candidemia",
+      "pmid": "17568028",
+      "year": 2007
+    },
+    "DAPTOMYCINSAB": {
+      "name": "Daptomycin-SAB",
+      "pmid": "16914701",
+      "year": 2006
+    },
+    "FREEDOMDENOSUMAB": {
+      "name": "FREEDOM (denosumab)",
+      "pmid": "19671655",
+      "year": 2009
+    },
+    "HORIZONPFT": {
+      "name": "HORIZON-PFT",
+      "pmid": "17476007",
+      "year": 2007
+    },
+    "FRAME": {
+      "name": "FRAME",
+      "pmid": "27641143",
+      "year": 2016
+    },
+    "ARCH": {
+      "name": "ARCH",
+      "pmid": "28892457",
+      "year": 2017
+    },
+    "VERO": {
+      "name": "VERO",
+      "pmid": "29129436",
+      "year": 2018
+    },
+    "FPTTERIPARATIDE": {
+      "name": "FPT (teriparatide)",
+      "pmid": "11346808",
+      "year": 2001
+    },
+    "ACTIVEABALOPARATIDE": {
+      "name": "ACTIVE (abaloparatide)",
+      "pmid": "27533157",
+      "year": 2016
+    },
+    "TRAVERSE": {
+      "name": "TRAVERSE",
+      "pmid": "37326322",
+      "year": 2023
+    },
+    "SALT1SALT2": {
+      "name": "SALT-1/SALT-2",
+      "pmid": "17105757",
+      "year": 2006
+    },
+    "PREMIER": {
+      "name": "PREMIER",
+      "pmid": "16385520",
+      "year": 2006
+    },
+    "RABEAM": {
+      "name": "RA-BEAM",
+      "pmid": "28199814",
+      "year": 2017
+    },
+    "ORALSTART": {
+      "name": "ORAL Start",
+      "pmid": "24941177",
+      "year": 2014
+    },
+    "CONFIRMS": {
+      "name": "CONFIRMS",
+      "pmid": "20370912",
+      "year": 2010
+    },
+    "PEGLOTICASEGOUT12": {
+      "name": "Pegloticase (GOUT-1/2)",
+      "pmid": "21846852",
+      "year": 2011
+    },
+    "BLISS52": {
+      "name": "BLISS-52",
+      "pmid": "21296403",
+      "year": 2011
+    },
+    "BLISS76": {
+      "name": "BLISS-76",
+      "pmid": "22127708",
+      "year": 2011
+    },
+    "STRIVE": {
+      "name": "STRIVE",
+      "pmid": "29171821",
+      "year": 2017
+    },
+    "ACHIEVEI": {
+      "name": "ACHIEVE I",
+      "pmid": "31800988",
+      "year": 2019
+    },
+    "RIMEGEPANTACUTE": {
+      "name": "Rimegepant acute",
+      "pmid": "31291516",
+      "year": 2019
+    },
+    "OPERAIII": {
+      "name": "OPERA I/II",
+      "pmid": "28002679",
+      "year": 2017
+    },
+    "REGAIN": {
+      "name": "REGAIN",
+      "pmid": "29066163",
+      "year": 2017
+    },
+    "ASTERIAI": {
+      "name": "ASTERIA I",
+      "pmid": "25046337",
+      "year": 2015
+    },
+    "ASTERIAII": {
+      "name": "ASTERIA II",
+      "pmid": "23432142",
+      "year": 2013
+    },
+    "GLACIAL": {
+      "name": "GLACIAL",
+      "pmid": "23810097",
+      "year": 2013
+    },
+    "SINUS24SINUS52": {
+      "name": "SINUS-24/SINUS-52",
+      "pmid": "31543428",
+      "year": 2019
+    },
+    "SYNAPSE": {
+      "name": "SYNAPSE",
+      "pmid": "33872587",
+      "year": 2021
+    },
+    "SOLO1SOLO2": {
+      "name": "SOLO 1/SOLO 2",
+      "pmid": "27690741",
+      "year": 2016
+    },
+    "LIBERTYADCHRONOS": {
+      "name": "LIBERTY AD CHRONOS",
+      "pmid": "28478972",
+      "year": 2017
+    },
+    "MEASUREUP12": {
+      "name": "Measure Up 1/2",
+      "pmid": "34023008",
+      "year": 2021
+    },
+    "JADEMONO1": {
+      "name": "JADE MONO-1",
+      "pmid": "32711801",
+      "year": 2020
+    },
+    "LEAP": {
+      "name": "LEAP",
+      "pmid": "25705822",
+      "year": 2015
+    },
+    "EAT": {
+      "name": "EAT",
+      "pmid": "26943128",
+      "year": 2016
+    },
+    "HELPLANADELUMAB": {
+      "name": "HELP (lanadelumab)",
+      "pmid": "30480729",
+      "year": 2018
+    },
+    "APEX2": {
+      "name": "APeX-2",
+      "pmid": "33098856",
+      "year": 2021
+    },
+    "C1INHNANOFILTERED": {
+      "name": "C1-INH (nanofiltered)",
+      "pmid": "20818886",
+      "year": 2010
+    },
+    "COMPACT": {
+      "name": "COMPACT",
+      "pmid": "28328347",
+      "year": 2017
+    },
+    "PALACE": {
+      "name": "PALACE",
+      "pmid": "37459086",
+      "year": 2023
+    },
+    "GRASSSLITTABLETGT08": {
+      "name": "Grass SLIT tablet (GT-08)",
+      "pmid": "16630937",
+      "year": 2006
+    },
+    "SPACE": {
+      "name": "SPACE",
+      "pmid": "29509867",
+      "year": 2018
+    },
+    "STRIDEFALLS": {
+      "name": "STRIDE (falls)",
+      "pmid": "32640131",
+      "year": 2020
+    },
+    "WHIESTROGENALONE": {
+      "name": "WHI (Estrogen-alone)",
+      "pmid": "15082697",
+      "year": 2004
+    },
+    "PLCO": {
+      "name": "PLCO",
+      "pmid": "19297565",
+      "year": 2009
+    },
+    "ERSPC": {
+      "name": "ERSPC",
+      "pmid": "19297566",
+      "year": 2009
+    },
+    "NLST": {
+      "name": "NLST",
+      "pmid": "21714641",
+      "year": 2011
+    },
+    "NELSON": {
+      "name": "NELSON",
+      "pmid": "31995683",
+      "year": 2020
+    },
+    "POISE2": {
+      "name": "POISE-2",
+      "pmid": "24679062",
+      "year": 2014
+    },
+    "POISE3": {
+      "name": "POISE-3",
+      "pmid": "35363452",
+      "year": 2022
+    },
+    "MANAGE": {
+      "name": "MANAGE",
+      "pmid": "29900874",
+      "year": 2018
+    },
+    "HELPDELIRIUM": {
+      "name": "HELP (delirium)",
+      "pmid": "10053175",
+      "year": 1999
+    },
+    "MAGELLAN": {
+      "name": "MAGELLAN",
+      "pmid": "23388003",
+      "year": 2013
+    },
+    "MARINER": {
+      "name": "MARINER",
+      "pmid": "30145946",
+      "year": 2018
+    },
+    "ADOPT": {
+      "name": "ADOPT",
+      "pmid": "22077144",
+      "year": 2011
+    },
+    "PREDIMED": {
+      "name": "PREDIMED",
+      "pmid": "29897866",
+      "year": 2018
+    },
+    "UKFLEXISIG": {
+      "name": "UK Flexi-Sig",
+      "pmid": "20430429",
+      "year": 2010
+    },
+    "PACE": {
+      "name": "PACE",
+      "pmid": "25064594",
+      "year": 2014
+    },
+    "FASTFEBUXOSTAT": {
+      "name": "FAST (febuxostat)",
+      "pmid": "33181081",
+      "year": 2020
+    },
+    "COSMOSMIND": {
+      "name": "COSMOS-Mind",
+      "pmid": "36102337",
+      "year": 2023
+    },
+    "PARTNERUU": {
+      "name": "PARTNER (U=U)",
+      "pmid": "27404185",
+      "year": 2016
+    }
+  }
+}
