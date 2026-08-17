@@ -616,12 +616,12 @@
       "review_due": "2027-07-13"
     },
     {
-      "id": "aad-atopic-dermatitis-2023-base-2025-adult-focused-update-2026-pediatr",
-      "title": "AAD Atopic Dermatitis - 2023 base + 2025 adult focused update + 2026 pediatric",
+      "id": "aad-atopic-dermatitis-2023-base-2025-adult-focused-update-2026-first-e",
+      "title": "AAD Atopic Dermatitis - 2023 base + 2025 adult focused update + 2026 first-ever pediatric guidelines (prevention + management)",
       "societies": [
         "AAD"
       ],
-      "year": 2025,
+      "year": 2026,
       "status": "current",
       "evidence_type": "guideline",
       "specialties": [
@@ -1517,8 +1517,8 @@
       "review_due": "2027-07-13"
     },
     {
-      "id": "acog-endometriosis-2026",
-      "title": "ACOG Endometriosis 2026",
+      "id": "acog-diagnosis-of-endometriosis-clinical-practice-guideline-no-11-2026",
+      "title": "ACOG Diagnosis of Endometriosis - Clinical Practice Guideline No. 11 (2026; scope is evaluation/diagnosis, NOT comprehensive treatment)",
       "societies": [
         "ACOG"
       ],
@@ -2281,8 +2281,8 @@
       "review_due": "2027-07-13"
     },
     {
-      "id": "asas-eular-2022-acr-2019-axial-spondyloarthritis-acr-update-announced-",
-      "title": "ASAS-EULAR 2022 / ACR 2019 Axial Spondyloarthritis (ACR update announced Jun 2026)",
+      "id": "asas-eular-2022-acr-saa-spartan-2026-axial-spondyloarthritis-2026-upda",
+      "title": "ASAS-EULAR 2022 / ACR-SAA-SPARTAN 2026 Axial Spondyloarthritis (2026 update RELEASED 24 Jun 2026)",
       "societies": [
         "ASAS"
       ],
@@ -2298,7 +2298,7 @@
       "doi": null,
       "access": "open",
       "access_raw": "Open",
-      "summary": "CURRENCY: the ACR/SAA/SPARTAN guideline was UPDATED - approved by the ACR Board 31 May 2026 and announced 24 Jun 2026, replacing the 2019 adult recommendations and adding a first-ever JUVENILE axSpA guideline. Headline change: JAKi UPGRADED to strongly recommended, which reverses the 2019/ASAS-EULAR positioning below. Full manuscript was not yet peer-reviewed and journal-published at announcement, so cite the 2026 update as announced-not-yet-published and prefer it over the 2019 ACR positions. ASAS-EULAR 2022 remains current. Legacy 2019/2022 content follows: NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria).",
+      "summary": "CURRENCY: the ACR/SAA/SPARTAN guideline was UPDATED - approved by the ACR Board 31 May 2026 and announced 24 Jun 2026, replacing the 2019 adult recommendations and adding a first-ever JUVENILE axSpA guideline. Headline change: JAKi UPGRADED to strongly recommended, which reverses the 2019/ASAS-EULAR positioning below. Released 24 Jun 2026 as an ACR press release plus a downloadable guideline summary; the peer-reviewed manuscript may still be pending, so cite it as 'ACR/SAA/SPARTAN 2026 (guideline summary)' and prefer it over the 2019 ACR positions. Verified Aug 2026. ASAS-EULAR 2022 remains current. Legacy 2019/2022 content follows: NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria).",
       "key_recommendations": [],
       "practice_changers": [],
       "do_not_teach": [],
@@ -2986,8 +2986,8 @@
       "review_due": "2027-07-13"
     },
     {
-      "id": "cdc-yellow-book-2026-who-malaria-guidelines-there-is-no-idsa-travel-me",
-      "title": "CDC Yellow Book 2026 + WHO Malaria Guidelines (there is no IDSA travel medicine guideline)",
+      "id": "cdc-yellow-book-2026-who-malaria-guidelines-idsa-s-2006-travel-medicin",
+      "title": "CDC Yellow Book 2026 + WHO Malaria Guidelines (IDSA's 2006 travel-medicine guideline is ARCHIVED and unmaintained - there is no CURRENT IDSA travel guideline)",
       "societies": [
         "CDC"
       ],
@@ -4070,8 +4070,8 @@
       "review_due": "2027-07-13"
     },
     {
-      "id": "kdigo-2012-aki-2026-update-in-review",
-      "title": "KDIGO 2012 AKI (2026 update in review)",
+      "id": "kdigo-2012-aki-2026-aki-akd-update-drafted-mar-2026-public-comment-clo",
+      "title": "KDIGO 2012 AKI (2026 AKI/AKD update drafted Mar 2026; public comment closed 11 May 2026, NOT yet published - the 2012 guideline is still the one in force)",
       "societies": [
         "KDIGO"
       ],
@@ -4351,8 +4351,8 @@
       "review_due": "2027-07-13"
     },
     {
-      "id": "nccn-breast-cancer-modular-versioned-continuously-cite-the-version-you-2026",
-      "title": "NCCN Breast Cancer (modular, versioned continuously - cite the version you used)",
+      "id": "nccn-breast-cancer-one-guideline-covering-dcis-invasive-metastatic-in--2026",
+      "title": "NCCN Breast Cancer (ONE guideline covering DCIS/invasive/metastatic in internal sections - the patient-facing versions are split by stage, the clinician one is not; versioned continuously, cite the version you used)",
       "societies": [
         "NCCN"
       ],
@@ -4463,8 +4463,8 @@
       "review_due": "2026-10-11"
     },
     {
-      "id": "nccn-prostate-v3-2026",
-      "title": "NCCN Prostate v3.2026",
+      "id": "nccn-prostate-v5-2026-verified-aug-2026-nccn-reissues-several-times-a-",
+      "title": "NCCN Prostate v5.2026 (verified Aug 2026; NCCN reissues several times a year, so treat any pinned version as a floor, not the current one)",
       "societies": [
         "NCCN"
       ],
@@ -4648,7 +4648,7 @@
       "doi": null,
       "access": "open",
       "access_raw": "Open",
-      "summary": "PHANTOM-YEAR FIX: there was never a 2024 SSC update (a 2024 re-post of the 2021 PDF is the likely source of that error). SSC 2026 (SCCM/ESICM, Intensive Care Med) is now out and REPLACES 2021 - 129 statements, 46 new. NEW: a conditional recommendation for an initial MAP target of 60-65 mmHg in adults aged 65 and over, rather than a flat 65 for everyone. Core that stands: sepsis = life-threatening organ dysfunction from dysregulated host response; qSOFA is NOT a screening tool (use it to prompt concern, not to rule out). Hour-1 bundle: measure LACTATE, draw BLOOD CULTURES BEFORE antibiotics, give BROAD-SPECTRUM ANTIBIOTICS within 1 hour for septic shock (within 3 h if sepsis without shock and diagnosis uncertain), start 30 mL/kg crystalloid for hypotension or lactate 4 or more, and start VASOPRESSORS to keep MAP at target if fluid-refractory. NOREPINEPHRINE is first-line vasopressor - add vasopressin second rather than escalating norepinephrine indefinitely. Balanced crystalloids over normal saline. Steroids (hydrocortisone) for shock refractory to fluids and pressors. Source control ASAP.",
+      "summary": "PHANTOM-YEAR FIX: there was never a 2024 SSC update (a 2024 re-post of the 2021 PDF is the likely source of that error). SSC 2026 (SCCM/ESICM, Intensive Care Med) is now out and REPLACES 2021 - 129 statements, 46 new. NEW: a conditional recommendation for an initial MAP target of 60-65 mmHg in adults aged 65 and over, rather than a flat 65 for everyone. Core that stands: sepsis = life-threatening organ dysfunction from dysregulated host response; qSOFA is NOT a screening tool (use it to prompt concern, not to rule out). Hour-1 bundle: measure LACTATE, draw BLOOD CULTURES BEFORE antibiotics, give BROAD-SPECTRUM ANTIBIOTICS within 1 hour for septic shock (within 3 h if sepsis without shock and diagnosis uncertain), start 30 mL/kg crystalloid for hypotension or lactate 4 or more, and start VASOPRESSORS to keep MAP at target if fluid-refractory. NOREPINEPHRINE is first-line vasopressor - add vasopressin second rather than escalating norepinephrine indefinitely. Balanced crystalloids over normal saline. Steroids: SSC 2026 SIMPLIFIED this - it now suggests IV corticosteroids for adults with septic shock, WITHOUT the 2021 qualifier of an ongoing vasopressor requirement. Do not state a refractory-shock or vasopressor-dose threshold as a 2026 criterion; 2026 sets no quantitative refractory-shock threshold. (The only 'refractory' framing in the 2026 document is the methylene blue statement, where it says the evidence is insufficient.) Source control ASAP.",
       "key_recommendations": [],
       "practice_changers": [],
       "do_not_teach": [],

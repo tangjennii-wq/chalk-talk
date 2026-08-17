@@ -42,7 +42,7 @@
           "keys": "YEAR FIX: this is the KDIGO 2017 CKD-MBD Guideline Update (Kidney Int Suppl 2017;7:1-59). There is NO 2024 CKD-MBD guideline - the 2024 document is a CONTROVERSIES CONFERENCE REPORT, not a guideline, and it concluded the 2017 recommendations remain largely consistent with the evidence. Do not cite it as a guideline update. Content: treat toward the NORMAL range for calcium and phosphate; lower ELEVATED phosphate toward normal (do not treat prophylactically); restrict dietary phosphate, prefer non-calcium binders. PTH in CKD G5D: maintain roughly 2 to 9 times the upper normal assay limit - do not chase a single number. Bone biopsy is not routine. Avoid bisphosphonates in advanced CKD without a biopsy."
         },
         {
-          "name": "KDIGO 2012 AKI (2026 update in review)",
+          "name": "KDIGO 2012 AKI (2026 AKI/AKD update drafted Mar 2026; public comment closed 11 May 2026, NOT yet published - the 2012 guideline is still the one in force)",
           "year": 2012,
           "access": "Open",
           "url": "https://kdigo.org/guidelines/acute-kidney-injury/",
@@ -595,7 +595,7 @@
           "year": 2026,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/41869847/",
-          "keys": "PHANTOM-YEAR FIX: there was never a 2024 SSC update (a 2024 re-post of the 2021 PDF is the likely source of that error). SSC 2026 (SCCM/ESICM, Intensive Care Med) is now out and REPLACES 2021 - 129 statements, 46 new. NEW: a conditional recommendation for an initial MAP target of 60-65 mmHg in adults aged 65 and over, rather than a flat 65 for everyone. Core that stands: sepsis = life-threatening organ dysfunction from dysregulated host response; qSOFA is NOT a screening tool (use it to prompt concern, not to rule out). Hour-1 bundle: measure LACTATE, draw BLOOD CULTURES BEFORE antibiotics, give BROAD-SPECTRUM ANTIBIOTICS within 1 hour for septic shock (within 3 h if sepsis without shock and diagnosis uncertain), start 30 mL/kg crystalloid for hypotension or lactate 4 or more, and start VASOPRESSORS to keep MAP at target if fluid-refractory. NOREPINEPHRINE is first-line vasopressor - add vasopressin second rather than escalating norepinephrine indefinitely. Balanced crystalloids over normal saline. Steroids (hydrocortisone) for shock refractory to fluids and pressors. Source control ASAP."
+          "keys": "PHANTOM-YEAR FIX: there was never a 2024 SSC update (a 2024 re-post of the 2021 PDF is the likely source of that error). SSC 2026 (SCCM/ESICM, Intensive Care Med) is now out and REPLACES 2021 - 129 statements, 46 new. NEW: a conditional recommendation for an initial MAP target of 60-65 mmHg in adults aged 65 and over, rather than a flat 65 for everyone. Core that stands: sepsis = life-threatening organ dysfunction from dysregulated host response; qSOFA is NOT a screening tool (use it to prompt concern, not to rule out). Hour-1 bundle: measure LACTATE, draw BLOOD CULTURES BEFORE antibiotics, give BROAD-SPECTRUM ANTIBIOTICS within 1 hour for septic shock (within 3 h if sepsis without shock and diagnosis uncertain), start 30 mL/kg crystalloid for hypotension or lactate 4 or more, and start VASOPRESSORS to keep MAP at target if fluid-refractory. NOREPINEPHRINE is first-line vasopressor - add vasopressin second rather than escalating norepinephrine indefinitely. Balanced crystalloids over normal saline. Steroids: SSC 2026 SIMPLIFIED this - it now suggests IV corticosteroids for adults with septic shock, WITHOUT the 2021 qualifier of an ongoing vasopressor requirement. Do not state a refractory-shock or vasopressor-dose threshold as a 2026 criterion; 2026 sets no quantitative refractory-shock threshold. (The only 'refractory' framing in the 2026 document is the methylene blue statement, where it says the evidence is insufficient.) Source control ASAP."
         },
         {
           "name": "HHS/OARAC HIV Antiretroviral Guidelines (living - last updated 2026)",
@@ -682,7 +682,7 @@
           "keys": "YEAR FIX: there is NO 2024 febrile neutropenia update. IDSA is 2010 (Freifeld, CID 52:e56); the joint ASCO/IDSA documents are both 2018 (outpatient management of fever and neutropenia; antimicrobial prophylaxis). A 2024 label falsely implies the fluoroquinolone-prophylaxis and outpatient recommendations have been re-reviewed - they have not. DEFINITION: single temperature 38.3 C or more, or 38.0 C sustained over 1 h, WITH ANC under 500 (or expected to fall below 500). THIS IS AN EMERGENCY: draw blood cultures (peripheral AND each lumen of any central line) and give EMPIRIC BROAD-SPECTRUM ANTIBIOTICS WITHIN 1 HOUR - do not wait for the ANC or for imaging. Monotherapy with an ANTIPSEUDOMONAL BETA-LACTAM (cefepime, piperacillin-tazobactam, or a carbapenem). Add VANCOMYCIN only for specific indications - hemodynamic instability, suspected catheter infection, skin/soft tissue infection, known MRSA colonization, or severe mucositis - NOT routinely. Risk-stratify with MASCC or CISNE: low-risk patients may be managed as OUTPATIENTS on oral cipro plus amoxicillin-clavulanate. Add antifungal coverage if fever persists 4-7 days. G-CSF for prophylaxis, not for treatment of established FN."
         },
         {
-          "name": "CDC Yellow Book 2026 + WHO Malaria Guidelines (there is no IDSA travel medicine guideline)",
+          "name": "CDC Yellow Book 2026 + WHO Malaria Guidelines (IDSA's 2006 travel-medicine guideline is ARCHIVED and unmaintained - there is no CURRENT IDSA travel guideline)",
           "year": 2026,
           "access": "Open",
           "url": "https://www.cdc.gov/yellow-book/",
@@ -795,7 +795,7 @@
           "keys": "VERSION CAUTION: NCCN guidelines are versioned CONTINUOUSLY (v4.2024 is long superseded; current is v4.2026 as of April 2026). Always cite the exact version and date you used, and check NCCN before teaching. RECENT CHANGES: datopotamab deruxtecan added as preferred second-line in EGFR-mutant NSCLC after osimertinib; osimertinib plus chemotherapy and amivantamab plus lazertinib elevated to category 1 preferred first-line. CORE: BIOMARKER TESTING BEFORE TREATMENT in advanced non-squamous NSCLC - EGFR, ALK, ROS1, BRAF, KRAS G12C, MET exon 14, RET, NTRK, HER2, plus PD-L1. Do NOT start chemo-immunotherapy before molecular results return in a never-smoker. TARGETED THERAPY beats chemo/immunotherapy when a driver is present: osimertinib (EGFR), alectinib/lorlatinib (ALK), etc. NO driver: PD-L1 50 percent or more - pembrolizumab monotherapy; PD-L1 under 50 percent - chemo plus immunotherapy. Early stage: surgery plus adjuvant (osimertinib for EGFR, atezolizumab/pembrolizumab for PD-L1-positive); neoadjuvant chemo-immunotherapy (CheckMate 816). Stage III unresectable: chemoradiation plus consolidation durvalumab (PACIFIC). LUNG CANCER SCREENING: low-dose CT annually, age 50-80, 20 pack-years, currently smoking or quit within 15 years (USPSTF 2021)."
         },
         {
-          "name": "NCCN Breast Cancer (modular, versioned continuously - cite the version you used)",
+          "name": "NCCN Breast Cancer (ONE guideline covering DCIS/invasive/metastatic in internal sections - the patient-facing versions are split by stage, the clinician one is not; versioned continuously, cite the version you used)",
           "year": 2026,
           "access": "Open",
           "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1419",
@@ -809,7 +809,7 @@
           "keys": "Universal MMR/MSI testing. dMMR/MSI-H metastatic: pembrolizumab first-line (KEYNOTE-177; ORR ~30%, OS not reached). BRAF V600E: encorafenib + cetuximab/panitumumab (BEACON). Adjuvant FOLFOX/CAPOX +/- atezolizumab for stage III dMMR."
         },
         {
-          "name": "NCCN Prostate v3.2026",
+          "name": "NCCN Prostate v5.2026 (verified Aug 2026; NCCN reissues several times a year, so treat any pinned version as a floor, not the current one)",
           "year": 2026,
           "access": "Paywalled",
           "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1459",
@@ -1024,11 +1024,11 @@
           "keys": "ATTRIBUTION FIX: there is NO EULAR 2022 GCA management guideline. EULAR large-vessel-vasculitis MANAGEMENT recommendations are the 2018 update (Hellmich, Ann Rheum Dis 2020). What IS real and current is the 2023 EULAR update on IMAGING in large vessel vasculitis (Dejaco, Ann Rheum Dis 2024). IMAGING CHANGES vs 2018: ULTRASOUND IS NOW FIRST-LINE IN ALL PATIENTS with suspected GCA (not just selected ones), and the AXILLARY ARTERIES MUST be included in the standard exam. FDG-PET or MRI (cranial plus extracranial) are alternatives. For Takayasu, MRI is preferred. Imaging is NOT routine for follow-up but may assess suspected relapse when inflammatory markers are unreliable. Halo sign on ultrasound; compression sign. Start steroids immediately - imaging yield persists for days but do not delay treatment."
         },
         {
-          "name": "ASAS-EULAR 2022 / ACR 2019 Axial Spondyloarthritis (ACR update announced Jun 2026)",
+          "name": "ASAS-EULAR 2022 / ACR-SAA-SPARTAN 2026 Axial Spondyloarthritis (2026 update RELEASED 24 Jun 2026)",
           "year": 2022,
           "access": "Open",
           "url": "https://ard.bmj.com/content/82/1/19",
-          "keys": "CURRENCY: the ACR/SAA/SPARTAN guideline was UPDATED - approved by the ACR Board 31 May 2026 and announced 24 Jun 2026, replacing the 2019 adult recommendations and adding a first-ever JUVENILE axSpA guideline. Headline change: JAKi UPGRADED to strongly recommended, which reverses the 2019/ASAS-EULAR positioning below. Full manuscript was not yet peer-reviewed and journal-published at announcement, so cite the 2026 update as announced-not-yet-published and prefer it over the 2019 ACR positions. ASAS-EULAR 2022 remains current. Legacy 2019/2022 content follows: NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria)."
+          "keys": "CURRENCY: the ACR/SAA/SPARTAN guideline was UPDATED - approved by the ACR Board 31 May 2026 and announced 24 Jun 2026, replacing the 2019 adult recommendations and adding a first-ever JUVENILE axSpA guideline. Headline change: JAKi UPGRADED to strongly recommended, which reverses the 2019/ASAS-EULAR positioning below. Released 24 Jun 2026 as an ACR press release plus a downloadable guideline summary; the peer-reviewed manuscript may still be pending, so cite it as 'ACR/SAA/SPARTAN 2026 (guideline summary)' and prefer it over the 2019 ACR positions. Verified Aug 2026. ASAS-EULAR 2022 remains current. Legacy 2019/2022 content follows: NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria)."
         }
       ],
       "trials": [
@@ -1261,8 +1261,8 @@
       "society": "AAD (American Academy of Dermatology), NPF",
       "guidelines": [
         {
-          "name": "AAD Atopic Dermatitis - 2023 base + 2025 adult focused update + 2026 pediatric",
-          "year": 2025,
+          "name": "AAD Atopic Dermatitis - 2023 base + 2025 adult focused update + 2026 first-ever pediatric guidelines (prevention + management)",
+          "year": 2026,
           "access": "Open",
           "url": "https://www.aad.org/member/clinical-quality/guidelines/atopic-dermatitis",
           "keys": "The AAD AD set is 2022-2023 (comorbidities, topicals, phototherapy/systemics), UPDATED by an adult focused update (JAAD June 2025) and the FIRST-EVER AAD PEDIATRIC AD guideline (JAAD April 2026, 27 recommendations). NEWLY GUIDELINE-ENDORSED AGENTS a 2023-grounded talk omits: TAPINAROF (AhR agonist), ROFLUMILAST cream (topical PDE4), LEBRIKIZUMAB (IL-13), and NEMOLIZUMAB (IL-31, for itch). Core: emollients and trigger avoidance in everyone. Topical corticosteroids first-line; topical calcineurin inhibitors (tacrolimus, pimecrolimus) and crisaborole for face/folds and steroid-sparing; now also tapinarof and roflumilast. Moderate-severe: DUPILUMAB (IL-4/13) or tralokinumab or lebrikizumab; JAK inhibitors (upadacitinib, abrocitinib) work fast but carry boxed warnings. Phototherapy. Treat S. aureus superinfection; bleach baths. Screen for comorbid asthma, allergic rhinitis, depression."
@@ -1469,7 +1469,7 @@
           "keys": "YEAR FIX: there is no 2024 ACOG hypertension-in-pregnancy guideline. The documents are Practice Bulletin 222 - Gestational Hypertension and Preeclampsia (2020, interim update), Practice Bulletin 203 - Chronic Hypertension in Pregnancy (2019), and the post-CHAP ACOG Clinical Practice Update (2022) that set the treatment threshold. CHRONIC HYPERTENSION: after CHAP, TREAT to a threshold of 140/90 (previously treatment was withheld until 160/110) - this REDUCED adverse pregnancy outcomes without harming fetal growth. Preferred agents: LABETALOL, NIFEDIPINE, methyldopa. ACE inhibitors, ARBs, and direct renin inhibitors are CONTRAINDICATED. PREECLAMPSIA: new-onset hypertension after 20 weeks plus proteinuria OR severe features (platelets under 100k, creatinine over 1.1 or doubled, transaminases 2x normal, pulmonary edema, new cerebral or visual symptoms) - proteinuria is NOT required if severe features are present. SEVERE-RANGE hypertension (160/110 or more) is an EMERGENCY - treat within 30-60 minutes with IV labetalol, IV hydralazine, or oral immediate-release nifedipine. MAGNESIUM SULFATE for seizure prophylaxis in preeclampsia with severe features, and for eclampsia treatment (it is NOT an antihypertensive). Delivery is the only cure - at 37 weeks for preeclampsia without severe features, 34 weeks with severe features. PREVENTION: LOW-DOSE ASPIRIN 81 mg daily from 12-28 weeks (ideally before 16) for high-risk patients."
         },
         {
-          "name": "ACOG Endometriosis 2026",
+          "name": "ACOG Diagnosis of Endometriosis - Clinical Practice Guideline No. 11 (2026; scope is evaluation/diagnosis, NOT comprehensive treatment)",
           "year": 2026,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/41712950/",

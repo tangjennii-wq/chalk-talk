@@ -41,7 +41,7 @@
   },
   {
     "specialty": "Nephrology",
-    "name": "KDIGO 2012 AKI (2026 update in review)",
+    "name": "KDIGO 2012 AKI (2026 AKI/AKD update drafted Mar 2026; public comment closed 11 May 2026, NOT yet published - the 2012 guideline is still the one in force)",
     "year": 2012,
     "access": "Open",
     "url": "https://kdigo.org/guidelines/acute-kidney-injury/",
@@ -485,7 +485,7 @@
     "year": 2026,
     "access": "Open",
     "url": "https://pubmed.ncbi.nlm.nih.gov/41869847/",
-    "keys": "PHANTOM-YEAR FIX: there was never a 2024 SSC update (a 2024 re-post of the 2021 PDF is the likely source of that error). SSC 2026 (SCCM/ESICM, Intensive Care Med) is now out and REPLACES 2021 - 129 statements, 46 new. NEW: a conditional recommendation for an initial MAP target of 60-65 mmHg in adults aged 65 and over, rather than a flat 65 for everyone. Core that stands: sepsis = life-threatening organ dysfunction from dysregulated host response; qSOFA is NOT a screening tool (use it to prompt concern, not to rule out). Hour-1 bundle: measure LACTATE, draw BLOOD CULTURES BEFORE antibiotics, give BROAD-SPECTRUM ANTIBIOTICS within 1 hour for septic shock (within 3 h if sepsis without shock and diagnosis uncertain), start 30 mL/kg crystalloid for hypotension or lactate 4 or more, and start VASOPRESSORS to keep MAP at target if fluid-refractory. NOREPINEPHRINE is first-line vasopressor - add vasopressin second rather than escalating norepinephrine indefinitely. Balanced crystalloids over normal saline. Steroids (hydrocortisone) for shock refractory to fluids and pressors. Source control ASAP."
+    "keys": "PHANTOM-YEAR FIX: there was never a 2024 SSC update (a 2024 re-post of the 2021 PDF is the likely source of that error). SSC 2026 (SCCM/ESICM, Intensive Care Med) is now out and REPLACES 2021 - 129 statements, 46 new. NEW: a conditional recommendation for an initial MAP target of 60-65 mmHg in adults aged 65 and over, rather than a flat 65 for everyone. Core that stands: sepsis = life-threatening organ dysfunction from dysregulated host response; qSOFA is NOT a screening tool (use it to prompt concern, not to rule out). Hour-1 bundle: measure LACTATE, draw BLOOD CULTURES BEFORE antibiotics, give BROAD-SPECTRUM ANTIBIOTICS within 1 hour for septic shock (within 3 h if sepsis without shock and diagnosis uncertain), start 30 mL/kg crystalloid for hypotension or lactate 4 or more, and start VASOPRESSORS to keep MAP at target if fluid-refractory. NOREPINEPHRINE is first-line vasopressor - add vasopressin second rather than escalating norepinephrine indefinitely. Balanced crystalloids over normal saline. Steroids: SSC 2026 SIMPLIFIED this - it now suggests IV corticosteroids for adults with septic shock, WITHOUT the 2021 qualifier of an ongoing vasopressor requirement. Do not state a refractory-shock or vasopressor-dose threshold as a 2026 criterion; 2026 sets no quantitative refractory-shock threshold. (The only 'refractory' framing in the 2026 document is the methylene blue statement, where it says the evidence is insufficient.) Source control ASAP."
   },
   {
     "specialty": "ID",
@@ -585,7 +585,7 @@
   },
   {
     "specialty": "ID",
-    "name": "CDC Yellow Book 2026 + WHO Malaria Guidelines (there is no IDSA travel medicine guideline)",
+    "name": "CDC Yellow Book 2026 + WHO Malaria Guidelines (IDSA's 2006 travel-medicine guideline is ARCHIVED and unmaintained - there is no CURRENT IDSA travel guideline)",
     "year": 2026,
     "access": "Open",
     "url": "https://www.cdc.gov/yellow-book/",
@@ -665,7 +665,7 @@
   },
   {
     "specialty": "Oncology",
-    "name": "NCCN Breast Cancer (modular, versioned continuously - cite the version you used)",
+    "name": "NCCN Breast Cancer (ONE guideline covering DCIS/invasive/metastatic in internal sections - the patient-facing versions are split by stage, the clinician one is not; versioned continuously, cite the version you used)",
     "year": 2026,
     "access": "Open",
     "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1419",
@@ -681,7 +681,7 @@
   },
   {
     "specialty": "Oncology",
-    "name": "NCCN Prostate v3.2026",
+    "name": "NCCN Prostate v5.2026 (verified Aug 2026; NCCN reissues several times a year, so treat any pinned version as a floor, not the current one)",
     "year": 2026,
     "access": "Paywalled",
     "url": "https://www.nccn.org/guidelines/guidelines-detail?category=1&id=1459",
@@ -873,11 +873,11 @@
   },
   {
     "specialty": "Rheumatology",
-    "name": "ASAS-EULAR 2022 / ACR 2019 Axial Spondyloarthritis (ACR update announced Jun 2026)",
+    "name": "ASAS-EULAR 2022 / ACR-SAA-SPARTAN 2026 Axial Spondyloarthritis (2026 update RELEASED 24 Jun 2026)",
     "year": 2022,
     "access": "Open",
     "url": "https://ard.bmj.com/content/82/1/19",
-    "keys": "CURRENCY: the ACR/SAA/SPARTAN guideline was UPDATED - approved by the ACR Board 31 May 2026 and announced 24 Jun 2026, replacing the 2019 adult recommendations and adding a first-ever JUVENILE axSpA guideline. Headline change: JAKi UPGRADED to strongly recommended, which reverses the 2019/ASAS-EULAR positioning below. Full manuscript was not yet peer-reviewed and journal-published at announcement, so cite the 2026 update as announced-not-yet-published and prefer it over the 2019 ACR positions. ASAS-EULAR 2022 remains current. Legacy 2019/2022 content follows: NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria)."
+    "keys": "CURRENCY: the ACR/SAA/SPARTAN guideline was UPDATED - approved by the ACR Board 31 May 2026 and announced 24 Jun 2026, replacing the 2019 adult recommendations and adding a first-ever JUVENILE axSpA guideline. Headline change: JAKi UPGRADED to strongly recommended, which reverses the 2019/ASAS-EULAR positioning below. Released 24 Jun 2026 as an ACR press release plus a downloadable guideline summary; the peer-reviewed manuscript may still be pending, so cite it as 'ACR/SAA/SPARTAN 2026 (guideline summary)' and prefer it over the 2019 ACR positions. Verified Aug 2026. ASAS-EULAR 2022 remains current. Legacy 2019/2022 content follows: NSAIDs first-line continuous dosing for active disease (naproxen, celecoxib); physiotherapy adjunct. Inadequate NSAID response after 2 trials: TNFi (adalimumab, infliximab, certolizumab, etanercept, golimumab) or IL-17i (secukinumab, ixekizumab, bimekizumab) without prioritization. JAKi (upadacitinib, tofacitinib) reserved for bDMARD-contraindicated/failed (per JAK safety signals, ORAL Surveillance). Imaging: MRI SI joints (bone marrow edema) for non-radiographic; pelvic X-ray for radiographic (modified NY criteria)."
   },
   {
     "specialty": "Neurology",
@@ -1033,8 +1033,8 @@
   },
   {
     "specialty": "Dermatology",
-    "name": "AAD Atopic Dermatitis - 2023 base + 2025 adult focused update + 2026 pediatric",
-    "year": 2025,
+    "name": "AAD Atopic Dermatitis - 2023 base + 2025 adult focused update + 2026 first-ever pediatric guidelines (prevention + management)",
+    "year": 2026,
     "access": "Open",
     "url": "https://www.aad.org/member/clinical-quality/guidelines/atopic-dermatitis",
     "keys": "The AAD AD set is 2022-2023 (comorbidities, topicals, phototherapy/systemics), UPDATED by an adult focused update (JAAD June 2025) and the FIRST-EVER AAD PEDIATRIC AD guideline (JAAD April 2026, 27 recommendations). NEWLY GUIDELINE-ENDORSED AGENTS a 2023-grounded talk omits: TAPINAROF (AhR agonist), ROFLUMILAST cream (topical PDE4), LEBRIKIZUMAB (IL-13), and NEMOLIZUMAB (IL-31, for itch). Core: emollients and trigger avoidance in everyone. Topical corticosteroids first-line; topical calcineurin inhibitors (tacrolimus, pimecrolimus) and crisaborole for face/folds and steroid-sparing; now also tapinarof and roflumilast. Moderate-severe: DUPILUMAB (IL-4/13) or tralokinumab or lebrikizumab; JAK inhibitors (upadacitinib, abrocitinib) work fast but carry boxed warnings. Phototherapy. Treat S. aureus superinfection; bleach baths. Screen for comorbid asthma, allergic rhinitis, depression."
@@ -1225,7 +1225,7 @@
   },
   {
     "specialty": "Women's Health",
-    "name": "ACOG Endometriosis 2026",
+    "name": "ACOG Diagnosis of Endometriosis - Clinical Practice Guideline No. 11 (2026; scope is evaluation/diagnosis, NOT comprehensive treatment)",
     "year": 2026,
     "access": "Open",
     "url": "https://pubmed.ncbi.nlm.nih.gov/41712950/",
