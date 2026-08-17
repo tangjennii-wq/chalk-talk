@@ -203,8 +203,12 @@ function blockSrc(name) {
   const rs = fnBody("async function resumeAsyncJobIfAny");
   ok(/ragDigest/.test(html), "the retrieved-source digest is persisted with the async job");
   ok(/stored\.ragDigest/.test(rs), "the resume path prefers the PERSISTED digest over post-reload live state");
-  ok(/buildCritiqueSpec\(S\.style, S\.topic, _glRef, _resumeRag\)/.test(rs),
+  ok(/buildCritiqueSpec\(S\.style, S\.topic, _glRef, _resumeRag[,)]/.test(rs),
      "the reviewer's ground-truth context is built from the persisted evidence, not from empty S.ragChunks");
+  ok(/buildCritiqueSpec\(S\.style, S\.topic, _glRef, _resumeRag, _resumeEv\.block\)/.test(rs),
+     "…and the resumed review is handed the SAME trial abstracts a fresh one gets");
+  ok(/gatherTrialEvidence\(S\.topic, _glRef, _resumeRag, JSON\.stringify\(draftTalk\)\)/.test(rs),
+     "…gathered WITH the draft, so a trial the draft names but the topic did not still arrives with its paper");
   ok(!/buildCritiqueSpec\(S\.style, S\.topic, _glRef, S\.ragChunks\)/.test(rs),
      "the old empty-after-reload S.ragChunks call is gone");
   ok(/stored\.ragCount/.test(rs), "the DRAFT's real source count is used for labeling, not the post-reload zero");

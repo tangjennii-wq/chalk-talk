@@ -275,6 +275,22 @@ jobs:
           node rag/build_landmark_index.mjs
           git diff --exit-code -- landmark_pmids.json
 
+      # THE DECISIVE REGRESSION. PEITHOs primary endpoint is 2.6% tenecteplase vs 5.6% placebo; the talk
+      # has stated it reversed - implying lysis increased events - in two separate evals, while the correct
+      # sentence sat in our own corpus unread. This asserts the full sentence reaches BOTH the writer and
+      # the reviewer prompt, against a verbatim /trials fixture. It cannot assert the model uses it
+      # correctly; that is what the PE canary is for.
+      - name: PEITHO orientation reaches both prompts
+        run: node test_peitho_grounding.mjs
+
+      # A specialty can name more trials than one request carries (Cardiovascular resolves 33 against a
+      # cap of 12), so the list is ranked before it is cut: explicit mention, then RAG PMID intersection in
+      # retrieval order, then curated order. Trial acronyms collide with ordinary English - IMPACT, HOPE,
+      # DELIVER, FLOW and POINT are all real trials - so "Impact of heart failure" must not promote IMPACT.
+      # Ranking may be imperfect; a trial with no returned abstract may never be named.
+      - name: Trial selection (three-tier ranking, evidence-gated naming)
+        run: node test_trial_selection.mjs
+
       # guidelines.json named trials as bare acronyms and the prompt told the model to cite them "by name
       # with their PMID/DOI URL" while nothing supplied the paper: documents has no acronym column and
       # PubMed titles carry none, so PEITHO/DAPA-HF/EMPEROR-Reduced/PROSEVA return zero rows against a

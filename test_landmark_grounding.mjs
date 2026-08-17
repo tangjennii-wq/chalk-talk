@@ -93,8 +93,10 @@ ok(named.filter(t => !!index[normTrialName(t)]).length === 162,
    `162 of the 219 mentions are backed by a verified PMID (got ${named.filter(t => !!index[normTrialName(t)]).length})`);
 
 // ── the instruction itself ──────────────────────────────────────────────────────────────────────────
-ok(/Landmark trials to cite when relevant \(PMID given — use it, do not construct one\)/.test(src),
+ok(/Landmark trials to cite when relevant \(each has its abstract below — cite the PMID given, never construct one\)/.test(src),
    "the prompt hands over the verified PMID rather than asking the model to supply one");
+ok(/LANDMARK TRIAL EVIDENCE \(abstracts as published — the source of record for every figure below\)/.test(src),
+   "…and the abstracts themselves travel with it, which is the whole point of the patch");
 ok(!/guidelineContext \+= "\\nLandmark trials to cite when relevant: " \+ glRef\.trials\.join/.test(src),
    "the old unfiltered join — which named every trial, sourced or not — is gone");
 ok(/loadLandmarkPmids\(\);/.test(src), "the index is loaded at boot");

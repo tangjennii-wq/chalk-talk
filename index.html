@@ -1357,6 +1357,172 @@ async function _loadLandmarkPmids(){
   }
 }
 
+// ── TRIAL EVIDENCE: fetch, format, and the one gatherer all three paths use ──────────────────────────
+// Nothing below decides what is TRUE. It decides what the model is allowed to see, and the rule is that
+// a trial reaches a prompt only when its abstract came back. Ranking can be wrong; this cannot.
+async function fetchTrialEvidence(pmids){
+  if(!pmids || !pmids.length || !RAG_CONFIG.url) return { trials: [] };
+  try{
+    var r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/trials", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pmids: pmids }),
+    });
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    return await r.json();
+  }catch(err){
+    // A lookup failure means NO trial evidence, which means no trial is named. Generation continues; the
+    // talk simply loses trial citations rather than gaining unsupported ones.
+    console.warn("trial evidence lookup failed (" + (err && err.message) + ") — no trials will be named");
+    return { trials: [], error: (err && err.message) || "lookup failed" };
+  }
+}
+
+// Every trial acronym in the WHOLE index that is named distinctly in a piece of text. Used on the DRAFT,
+// so a trial the writer reached for that the topic never suggested — or an attribution it mutated — still
+// gets its paper put in front of the reviewer. Uses the same distinct-mention rule as tier 1, so a draft
+// that merely contains the word "impact" does not drag in the IMPACT trial.
+function trialsMentionedIn(text, index){
+  var ix = index || LANDMARK_PMIDS;
+  var out = [];
+  if(!ix || !text) return out;
+  for(var key in ix){
+    var e = ix[key];
+    if(e && e.name && trialNamedDistinctly(e.name, text)) out.push({ name: e.name, pmid: String(e.pmid), year: e.year || null });
+  }
+  return out;
+}
+
+// The block the model actually reads. Two instructions matter as much as the abstracts:
+//   * figures come FROM here, not from memory — this is the entire point of the patch;
+//   * a source absent from here is NOT evidence of mis-attribution. Without that line the reviewer, told
+//     elsewhere to strip mis-attributed markers, would delete citations for papers it simply was not sent.
+function buildTrialEvidenceBlock(named){
+  if(!named || !named.length) return "";
+  var out = "\n\n═══ LANDMARK TRIAL EVIDENCE (abstracts as published — the source of record for every figure below) ═══\n"
+    + "Every number you state about these trials MUST come from the abstract printed here: the effect size, the\n"
+    + "arm it belongs to, the endpoint it measures, and the population it was measured in. Do not recall these\n"
+    + "figures from memory, and do not swap the arms. If the abstract does not report something, say so or omit\n"
+    + "it rather than supplying a remembered value.\n"
+    + "A trial that is NOT listed here was not retrieved for this talk. Its absence is not evidence that a\n"
+    + "citation is wrong — do not remove a marker merely because its source is missing from this block.\n";
+  for(var i=0;i<named.length;i++){
+    var t = named[i];
+    out += "\n[" + t.name + "] " + (t.title || "") + (t.journal ? " — " + t.journal : "")
+        + (t.year ? " " + t.year : "") + ". PMID: " + t.pmid + ".\n"
+        + "Abstract: " + (t.abstract || "") + "\n";
+  }
+  return out + "═══ END LANDMARK TRIAL EVIDENCE ═══\n";
+}
+
+// ONE gatherer, used by drafting, by the critique spec, and by resume — so the three cannot drift the way
+// buildCritiqueSpec and the async submit's inline copy already had.
+//
+// draftText is optional. When present (synchronous critique, resume) the request is the UNION of the
+// topic-resolved trials and any trial the draft names distinctly, so an unexpected or mutated attribution
+// still arrives with its paper. On the DURABLE path the critique spec is submitted BEFORE a draft exists,
+// so only the topic-resolved half is available there — a real limit of that path, not an oversight.
+async function gatherTrialEvidence(topic, glRef, ragChunks, draftText){
+  var resolved = resolveTrials(glRef ? glRef.trials : []).resolved;
+  if(draftText){
+    var seen = {};
+    for(var i=0;i<resolved.length;i++) seen[resolved[i].pmid] = 1;
+    var extra = trialsMentionedIn(draftText);
+    for(var j=0;j<extra.length;j++) if(!seen[extra[j].pmid]){ seen[extra[j].pmid] = 1; resolved.push(extra[j]); }
+  }
+  if(!resolved.length) return { named: [], block: "", pmids: [], requested: 0, droppedForLimit: [] };
+  var ranked = rankTrialsForRequest(resolved, topic, ragChunks || []);
+  var res = await fetchTrialEvidence(ranked.request.map(function(t){ return t.pmid; }));
+  var out = namedTrialsFromResponse(ranked.request, res);
+  if(out.unsupported.length) console.info("trials requested but not evidenced, so not named: "
+    + out.unsupported.map(function(t){ return t.name; }).join(", "));
+  return {
+    named: out.named,
+    block: buildTrialEvidenceBlock(out.named),
+    pmids: out.named.map(function(t){ return t.pmid; }),
+    requested: ranked.request.length,
+    droppedForLimit: ranked.droppedForLimit.map(function(t){ return t.name; }),
+  };
+}
+
+// ── TRIAL SELECTION: three tiers, no model judgement, no extra API call ─────────────────────────────
+// A specialty can name far more trials than one request can carry (Cardiovascular resolves 33), so the
+// list has to be ordered before it is cut. Ranking may be imperfect; what may NOT happen is a trial being
+// named without evidence behind it, and that property is guaranteed downstream — only trials whose
+// abstracts actually came back are ever named.
+//
+//   1. EXPLICITLY ASKED FOR. Trial acronyms collide with ordinary words — IMPACT, HOPE, DELIVER, FLOW,
+//      POINT are all real trials AND normal English. "Impact of heart failure" must not promote IMPACT.
+//      So a bare capitalised word is not enough: promote only when the mention is DISTINCT.
+//   2. IN THE RETRIEVED EVIDENCE. The trial's PMID appears in the chunks retrieveRAG already returned
+//      for this topic, in that retrieval's own rank order. Strongest normal-path signal, already paid for.
+//   3. CURATED ORDER. The per-specialty lists are hand-ordered and turn out to be a decent ranking on
+//      their own (HFrEF puts PARADIGM-HF, DAPA-HF, EMPEROR-Reduced at 1-3), so this is the deterministic
+//      fallback — and the ONLY tier that survives a retrieval outage.
+var TRIALS_REQUEST_MAX = 12;   // must match TRIALS_MAX in worker.js
+
+// Is this trial named DISTINCTLY in the topic? Three ways to qualify:
+//   (a) the name carries a hyphen or a digit (DAPA-HF, AKIKI-2, TRITON-TIMI 38) — inherently distinctive,
+//       so any casing counts;
+//   (b) it appears in ALL CAPS ("PEITHO", "IMPACT") — deliberate, not incidental capitalisation;
+//   (c) it is followed by "trial" or "study" ("the impact trial") — named as a trial, whatever the case.
+// A capitalised-but-not-upper word with no hyphen, digit or following noun does NOT qualify. That is the
+// whole point: "Impact of heart failure" is a topic, not a request for the IMPACT trial.
+function trialNamedDistinctly(name, topic){
+  var t = String(topic || "");
+  if(!t || !name) return false;
+  var esc = String(name).replace(/[-\/\\^$*+?.()|[\]{}]/g, function(ch){ return "\\" + ch; });
+  var distinctiveName = /[-0-9]/.test(String(name));
+  if(distinctiveName && new RegExp("(^|[^A-Za-z0-9])" + esc + "([^A-Za-z0-9]|$)", "i").test(t)) return true;
+  if(new RegExp("(^|[^A-Za-z0-9])" + esc + "([^A-Za-z0-9]|$)").test(t)) return true;              // exact case, i.e. ALL CAPS names
+  if(new RegExp("(^|[^A-Za-z0-9])" + esc + "\\s+(trial|study)\\b", "i").test(t)) return true;
+  return false;
+}
+
+// Pure. resolved = [{name, pmid, year}] in curated order; ragChunks in retrieval-rank order.
+function rankTrialsForRequest(resolved, topic, ragChunks, max){
+  var cap = (typeof max === "number") ? max : TRIALS_REQUEST_MAX;
+  var ragRank = {};
+  var chunks = ragChunks || [];
+  for(var i=0; i<chunks.length; i++){
+    var pm = chunks[i] && chunks[i].pmid ? String(chunks[i].pmid) : "";
+    if(pm && !(pm in ragRank)) ragRank[pm] = i;     // first appearance = best rank
+  }
+  var scored = (resolved || []).map(function(t, idx){
+    var tier = 3, within = idx;
+    if(trialNamedDistinctly(t.name, topic)) { tier = 1; within = idx; }
+    else if(t.pmid in ragRank) { tier = 2; within = ragRank[t.pmid]; }
+    return { trial: t, tier: tier, within: within, curated: idx };
+  });
+  // Stable across tiers: tier, then the tier's own ordering, then curated position as the tiebreak. No
+  // randomness and no clock, so the same inputs always produce the same request.
+  scored.sort(function(a, b){ return (a.tier - b.tier) || (a.within - b.within) || (a.curated - b.curated); });
+  var keep = scored.slice(0, cap).map(function(x){ return x.trial; });
+  var cut  = scored.slice(cap).map(function(x){ return x.trial; });
+  return { request: keep, droppedForLimit: cut };
+}
+
+// Only trials whose abstract actually came BACK may be named. The response is the authority, not the
+// request and not the index: a PMID we asked for and did not receive is a trial with no evidence, and
+// naming it is the exact defect this patch exists to remove.
+function namedTrialsFromResponse(requested, response){
+  var byPmid = {};
+  var got = (response && response.trials) ? response.trials : [];
+  for(var i=0; i<got.length; i++){
+    var r = got[i];
+    if(r && r.pmid && typeof r.abstract === "string" && r.abstract.trim()) byPmid[String(r.pmid)] = r;
+  }
+  var named = [], unsupported = [];
+  for(var j=0; j<(requested || []).length; j++){
+    var t = requested[j];
+    var hit = byPmid[String(t.pmid)];
+    if(hit) named.push({ name: t.name, pmid: t.pmid, year: t.year || hit.year || null,
+                         title: hit.title || "", journal: hit.journal || "", abstract: hit.abstract });
+    else unsupported.push(t);
+  }
+  return { named: named, unsupported: unsupported };
+}
+
 // Pure. Returns the trials we can stand behind, and the ones we deliberately dropped.
 function resolveTrials(names, index){
   var ix = index || LANDMARK_PMIDS;
@@ -2089,7 +2255,11 @@ async function resumeAsyncJobIfAny(){
     var _resumeRag = (stored && stored.ragDigest && stored.ragDigest.length) ? stored.ragDigest
                    : ((S.ragChunks && S.ragChunks.length) ? S.ragChunks : []);
     if(!_resumeRag.length && (stored && stored.ragCount)) console.warn("Resumed job cited " + stored.ragCount + " retrieved source(s) but no digest survived — the review runs on guidelines only.");
-    var _spec = buildCritiqueSpec(S.style, S.topic, _glRef, _resumeRag);
+    // The draft exists here, so the reviewer gets the UNION: trials the topic resolved plus any the
+    // draft names distinctly. A resumed talk is reviewed with exactly the evidence a fresh one gets.
+    var _resumeEv = await gatherTrialEvidence(S.topic, _glRef, _resumeRag, JSON.stringify(draftTalk));
+    S._trialPmids = _resumeEv.pmids;
+    var _spec = buildCritiqueSpec(S.style, S.topic, _glRef, _resumeRag, _resumeEv.block);
     var _critInput = _spec.prefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
     var _resumeRewroteTalk = false, _resumeRetryModel = "";
@@ -8130,7 +8300,10 @@ var LECTURE_CRITIQUE_PROMPT = "You are a senior IM attending peer-reviewing a ch
 var BOARDS_CRITIQUE_PROMPT = "You are a senior board-certified Internal Medicine attending acting as a peer reviewer for a chalk talk. Review for: (1) factual errors in physiology or pharmacology, (2) outdated treatment recommendations vs current major society guidelines (KDIGO/AHA/ACC/ATS/ACG/AASLD/ADA/IDSA/ASH/ASCO/ACR/AAN/SCCM/AAAAI/AAD/APA/AGS/ACOG/USPSTF/AAHPM), (3) internal contradictions, (4) wrong landmark trial attributions, (5) shallow physiology, (6) DRUG NAME MISSPELLINGS — verify every drug name against canonical INN spelling. Common LLM errors to fix: rivarelbaxaban→rivaroxaban, apixiban→apixaban, clopridogel→clopidogrel, empagliflozen→empagliflozin, semaglutid→semaglutide. Any drug name that isn't a real FDA-approved drug or known investigational compound MUST be corrected. If unsure of generic spelling, replace with the brand name. Do NOT flag stylistic preferences.\n\nBOARDS-MODE ANSWER VERIFICATION (when the input contains a 'question' field): Re-derive the correct answer INTERNALLY — reason it through without writing the derivation out. (a) Restate the discriminating clinical features in the stem. (b) Identify the most relevant guideline and year (KDIGO, AHA/ACC, ADA, etc.) or landmark trial. (c) Confirm whether the marked correct_letter is truly best per that guideline. (d) If a different choice is better, fix correct_letter and rewrite explanation + wrong_explanations accordingly. Do not allow ambiguous or 'defensibly correct' answers to stand \u2014 the correct answer must be UNAMBIGUOUSLY best per current guidelines.\n\nSTEM STYLE VERIFICATION (boards mode): Also verify the stem follows UWorld / ABIM / MKSAP style. Check: (a) demographic + presentation opener \u2014 EITHER USMLE phrasing (A [age]-year-old [man/woman] comes to the physician because of...) OR MKSAP phrasing (...is evaluated in the office/emergency department for...) is acceptable; do not force one style, (b) quantitative symptom detail (frequency, duration, character, location, timing), (c) explicit pertinent positives AND key pertinent negatives stated together, (d) social/medical history quantified where relevant (e.g., 8-10 beers/week, 1 pack/day for 30 years), (e) specific vital signs with numbers and lab values with units, (f) imaging or diagnostic findings stated specifically, (g) ending phrase: Which of the following is the most [likely diagnosis / appropriate next step in management / appropriate initial test / likely cause]?, (h) 5 choices, parallel grammatical structure (all diagnoses OR all treatments OR all tests, not mixed), (i) each choice 2-8 words, no 'all of the above', no 'none of the above', no vague catch-alls, (j) distractors are plausible alternatives a less-prepared resident might pick \u2014 not throwaway, (k) CHOICE ORDER: do NOT reorder the choices for any reason. Their order is assigned by the application in code AFTER you reply; re-sorting here would be undone and would corrupt correct_letter. Verify only that exactly one choice carries correct:true and that correct_letter names it, (l) KEY POINT: a non-empty key_point field must exist (one standalone \u226430-word clinical-rule sentence) \u2014 if missing, write one. If the stem fails ANY criterion, REWRITE the stem and choices to match UWorld/MKSAP style while preserving the same correct answer and clinical scenario. Do not change the medical content; tighten the format.\n\nCITATION HONESTY (accuracy over coverage): an inline marker like [1] must appear ONLY where a source in the references array GENUINELY SUPPORTS that specific claim. Do NOT add citations just to make the key_point, board_pearls, or teaching_points look sourced. Instead, find MIS-ATTRIBUTED markers (cited source doesn't actually substantiate the claim) and remove or re-point them to a listed source that does. An uncited pearl is acceptable and preferable to a wrongly-cited one. Do NOT flag an item as an issue merely for lacking a citation.\n\nReason internally. Your response must START with { and contain nothing but JSON — no preamble, no markdown, no checklist walk-through. Return ONLY ONE of these two formats:\n\nIF the talk is accurate and needs no changes:\n{\"verdict\":\"clean\"}\n\n" + CRITIQUE_OUTPUT_CONTRACT;
 // One place that decides how a talk gets reviewed, used by generate(), the async submit, and the resume
 // path. glRef is the matched guideline object (may be null).
-function buildCritiqueSpec(style, topic, glRef, ragChunks){
+// trialBlock comes from gatherTrialEvidence(), the SAME builder drafting and the synchronous critique
+// use. This function is the resume path's spec, and it was previously the only place that degraded the
+// reviewer's grounding — titles and PMIDs where the other paths passed abstracts.
+function buildCritiqueSpec(style, topic, glRef, ragChunks, trialBlock){
   var glCtx = (glRef && glRef.context) ? glRef.context : "";
   var ragCtx = "";
   try {
@@ -8142,7 +8315,7 @@ function buildCritiqueSpec(style, topic, glRef, ragChunks){
   var grounding = (glCtx || ragCtx)
     ? ("\n\n═══ GUIDELINE / SOURCE CONTEXT (ground truth — the talk MUST match these for every number, drug, tier list, and recommendation) ═══" + glCtx + ragCtx + "\n═══ END CONTEXT ═══")
     : "";
-  var prefix = "Topic: " + (topic || "") + grounding;
+  var prefix = "Topic: " + (topic || "") + grounding + (trialBlock || "");
   if(style === "boards"){
     var lvl = boardsDifficulty(), bd = BOARDS_DIFFICULTY[lvl];
     prefix += "\n\nTARGET DIFFICULTY FOR THIS QUESTION: Level " + lvl + " (" + bd.label + "). " + bd.directive;
@@ -8257,16 +8430,22 @@ async function generate(){
     var guidelineContext = "";
     if (glRef) {
       guidelineContext = "\n\n═══ GUIDELINE REFERENCE CONTEXT (use this to anchor your recommendations) ═══" + glRef.context;
-      // Resolved trials only. An unresolvable trial is not named at all — see resolveTrials().
-      var _tr = resolveTrials(glRef.trials);
-      S._trialsNamed = _tr.resolved.length;
-      S._trialsDropped = _tr.dropped.length;
-      if (_tr.resolved.length > 0) {
-        guidelineContext += "\nLandmark trials to cite when relevant (PMID given — use it, do not construct one): "
-          + _tr.resolved.map(function(t){ return t.name + " (PMID " + t.pmid + (t.year ? ", " + t.year : "") + ")"; }).join("; ");
+      // TRIAL EVIDENCE, not trial names. The previous line named every resolvable trial and supplied a
+      // PMID; the model still had to produce the figures from memory, which is how PEITHO's arms came
+      // back reversed. gatherTrialEvidence() fetches the abstracts and names ONLY the trials whose
+      // abstract actually returned — a requested-but-unevidenced trial is never mentioned to the writer.
+      var _ev = await gatherTrialEvidence(S.topic, glRef, S.ragChunks);
+      S._trialEvidence = _ev;                 // reused by the synchronous critique below
+      S._trialsNamed = _ev.named.length;      // EVIDENCED, not merely resolvable
+      S._trialsDropped = _ev.droppedForLimit.length;
+      S._trialPmids = _ev.pmids;              // the exact papers this talk was grounded on
+      if (_ev.named.length > 0) {
+        guidelineContext += "\nLandmark trials to cite when relevant (each has its abstract below — cite the PMID given, never construct one): "
+          + _ev.named.map(function(t){ return t.name + " (PMID " + t.pmid + (t.year ? ", " + t.year : "") + ")"; }).join("; ");
       }
-      if (_tr.dropped.length > 0) console.info("trials not named (no verified PMID): " + _tr.dropped.join(", "));
+      if (_ev.droppedForLimit.length > 0) console.info("trials not requested (over the per-request cap): " + _ev.droppedForLimit.join(", "));
       guidelineContext += "\n═══ END GUIDELINE CONTEXT ═══";
+      guidelineContext += _ev.block;
     }
     S.ragGuidelines = ragResult.guidelineChunks || [];
     // SEMANTICALLY-RETRIEVED guideline summaries. The keyword matcher (getGuidelinesForTopic) returns
@@ -8652,7 +8831,20 @@ async function generate(){
       console.info("Concise: targeted safety review (numbers/drugs/guidelines/citations/contradictions).");
     }
 
-    var critiqueInput = critiquePrefix + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
+    // UNION WITH THE DRAFT. critiquePrefix already carries the topic-resolved abstracts (they are inside
+    // guidelineContext). What it cannot carry is a trial the WRITER reached for that the topic never
+    // suggested, or an attribution it mutated — exactly the case this review pass exists to catch. Only
+    // the papers not already present are appended, so nothing is sent twice.
+    var _critEv = await gatherTrialEvidence(S.topic, glRef, S.ragChunks, JSON.stringify(draftTalk));
+    var _extraEv = "", _seenPmids = {};
+    (S._trialPmids || []).forEach(function(pm){ _seenPmids[pm] = 1; });
+    var _newTrials = _critEv.named.filter(function(t){ return !_seenPmids[t.pmid]; });
+    if(_newTrials.length){
+      _extraEv = buildTrialEvidenceBlock(_newTrials);
+      S._trialPmids = (S._trialPmids || []).concat(_newTrials.map(function(t){ return t.pmid; }));
+      console.info("trials the draft named that the topic did not: " + _newTrials.map(function(t){ return t.name; }).join(", "));
+    }
+    var critiqueInput = critiquePrefix + _extraEv + "\n\nDraft chalk talk to review:\n" + JSON.stringify(draftTalk);
 
     // Phase → REVIEWING (Jenni 2026-07): the draft is in hand; the AI safety-review now runs. Signal it
     // honestly so the ~15s review reads as purposeful (the trust step) instead of a stuck progress bar.
@@ -10936,6 +11128,9 @@ function _stampProvenance(talk, o){
   talk._trialIndexReady = !!S._trialIndexReady;
   talk._trialsNamed = S._trialsNamed || 0;
   talk._trialsDropped = S._trialsDropped || 0;
+  // THE EXACT PAPERS, not a count. Which trials a talk was grounded on is the thing worth auditing
+  // later; a number cannot answer "was PEITHO actually in front of the model for this talk".
+  talk._trialPmids = (S._trialPmids || []).slice();
   // null on talks saved before 2026-07-31. Absence is NOT success: an old talk with zero chunks gets
   // the honest "no sources" disclosure rather than silence.
   //
