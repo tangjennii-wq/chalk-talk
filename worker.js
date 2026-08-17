@@ -227,6 +227,10 @@ export default {
       return handleRetrieve(request, env, origin);
     }
 
+    if (request.method === "POST" && url.pathname === "/trials") {
+      return handleTrials(request, env, origin);
+    }
+
     if (request.method === "POST" && url.pathname === "/v1/images/generations") {
       return handleImageGeneration(request, env, ctx, origin);
     }
@@ -1243,7 +1247,122 @@ async function handleFreeTierBonus(request, env, origin) {
   }
 }
 
-async function handleRetrieve(request, env, origin) {
+// TRIAL EVIDENCE BY PMID.
+//
+// The client resolves an acronym to a verified PMID (landmark_pmids.json) and asks here for the paper.
+// Distinct from /retrieve, which is semantic: a trial named in the guideline corpus must be fetchable by
+// IDENTITY, not by hoping it ranks. Searching for the acronym cannot work at all — `documents` has no
+// acronym column and PubMed titles do not contain acronyms, which is why PEITHO, DAPA-HF,
+// EMPEROR-Reduced and PROSEVA all returned zero rows against a corpus holding every one of them.
+//
+// Anon SELECT on public.documents is already policy-allowed, so this is a plain PostgREST read: no new
+// privilege, no RPC, no service-role key.
+//
+// A PMID that comes back with nothing gets NO entry, deliberately. The caller must build its final
+// "cite these trials" list from what came BACK, not from what it asked for — a trial named with no
+// abstract behind it is the original defect wearing a PMID.
+const TRIALS_MAX = 12;
+// SIZING, from the corpus rather than a guess: mean 2433 chars, median 2322, p90 3065, p99 4502, MAX 5635,
+// and zero abstracts above 6000. The first cut used 3000 — BELOW p90, so more than one abstract in ten
+// would have lost its tail, and the tail of a structured abstract is where RESULTS and ADVERSE EVENTS
+// live. Truncating the sentence we added this whole feature to deliver, while still presenting the block
+// as evidence, is worse than not sending the trial.
+//
+// So: a per-abstract ceiling well clear of the real maximum (truncates nothing today; it exists only so a
+// future 40k-character monster cannot blow the prompt), and an AGGREGATE budget that DROPS whole trials
+// rather than shortening them. A dropped trial is correctly never named; a silently shortened one reads
+// as complete. Anything shortened is flagged truncated:true and the response says so.
+const TRIAL_ABSTRACT_CHARS = 8000;     // > corpus max (5635); a real ceiling, not a working limit
+const TRIALS_TOTAL_CHARS = 48000;      // ~12k tokens across at most 12 trials
+
+async function handleTrials(request, env, origin) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY)
+    return jsonError(503, "rag_not_configured", "Trial lookup needs SUPABASE_URL and SUPABASE_ANON_KEY.", origin);
+
+  const raw = await request.text();
+  if (raw.length > 4000) return jsonError(413, "request_too_large", "Trial request body too large.", origin);
+
+  let body;
+  try { body = JSON.parse(raw); }
+  catch { return jsonError(400, "invalid_json", "Request body is not valid JSON.", origin); }
+
+  const asked = Array.isArray(body.pmids) ? body.pmids : null;
+  if (!asked || !asked.length)
+    return jsonError(400, "missing_pmids", "`pmids` (non-empty array) is required.", origin);
+
+  // Digits only, deduped. The PMID list is the entire query, so it is the entire attack surface.
+  const clean = [...new Set(asked.map((x) => String(x || "").trim()))].filter((x) => /^[0-9]{1,9}$/.test(x));
+  if (!clean.length)
+    return jsonError(400, "no_valid_pmids", "No syntactically valid PMIDs in the request.", origin);
+
+  // NOTHING IS SILENTLY SLICED. The first cut did `.slice(0, TRIALS_MAX)` and returned the survivors with
+  // no mention of the rest, so a caller asking for 33 trials got 12 back and no way to tell that 21 had
+  // vanished — the caller would then name only what returned and believe that was the whole answer. The
+  // excess is reported, and the caller decides.
+  const pmids = clean.slice(0, TRIALS_MAX);
+  const droppedForLimit = clean.slice(TRIALS_MAX);
+
+  const q = `${env.SUPABASE_URL}/rest/v1/documents?pmid=in.(${pmids.join(",")})&select=pmid,title,journal,year,abstract,doi,url`;
+  let rows;
+  try {
+    const res = await fetch(q, {
+      headers: {
+        "apikey": env.SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${env.SUPABASE_ANON_KEY}`,
+      },
+    });
+    if (!res.ok) throw new Error(`Supabase ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    rows = await res.json();
+  } catch (err) {
+    return jsonError(502, "trial_lookup_failed", (err && err.message) || "Trial lookup failed.", origin);
+  }
+
+  // REQUESTED ORDER, RESTORED. PostgREST does not promise row order without an explicit `order=`, so the
+  // array can come back in any sequence — and the aggregate budget below spends in array order, which
+  // would otherwise make "which trials fit" depend on however Postgres happened to return them. The
+  // caller ranks its request; that ranking is what must survive.
+  const byPmid = new Map();
+  for (const r of (Array.isArray(rows) ? rows : [])) if (r && r.pmid) byPmid.set(String(r.pmid), r);
+  const ordered = pmids.map((id) => byPmid.get(id)).filter(Boolean);
+
+  // An EMPTY abstract is a MISS, not a hit with no text. The caller drops the trial either way, and
+  // conflating the two is exactly how a trial ends up named with nothing behind it.
+  const usable = ordered.filter((r) => typeof r.abstract === "string" && r.abstract.trim().length > 0);
+
+  const trials = [];
+  const overBudget = [];
+  const overLength = [];
+  let spent = 0;
+  for (const r of usable) {
+    // TRUNCATED IS UNUSABLE. A shortened abstract is the one thing worse than a missing one: it reads as
+    // complete evidence while the sentence that was cut may be exactly the result or the harm. Nothing in
+    // the corpus reaches this ceiling today (max 5635 vs 8000) — it exists so a future outlier is DROPPED
+    // rather than quietly clipped.
+    if (r.abstract.length > TRIAL_ABSTRACT_CHARS) { overLength.push(String(r.pmid)); continue; }
+    if (spent + r.abstract.length > TRIALS_TOTAL_CHARS) { overBudget.push(String(r.pmid)); continue; }
+    spent += r.abstract.length;
+    trials.push({
+      pmid: String(r.pmid),
+      title: r.title || "",
+      journal: r.journal || "",
+      year: r.year || null,
+      doi: r.doi || null,
+      url: r.url || null,
+      abstract: r.abstract,
+    });
+  }
+
+  // Every requested PMID is accounted for in exactly one bucket. A caller can reconcile its request
+  // against the response without inferring anything from a short array.
+  const found = new Set(trials.map((t) => t.pmid));
+  return jsonOK({
+    trials,
+    missing: pmids.filter((x) => !found.has(x) && !overBudget.includes(x) && !overLength.includes(x)),
+    dropped_for_limit: droppedForLimit,
+    dropped_for_budget: overBudget,
+    dropped_for_length: overLength,
+  }, origin);
+}async function handleRetrieve(request, env, origin) {
   if (!env.OPENAI_API_KEY || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY)
     return jsonError(503, "rag_not_configured",
       "RAG not configured. Need OPENAI_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY secrets.", origin);

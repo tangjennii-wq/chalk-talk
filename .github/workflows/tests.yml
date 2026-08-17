@@ -267,6 +267,14 @@ jobs:
       - name: Live check runs in the review pass (and only where it pays)
         run: node test_live_check.mjs
 
+      # "GENERATED - do not hand-edit" is a comment, and comments in this repo have a track record. This
+      # regenerates the index from rag/landmark_trials.json and fails if the committed file differs, so
+      # drift across 559 entries cannot survive a push. A collision now exits nonzero here too.
+      - name: landmark_pmids.json is reproducible from its source
+        run: |
+          node rag/build_landmark_index.mjs
+          git diff --exit-code -- landmark_pmids.json
+
       # guidelines.json named trials as bare acronyms and the prompt told the model to cite them "by name
       # with their PMID/DOI URL" while nothing supplied the paper: documents has no acronym column and
       # PubMed titles carry none, so PEITHO/DAPA-HF/EMPEROR-Reduced/PROSEVA return zero rows against a

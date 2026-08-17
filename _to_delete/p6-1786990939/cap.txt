@@ -1,0 +1,13 @@
+const TRIALS_MAX = 12;
+// SIZING, from the corpus rather than a guess: mean 2433 chars, median 2322, p90 3065, p99 4502, MAX 5635,
+// and zero abstracts above 6000. The first cut used 3000 — BELOW p90, so more than one abstract in ten
+// would have lost its tail, and the tail of a structured abstract is where RESULTS and ADVERSE EVENTS
+// live. Truncating the sentence we added this whole feature to deliver, while still presenting the block
+// as evidence, is worse than not sending the trial.
+//
+// So: a per-abstract ceiling well clear of the real maximum (truncates nothing today; it exists only so a
+// future 40k-character monster cannot blow the prompt), and an AGGREGATE budget that DROPS whole trials
+// rather than shortening them. A dropped trial is correctly never named; a silently shortened one reads
+// as complete. Anything shortened is flagged truncated:true and the response says so.
+const TRIAL_ABSTRACT_CHARS = 8000;     // > corpus max (5635); a real ceiling, not a working limit
+const TRIALS_TOTAL_CHARS = 48000;      // ~12k tokens across at most 12 trials

@@ -1,0 +1,77 @@
+  const asked = Array.isArray(body.pmids) ? body.pmids : null;
+  if (!asked || !asked.length)
+    return jsonError(400, "missing_pmids", "`pmids` (non-empty array) is required.", origin);
+
+  // Digits only, deduped. The PMID list is the entire query, so it is the entire attack surface.
+  const clean = [...new Set(asked.map((x) => String(x || "").trim()))].filter((x) => /^[0-9]{1,9}$/.test(x));
+  if (!clean.length)
+    return jsonError(400, "no_valid_pmids", "No syntactically valid PMIDs in the request.", origin);
+
+  // NOTHING IS SILENTLY SLICED. The first cut did `.slice(0, TRIALS_MAX)` and returned the survivors with
+  // no mention of the rest, so a caller asking for 33 trials got 12 back and no way to tell that 21 had
+  // vanished — the caller would then name only what returned and believe that was the whole answer. The
+  // excess is reported, and the caller decides.
+  const pmids = clean.slice(0, TRIALS_MAX);
+  const droppedForLimit = clean.slice(TRIALS_MAX);
+
+  const q = `${env.SUPABASE_URL}/rest/v1/documents?pmid=in.(${pmids.join(",")})&select=pmid,title,journal,year,abstract,doi,url`;
+  let rows;
+  try {
+    const res = await fetch(q, {
+      headers: {
+        "apikey": env.SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${env.SUPABASE_ANON_KEY}`,
+      },
+    });
+    if (!res.ok) throw new Error(`Supabase ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    rows = await res.json();
+  } catch (err) {
+    return jsonError(502, "trial_lookup_failed", (err && err.message) || "Trial lookup failed.", origin);
+  }
+
+  // REQUESTED ORDER, RESTORED. PostgREST does not promise row order without an explicit `order=`, so the
+  // array can come back in any sequence — and the aggregate budget below spends in array order, which
+  // would otherwise make "which trials fit" depend on however Postgres happened to return them. The
+  // caller ranks its request; that ranking is what must survive.
+  const byPmid = new Map();
+  for (const r of (Array.isArray(rows) ? rows : [])) if (r && r.pmid) byPmid.set(String(r.pmid), r);
+  const ordered = pmids.map((id) => byPmid.get(id)).filter(Boolean);
+
+  // An EMPTY abstract is a MISS, not a hit with no text. The caller drops the trial either way, and
+  // conflating the two is exactly how a trial ends up named with nothing behind it.
+  const usable = ordered.filter((r) => typeof r.abstract === "string" && r.abstract.trim().length > 0);
+
+  const trials = [];
+  const overBudget = [];
+  const overLength = [];
+  let spent = 0;
+  for (const r of usable) {
+    // TRUNCATED IS UNUSABLE. A shortened abstract is the one thing worse than a missing one: it reads as
+    // complete evidence while the sentence that was cut may be exactly the result or the harm. Nothing in
+    // the corpus reaches this ceiling today (max 5635 vs 8000) — it exists so a future outlier is DROPPED
+    // rather than quietly clipped.
+    if (r.abstract.length > TRIAL_ABSTRACT_CHARS) { overLength.push(String(r.pmid)); continue; }
+    if (spent + r.abstract.length > TRIALS_TOTAL_CHARS) { overBudget.push(String(r.pmid)); continue; }
+    spent += r.abstract.length;
+    trials.push({
+      pmid: String(r.pmid),
+      title: r.title || "",
+      journal: r.journal || "",
+      year: r.year || null,
+      doi: r.doi || null,
+      url: r.url || null,
+      abstract: r.abstract,
+    });
+  }
+
+  // Every requested PMID is accounted for in exactly one bucket. A caller can reconcile its request
+  // against the response without inferring anything from a short array.
+  const found = new Set(trials.map((t) => t.pmid));
+  return jsonOK({
+    trials,
+    missing: pmids.filter((x) => !found.has(x) && !overBudget.includes(x) && !overLength.includes(x)),
+    dropped_for_limit: droppedForLimit,
+    dropped_for_budget: overBudget,
+    dropped_for_length: overLength,
+  }, origin);
+}

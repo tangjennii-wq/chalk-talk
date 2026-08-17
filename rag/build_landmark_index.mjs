@@ -28,11 +28,14 @@ for (const t of trials) {
   if (!t || !t.expected_pmid || !VERIFIED_OK.includes(t.pmid_verified)) { skipped++; continue; }
   const key = norm(t.name);
   if (!key) { skipped++; continue; }
-  // First writer wins, and a collision is reported rather than silently resolved: two trials sharing a
-  // normalised acronym would otherwise hand the model the wrong paper under the right name.
+  // A collision is FATAL. Two trials sharing a normalised acronym means the index would hand the model
+  // the wrong paper under the right name — the exact failure this whole patch exists to remove, and one
+  // that would read as grounded. Keeping the first was the wrong instinct: there is no basis for choosing.
   if (index[key] && index[key].pmid !== String(t.expected_pmid)) {
-    console.warn(`COLLISION: ${key} -> ${index[key].pmid} and ${t.expected_pmid} (keeping the first)`);
-    continue;
+    console.error(`COLLISION: normalised acronym ${key} maps to BOTH PMID ${index[key].pmid} (${index[key].name}) `
+      + `and PMID ${t.expected_pmid} (${t.name}). Right acronym, wrong paper is worse than no paper — `
+      + `disambiguate the names in rag/landmark_trials.json before regenerating.`);
+    process.exit(1);
   }
   index[key] = { name: t.name, pmid: String(t.expected_pmid), year: t.year || null };
 }
