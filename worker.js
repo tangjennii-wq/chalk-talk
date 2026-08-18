@@ -42,6 +42,11 @@ const MAX_REQUEST_BYTES = 5_000_000;
 const FREE_TALKS_DEFAULT = 10;
 const FREE_IMAGES_DEFAULT = 5;
 const MAX_MONTHLY_SPEND_USD_DEFAULT = 250;
+// Prompt caching. A 5-minute ephemeral cache WRITE costs 1.25x input; a READ costs 0.1x. Anthropic
+// requires >=1024 tokens for a cacheable block, so the threshold below is deliberately conservative in
+// characters — a system prompt shorter than this is not worth a write premium.
+const CACHE_WRITE_MULTIPLIER = 1.25;
+const SYS_CACHE_MIN_CHARS = 6000;
 // Per-million-token prices in USD. VERIFIED against platform.claude.com/docs/en/about-claude/pricing
 // on 2026-07-26. `cache` is the cache-HIT (read) rate = 0.1x base input.
 //
@@ -893,17 +898,50 @@ export function makeWorkflowDeps(env, { NonRetryableError }) {
   };
 }
 
+// PRICING, all three input classes. Anthropic reports them as DISJOINT counts — input_tokens excludes
+// anything served from or written to the cache — so each is priced on its own line and they sum.
+//
+// cache_creation_input_tokens was read NOWHERE in this file or index.html before now, while the browser
+// path has been sending cache_control since June. Every cached BYOK generation has therefore been
+// undercounted against the $250 cap by the full 1.25x write premium on its first call. Enabling caching
+// on the Worker would have widened a hole that was already open, which is why this lands in the same
+// patch rather than after it.
+//   read   = 0.1x input   (MODEL_PRICES.cache is exactly 0.1 * .in for all three tiers)
+//   write  = 1.25x input  (5-minute ephemeral cache)
+// One structured line per model call. Cache behaviour is invisible otherwise: the only proof that a
+// cached prefix is being HIT is read>0 on a second call inside the five-minute window, and nothing in
+// this Worker printed either count before now.
+function logCacheTelemetry(model, usage, elapsedMs) {
+  try {
+    const u = usage || {};
+    console.log(JSON.stringify({
+      evt: "model_call",
+      model,
+      elapsed_ms: elapsedMs,
+      input_tokens: u.input_tokens || 0,
+      output_tokens: u.output_tokens || 0,
+      cache_read_input_tokens: u.cache_read_input_tokens || 0,
+      cache_creation_input_tokens: u.cache_creation_input_tokens || 0,
+      cache_hit: (u.cache_read_input_tokens || 0) > 0,
+    }));
+  } catch (_) { /* telemetry must never break a generation */ }
+}
+
 function estimateCostCents(model, usage) {
   const p = MODEL_PRICES[model] || MODEL_PRICES["claude-sonnet-4-6"];
   const inTok = usage.input_tokens || 0;
   const outTok = usage.output_tokens || 0;
-  const cacheTok = usage.cache_read_input_tokens || 0;
-  const dollars = (inTok / 1e6) * p.in + (outTok / 1e6) * p.out + (cacheTok / 1e6) * p.cache;
+  const cacheReadTok = usage.cache_read_input_tokens || 0;
+  const cacheWriteTok = usage.cache_creation_input_tokens || 0;
+  const dollars = (inTok / 1e6) * p.in
+                + (outTok / 1e6) * p.out
+                + (cacheReadTok / 1e6) * p.cache
+                + (cacheWriteTok / 1e6) * (p.in * CACHE_WRITE_MULTIPLIER);
   return Math.ceil(dollars * 100);
 }
 
 async function extractUsage(resp) {
-  const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0 };
+  const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
   try {
     const text = await resp.text();
     if (text.indexOf("message_start") >= 0 || (text.indexOf("data:") >= 0 && text.indexOf("message_delta") >= 0)) {
@@ -919,6 +957,7 @@ async function extractUsage(resp) {
           if (e.type === "message_start" && e.message && e.message.usage) {
             usage.input_tokens = e.message.usage.input_tokens || 0;
             usage.cache_read_input_tokens = e.message.usage.cache_read_input_tokens || 0;
+            usage.cache_creation_input_tokens = e.message.usage.cache_creation_input_tokens || 0;
           }
           if (e.type === "message_delta" && e.usage && typeof e.usage.output_tokens === "number") {
             usage.output_tokens = e.usage.output_tokens;
@@ -931,6 +970,7 @@ async function extractUsage(resp) {
         usage.input_tokens = j.usage.input_tokens || 0;
         usage.output_tokens = j.usage.output_tokens || 0;
         usage.cache_read_input_tokens = j.usage.cache_read_input_tokens || 0;
+        usage.cache_creation_input_tokens = j.usage.cache_creation_input_tokens || 0;
       }
     }
   } catch (e) {}
@@ -1989,7 +2029,24 @@ async function callAnthropicText(env, sys, content, maxTok, models, tools, onPro
   }
   let lastErr;
   for (let i = 0; i < models.length; i++) {
-    const reqBody = { model: models[i], max_tokens: maxTok || 16384, system: sys, messages: [{ role: "user", content: content }] };
+    // PROMPT CACHING — the STABLE SYSTEM BLOCK ONLY.
+    //
+    // Anthropic caches on an exact prefix match, so only content identical across calls may carry
+    // cache_control. `sys` qualifies: it is LECTURE_PROMPT / BOARDS_PROMPT for the draft and
+    // LECTURE_CRITIQUE_PROMPT / BOARDS_CRITIQUE_PROMPT for the review (plus, in boards mode, a difficulty
+    // suffix that is stable per level). Everything topic-specific — guideline context, retrieved sources,
+    // trial abstracts, the draft under review — travels in `content`, which is deliberately NOT cached:
+    // it changes every call, so marking it would buy a 1.25x write premium on every request and never a
+    // single read.
+    //
+    // A short system prompt is left uncached. Below Anthropic's 1024-token minimum a block cannot be
+    // cached at all, and just above it the write premium outweighs the reads.
+    const tCall = Date.now();
+    const cacheable = typeof sys === "string" && sys.length >= SYS_CACHE_MIN_CHARS;
+    const systemField = cacheable
+      ? [{ type: "text", text: sys, cache_control: { type: "ephemeral" } }]
+      : sys;
+    const reqBody = { model: models[i], max_tokens: maxTok || 16384, system: systemField, messages: [{ role: "user", content: content }] };
     if (safeTools) reqBody.tools = safeTools;
     // Stream ONLY when a progress callback is supplied (the async draft path) — lets the server surface a
     // live partial draft to the polling client so mobile users watch the talk build. (Jenni 2026-07-10)
@@ -2034,6 +2091,7 @@ async function callAnthropicText(env, sys, content, maxTok, models, tools, onPro
           if (now - lastEmit > 1200) { lastEmit = now; try { await onProgress(text); } catch (_) {} }
         }
         try { await onProgress(text); } catch (_) {}
+        logCacheTelemetry(models[i], usage, Date.now() - tCall);
         return { text, modelUsed: models[i], usage, webSearched };
       }
       const d = await r.json();
@@ -2044,6 +2102,7 @@ async function callAnthropicText(env, sys, content, maxTok, models, tools, onPro
         if (b && b.type === "text" && b.text) text += b.text;
         else if (b && (b.type === "web_search_tool_result" || (b.type === "server_tool_use" && b.name === "web_search"))) webSearched = true;
       }
+      logCacheTelemetry(models[i], d.usage || {}, Date.now() - tCall);
       return { text, modelUsed: models[i], usage: d.usage || {}, webSearched };
     }
     if ((r.status === 529 || r.status >= 500) && i < models.length - 1) { lastErr = new Error("overloaded " + r.status); continue; }

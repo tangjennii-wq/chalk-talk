@@ -7878,7 +7878,12 @@ async function callAPI(sys, content, maxTok, opts) {
   if(_prov === "openai") return await _callOpenAIText(sys, content, maxTok, opts);
   if(_prov === "gemini") return await _callGeminiText(sys, content, maxTok, opts);
   // Anthropic prompt caching: wrap the (static, ~5000-token) system prompt in a single block with
-  // cache_control:ephemeral so subsequent calls within 5 min hit the cache. ~80% cheaper + faster
+  // cache_control:ephemeral so subsequent calls within 5 min hit the cache. Published rates: a cache
+  // READ costs 0.1x input, a 5-minute WRITE costs 1.25x. This line previously claimed "~80% cheaper +
+  // faster" — nobody could have measured that, because cache_creation_input_tokens was read nowhere in
+  // this file or worker.js, so every cache WRITE has been billed at zero against the $250 cap since
+  // June. The Worker now records both counts and logs them; no speedup claim until a repeat request
+  // inside the window actually reports cache_read_input_tokens > 0.
   // on cache-hit. Strings are still accepted for backward compat; we only upgrade if sys is long
   // enough to be worth caching (Anthropic minimum is 1024 tokens / ~4096 chars). (Jenni 2026-06-09)
   var systemField;
