@@ -38,3 +38,7 @@ rag/eval_gemini_report.json
 # transient "most recent run" duplicate — the per-model eval_critic_<model>.json files are the durable record
 rag/eval_critic_report.json
 rag/runs/*.json
+
+# Local scratch: patch scripts, moved-aside files, commit message drafts.
+# device_bash cannot delete on this machine, so files are MOVED here instead of removed.
+_to_delete/
