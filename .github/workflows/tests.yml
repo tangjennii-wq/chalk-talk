@@ -290,6 +290,14 @@ jobs:
       - name: Updates explainer (the ⓘ, and its claims match what the code does)
         run: node test_updates_info.mjs
 
+      # Physician review of a GENERATED CARD keeps finding faults that are not the card's - it repeated what
+      # guidelines.json told it. So the fix belongs in the corpus and so does the regression test. The rule
+      # this enforces: a correction is made AT SOURCE, never appended. The first fluid fix appended "not a
+      # mandate" while leaving "now favoured" in place higher up, and the model reads the whole entry as
+      # ground truth. Every negative assertion in this suite is the old wording.
+      - name: Corpus review corrections (DKA + PE, corrected at source)
+        run: node test_corpus_corrections.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction
