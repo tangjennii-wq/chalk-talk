@@ -298,6 +298,14 @@ jobs:
       - name: Corpus review corrections (DKA + PE, corrected at source)
         run: node test_corpus_corrections.mjs
 
+      # Three worded buttons crowded the LESSON OUTLINE row; two lose their labels and ONE KEEPS ITS LABEL
+      # DELIBERATELY. The same ⧉ glyph sits on every section card, so an icon-only ⧉ in the header would
+      # read as "copy this one section" - Reorder and Expand have no such collision. The asymmetry is the
+      # design, and making all three icon-only would be more consistent and worse. Also asserts the
+      # accessible names, since an icon-only button is otherwise nameless.
+      - name: Outline-head controls (icon-only, except the one that would be ambiguous)
+        run: node test_outline_controls.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction

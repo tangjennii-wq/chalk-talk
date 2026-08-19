@@ -12021,6 +12021,19 @@ function linkifyPMIDs(root) {
 
 // Standard "copy" icon (two overlapping rounded rectangles) — same shape Mac/iOS/Google uses,
 // so users recognize it instantly. Sized to inherit the parent button's color via currentColor.
+// Outline-head icons. Same 14px / currentColor / stroke-width 2 family as COPY_ICON so the row reads as
+// one set. aria-hidden on every one: the accessible name lives on the BUTTON's aria-label, and without
+// this a screen reader announces the svg as a second, nameless child of the control.
+var SVG_OPEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle" aria-hidden="true" focusable="false">';
+// Reorder: list rows plus an up/down arrow pair — the standard 'change the order of these' glyph.
+// Deliberately NOT a drag handle (⠿): this app's reorder is tap-based ↑/↓ buttons, not drag-and-drop,
+// and a handle icon would promise a gesture that does not work here, least of all on a phone.
+var REORDER_ICON = SVG_OPEN + '<path d="M9 6h12M9 12h12M9 18h12"/><path d="M3 8l2-2 2 2M3 16l2 2 2-2"/></svg>';
+var DONE_ICON    = SVG_OPEN + '<polyline points="20 6 9 17 4 12"/></svg>';
+// Double chevrons, direction = what the click DOES, not the current state: pointing down means it will
+// open everything. A single chevron reads as 'this one section'.
+var CHEVRONS_DOWN = SVG_OPEN + '<polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg>';
+var CHEVRONS_UP   = SVG_OPEN + '<polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>';
 var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 
 // The specialty axis for the mobile drawer. It is a DISCLOSURE: the strip is not shown until the user
@@ -13866,7 +13879,6 @@ h+='</div>';
       // LECTURE — accordion lesson outline (hero content)
       if(!isBQ&&(t.sections||[]).length>0){
         var hasMultiSec = (t.sections||[]).length>1;
-        var allExpLbl2 = S.allExpanded ? 'Collapse all' : 'Expand all'; // no chevron — Jenni 2026-06-04
         h+='<div class="outline-head"><span>Lesson outline</span>';
         // Right-side controls: Concise/Detailed toggle + Expand all (toggle reuses existing depthToggleBtn handler)
         h+='<div style="display:flex;align-items:center;gap:10px">';
@@ -13887,10 +13899,17 @@ h+='</div>';
           // collapses the outline into compact rows with big ↑/↓ arrows (touch-friendly; deliberate
           // choice over drag-and-drop, which fights the full-re-render architecture and does not
           // work on mobile). Tap Done to exit.
-          h+='<button id="reorderModeBtn" title="'+(S.reorderMode?"Done reordering":"Reorder sections")+'" style="background:'+(S.reorderMode?"var(--plum)":"none")+';border:none;padding:2px 10px;color:'+(S.reorderMode?"#fff":"var(--plum)")+';font-size:11px;font-weight:'+(S.reorderMode?"700":"600")+';cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;border-radius:6px">'+(S.reorderMode?"✓ Done":"↕ Reorder")+'</button>';
+          // ICON-ONLY AT REST, LABELLED WHILE ACTIVE (Jenni 2026-08-19). Three worded buttons in one row
+          // was the clutter; the resting state loses its label. The ACTIVE state keeps "Done" in words,
+          // because reorder is a MODE — the outline collapses into ↑/↓ rows and the way out has to be
+          // unmistakable. An icon-only exit from a mode is how people get stuck, and that is worth the
+          // few pixels back. title= gives the hover tooltip, aria-label gives the accessible name.
+          var _roLbl = S.reorderMode ? "Done reordering" : "Reorder sections";
+          h+='<button id="reorderModeBtn" title="'+_roLbl+'" aria-label="'+_roLbl+'" aria-pressed="'+(S.reorderMode?"true":"false")+'" style="background:'+(S.reorderMode?"var(--plum)":"none")+';border:none;padding:'+(S.reorderMode?"3px 10px":"4px 7px")+';color:'+(S.reorderMode?"#fff":"var(--plum)")+';font-size:11px;font-weight:'+(S.reorderMode?"700":"600")+';cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;border-radius:6px;display:inline-flex;align-items:center;gap:5px;line-height:1">'+(S.reorderMode?(DONE_ICON+'<span>Done</span>'):REORDER_ICON)+'</button>';
           if(!S.reorderMode){
-            h+='<button id="expandAllBtn" title="'+(S.allExpanded?"Collapse all sections":"Expand all sections at once")+'" style="background:none;border:none;padding:2px 8px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;border-radius:6px">'+allExpLbl2+'</button>';
-            h+='<button id="copyAllSectionsBtn" title="Copy the entire lesson outline to clipboard" style="background:none;border:none;padding:2px 8px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;border-radius:6px;display:inline-flex;align-items:center;gap:4px">'+COPY_ICON+'<span>Copy all</span></button>';
+            var _exLbl = S.allExpanded ? "Collapse all sections" : "Expand all sections";
+            h+='<button id="expandAllBtn" title="'+_exLbl+'" aria-label="'+_exLbl+'" aria-expanded="'+(S.allExpanded?"true":"false")+'" style="background:none;border:none;padding:4px 7px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;border-radius:6px;display:inline-flex;align-items:center;line-height:1">'+(S.allExpanded?CHEVRONS_UP:CHEVRONS_DOWN)+'</button>';
+            h+='<button id="copyAllSectionsBtn" title="Copy the entire lesson outline to clipboard" aria-label="Copy the entire lesson outline" style="background:none;border:none;padding:4px 8px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;border-radius:6px;display:inline-flex;align-items:center;gap:4px;line-height:1">'+COPY_ICON+'<span>Copy all</span></button>';
           }
           h+='</div>';
         }
