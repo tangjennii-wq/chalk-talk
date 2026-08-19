@@ -306,6 +306,15 @@ jobs:
       - name: Outline-head controls (icon-only, except the one that would be ambiguous)
         run: node test_outline_controls.mjs
 
+      # A fabricated malignancy figure on a pericarditis card was NOT the model drifting:
+      # getGuidelinesForTopic("Acute Pericarditis") returned null, so the talk was drafted with zero
+      # guideline context. Two bugs did it - no Cardiovascular keyword matched ("cardi" is not "cardiac"),
+      # and the TOPICS fallback compared === against its own sentence-case catalogue. An ungrounded talk
+      # looks exactly like a grounded one until a number is wrong, so routing is EXECUTED here, not
+      # regex-matched. Also asserts every clinical number in the new entry was read in a primary source.
+      - name: Pericardial grounding (routing executed, entry verified at source)
+        run: node test_pericardial_grounding.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction

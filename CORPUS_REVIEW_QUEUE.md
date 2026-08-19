@@ -52,10 +52,45 @@ All re-verified 2026-08-19 against doi 10.2337/dci24-0032.
 
 ---
 
-## 3. Standing lesson
+## 3. Pericardial effusion / tamponade — entry written, three items withheld
+
+The entry is committed. These are NOT in it:
+
+| Claim | Status |
+|---|---|
+| "ESC quotes an overall pericardiocentesis complication rate of **4–10%**" | **Withheld — contradicted.** The ESC Council for Cardiology Practice article gives **major 0.3–3.9%, minor 0.4–20%** — a different structure, not a different number. Asserted twice by the same review. Tie-break needs the 2015 ESC guideline full text, which is captcha-walled to me |
+| "Drain **<500 mL** in one sitting to avoid decompression syndrome," attributed to ESC | **Withheld — contradicted.** The same ESC article says there are no effective preventive recommendations "except to remove enough fluid to normalise the central venous and systemic blood pressure (**not >1 L**)". Also asserted twice. The entry states 1 L and names 500 mL as not-from-this-source, so it cannot be quietly adopted later |
+| Malignancy causes >30% of tamponade presentations; ~72% of new malignancies had positive cytology; ~50% of drained effusions | **Withheld — unverified.** Not in either source I could read. The entry instead refuses the number outright and keeps the actionable half (always send cytology) |
+| Effusion size grading: small <1.0 cm, moderate 1.0–1.9, large 2.0–2.5, very large >2.5, attributed to "ACC/imaging schemes" | **Withheld — unverified.** Plausible and useful; no primary source read |
+| **CORP-2 PMID** | **Blocked, not withheld.** DOI `10.1016/S0140-6736(13)62709-9` and the figures are confirmed, but `landmark_pmids.json` is PMID-keyed and eutils is robots-disallowed to me. One lookup from a machine with network adds it — ICAP (23992557) and CORP (21873705) are already indexed |
+
+**Verified and committed:** fluids scoped to hypotensive/hypovolaemic at 250–500 mL with the harm from
+larger volumes · IV diuretics contraindicated · positive-pressure ventilation −25% cardiac output ·
+drainage indications with 20 mm tied to *chronic* effusion · major/minor complication split ·
+decompression syndrome at 1 L · ICAP 16.7% (20/120) vs 37.5% (45/120) · CORP-2 21.6% (26/120) vs 42.5%
+(51/120) · echo-guided preferred, surgery for dissection and uncontrolled bleeding.
+
+---
+
+## 4. ILD / PPF — not yet triaged
+
+Relayed 2026-08-19: nintedanib **strongly** (not conditionally) recommended for PPF with pirfenidone the
+conditional one; inhaled treprostinil as the Group 3 PH-ILD exception (INCREASE, ~31 m 6MWD); tocilizumab
+and nintedanib alongside MMF in SSc-ILD; the anti-steroid recommendation being SSc-specific rather than
+general to CTD-ILD. Nothing verified, nothing in the corpus. Check the Pulmonary IPF/PPF entry first —
+if it is as thin as the pericardial one was, these are corpus-silent rather than corpus-wrong.
+
+---
+
+## 5. Standing lesson
 
 Physician review of a *generated card* keeps surfacing faults that are the corpus's, not the card's — the
 card repeated what it was told. Two failure modes seen so far:
+
+3. **A silent routing miss looks exactly like a normal talk.** `getGuidelinesForTopic("Acute
+   Pericarditis")` returned null — no keyword matched, and the TOPICS fallback compared case-sensitively
+   against its own catalogue. The talk was written with zero guideline context and read fine until a
+   number was wrong. Check routing before blaming the model.
 
 1. **Appending a correction instead of applying it.** Leaves the entry asserting both. The model reads
    the whole string and picks. Corrections go at the sentence carrying the error.

@@ -1601,7 +1601,7 @@ function getGuidelinesForTopic(topic) {
   // map topic keywords to specialties
   var kwMap = {
     "Nephrology": ["kidney","renal","nephro","ckd","aki","gfr","dialysis","transplant","glomerul","nephrotic","nephritic","proteinuria","creatinine","urine","sodium","hyponatremia","hypernatremia","potassium","hyperkalemia","acid-base","rta","metabolic acidosis","metabolic alkalosis","diuretic","furst","siadh","beer potomania","rhabdomyolysis","tumor lysis","hepatorenal","crrt","ihd","peritoneal","fistula","raas","sglt2","finerenone","aldosteronism"],
-    "Cardiovascular": ["heart","cardiac","cardio","hf ","hfref","hfpef","acs","stemi","nstemi","atrial fib","af ","afib","valve","valvular","endocarditis","syncope","hypertension","htn","blood pressure","dyslipidemia","cholesterol","statin","anticoagul","warfarin","doac","chads"],
+    "Cardiovascular": ["heart","cardiac","cardio","hf ","hfref","hfpef","acs","stemi","nstemi","atrial fib","af ","afib","valve","valvular","endocarditis","syncope","hypertension","htn","blood pressure","dyslipidemia","cholesterol","statin","anticoagul","warfarin","doac","chads","pericard","tamponade","myocarditis","pericardial effusion"],
     "Pulmonary": ["copd","asthma","lung","pulmonary","pneumonia","cap ","hap ","vap","ards","pleural","pe ","pulmonary embolism","ild","ipf","pulmonary hypertension","oxygen","ventilat","intubat","bronch"],
     "GI/Hepatology": ["liver","hepat","cirrhosis","varices","ascites","nafld","masld","nash","mash","gi bleed","ibd","crohn","colitis","c diff","cdiff","pancreat","gi ","gastro","esophag","celiac","barrett"],
     "Endocrinology": ["diabet","dka","hhs","ketoacidosis","hyperosmolar","hyperglycemic","insulin","a1c","thyroid","hypothyroid","hyperthyroid","adrenal","cortisol","addison","cushing","pheochrom","calcium","hypercalcemia","pth","osteoporosis","pituitary","prolactin"],
@@ -1634,7 +1634,10 @@ function getGuidelinesForTopic(topic) {
       var subs = TOPICS[cat].topics;
       for (var sub in subs) {
         for (var ti = 0; ti < subs[sub].length; ti++) {
-          if (subs[sub][ti] === topic) {
+          // CASE-INSENSITIVE. TOPICS stores "Acute pericarditis"; the topic arrives titled as
+          // "Acute Pericarditis", and === made the fallback miss its own catalogue entry. The failure
+          // was silent: getGuidelinesForTopic returns null and the talk is written ungrounded.
+          if (String(subs[sub][ti]).toLowerCase() === String(topic).toLowerCase()) {
             var cleanCat = cat.replace(/★\s*/,"").replace(/\s*\(\d+%.*\)/,"").trim();
             if (cleanCat === "★ Nephrology" || cleanCat === "Nephrology" || cat.indexOf("Nephrology") >= 0) matched.push("Nephrology");
             else if (cat.indexOf("Cardiovascular") >= 0) matched.push("Cardiovascular");
