@@ -26,9 +26,18 @@ const codeOnly = (src) => src.split("\n").map(l => l.replace(/\/\/.*$/, "")).joi
 
 // ── lift the REAL poller out of index.html ───────────────────────────────────
 const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
-const start = html.indexOf("async function pollAsyncGeneration(");
+// Lift from the FIRST thing the poller depends on, not from the poller itself. pollAsyncGeneration
+// sleeps via sleepUntilVisibleOr(), which waits on the _wakeWaiters list that notifyWake() releases —
+// all of which sits above it. Starting the slice lower silently extracts a poller whose helpers are
+// undefined, which reads as five unrelated assertion failures.
+const start = html.indexOf("var _wakeWaiters = [];");
 const end = html.indexOf("// RELOAD RECONNECT", start);
 ok(start > 0 && end > start, "found pollAsyncGeneration in index.html");
+ok(/async function pollAsyncGeneration\(/.test(html.slice(start, end)),
+   "…and the lifted slice still contains the poller itself, not just its helpers");
+for (const dep of ["notifyWake", "sleepUntilVisibleOr"]) {
+  ok(html.slice(start, end).includes(`function ${dep}(`), `…and ${dep}, which the poller calls`);
+}
 const pollerSrc = html.slice(start, end);
 
 // ── run the REAL worker to get a REAL status response ────────────────────────
@@ -52,12 +61,16 @@ async function statusFor(job) {
 }
 
 // ── drive the REAL poller with that response ─────────────────────────────────
-async function runPoller(statusBody, { httpStatus = 200 } = {}) {
+async function runPoller(statusBody, opts = {}) {
+  const { httpStatus = 200 } = opts;
   const ctx = {
     RAG_CONFIG: { url: "https://p.test" },
     ASYNC_GEN_CONFIG: { maxPollMs: 5000, pollMs: 1, jobKey: "k" },
     freeTierToken: () => "t",
-    encodeURIComponent, setTimeout, Promise, Date, Error, JSON, console: { warn() {}, log() {} },
+    encodeURIComponent, setTimeout, clearTimeout, Promise, Date, Error, JSON, console: { warn() {}, log() {} },
+    // The poll sleep now also wakes on visibilitychange (a hidden tab throttles setTimeout to roughly
+    // once a minute, which stalled completion detection for six minutes in testing on 2026-08-11).
+    document: opts.document || { hidden: false, addEventListener(){}, removeEventListener(){} },
     fetch: async () => ({ status: httpStatus, ok: httpStatus < 400, json: async () => statusBody }),
   };
   vm.createContext(ctx);

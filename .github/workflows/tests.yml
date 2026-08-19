@@ -275,6 +275,14 @@ jobs:
           node rag/build_landmark_index.mjs
           git diff --exit-code -- landmark_pmids.json
 
+      # Chrome throttles timers hard in a hidden tab. Observed 2026-08-11: the elapsed counter froze at 46s
+      # for six minutes on a job the Worker had already finished, because both the counter and the status
+      # poll had stopped. genBackgroundSafe promises the job survives - it does - but the CLIENT stopped
+      # noticing. Elapsed is now derived from a timestamp and the poll wakes on visibilitychange. Also
+      # guards BUILD_ID against build.txt: it sat six commits stale through the whole trial-grounding change.
+      - name: Backgrounded-tab recovery + build stamp
+        run: node test_launch_polish.mjs
+
       # cache_creation_input_tokens was read NOWHERE in worker.js or index.html while the browser path had
       # been sending cache_control since June, so every cached BYOK generation billed ZERO for the 1.25x
       # write premium against the 250 dollar cap. Enabling caching on the Worker without fixing that would

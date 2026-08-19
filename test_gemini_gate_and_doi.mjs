@@ -23,6 +23,23 @@ ok(/if \(geminiEnabled\(\)\) \{/.test(beforeCta), "the 'Continue free with Gemin
 
 // provider picker must refuse gemini
 ok(/if\(p==="gemini" && !geminiEnabled\(\)\) return;/.test(html), "the provider picker refuses to switch to Gemini when disabled");
+
+// THE HANDLER REFUSED, THE BUTTON DID NOT SAY SO. Until 2026-08-11 provBtn rendered Gemini identically
+// to Claude and ChatGPT while the click handler above silently returned — a dead control that still
+// implied an equivalence the benchmark disproves (18/18 failures, including a fabricated trial and DOI).
+// A refusal the user cannot see is not a gate, it is a bug.
+ok(/var blocked = \(val === "gemini" && !geminiEnabled\(\)\);/.test(html),
+   "the model picker itself knows Gemini is gated, not just the click handler");
+ok(/if\(blocked\)\{[\s\S]{0,400}?disabled aria-disabled="true"/.test(html),
+   "…and renders it disabled to pointer AND to assistive tech");
+ok(/if\(blocked\)\{[\s\S]{0,900}?>Unavailable</.test(html),
+   "…labelled Unavailable in VISIBLE text, not a hover tooltip a phone cannot reach");
+ok(/aria-label="Gemini is unavailable: it did not meet Chalk Talk&#39;s medical-quality standard\."/.test(html),
+   "…with a plain-language reason for assistive tech - product copy, not benchmark jargon");
+ok(/18 of 18 judged comparisons/.test(html) && !/18\/18/.test(html.replace(/\/\/[^\n]*/g, "")),
+   "the benchmark detail stays in the source comments, where it belongs");
+ok(/if\(blocked\)\{[\s\S]{0,900}?cursor:not-allowed/.test(html),
+   "…and looks unavailable rather than merely inert");
 // a previously-saved gemini preference must not silently persist
 ok(/if\(_gp==="gemini" && !geminiEnabled\(\)\) _gp = "claude";/.test(html), "a stored gemini provider preference falls back to Claude at boot");
 // review-switch button: both render and handler gated

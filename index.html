@@ -1817,7 +1817,7 @@ var RAG_CONFIG = {
 // load + on tab-focus we fetch build.txt with cache:no-store and, if it differs from BUILD_ID baked into
 // this build, show a small "Refresh for the latest version" pill. BUMP BOTH BUILD_ID and build.txt on
 // every deploy. (Jenni 2026-07)
-var BUILD_ID = "2026-08-09-02";
+var BUILD_ID = "2026-08-18-01";
 // ── THE iOS KEYBOARD, MEASURED RATHER THAN DECLARED ─────────────────────────────────────────────────
 // visualViewport is the only thing on iOS that knows the keyboard is up: window.innerHeight does not
 // change, and env(keyboard-inset-height) is a Chromium API. --kb is the number of pixels the keyboard
@@ -2108,6 +2108,88 @@ function _applyStreamingPartial(fullText){
   if (typeof render === "function") render();
 }
 
+// ── BACKGROUNDED-TAB RECOVERY ───────────────────────────────────────────────────────────────────────
+// Chrome throttles timers hard in a hidden tab: setInterval slows to roughly once a minute, and the
+// status poll below sleeps on a setTimeout. Observed 2026-08-11 while driving a generation with the tab
+// unfocused — the elapsed counter froze at 46s and stayed there for six minutes on a job the Worker had
+// already finished. The durable path genuinely survives backgrounding (that is the point of it, and
+// genBackgroundSafe says so), but the CLIENT stops noticing. On a phone that is "switch apps, come back
+// to a talk that looks stuck".
+//
+// Two fixes, both small:
+//   1. elapsed time is DERIVED from a start timestamp, not accumulated by a tick that may not fire;
+//   2. the poll sleep also wakes on visibilitychange, so returning to the tab checks immediately
+//      instead of waiting out a throttled timer.
+// ── WAKE-UP CHECK ───────────────────────────────────────────────────────────────────────────────────
+// Three events can mean "the user is looking at this again": visibilitychange (tab switch),
+// pageshow (bfcache restore — fires with NO visibilitychange, so a back-button return is otherwise
+// invisible), and focus (window switch on desktop). They routinely fire together, so this is guarded:
+// one check per wake, never three overlapping polls against the same job.
+//
+// It deliberately does NOT try to defeat timer throttling. While hidden, the poll sleeps as the browser
+// dictates. What this guarantees is that RETURNING is immediate.
+var _wakeCheckInFlight = false;
+async function checkActiveJobOnWake(){
+  if(_wakeCheckInFlight) return;
+  if(typeof document !== "undefined" && document.hidden) return;   // still hidden: nothing to show yet
+  _wakeCheckInFlight = true;
+  try{
+    // A poll loop is already running: WAKE IT. This is the line that makes pageshow and focus mean
+    // anything — the sleep cannot observe those events itself, so without notifyWake() a bfcache restore
+    // would wait out the full throttled timeout while the job sat finished on the server.
+    if(S.loading){
+      notifyWake();
+      if(typeof render === "function") render();
+      return;
+    }
+    // No loop running: a bfcache restore or a reload lost it while the job kept going server-side.
+    var stored = null;
+    try{ stored = JSON.parse(localStorage.getItem(ASYNC_GEN_CONFIG.jobKey) || "null"); }catch(_){ stored = null; }
+    if(!stored || !stored.jobId) return;
+    notifyWake();                       // release any sleeper before we take over
+    S.reconnecting = true;
+    if(typeof render === "function") render();
+    try{ await resumeAsyncJobIfAny(); }
+    catch(_){ /* the handle is preserved by the resume path error handling — never dropped here */ }
+    finally{ S.reconnecting = false; if(typeof render === "function") render(); }
+  } finally {
+    _wakeCheckInFlight = false;
+  }
+}
+
+// A sleeping poll subscribes here. THREE events mean "the user is back" — visibilitychange, pageshow and
+// focus — and only visibilitychange is observable from inside the sleep. Routing all three through one
+// notifier is the difference between the fix working and merely looking like it works: a bfcache restore
+// fires pageshow with NO visibilitychange, so a sleep that listened for visibilitychange alone would sit
+// out its full throttled timeout on exactly the return this was built for. (Codex caught this, 2026-08-18.)
+var _wakeWaiters = [];
+function notifyWake(){
+  var waiting = _wakeWaiters.splice(0, _wakeWaiters.length);
+  for(var i=0;i<waiting.length;i++){ try{ waiting[i](); }catch(_){} }
+}
+
+function sleepUntilVisibleOr(ms){
+  return new Promise(function(res){
+    var done = false;
+    var t = null;
+    function fin(){
+      if(done) return;
+      done = true;
+      var i = _wakeWaiters.indexOf(fin);
+      if(i >= 0) _wakeWaiters.splice(i, 1);
+      if(t) clearTimeout(t);
+      res();
+    }
+    t = setTimeout(fin, ms);
+    _wakeWaiters.push(fin);
+  });
+}
+// Elapsed seconds since generation started. Read from the clock rather than counted, so a throttled or
+// missed tick cannot make the number wrong — it can only make it update late.
+function genElapsedSec(){
+  return S._genStartedAt ? Math.max(0, Math.round((Date.now() - S._genStartedAt) / 1000)) : (S.loadSec || 0);
+}
+
 async function pollAsyncGeneration(jobId, onStage, checkAbort, onPartial){
   var start = Date.now();
   var lastStage = "";
@@ -2120,7 +2202,7 @@ async function pollAsyncGeneration(jobId, onStage, checkAbort, onPartial){
     if(Date.now() - start > ASYNC_GEN_CONFIG.maxPollMs){
       var te = new Error("Still generating on our servers — reload the page in a moment to pick it back up."); te.code = "timeout"; throw te;
     }
-    await new Promise(function(res){ setTimeout(res, ASYNC_GEN_CONFIG.pollMs); });
+    await sleepUntilVisibleOr(ASYNC_GEN_CONFIG.pollMs);
     var r;
     try{
       r = await fetch(RAG_CONFIG.url.replace(/\/$/,"") + "/generate-status/" + encodeURIComponent(jobId), {
@@ -2225,7 +2307,8 @@ async function resumeAsyncJobIfAny(){
   S.streamingTitle=""; S.streamingChars=0; S.streamingSubtitle=""; S.streamingSections=[]; S.streamingStem="";
   if(typeof render === "function") render();
   if(typeof loadTimer !== "undefined") clearInterval(loadTimer);
-  loadTimer = setInterval(function(){ S.loadSec++; render(); }, 1000);
+  S._genStartedAt = (stored && stored.at) ? stored.at : Date.now();   // persisted, not the moment we noticed
+  loadTimer = setInterval(function(){ S.loadSec = genElapsedSec(); render(); }, 1000);
   try{
     var res = await pollAsyncGeneration(stored.jobId,
       function(stage){ S.genPhase = (stage === "critique") ? "reviewing" : "drafting"; S.reviewLiveChecking = (stage === "critique") && topicNeedsLiveCheck(S.topic); S.loadMsg = (stage === "critique") ? "AI-checking & polishing (server-side)…" : "Finishing your talk (server-side)…"; render(); },
@@ -4034,7 +4117,7 @@ var S = {
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false, proofreadArmed:false,
-  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude", modelPickerOpen:false, composeOptionsOpen:false, mobileLibOpen:false, mobileLibSpecOpen:false,
+  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude", modelPickerOpen:false, composeOptionsOpen:false, mobileLibOpen:false, mobileLibSpecOpen:false, reconnecting:false,
   talkHistory:[], editingSection:null, editingDraft:null, reorderMode:false,
   loadingFromHash:false,
   // — Auth + cloud
@@ -8208,12 +8291,33 @@ function renderModelPicker(){
     var on=(_gp===val);
     var hasKey=false;
     try{ hasKey = (val==="openai" && !!localStorage.getItem("openai_api_key")) || (val==="gemini" && !!localStorage.getItem("gemini_api_key")); }catch(e){}
+    // GEMINI IS OFF, AND THE BUTTON MUST SAY SO — but in product language, not benchmark jargon.
+    //
+    // Internal reason, kept here rather than in the UI: Gemini failed the medical-accuracy benchmark on
+    // 18 of 18 judged comparisons, including a fabricated trial and a fabricated DOI. That is why
+    // geminiEnabled() returns false. "20-topic benchmark 18/18" means nothing to a physician reading a
+    // model picker, so the surface copy says only that it did not meet the standard.
+    //
+    // Until 2026-08-11 this rendered identically to Claude and ChatGPT while the click handler silently
+    // returned: a dead control that still implied an equivalence the benchmark disproves. The label is
+    // now VISIBLE text, not a title attribute — a hover tooltip is unreachable on a phone, which is where
+    // most of this app is used.
+    var blocked = (val === "gemini" && !geminiEnabled());
+    if(blocked){
+      return '<button class="genProvBtn" data-p="'+val+'" disabled aria-disabled="true" '
+        + 'aria-label="Gemini is unavailable: it did not meet Chalk Talk&#39;s medical-quality standard." '
+        + 'style="flex:1 1 0;min-width:0;background:transparent;color:var(--ink-soft);border:1px dashed var(--line);border-radius:10px;padding:9px 8px;'
+        + 'font-size:13px;font-weight:500;cursor:not-allowed;opacity:.6;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px">'
+        + '<span style="font-size:13px">'+icon+'</span>'+label
+        + '<span style="font-size:9px;font-weight:700;letter-spacing:0.04em;line-height:1.4;border:1px solid var(--line);border-radius:4px;padding:1px 4px">Unavailable</span>'
+        + '</button>';
+    }
     return '<button class="genProvBtn" data-p="'+val+'" style="flex:1 1 0;min-width:0;background:'+(on?"#fff":"transparent")+';color:'+(on?"var(--plum-deep)":"var(--ink-muted)")+';border:'+(on?"1px solid var(--line)":"1px solid transparent")+';border-radius:10px;padding:9px 8px;font-size:13px;font-weight:'+(on?"600":"500")+';cursor:pointer;box-shadow:'+(on?"var(--shadow-soft)":"none")+';transition:all .15s ease;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:13px">'+icon+'</span>'+label+
       (hasKey?'<span style="font-size:9px;font-weight:700;color:'+(on?"var(--plum)":"var(--ink-soft)")+';background:'+(on?"var(--lavender-bg)":"transparent")+';border-radius:4px;padding:1px 4px;letter-spacing:0.04em;line-height:1.4">✓ key</span>':'')+
       '</button>';
   }
   var out='<div style="margin-bottom:14px">';
-  out+='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 4px 6px"><span style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em">Model</span><span style="font-size:10.5px;color:var(--ink-soft);font-weight:400;line-height:1.4;text-align:right">ChatGPT &amp; Gemini use your own key</span></div>';
+  out+='<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 4px 6px"><span style="font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em">Model</span><span style="font-size:10.5px;color:var(--ink-soft);font-weight:400;line-height:1.4;text-align:right">ChatGPT uses your own key'+(geminiEnabled()?" \u00b7 Gemini too":"")+'</span></div>';
   out+='<div style="display:flex;background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;box-shadow:var(--shadow-soft)">';
   out+=provBtn("claude","🟣","Claude")+provBtn("openai","💬","ChatGPT")+provBtn("gemini","✦","Gemini");
   out+='</div></div>';
@@ -8409,8 +8513,9 @@ async function generate(){
   speechSynthesis.cancel();
   if(!_hadExistingTalk) S.talk = null;   // only blank the view when there's no prior content to read
   render();
+  S._genStartedAt = Date.now();
   loadTimer=setInterval(function(){
-    S.loadSec++;
+    S.loadSec = genElapsedSec();
     if(S.genPhase==="reviewing"){
       // Review phase — cycle messages so it never looks stuck; these describe the actual safety checks.
       var rmsgs=["Checking the numbers and doses…","Checking the drug names…","Checking claims against the guidelines…","Almost done…"];
@@ -13162,6 +13267,7 @@ h+='</div>';
     var _genLabel = _reviewing ? "🔎 Checking it" : (S.streamingTitle ? ("Writing: "+S.streamingTitle) : "Writing your talk");
     h+='<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><span class="spinner" style="width:22px;height:22px;border-width:3px'+(_reviewing?';border-top-color:#2d8a2d':'')+'"></span><span style="font-size:14px;font-weight:700;color:'+(_reviewing?"#2d6a2d":"var(--plum-deep)")+'">'+esc(_genLabel)+'</span></div>';
     h+='<div style="font-size:12px;color:var(--ink);margin-bottom:6px">'+esc(S.loadMsg||"Working…")+'</div>';
+    if(S.reconnecting) h+='<div style="font-size:11.5px;color:var(--plum-deep);font-weight:600;margin-bottom:6px">↻ Reconnecting\u2026</div>';
     if(_reviewing && S.reviewLiveChecking){
       // The live check is the slowest part of the review and the least guessable, so name it.
       h+='<div style="font-size:11.5px;color:var(--plum-deep);line-height:1.45;margin-bottom:6px;font-weight:600">'
@@ -13256,11 +13362,12 @@ h+='</div>';
     // Button copy adapts to mode (Jenni 2026-06-10): Lecture → "Generate Chalk Talk", Boards → "Generate Question".
     // Generation is disabled until guideline data is ready (JSON-source migration).
     var _gReady = guidelinesReady();
-    var _genLabel = !_gReady ? "Loading guideline data…"
+    var _genLabel = S.reconnecting ? "Reconnecting to your talk…"
+      : !_gReady ? "Loading guideline data…"
       : (S.topic.trim()
         ? (S.style === "boards" ? "Generate Question" : "Generate Chalk Talk")
         : "Enter a topic to generate");
-    var _genOff = !_gReady || !S.topic.trim();
+    var _genOff = S.reconnecting || !_gReady || !S.topic.trim();   // never invite a second job while reconnecting
     h+='<button id="genBtn" '+(_genOff?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich) 0%,var(--plum-deep) 100%);border:none;border-radius:18px;padding:16px 20px;color:#fff;font-size:15px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(75,17,111,0.28);opacity:'+(_genOff?"0.45":"1")+';cursor:'+(_genOff?"not-allowed":"pointer")+';transition:all .15s ease"><span style="font-size:14px">'+(_gReady?"✨":"⏳")+'</span>'+_genLabel+(_gReady?'<span style="font-size:14px">→</span>':'')+'</button>';
   }
   if(S.error){
@@ -15454,6 +15561,14 @@ loadGuidelines();
 // citations, not the talk. resolveTrials() returns nothing while it is unset, so the window before it
 // lands names no trials rather than naming unsourced ones.
 loadLandmarkPmids();
+// THREE ways the user can come back, and pageshow is the one that is easy to miss: a bfcache restore
+// fires pageshow with NO visibilitychange, so a back-button return would otherwise never be noticed.
+// checkActiveJobOnWake() is guarded, so all three firing at once still produces one check.
+try{
+  document.addEventListener("visibilitychange", function(){ checkActiveJobOnWake(); });
+  window.addEventListener("pageshow", function(){ checkActiveJobOnWake(); });
+  window.addEventListener("focus", function(){ checkActiveJobOnWake(); });
+}catch(_){}
 // Safety net: if Supabase init never completes (e.g., user offline), still drain after 3s
 // so the deep-link at least tries the localStorage path. No-op if already drained.
 setTimeout(function(){ if(typeof drainPendingHashLoad==="function" && window._pendingHashLoad) drainPendingHashLoad(); }, 3000);
