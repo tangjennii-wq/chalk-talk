@@ -104,7 +104,16 @@ const iStamp = titleRow.indexOf('ttl-refined');
 const iPencil = titleRow.indexOf('editTitleBtn');
 ok(iStamp > -1, "the stamp renders on the title row");
 ok(iStamp > iPill, "…to the RIGHT of the Lecture / Boards pill, as asked");
-ok(iPencil > iStamp, "…and to the LEFT of the ✎, so margin-left:auto still pins the pencil right");
+// ORDER REVERSED 2026-08-19. The pencil used to be pinned to the far right with margin-left:auto,
+// which put it nowhere near the title it edits. It now sits directly beside the mode symbol and the
+// stamp trails the cluster: title · symbol · ✎ · last updated.
+ok(iPencil < iStamp, "…and to the RIGHT of the ✎, which now sits beside the title it edits");
+ok(!/id="editTitleBtn"[^>]*margin-left:auto/.test(titleRow),
+   "…because the pencil no longer uses margin-left:auto to float away from the title");
+// The pencil is a bare ✎ glyph, so it has always needed a name — nothing asserted it until a mutation
+// stripped it and passed.
+ok(/id="editTitleBtn"[^>]*aria-label="Edit title"/.test(titleRow),
+   "…and the ✎ carries an aria-label, since a lone glyph is nameless to a screen reader");
 ok(/t\._refinedAt\?'<span class="ttl-refined"/.test(titleRow),
    "…conditionally — a talk never refined renders nothing at all, not an empty span");
 ok(/class="ttl-refined"[^']*color:var\(--ink-soft\)/.test(titleRow) &&
@@ -116,6 +125,19 @@ ok(/class="ttl-refined"[^']*flex-shrink:0/.test(titleRow),
    "…and flex-shrink:0, so the long title truncates instead of crushing the stamp");
 ok(!/<p class="ttl-refined"/.test(html),
    "the old <p> under the subtitle is gone — it was rejected for that placement");
+// ── the mode pill is the SYMBOL ALONE ───────────────────────────────────────────────────────────────
+// "🎓 Lecture" spent a third of the row restating what the glyph already said. Dropping the word makes
+// the accessible name load-bearing rather than decorative: a bare emoji is unreadable to a screen
+// reader and ambiguous at small sizes, so title= and aria-label are now the only place the word exists.
+ok(/tk-pill-modetype[^>]*>'\+\(isBQ\?"📋":"🎓"\)/.test(titleRow),
+   "the mode pill renders the symbol alone, with no 'Lecture' / 'Boards' text");
+ok(/tk-pill-modetype[^>]*aria-label="'\+\(isBQ\?"Boards question":"Lecture"\)/.test(titleRow),
+   "…so it carries an aria-label naming the mode");
+ok(/tk-pill-modetype[^>]*title="'\+\(isBQ\?"Boards question":"Lecture"\)/.test(titleRow),
+   "…and a title, so hovering still says which mode this is");
+ok(/tk-pill-modetype[^>]*font-size:13px/.test(titleRow),
+   "…set larger than the 10.5px it was, because it is no longer propped up by a word beside it");
+
 // ── the library card dates BY the stamp (Jenni 2026-08-19) ──────────────────────────────────────────
 // The original ask was "not in library", meaning: do not add a second line to a card. That still holds —
 // what changed is which date the card's ONE date is. It was created_at, which never moves, so a library

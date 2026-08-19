@@ -13758,9 +13758,16 @@ h+='</div>';
     // truncates with an ellipsis (full title on hover via the title attr) and the ✎ edit button
     // stays pinned to its right instead of wrapping below. Graduation-cap emoji prefix removed.
     // Mode pill lives inline right of the title (Jenni 2026-07-03 — saves a vertical row; was in ttl-pills).
-    // The refine stamp sits after the pill and before the ✎, so the pencil keeps its margin-left:auto
-    // and stays pinned right whether or not the talk has ever been refined. Absent until it has been.
-    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap"><span class="tk-title-text" title="'+esc(t.title||"")+'" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto">'+esc(t.title||"")+'</span><span class="tk-pill tk-pill-modetype" style="flex-shrink:0;font-size:10.5px;padding:1px 8px;opacity:0.85">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>'+(t._refinedAt?'<span class="ttl-refined" style="flex-shrink:0;font-size:10.5px;color:var(--ink-soft);font-weight:400;letter-spacing:.01em;white-space:nowrap;opacity:0.75">'+esc(refinedStampText(t._refinedAt))+'</span>':'')+'<button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0;margin-left:auto">✎</button></h1>';
+    // ORDER: title · mode symbol · ✎ · last-updated stamp. The pencil used to be pinned to the far
+    // right with margin-left:auto, which put it nowhere near the title it edits — on a wide screen it
+    // read as a toolbar button for the whole page. It now sits directly beside the title, and the quiet
+    // stamp trails the cluster. (Jenni 2026-08-19)
+    //
+    // THE MODE PILL IS THE SYMBOL ALONE. "🎓 Lecture" spent a third of the row restating what the emoji
+    // already says. Dropping the word means the glyph now carries the whole meaning, so it keeps BOTH a
+    // title= and an aria-label — without them a bare emoji is unreadable to a screen reader and
+    // ambiguous at 10.5px, which is also why it is set slightly larger now that it stands alone.
+    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap"><span class="tk-title-text" title="'+esc(t.title||"")+'" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto">'+esc(t.title||"")+'</span><span class="tk-pill tk-pill-modetype" title="'+(isBQ?"Boards question":"Lecture")+'" aria-label="'+(isBQ?"Boards question":"Lecture")+'" style="flex-shrink:0;font-size:13px;line-height:1;padding:3px 7px;opacity:0.9">'+(isBQ?"📋":"🎓")+'</span>'+'<button id="editTitleBtn" title="Edit title" aria-label="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0">✎</button>'+(t._refinedAt?'<span class="ttl-refined" style="flex-shrink:0;font-size:10.5px;color:var(--ink-soft);font-weight:400;letter-spacing:.01em;white-space:nowrap;opacity:0.75">'+esc(refinedStampText(t._refinedAt))+'</span>':'')+'</h1>';
     if(t.subtitle)h+='<p class="ttl-sub">'+esc(t.subtitle)+'</p>';
 
       // ─── CHECK FOR UPDATES ───────────────────────────────────────────────
