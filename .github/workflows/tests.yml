@@ -275,6 +275,13 @@ jobs:
           node rag/build_landmark_index.mjs
           git diff --exit-code -- landmark_pmids.json
 
+      # Nothing recorded that a talk had been through a refine, so reviewing a library one at a time there
+      # was no way to tell which were done. ABSENCE is the signal, which is why what must NOT stamp matters
+      # more than what does: loading a talk, the citation audit, the depth toggle and undo all rewrite
+      # S.talk without the user asking, and any of them stamping would mark every talk as refined.
+      - name: Refine stamp (five refine paths stamp, nothing else does)
+        run: node test_refine_stamp.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction

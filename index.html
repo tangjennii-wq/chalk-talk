@@ -6970,6 +6970,31 @@ function topicNeedsLiveCheck(topicStr){
 function isFirstRun(){
   try{ return !localStorage.getItem("ct_generated_once"); }catch(_){ return false; }
 }
+// ── REFINE STAMP ────────────────────────────────────────────────────────────────────────────────────
+// Set ONLY where a refine writes the talk back. Deliberately NOT set by: loading a saved talk, the
+// citation audit (which rewrites the talk without the user asking), the depth toggle, or an undo — a
+// snapshot restore carries whatever stamp it was taken with, which is the honest answer.
+//
+// Absence is the signal. A talk that has never been refined shows nothing at all, so working through a
+// library one at a time, the unstamped ones are the ones left.
+function markRefined(talk){
+  if(!talk || typeof talk !== "object") return talk;
+  talk._refinedAt = new Date().toISOString();
+  talk._refineCount = (talk._refineCount || 0) + 1;
+  return talk;
+}
+
+// A numeric date, always — no "today", no time. It sits inline on the title row beside the mode pill,
+// where the horizontal budget is already spent on the title itself, so it has to be short and the same
+// width every day. "last updated 9/16/2026" is the whole vocabulary. Lowercase, because it is a
+// footnote on the title and capitalising it would make it read as a second label next to Lecture.
+function refinedStampText(iso){
+  if(!iso) return "";
+  var d = new Date(iso);
+  if(isNaN(d.getTime())) return "";
+  return "last updated " + d.toLocaleDateString(undefined, { year: "numeric", month: "numeric", day: "numeric" });
+}
+
 function markGeneratedOnce(){
   try{ localStorage.setItem("ct_generated_once","1"); }catch(_){}
 }
@@ -9843,7 +9868,7 @@ async function applyProofreadFeedback(userMsg){
           S.msgs.push({r:"a",t:"⚠ Applying that would have left the talk incomplete (" + (_incomplete.missing||[]).join(", ") + "), so I kept your original untouched. Try applying the corrections one at a time."});
           if(refineTimer){ clearInterval(refineTimer); refineTimer=null; } S._proofreadRunning=false; S.chatBusy=false; render(); return;
         }
-        S.talk = revised;
+        S.talk = markRefined(revised);
         // NO CHARGE. Refinement is part of the talk already paid for; authorisation was obtained at the
         // top of this function via ensureRefineAuth(). This line used to take a full talk credit.
         if(S.dg && S.dg.imgB64) S.visualStale = true;
@@ -10505,7 +10530,7 @@ async function sendChat(){
         } else {
           var origSecCount = (S.talk.sections || []).length;
           var newSecCount = (restructured.sections || []).length;
-          S.talk = restructured;
+          S.talk = markRefined(restructured);
           if(S.dg && S.dg.imgB64) S.visualStale = true;
           else { S.dg = null; S.dgErr = ""; }
           S.podScript = "";
@@ -10547,7 +10572,7 @@ async function sendChat(){
         } else if(newRefCount < origRefCount){
           S.msgs.push({r:"a",t:"\u26a0 Expansion dropped a reference. Keeping the original. Try again."});
         } else {
-          S.talk = expanded;
+          S.talk = markRefined(expanded);
           if(S.dg && S.dg.imgB64) S.visualStale = true;
           else { S.dg = null; S.dgErr = ""; }
           S.podScript = "";
@@ -10586,7 +10611,7 @@ async function sendChat(){
         } else if(newRefCount < origRefCount){
           S.msgs.push({r:"a",t:"\u26a0 Compression dropped a reference ("+origRefCount+" \u2192 "+newRefCount+"). Keeping the original. Try again or say \"rewrite\" for a full regen."});
         } else {
-          S.talk = compressed;
+          S.talk = markRefined(compressed);
           if(S.dg && S.dg.imgB64) S.visualStale = true;
           else { S.dg = null; S.dgErr = ""; }
           S.podScript = "";
@@ -10659,7 +10684,7 @@ async function sendChat(){
             S.msgs.push({r:"a",t:"⚠ That edit would have left the talk incomplete (" + (_inc.missing||[]).join(", ") + "), so I kept your original. Try a narrower change."});
             S.chatBusy=false; render(); return;
           }
-          S.talk = merge.talk;
+          S.talk = markRefined(merge.talk);
           // VMC staleness (Jenni 2026-07-03): if the refine changed content but the model didn't
           // update the memory card, flag it so the reader knows the card may lag the latest edits.
           // An explicit VMC edit clears the flag.
@@ -13571,7 +13596,9 @@ h+='</div>';
     // truncates with an ellipsis (full title on hover via the title attr) and the ✎ edit button
     // stays pinned to its right instead of wrapping below. Graduation-cap emoji prefix removed.
     // Mode pill lives inline right of the title (Jenni 2026-07-03 — saves a vertical row; was in ttl-pills).
-    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap"><span class="tk-title-text" title="'+esc(t.title||"")+'" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto">'+esc(t.title||"")+'</span><span class="tk-pill tk-pill-modetype" style="flex-shrink:0;font-size:10.5px;padding:1px 8px;opacity:0.85">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span><button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0;margin-left:auto">✎</button></h1>';
+    // The refine stamp sits after the pill and before the ✎, so the pencil keeps its margin-left:auto
+    // and stays pinned right whether or not the talk has ever been refined. Absent until it has been.
+    h+='<div class="tk-lessontitle"><h1 style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap"><span class="tk-title-text" title="'+esc(t.title||"")+'" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto">'+esc(t.title||"")+'</span><span class="tk-pill tk-pill-modetype" style="flex-shrink:0;font-size:10.5px;padding:1px 8px;opacity:0.85">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>'+(t._refinedAt?'<span class="ttl-refined" style="flex-shrink:0;font-size:10.5px;color:var(--ink-soft);font-weight:400;letter-spacing:.01em;white-space:nowrap;opacity:0.75">'+esc(refinedStampText(t._refinedAt))+'</span>':'')+'<button id="editTitleBtn" title="Edit title" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;flex-shrink:0;margin-left:auto">✎</button></h1>';
     if(t.subtitle)h+='<p class="ttl-sub">'+esc(t.subtitle)+'</p>';
 
       // ─── CHECK FOR UPDATES ───────────────────────────────────────────────
