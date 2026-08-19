@@ -315,6 +315,16 @@ jobs:
       - name: Pericardial grounding (routing executed, entry verified at source)
         run: node test_pericardial_grounding.mjs
 
+      # 107 of 768 topics - 14% of the app - were drafted with NO guideline context, silently, for as
+      # long as the category names had existed. Found one card at a time through physician review; a loop
+      # enumerates them in 30ms. Worse, bare-substring keyword matching produced actively WRONG grounding:
+      # "tens" fired inside "hyperTENSive" so hypertensive emergency was grounded on DERMATOLOGY. This
+      # walks every catalogue topic in three cases, asserts the CORRECT specialty rather than any
+      # guideline, and forbids a catch-all - an unmapped category must ground on nothing, because wrong
+      # grounding is far harder to notice than missing grounding.
+      - name: Routing coverage (all 768 topics, correct specialty, no catch-all)
+        run: node test_routing_coverage.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction

@@ -36,11 +36,20 @@ function fnSrc(name){
 // read undefined and matched nothing; the pericardial assertions passed only because the keyword fix
 // handles them before the fallback is reached. A stub that does not mirror the real structure is not
 // exercising the code it claims to.
+// getGuidelinesForTopic now depends on TOPIC_CATEGORY_SPECIALTY, so the lift has to bring it along.
+// It failed loudly (ReferenceError) rather than silently returning null, which is the right way round.
+function objSrc(name){
+  const at = html.indexOf(`var ${name} = {`);
+  if (at < 0) throw new Error("missing " + name);
+  return html.slice(at, html.indexOf("};", at) + 2);
+}
+const CAT_MAP_SRC = objSrc("TOPIC_CATEGORY_SPECIALTY");
+
 const ctx = { GUIDELINES: G, TOPICS: { "Cardiology": { topics: { "Pericardial Disease":
   ["Acute pericarditis", "Pericardial effusion", "Constrictive pericarditis", "Tamponade"] } } },
   String, Object, console: { warn(){} } };
 vm.createContext(ctx);
-vm.runInContext(fnSrc("getGuidelinesForTopic") + "\nthis.route = getGuidelinesForTopic;", ctx);
+vm.runInContext(CAT_MAP_SRC + "\n" + fnSrc("getGuidelinesForTopic") + "\nthis.route = getGuidelinesForTopic;", ctx);
 const route = ctx.route;
 
 // The exact titles that failed. Each must now reach Cardiovascular.
@@ -55,9 +64,12 @@ for (const topic of ["Acute Pericarditis", "Pericardial Effusion and Cardiac Tam
 // fires first and the fallback is never reached. Reverting === survived the whole mutation pass because
 // of that. This uses a topic no keyword can match, so the ONLY way it routes is through TOPICS.
 const fallbackCtx = { GUIDELINES: G, String, Object, console: { warn(){} },
-  TOPICS: { "★ Nephrology (12%)": { topics: { "Obscure": ["Bartter syndrome variant"] } } } };
+  // A REAL category name, because routing is now an exact table with no catch-all. The old stub used a
+  // decorated invented name and correctly routed to nothing — the test was asserting against a category
+  // the app has never had.
+  TOPICS: { "Nephrology and Urology": { topics: { "Obscure": ["Bartter syndrome variant"] } } } };
 vm.createContext(fallbackCtx);
-vm.runInContext(fnSrc("getGuidelinesForTopic") + "\nthis.route = getGuidelinesForTopic;", fallbackCtx);
+vm.runInContext(CAT_MAP_SRC + "\n" + fnSrc("getGuidelinesForTopic") + "\nthis.route = getGuidelinesForTopic;", fallbackCtx);
 const fb = fallbackCtx.route;
 ok(!!fb("Bartter syndrome variant"), "sanity: the TOPICS fallback routes an exact-case catalogue entry");
 ok(!!fb("bartter syndrome variant") && !!fb("BARTTER SYNDROME VARIANT"),

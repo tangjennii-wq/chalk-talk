@@ -1591,6 +1591,31 @@ async function loadGuidelines(){
 }
 
 // ═══════════ GUIDELINE LOOKUP ═══════════
+// TOPICS category (the display name shown in the picker) -> guidelines.json specialty key.
+// Every category in TOPICS must appear here. test_routing_coverage.mjs walks all 768 catalogue topics
+// and fails on any that routes to null, so adding a category without a line here is a build failure
+// rather than a class of talks quietly written without guideline grounding. (Jenni 2026-08-19)
+var TOPIC_CATEGORY_SPECIALTY = {
+  "Allergy and Immunology": "Allergy/Immuno",
+  "Cardiovascular Disease": "Cardiovascular",
+  "Dermatology": "Dermatology",
+  "Endocrinology, Diabetes, Metabolism": "Endocrinology",
+  "Gastroenterology": "GI/Hepatology",
+  "Geriatric Syndromes": "Geriatrics",
+  "Hematology": "Heme/Onc",
+  "Infectious Disease": "ID",
+  "Medical Oncology": "Oncology",
+  "Miscellaneous": "Miscellaneous",
+  "Nephrology and Urology": "Nephrology",
+  "Neurology": "Neurology",
+  "Obstetrics and Gynecology": "Women's Health",
+  "Ophthalmology": "Ophthalmology",
+  "Otolaryngology and Dental": "Otolaryngology",
+  "Psychiatry": "Psychiatry",
+  "Pulmonary Disease": "Pulmonary",
+  "Rheumatology and Orthopedics": "Rheumatology"
+};
+
 function getGuidelinesForTopic(topic) {
   // Null-safe against the JSON loader: if called before guidelines.json has loaded (e.g. a reload that
   // resumes a mid-flight generation), return null cleanly rather than throwing on GUIDELINES[...]. The
@@ -1619,45 +1644,64 @@ function getGuidelinesForTopic(topic) {
     "Prevention": ["screen","prevention","uspstf","vaccin","immuniz","aspirin primary","statin primary","cancer screen","cardiovascular risk","tobacco cessation"],
     "Palliative": ["palliat","hospice","end of life","cancer pain","opioid titration","goals of care","comfort care","dnr","dni"]
   };
+  // WORD-BOUNDARY, NOT BARE SUBSTRING. indexOf() matched keywords INSIDE longer words and produced
+  // confidently WRONG grounding, which is far worse than none: "tens" fired inside "hyperTENSive", so
+  // Hypertensive urgency & emergency was grounded on DERMATOLOGY guidelines. "ect" fired inside
+  // "pECToris" and "defECTs", so Stable angina pectoris and Conduction defects (AV blocks) were
+  // grounded on PSYCHIATRY. None of this was visible in the output — the talk just quietly cited the
+  // wrong specialty.
+  //
+  // A leading \b with no trailing boundary keeps the intended prefix behaviour: "cardio" still matches
+  // cardiomyopathy, "diabet" still matches diabetic. Keywords that already encode a trailing space
+  // ("hf ", "af ", "tb ") are unaffected. (Jenni 2026-08-19)
   for (var spec in kwMap) {
     var kws = kwMap[spec];
     for (var ki = 0; ki < kws.length; ki++) {
-      if (t.indexOf(kws[ki]) >= 0 && matched.indexOf(spec) < 0) {
+      var _kw = kws[ki];
+      var _re = new RegExp("\\b" + _kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+      if (_re.test(t) && matched.indexOf(spec) < 0) {
         matched.push(spec);
         break;
       }
     }
   }
-  if (matched.length === 0) {
+  // THE CATALOGUE ALWAYS CONTRIBUTES, it is not a last resort. This ran only when keyword matching
+  // found NOTHING, so a single spurious keyword hit suppressed the curated answer entirely: "Asthma in
+  // pregnancy" reached Pulmonary and never Allergy/Immuno, and a topic whose keyword match was simply
+  // wrong had no way to be corrected. A curated category is better evidence of what a topic is about
+  // than a substring, so its specialty is UNIONED in rather than used as a fallback. (Jenni 2026-08-19)
+  {
+    // NULL-SAFE ON TOPICS. This block used to run only when keyword matching found nothing; it now runs
+    // on every call, so a caller reached before the catalogue exists (the resume path, mid-flight
+    // reload) must degrade to keyword-only rather than throw. Same reasoning as the GUIDELINES guard
+    // at the top of this function.
+    var _TOPICS = (typeof TOPICS !== "undefined" && TOPICS) ? TOPICS : {};
     // try category match from TOPICS structure
-    for (var cat in TOPICS) {
-      var subs = TOPICS[cat].topics;
+    for (var cat in _TOPICS) {
+      var subs = _TOPICS[cat].topics;
       for (var sub in subs) {
         for (var ti = 0; ti < subs[sub].length; ti++) {
           // CASE-INSENSITIVE. TOPICS stores "Acute pericarditis"; the topic arrives titled as
           // "Acute Pericarditis", and === made the fallback miss its own catalogue entry. The failure
           // was silent: getGuidelinesForTopic returns null and the talk is written ungrounded.
           if (String(subs[sub][ti]).toLowerCase() === String(topic).toLowerCase()) {
-            var cleanCat = cat.replace(/★\s*/,"").replace(/\s*\(\d+%.*\)/,"").trim();
-            if (cleanCat === "★ Nephrology" || cleanCat === "Nephrology" || cat.indexOf("Nephrology") >= 0) matched.push("Nephrology");
-            else if (cat.indexOf("Cardiovascular") >= 0) matched.push("Cardiovascular");
-            else if (cat.indexOf("Pulmonary") >= 0) matched.push("Pulmonary");
-            else if (cat.indexOf("GI") >= 0) matched.push("GI/Hepatology");
-            else if (cat.indexOf("Endocrin") >= 0) matched.push("Endocrinology");
-            else if (cat.indexOf("ID") >= 0) matched.push("ID");
-            else if (cat.indexOf("Hematology") >= 0) matched.push("Heme/Onc");
-            else if (cat.indexOf("Oncology") >= 0) matched.push("Oncology");
-            else if (cat.indexOf("Heme") >= 0) matched.push("Heme/Onc");
-            else if (cat.indexOf("Rheum") >= 0) matched.push("Rheumatology");
-            else if (cat.indexOf("Neuro") >= 0) matched.push("Neurology");
-            else if (cat.indexOf("Allergy") >= 0) matched.push("Allergy/Immuno");
-            else if (cat.indexOf("Dermatology") >= 0) matched.push("Dermatology");
-            else if (cat.indexOf("Psychiatry") >= 0) matched.push("Psychiatry");
-            else if (cat.indexOf("Geriatric") >= 0) matched.push("Geriatrics");
-            else if (cat.indexOf("Women") >= 0) matched.push("Women's Health");
-            else if (cat.indexOf("Prevention") >= 0) matched.push("Prevention");
-            else if (cat.indexOf("Critical Care") >= 0) matched.push("Critical Care");
-            else if (cat.indexOf("Palliative") >= 0) matched.push("Palliative");
+            // EXPLICIT TABLE, NOT SUBSTRING MATCHING. What this replaces tested cat.indexOf("GI") and
+            // cat.indexOf("ID") — and the categories in the catalogue are named "Gastroenterology" and
+            // "Infectious Disease", which contain neither. The two largest categories in the app matched
+            // nothing, and 56 of their topics were drafted with no guideline context at all. Four more
+            // categories (Ophthalmology, Obstetrics and Gynecology, Otolaryngology and Dental,
+            // Miscellaneous) had no branch whatsoever: 107 topics ungrounded in total, 14% of the
+            // catalogue, silently, for as long as those names have existed.
+            //
+            // Substring guessing over human-written display names cannot be made safe — rename a
+            // category and the grounding disappears with no error. An exact table can, and a category
+            // added without a mapping fails test_routing_coverage.mjs instead of shipping ungrounded.
+            //
+            // DELIBERATELY NO CATCH-ALL. An unmapped category pushes NOTHING and the topic routes to
+            // null. Falling back to a generic specialty would convert a visible absence of grounding
+            // into confident WRONG grounding, which is far harder to notice and far worse to teach from.
+            var _mappedSpec = (typeof TOPIC_CATEGORY_SPECIALTY !== "undefined") ? TOPIC_CATEGORY_SPECIALTY[cat] : null;
+            if (_mappedSpec && matched.indexOf(_mappedSpec) < 0) matched.push(_mappedSpec);
           }
         }
       }
