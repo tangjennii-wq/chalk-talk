@@ -121,11 +121,16 @@ ok(!/<p class="ttl-refined"/.test(html),
 // what changed is which date the card's ONE date is. It was created_at, which never moves, so a library
 // halfway through a review pass looked exactly like one that had not been started.
 const card = html.slice(html.indexOf("function renderLibCard("), html.indexOf("function renderLibCard(") + 3000);
-ok(/_refinedAt/.test(card), "the library card dates a talk by its last refine…");
+// Asserted as the actual READ. `/_refinedAt/` alone matched the comment above it explaining the choice,
+// so blanking the variable left the test green — the third time in this feature that a regex matched
+// prose instead of behaviour.
+ok(/_lastRefined = \(t && t\._refinedAt\) \|\| x\._refinedAt/.test(card),
+   "the library card dates a talk by its last refine, reading the stamp from the talk or the row…");
 ok(/"Updated " : "Created "/.test(card),
    "…and LABELS which it is showing — two bare dates meaning different things are worse than none");
 ok(/x\.savedAt/.test(card), "…falling back to the created date for a talk never refined");
-ok(!/updated_at/.test(card),
+// Matched as a READ, not as a word: the comment explaining why it is not used says "updated_at" too.
+ok(!/[.[]updated_at/.test(card),
    "…and NOT the updated_at column: a trigger bumps it on publish and on reorder, so sorting the library would have redated all of it");
 // Still one line, not two: the card must not grow a second date row.
 const dateAssigns = card.match(/var dateStr =/g) || [];
