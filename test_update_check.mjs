@@ -224,6 +224,43 @@ ok(/S\.updateCheck=null;/.test(block(/^function _clearTalkScoped\(/m)),
   ok(/_verifyProposedUpdates\(items\)/.test(fn), "every proposal goes through verification before display");
   ok(/slice\(0, 8\)/.test(fn), "the number of proposals is bounded");
 }
+// ── 8) IT MUST ASK FOR AUTHORISATION, like every other call that spends the app's key ──
+// This function sent `X-CT-Meter: talk` with no receipt. The Worker's staged rollout allowed that and
+// logged it, so it worked in every test and every manual check — and would have started returning 402
+// on every saved talk the moment RECEIPTS_REQUIRED was set. The bug was invisible precisely because
+// the enforcement it violated was not switched on yet, which is why this is asserted rather than tried.
+{
+  const fn = block(/^async function checkForUpdates\(/m);
+  ok(/await ensureRefineAuth\(\)/.test(fn),
+     "the update check asks for authorisation first — the same free, ownership-checked call every refine makes");
+  const iAuth = fn.indexOf("ensureRefineAuth"), iCall = fn.indexOf("callAPIWithFallback");
+  ok(iAuth > -1 && iCall > -1 && iAuth < iCall,
+     "…BEFORE it spends anything, so a refusal costs nothing");
+  ok(/if\(!_ra\.ok\)\{/.test(fn), "…and a refusal is handled rather than ignored");
+  ok(/status: "error"/.test(fn.slice(iAuth, iCall)) && /Nothing was searched and your talk is unchanged/.test(fn),
+     "…surfaced in the panel, saying nothing was searched and the talk is untouched");
+
+  // STAGE IS THE HALF THAT WOULD STILL HAVE FAILED. A refine receipt covers refine/critique/aux and
+  // deliberately NOT draft, and `meterKind: "talk"` makes the server default the stage to draft. So
+  // adding the receipt without fixing the stage would have swapped 402 receipt_required for 402
+  // stage_not_authorised — a different error message for the same broken button.
+  ok(/stage: "aux"/.test(fn),
+     "the call declares stage aux — a refine receipt covers aux, and NOT draft");
+  ok(!/meterKind: "talk"/.test(fn),
+     "…and is not labelled a talk: it writes no teaching content, it returns a list of candidate papers");
+  ok(/meterKind: "aux"/.test(fn), "…it is labelled aux, which is also where its cost is now attributed");
+}
+// The server-side rule this depends on, asserted against the Worker so a change there fails HERE and not
+// in production: the receipt minted for a saved talk must cover the stage this call sends.
+{
+  const worker = readFileSync(new URL("./worker.js", import.meta.url), "utf8");
+  const budgets = worker.slice(worker.indexOf("RECEIPT_STAGE_BUDGETS"), worker.indexOf("RECEIPT_STAGE_BUDGETS") + 1200);
+  const refineLine = (budgets.match(/refine:\s*\{[^}]*\}/) || [""])[0];
+  ok(/aux:/.test(refineLine), "a refine receipt still budgets the aux stage — what this call spends against");
+  ok(!/draft:/.test(refineLine),
+     "…and still does NOT budget draft, which is why the old call was doomed once enforcement turned on");
+}
+
 ok(/discarded — could not be verified/.test(html),
    "refused proposals are SHOWN with their reason — hiding them would hide how often the model invents citations");
 ok(/Your teaching text is never rewritten/.test(html), "the UI states plainly that applying does not change the talk");

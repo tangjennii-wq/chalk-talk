@@ -282,6 +282,14 @@ jobs:
       - name: Refine stamp (five refine paths stamp, nothing else does)
         run: node test_refine_stamp.mjs
 
+      # Jenni asked for the ⓘ and, in the same sentence, guessed that pressing Updates again undoes it.
+      # It does not — it discards the results and searches again. When the person who commissioned the
+      # feature guesses wrong, every user will, so the panel says so and this asserts that it still does.
+      # It also checks the panel's claims against the CODE: a help text that describes behaviour the app
+      # does not have is worse than no help text.
+      - name: Updates explainer (the ⓘ, and its claims match what the code does)
+        run: node test_updates_info.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction

@@ -313,6 +313,14 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .cap-save-unsaved .hide-mobi
 body.mobile-drawer-open{overflow:hidden;touch-action:none}
 body.mobile-drawer-open .side-drawer{touch-action:pan-y}
 /* Overflow ⋯ menu */
+.info-pop{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,10,28,0.14);width:320px;max-width:calc(100vw - 32px);z-index:71;padding:14px 16px;text-align:left;font-size:12.5px;line-height:1.55;color:var(--ink);white-space:normal;font-weight:400}
+.info-pop h4{margin:0 0 8px;font-size:13px;color:var(--plum-deep);font-weight:700}
+.info-pop p{margin:0 0 9px}
+.info-pop p:last-child{margin-bottom:0}
+.info-pop b{font-weight:700;color:var(--plum-deep)}
+.info-i{background:none;border:none;color:var(--ink-soft);cursor:pointer;padding:5px 6px;border-radius:7px;font-size:13px;line-height:1;flex-shrink:0}
+.info-i:hover{background:var(--lavender-bg);color:var(--plum)}
+.info-i[aria-expanded="true"]{background:var(--lavender-bg);color:var(--plum)}
 .overflow-menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,10,28,0.12);min-width:200px;z-index:70;overflow:hidden}
 .overflow-menu button{width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft)}
 .overflow-menu button:last-child{border-bottom:none}
@@ -4117,7 +4125,7 @@ var S = {
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false, proofreadArmed:false,
-  gldOpen:false, editSettings:false, overflowOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude", modelPickerOpen:false, composeOptionsOpen:false, mobileLibOpen:false, mobileLibSpecOpen:false, reconnecting:false,
+  gldOpen:false, editSettings:false, overflowOpen:false, updatesInfoOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude", modelPickerOpen:false, composeOptionsOpen:false, mobileLibOpen:false, mobileLibSpecOpen:false, reconnecting:false,
   talkHistory:[], editingSection:null, editingDraft:null, reorderMode:false,
   loadingFromHash:false,
   // — Auth + cloud
@@ -4207,13 +4215,13 @@ async function refreshCloudTalks(){
     // Try the full query first (includes Pattern A columns). If the migration hasn't been run yet,
     // the new columns don't exist and PostgREST returns 42703 / "column does not exist" — fall back
     // to the prior query so the user still sees their saved talks. (Jenni 2026-06-09)
-    var FULL_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, files_meta, talk_json->>subtitle";
+    var FULL_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, files_meta, talk_json->>subtitle, refined_at:talk_json->>_refinedAt";
     // Fallback query. Includes the curation columns (specialty_override / is_pinned / pinned_at /
     // sort_order) too — they exist in every migrated DB, so keeping them here means a transient
     // FULL_COLS error can't silently DROP a user's recategorization / pin / manual order on reload.
     // (Jenni 2026-07-03 — recategorize-doesn't-persist fix.) files_meta drives the copyright confirm
     // on publish (Jenni 2026-07 — talks built from an uploaded reference warn before going public).
-    var LEGACY_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, files_meta, talk_json->>subtitle";
+    var LEGACY_COLS = "id, title, topic, style, depth, created_at, share_token, is_public, is_featured, featured_at, has_visuals, source_id, source_curator_name, source_curator_user_id, depth_variants, specialty_override, is_pinned, pinned_at, sort_order, files_meta, talk_json->>subtitle, refined_at:talk_json->>_refinedAt";
     var r = await window.sb.from("talks").select(FULL_COLS).order("created_at", { ascending: false });
     if(r.error){
       var msg = (r.error && (r.error.message||"")) + " " + (r.error.code||"");
@@ -4759,7 +4767,23 @@ function renderLibCard(x){
   var isBQ = (x._kind==="boards");
   var isSample = (x._source==="sample");
   var isShowcase = (x._source==="showcase");
-  var dateStr = x.savedAt ? new Date(x.savedAt).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "";
+  // ── WHICH DATE A CARD SHOWS (Jenni 2026-08-19) ────────────────────────────────────────────────────
+  // Was always created_at, which is the least useful fact about a talk being worked through: it never
+  // changes, so a library mid-review looked identical before and after.
+  //
+  // WHY NOT THE `updated_at` COLUMN, which is what "last updated" literally means. A trigger bumps it on
+  // EVERY update to the row, and publishing a talk or dragging a card in the showcase are updates. Sorting
+  // the library would have silently redated everything in it, which is precisely the opposite of what this
+  // is for. `_refinedAt` is set only by the five refine paths, so it means "I worked on this".
+  //
+  // AND THE LABEL IS PART OF THE FIX. Two cards showing bare dates that mean different things are worse
+  // than no date, so the meaning is written next to it. Local (unsynced) entries carry the whole talk and
+  // pick this up for free; cloud rows get the field selected out of talk_json above.
+  var _lastRefined = (t && t._refinedAt) || x._refinedAt || null;
+  var _dateSrc = _lastRefined || x.savedAt;
+  var _fmt = function(v){ var d = new Date(v); return isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); };
+  var dateStr = _dateSrc ? ((_lastRefined ? "Updated " : "Created ") + _fmt(_dateSrc)) : "";
+  if(_dateSrc && !_fmt(_dateSrc)) dateStr = "";
   var visuals = (t.savedVisuals && t.savedVisuals.length) ? t.savedVisuals : null;
   // Compact single-row library card (Jenni 2026-06-04 — actions live next to the title).
   // Open is the primary CTA (small filled button on the right); pencil/export/delete are tiny icon buttons.
@@ -4872,7 +4896,14 @@ function getDisplayLibrary(){
       subtitle: subtitle,
       question: row.style === "boards" ? {} : undefined,
       // _hasCloudVisuals signals the badge should render even without the full savedVisuals array.
-      _hasCloudVisuals: hasVis
+      _hasCloudVisuals: hasVis,
+      // Selected out of talk_json so the card can date a talk by its last REFINE without fetching the
+      // whole talk. Deliberately the same field the opened lecture stamps — one fact, two places, so
+      // the library and the lecture can never disagree about when a talk was last worked on.
+      // Aliased to refined_at in the select because PostgREST derives an unaliased name from the JSON
+      // path and camelCase is not guaranteed to survive it. The other two reads are belt-and-braces for
+      // a row that came from somewhere else (a just-saved full row, or a legacy cached shape).
+      _refinedAt: row.refined_at || row._refinedAt || (row.talk_json && row.talk_json._refinedAt) || null
     };
     return {
       id: row.id,
@@ -7067,12 +7098,43 @@ function _titleRoughlyMatches(claimed, actual){
   return (hit / Math.min(aw.length, bw.length)) >= 0.5;
 }
 
+// ── AUTHORISATION, LIKE EVERY OTHER CALL THAT SPENDS THE APP'S KEY ──────────────────────────────────
+// This function sent `X-CT-Meter: talk` and no receipt at all. The Worker's staged rollout let that
+// through with a `receipt_missing_unenforced` log line, so it worked and looked fine — right up until
+// RECEIPTS_REQUIRED is set, which is the point of having built receipts. Then every press on a SAVED
+// talk would have returned 402, on launch day, with the free tier the only path most users are on.
+//
+// TWO THINGS WERE WRONG, and fixing only one would not have helped:
+//   1. No receipt was ever requested. ensureRefineAuth() is the same call every refine path already
+//      makes: it reuses a live generation receipt if one is in hand, otherwise mints a free,
+//      ownership-checked refine session for a saved talk. It never consumes a talk credit.
+//   2. The stage defaulted to `draft`, because that is what `meterKind: "talk"` implies server-side.
+//      A refine receipt covers refine/critique/aux and DELIBERATELY not draft, so even with a receipt
+//      this would still have been refused — as stage_not_authorised, which reads like a permissions
+//      bug rather than a mislabelled call.
+//
+// `aux` IS THE HONEST LABEL, not a way around the writer allowlist. This call does not write teaching
+// content — it returns a JSON list of candidate papers, and applying them touches references only.
+// That is the promise the ⓘ panel makes to the user, and the metering should say the same thing.
+// The model is unchanged: writeAllowedModels() still restricts it to a benchmarked writer.
+//
+// COST ATTRIBUTION MOVES with the label, from the `talk` bucket to `aux`. Both count against the same
+// monthly cap, so nothing is uncapped by this; only the category changes. (Jenni 2026-08-19)
 async function checkForUpdates(){
   var t = S.talk;
   if(!t || (S.updateCheck && S.updateCheck.status === "running")) return;
   var _uid = S.genId, _target = t;
   S.updateCheck = { status: "running", items: [], err: "", checkedAt: 0 };
   render();
+  var _ra = await ensureRefineAuth();
+  if(!_ra.ok){
+    if(S.talk !== _target || _uid !== S.genId) return;
+    S.updateCheck = { status: "error", items: [],
+      err: (_ra.message || "Couldn't authorise the update check.") + " Nothing was searched and your talk is unchanged.",
+      checkedAt: 0 };
+    render();
+    return;
+  }
   try{
     var refs = (t.references || []).filter(function(r){ return r && r.confidence !== "low"; });
     var years = refs.map(function(r){ return parseInt(r.year, 10); }).filter(function(y){ return y > 1900; });
@@ -7085,7 +7147,7 @@ async function checkForUpdates(){
              + "The newest source it cites is from " + newest + ". Find what has changed SINCE then.";
     var res = await callAPIWithFallback(UPDATE_CHECK_PROMPT, user, 2048,
       writeAllowedModels([MODEL_MAIN, MODEL_SONNET_FALLBACK, MODEL_CRITIC]),
-      { meterKind: "talk", tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5, allowed_domains: ALLOWED_SEARCH_DOMAINS }] });
+      { meterKind: "aux", stage: "aux", tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5, allowed_domains: ALLOWED_SEARCH_DOMAINS }] });
     if(S.talk !== _target || _uid !== S.genId) return;    // user moved on — drop the result
     var parsed = JSON.parse(fixJSON(res.txt || "{}"));
     var items = Array.isArray(parsed.updates) ? parsed.updates.slice(0, 8) : [];
@@ -13487,6 +13549,11 @@ h+='</div>';
         + (_ucFast && !S.updateCheck ? ' style="color:#7a5b1a"' : '')
         + '>'+(_ucBusy ? '<span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:-1px"></span>' : (_ucFast ? '⚠️' : '🔎'))
         + ' <span class="hide-mobile-text">Updates</span></button>';
+      // WHAT DOES THIS BUTTON DO, AND WHAT DOES IT DO TO A TALK I ALREADY SAVED. Both questions arrived
+      // from Jenni on the same day, which is the signal that a 🔎 and a tooltip were not carrying it.
+      // A popover, not a title= tooltip: tooltips do not exist on a phone, and half the beta is on one.
+      h+='<button id="updatesInfoBtn" class="info-i" aria-expanded="'+(S.updatesInfoOpen?"true":"false")
+        + '" aria-label="What does Updates do?" title="What does Updates do?">\u24D8</button>';
       // EDIT (SETTINGS) IS HIDDEN FOR THE BETA. Everything it offered — change the depth, rebuild with a
       // different model, regenerate from the same topic — is a REGENERATION wearing the clothes of a
       // setting, and each one silently costs a credit. Refine does the same jobs conversationally, is free,
@@ -13532,6 +13599,21 @@ h+='</div>';
     }
     if(!S.sharedTalk){
       h+='<button id="overflowBtn" class="cap-more" title="More options" aria-label="More options">⋮</button>';
+    }
+    // Updates explainer — anchored the same way, for the same reason.
+    //
+    // THE THIRD PARAGRAPH IS THE ONE THAT HAD TO BE WRITTEN. Jenni's own guess was that pressing
+    // Updates a second time undoes it. It does not — it throws the current results away and searches
+    // again. If the person who built it guessed wrong, every user will.
+    if(S.updatesInfoOpen){
+      h+='<div class="info-pop" id="updatesInfoPop" role="dialog" aria-label="What Updates does">';
+      h+='<h4>\uD83D\uDD0E What Updates does</h4>';
+      h+='<p>It searches society sites and journals for guidance published <b>since the newest source this talk already cites</b> \u2014 so it looks forward from this talk, not at the whole literature.</p>';
+      h+='<p>Every suggestion is checked against PubMed before you see it: the PMID has to resolve and the title has to match. Anything that fails is shown greyed out with the reason, and cannot be added.</p>';
+      h+='<p>You tick the ones you want. They are added to <b>References only</b> \u2014 the teaching text is never rewritten. Reading the new paper and deciding what it changes stays yours.</p>';
+      h+='<p><b>On a talk you have already saved:</b> adding references makes it unsaved again, and the button flips back to Save. Press it, or the additions are lost when you leave.</p>';
+      h+='<p><b>To reverse it, use \u21A9 Undo</b> \u2014 not this button. Pressing Updates again discards the current results and runs a fresh search.</p>';
+      h+='</div>';
     }
     // Overflow menu — rendered INSIDE cap-actions so it anchors to the ⋮ button instead of the
     // viewport. (Jenni 2026-06-09 fix — menu used to float far from the kebab on wide screens.)
@@ -14787,7 +14869,7 @@ function bindMain(){
   // CLASS, not id: the action-row button and the panel's "Check again" can both be on screen at once,
   // and duplicate ids would leave all but the first one dead. (2026-07-26)
   document.querySelectorAll(".checkUpdatesBtn").forEach(function(b){
-    b.onclick=function(){ if(b.disabled) return; S.updateCheck=null; checkForUpdates(); };
+    b.onclick=function(){ if(b.disabled) return; S.updatesInfoOpen=false; S.updateCheck=null; checkForUpdates(); };
   });
   document.querySelectorAll(".updatePick").forEach(function(cb){
     cb.onchange=function(){
@@ -14829,8 +14911,15 @@ function bindMain(){
   var rb1=document.getElementById("rebuildBtn");if(rb1)rb1.onclick=function(){rebuildLesson()};
   var rb2=document.getElementById("rebuildBtn2");if(rb2)rb2.onclick=function(){rebuildLesson()};
   var brg=document.getElementById("boardRegenBtn");if(brg)brg.onclick=function(){rebuildLesson()};
-  var ofb=document.getElementById("overflowBtn");if(ofb)ofb.onclick=function(e){e.stopPropagation();S.overflowOpen=!S.overflowOpen;render()};
-  if(S.overflowOpen){document.body.onclick=function(e){if(!e.target.closest(".overflow-menu")&&!e.target.closest("#overflowBtn")){S.overflowOpen=false;render()}}}else{document.body.onclick=null}
+  var ofb=document.getElementById("overflowBtn");if(ofb)ofb.onclick=function(e){e.stopPropagation();S.overflowOpen=!S.overflowOpen;S.updatesInfoOpen=false;render()};
+  var uib=document.getElementById("updatesInfoBtn");if(uib)uib.onclick=function(e){e.stopPropagation();S.updatesInfoOpen=!S.updatesInfoOpen;S.overflowOpen=false;render()};
+  // ONE document.body.onclick, NOT TWO. It is a property, not a listener list — a second assignment
+  // silently replaces the first, so whichever popover bound last would be the only one that closes on
+  // an outside click. Both dismissals live in this single handler for that reason.
+  if(S.overflowOpen||S.updatesInfoOpen){document.body.onclick=function(e){
+    if(S.overflowOpen&&!e.target.closest(".overflow-menu")&&!e.target.closest("#overflowBtn")){S.overflowOpen=false;S.updatesInfoOpen=false;render();return}
+    if(S.updatesInfoOpen&&!e.target.closest(".info-pop")&&!e.target.closest("#updatesInfoBtn")){S.updatesInfoOpen=false;S.overflowOpen=false;render()}
+  }}else{document.body.onclick=null}
   var nbt=document.getElementById("newTalkBtn");if(nbt)nbt.onclick=function(){S.overflowOpen=false;safeResetAll()};
   var dcb=document.getElementById("drawerCloseBtn");if(dcb)dcb.onclick=function(){S.editSettings=false;render()};
   var dbk=document.getElementById("drawerBackdrop");if(dbk)dbk.onclick=function(){S.editSettings=false;render()};

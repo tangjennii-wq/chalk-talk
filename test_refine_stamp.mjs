@@ -116,8 +116,20 @@ ok(/class="ttl-refined"[^']*flex-shrink:0/.test(titleRow),
    "…and flex-shrink:0, so the long title truncates instead of crushing the stamp");
 ok(!/<p class="ttl-refined"/.test(html),
    "the old <p> under the subtitle is gone — it was rejected for that placement");
-const libCard = html.slice(html.indexOf("var dateStr = x.savedAt"), html.indexOf("var dateStr = x.savedAt") + 4000);
-ok(!/_refinedAt/.test(libCard), "…and the library card does NOT show it — Jenni asked for the lecture only");
+// ── the library card dates BY the stamp (Jenni 2026-08-19) ──────────────────────────────────────────
+// The original ask was "not in library", meaning: do not add a second line to a card. That still holds —
+// what changed is which date the card's ONE date is. It was created_at, which never moves, so a library
+// halfway through a review pass looked exactly like one that had not been started.
+const card = html.slice(html.indexOf("function renderLibCard("), html.indexOf("function renderLibCard(") + 3000);
+ok(/_refinedAt/.test(card), "the library card dates a talk by its last refine…");
+ok(/"Updated " : "Created "/.test(card),
+   "…and LABELS which it is showing — two bare dates meaning different things are worse than none");
+ok(/x\.savedAt/.test(card), "…falling back to the created date for a talk never refined");
+ok(!/updated_at/.test(card),
+   "…and NOT the updated_at column: a trigger bumps it on publish and on reorder, so sorting the library would have redated all of it");
+// Still one line, not two: the card must not grow a second date row.
+const dateAssigns = card.match(/var dateStr =/g) || [];
+ok(dateAssigns.length === 1, `the card still shows a single date (found ${dateAssigns.length})`);
 
 console.log(`\n${n} assertions, ` + (failures === 0 ? "✔ REFINE STAMP OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);
