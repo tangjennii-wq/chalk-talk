@@ -321,6 +321,26 @@ body.mobile-drawer-open .side-drawer{touch-action:pan-y}
 .info-i{background:none;border:none;color:var(--ink-soft);cursor:pointer;padding:5px 6px;border-radius:7px;font-size:13px;line-height:1;flex-shrink:0}
 .info-i:hover{background:var(--lavender-bg);color:var(--plum)}
 .info-i[aria-expanded="true"]{background:var(--lavender-bg);color:var(--plum)}
+/* ── LESSON OUTLINE toolbar ────────────────────────────────────────────────────────────────────── */
+/* 32x32 icon buttons. The GLYPH stays 14px, matching the ⧉ that sits beside it in the same row and on
+   every section card — the button grew for the hit area, the icon did not, or the three controls stop
+   reading as one set. */
+.outline-icon-btn{position:relative;width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;background:none;border:none;color:var(--plum);cursor:pointer;border-radius:8px;line-height:1;font-family:inherit;transition:background .12s ease,color .12s ease}
+.outline-txt-btn{position:relative;min-height:32px;padding:0 9px;display:inline-flex;align-items:center;gap:5px;background:none;border:none;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;border-radius:8px;line-height:1;font-family:inherit;text-transform:none;letter-spacing:0;transition:background .12s ease,color .12s ease}
+/* Hover AND focus are both visible. An icon-only control that only responds to hover is unusable by
+   keyboard and invisible on touch. :focus-visible so a mouse click does not leave a ring behind. */
+.outline-icon-btn:hover,.outline-txt-btn:hover{background:var(--lavender-bg);color:var(--plum-deep)}
+.outline-icon-btn:focus-visible,.outline-txt-btn:focus-visible{outline:2px solid var(--plum);outline-offset:2px;background:var(--lavender-bg)}
+/* Reorder mode ON — the one state that is filled, because it is a mode you are inside. */
+.outline-txt-btn[aria-pressed="true"]{background:var(--plum);color:#fff;font-weight:700}
+.outline-txt-btn[aria-pressed="true"]:hover{background:var(--plum-deep);color:#fff}
+/* 40x40 MINIMUM TOUCH TARGET, via an invisible ::before rather than by growing the button. Growing it
+   would reflow this row differently on phone and desktop for no visual reason; this keeps one layout
+   and still gives a thumb 40x40 to land on. Applied on coarse pointers only so it cannot swallow
+   neighbouring mouse clicks. */
+@media (pointer:coarse){
+  .outline-icon-btn::before,.outline-txt-btn::before{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:40px;min-height:40px;width:100%;height:100%}
+}
 .overflow-menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,10,28,0.12);min-width:200px;z-index:70;overflow:hidden}
 .overflow-menu button{width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft)}
 .overflow-menu button:last-child{border-bottom:none}
@@ -13905,11 +13925,11 @@ h+='</div>';
           // unmistakable. An icon-only exit from a mode is how people get stuck, and that is worth the
           // few pixels back. title= gives the hover tooltip, aria-label gives the accessible name.
           var _roLbl = S.reorderMode ? "Done reordering" : "Reorder sections";
-          h+='<button id="reorderModeBtn" title="'+_roLbl+'" aria-label="'+_roLbl+'" aria-pressed="'+(S.reorderMode?"true":"false")+'" style="background:'+(S.reorderMode?"var(--plum)":"none")+';border:none;padding:'+(S.reorderMode?"3px 10px":"4px 7px")+';color:'+(S.reorderMode?"#fff":"var(--plum)")+';font-size:11px;font-weight:'+(S.reorderMode?"700":"600")+';cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;border-radius:6px;display:inline-flex;align-items:center;gap:5px;line-height:1">'+(S.reorderMode?(DONE_ICON+'<span>Done</span>'):REORDER_ICON)+'</button>';
+          h+='<button id="reorderModeBtn" class="'+(S.reorderMode?"outline-txt-btn":"outline-icon-btn")+'" title="'+_roLbl+'" aria-label="'+_roLbl+'" aria-pressed="'+(S.reorderMode?"true":"false")+'">'+(S.reorderMode?(DONE_ICON+'<span>Done</span>'):REORDER_ICON)+'</button>';
           if(!S.reorderMode){
             var _exLbl = S.allExpanded ? "Collapse all sections" : "Expand all sections";
-            h+='<button id="expandAllBtn" title="'+_exLbl+'" aria-label="'+_exLbl+'" aria-expanded="'+(S.allExpanded?"true":"false")+'" style="background:none;border:none;padding:4px 7px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;border-radius:6px;display:inline-flex;align-items:center;line-height:1">'+(S.allExpanded?CHEVRONS_UP:CHEVRONS_DOWN)+'</button>';
-            h+='<button id="copyAllSectionsBtn" title="Copy the entire lesson outline to clipboard" aria-label="Copy the entire lesson outline" style="background:none;border:none;padding:4px 8px;color:var(--plum);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;border-radius:6px;display:inline-flex;align-items:center;gap:4px;line-height:1">'+COPY_ICON+'<span>Copy all</span></button>';
+            h+='<button id="expandAllBtn" class="outline-icon-btn" title="'+_exLbl+'" aria-label="'+_exLbl+'" aria-expanded="'+(S.allExpanded?"true":"false")+'">'+(S.allExpanded?CHEVRONS_UP:CHEVRONS_DOWN)+'</button>';
+            h+='<button id="copyAllSectionsBtn" class="outline-txt-btn" title="Copy the entire lesson outline to clipboard" aria-label="Copy the entire lesson outline">'+COPY_ICON+'<span>Copy all</span></button>';
           }
           h+='</div>';
         }

@@ -88,5 +88,67 @@ ok(/var SVG_OPEN = [^\n]*aria-hidden="true"/.test(html),
 ok(/var SVG_OPEN = [^\n]*stroke-width="2"/.test(html) && /var SVG_OPEN = [^\n]*width="14"/.test(html),
    "…at the same 14px / stroke-2 weight as COPY_ICON, so the row reads as one set");
 
+// ── SIZING, HIT AREA, AND THE STATES YOU CAN SEE ───────────────────────────────────────────────────
+// Spec: 32x32 icon buttons, visible hover AND focus, minimum 40x40 on touch. Each is asserted against
+// the stylesheet rather than the markup, because that is where a pseudo-class state can live at all.
+// Bounded by a REAL marker — the rule that follows the block — not a character count. Bounding it at
+// `indexOf("@media (pointer:coarse)")` meant deleting that block silently truncated the slice, so two
+// mutations died by the wrong assertion. A guard that fails for the wrong reason is luck, not coverage.
+const css = html.slice(html.indexOf(".outline-icon-btn{"), html.indexOf(".overflow-menu{position:absolute"));
+ok(css.length > 400 && css.length < 4000, "sanity: the toolbar CSS block was located by its real boundaries");
+ok(/\.outline-icon-btn\{[^}]*width:32px[^}]*height:32px/.test(css), "icon buttons are 32x32…");
+ok(/\.outline-icon-btn\{[^}]*padding:0/.test(css), "…with no padding fighting the fixed size");
+
+// The BUTTON grew, the GLYPH did not. A 14px icon matches the ⧉ beside it and on every section card;
+// scaling it up with the button would break the row into two visual weights.
+ok(/var SVG_OPEN = [^\n]*width="14"/.test(html) && /var COPY_ICON = [^\n]*width="14"/.test(html),
+   "…while the glyphs stay 14px, the same as COPY_ICON, so the row reads as one set");
+
+ok(/\.outline-icon-btn:hover,\.outline-txt-btn:hover\{[^}]*background:/.test(css),
+   "hover is visible on both button kinds");
+ok(/:focus-visible\{[^}]*outline:2px solid/.test(css),
+   "focus is visible too — an icon-only control that only answers to hover is unusable by keyboard");
+ok(/:focus-visible/.test(css) && !/\.outline-icon-btn:focus\{/.test(css),
+   "…and it is :focus-visible, so a mouse click does not leave a ring behind");
+
+// 40x40 on touch WITHOUT changing the layout.
+const coarse = html.slice(html.indexOf("@media (pointer:coarse)"), html.indexOf("@media (pointer:coarse)") + 400);
+ok(/min-width:40px/.test(coarse) && /min-height:40px/.test(coarse), "touch devices get a 40x40 minimum hit area…");
+ok(/::before/.test(coarse) && /position:absolute/.test(coarse),
+   "…via an invisible ::before, so the visible button stays 32x32 and the row does not reflow on phones");
+ok(/@media \(pointer:coarse\)/.test(html),
+   "…scoped to coarse pointers, so it cannot swallow neighbouring mouse clicks");
+
+// ── NO EMOJI OR UNICODE GLYPHS IN THIS TOOLBAR ─────────────────────────────────────────────────────
+// The old row used ↕ and relied on the platform to draw it. Every icon is now an inline SVG stroked
+// with currentColor, so it inherits the button's colour in every state including reorder-mode-on.
+// COMMENT LINES STRIPPED FIRST. The unstripped scan flagged the ↑/↓ in the comment explaining why
+// reorder mode needs a worded exit — prose, not markup. Fifth time this session that a match landed in
+// a comment instead of the code, and the fix is the same every time: narrow to what actually ships.
+const codeOnly = (src) => src.split("\n").filter(l => !/^\s*\/\//.test(l)).join("\n");
+for (const [label, src] of [["Reorder", reorder], ["Expand/Collapse", expand], ["Copy all", copy]]) {
+  const glyphs = (codeOnly(src).match(/[\u2190-\u21FF\u2300-\u27BF\uFE0F\u{1F300}-\u{1FAFF}]/gu) || []);
+  ok(glyphs.length === 0,
+     `${label}: no emoji or Unicode glyph in the RENDERED markup (found ${glyphs.length}${glyphs.length ? ": " + glyphs.join(" ") : ""})`);
+}
+ok(/var SVG_OPEN = [^\n]*stroke="currentColor"/.test(html),
+   "…and every icon strokes with currentColor, so it follows the button's colour into the filled state");
+
+// ── THE JOIN: the buttons must actually WEAR the classes ───────────────────────────────────────────
+// Two mutations survived the first pass by stripping class= from a button. Every sizing, hover, focus
+// and hit-area assertion above still passed, because the stylesheet was untouched — I had tested the CSS
+// and the markup separately and never that they meet. The styles are dead code without this.
+ok(/id="reorderModeBtn" class="\'\+\(S\.reorderMode\?"outline-txt-btn":"outline-icon-btn"\)\+\'"/.test(reorder),
+   "reorder wears outline-icon-btn at rest and outline-txt-btn while active — the class follows the shape");
+ok(/id="expandAllBtn" class="outline-icon-btn"/.test(expand), "expand/collapse wears outline-icon-btn");
+ok(/id="copyAllSectionsBtn" class="outline-txt-btn"/.test(copy), "Copy all wears outline-txt-btn, so it gets the same hover and focus");
+
+// ── HANDLERS MUST NOT HAVE MOVED ───────────────────────────────────────────────────────────────────
+// The whole change is presentational. If an id drifted, a control would silently stop working.
+for (const id of ["reorderModeBtn", "expandAllBtn", "copyAllSectionsBtn"]) {
+  ok(html.includes(`id="${id}"`), `${id} still rendered…`);
+  ok(new RegExp(`getElementById\\("${id}"\\)`).test(html), `…and still bound by id, so no handler changed`);
+}
+
 console.log(`\n${n} assertions, ` + (failures === 0 ? "✔ OUTLINE CONTROLS OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);
