@@ -1591,6 +1591,25 @@ async function loadGuidelines(){
 }
 
 // ═══════════ GUIDELINE LOOKUP ═══════════
+// NARROW COMPOUND ROUTES. Some clinical phrases route correctly only as a WHOLE PHRASE, because the
+// word that identifies the specialty is shared with another specialty entirely.
+//
+// "PD peritonitis" is the case that forced this. It routed to nothing, and the obvious fix - adding
+// "peritonitis" to the Nephrology keyword list - would have dragged SPONTANEOUS BACTERIAL peritonitis
+// out of GI/Hepatology and into Nephrology. One common query grounded by breaking another.
+//
+// SBP turned out to route to NOTHING either: it is in no catalogue category and matches no GI keyword,
+// so it was silently ungrounded exactly like the 107 the coverage test caught. Both are fixed here.
+//
+// RULES ARE FULL PHRASES, NEVER BARE ABBREVIATIONS. "sbp" is deliberately not a rule: it is systolic
+// blood pressure at least as often as it is spontaneous bacterial peritonitis, and a rule that grounds
+// a hypertension talk on hepatology guidance is the wrong-grounding failure mode, which is worse than
+// no grounding. If a phrase is ambiguous, it does not get a rule. (Jenni 2026-08-19)
+var COMPOUND_ROUTES = [
+  { re: /\bpd[- ]?(?:associated\s+)?peritonitis\b/, spec: "Nephrology" },
+  { re: /\bspontaneous\s+bacterial\s+peritonitis\b/, spec: "GI/Hepatology" }
+];
+
 // TOPICS category (the display name shown in the picker) -> guidelines.json specialty key.
 // Every category in TOPICS must appear here. test_routing_coverage.mjs walks all 768 catalogue topics
 // and fails on any that routes to null, so adding a category without a line here is a build failure
@@ -1664,6 +1683,16 @@ function getGuidelinesForTopic(topic) {
         break;
       }
     }
+  }
+  // Compound phrases, after the single-keyword pass and before the catalogue. Additive like the
+  // catalogue is: a compound match never removes a specialty another rule found.
+  // Guarded like the other two routing tables: a caller reached before this file finished evaluating
+  // degrades to keyword-only rather than throwing. test_routing_coverage.mjs asserts the rules exist
+  // and fire, so a genuinely missing table fails there rather than silently downgrading.
+  var _CR = (typeof COMPOUND_ROUTES !== "undefined" && COMPOUND_ROUTES) ? COMPOUND_ROUTES : [];
+  for (var ci = 0; ci < _CR.length; ci++) {
+    var _cr = _CR[ci];
+    if (_cr.re.test(t) && matched.indexOf(_cr.spec) < 0) matched.push(_cr.spec);
   }
   // THE CATALOGUE ALWAYS CONTRIBUTES, it is not a last resort. This ran only when keyword matching
   // found NOTHING, so a single spurious keyword hit suppressed the curated answer entirely: "Asthma in
@@ -4188,7 +4217,7 @@ var S = {
   // — Diagram / visual aid
   dg:null, dgBusy:false, dgErr:"", dgMode:"ai", _dgModeUserSet:false, lightbox:false,
   // — Podcast (audio narration)
-  podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false,
+  podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false, podWaitingOnAudit:false,
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false, proofreadArmed:false,
@@ -10887,13 +10916,42 @@ async function sendChat(){
   S.chatBusy=false;render();
 }
 
+// AUTHORISED, AND NOT RUN AGAINST A TALK THE AUDIT IS STILL EDITING (Jenni 2026-08-19).
+//
+// AUTH: this called the model with no opts at all - no receipt, no stage. Identical to the defect fixed
+// in checkForUpdates, but Audio is worse exposed: it is the only user-triggered call that runs on a
+// cold-loaded SAVED talk, where no prior action has minted a receipt. The Worker allows it today only
+// because RECEIPTS_REQUIRED has never been switched on; the moment it is, Generate audio returns 402 on
+// every saved talk. stage "aux" because this writes no teaching content - it reads a finished talk and
+// returns a script.
+//
+// RACE: the button was live while the background citation audit was still running. genPodcast snapshots
+// S.talk, the audit then REPLACES S.talk with the audited version, and S.podScript is never
+// invalidated - so the script could narrate references the audit had just dropped as unverifiable. The
+// audio was more wrong than the talk. Waiting is the honest fix: the audit is seconds, and a script
+// built from superseded citations is not something to ship and quietly correct later.
 async function genPodcast(){
-  if(!S.talk||S.podBusy)return;S.podBusy=true;render();
+  if(!S.talk||S.podBusy)return;
+  if(S.citationAuditPending){
+    S.msgs && S.msgs.push && S.msgs.push({r:"a",t:"Waiting for the citation check to finish before writing the script — otherwise the audio could read out a reference the check is about to remove."});
+    S.podWaitingOnAudit = true; render();
+    var _waited = 0;
+    while(S.citationAuditPending && _waited < 30000){ await new Promise(function(r){ setTimeout(r, 400); }); _waited += 400; }
+    S.podWaitingOnAudit = false;
+    if(!S.talk){ render(); return; }
+  }
+  var _ra = await ensureRefineAuth();
+  if(!_ra.ok){
+    S.podScript = "";
+    S.msgs && S.msgs.push && S.msgs.push({r:"a",t:(_ra.message || "Couldn't authorise the audio script.") + " Nothing was generated and your talk is unchanged."});
+    S.podBusy = false; render(); return;
+  }
+  S.podBusy=true;render();
   try{
     var c="";
     if(S.talk.sections){c="Title: "+S.talk.title+"\n";var ss=S.talk.sections;for(var i=0;i<ss.length;i++)c+="Section: "+ss[i].heading+". "+((ss[i].points||[]).join(". "))+". Pearl: "+(ss[i].teaching_pearl||"")+"\n";c+="Takeaways: "+(S.talk.summary_points||[]).join(". ")}
     else if(S.talk.question){c="Title: "+S.talk.title+"\nQ: "+S.talk.question.stem+"\nAnswer: "+S.talk.question.correct_letter+". "+S.talk.question.explanation+"\nPearls: "+(S.talk.board_pearls||[]).join(". ")}
-    var txt=await callAPI("Convert to a 1-2 min conversational podcast for internal medicine doctors. Warm, plain text only.",c,1500);
+    var txt=await callAPI("Convert to a 1-2 min conversational podcast for internal medicine doctors. Warm, plain text only.",c,1500,{ meterKind:"aux", stage:"aux" });
     S.podScript=txt.trim();
   }catch(e){S.podScript="Error: "+e.message}
   S.podBusy=false;render();

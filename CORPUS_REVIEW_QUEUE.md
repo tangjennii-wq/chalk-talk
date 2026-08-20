@@ -88,7 +88,27 @@ contradicted.** Two of those would have introduced errors into correct content.
 
 ---
 
-## 5. Standing lesson
+## 5. Kidney transplant immunosuppression — one verified fix, four withheld
+
+The KDIGO 2009 entry is one of the meatier ones (1,629 chars) and still produced a wrong card, by a
+mechanism worth naming: **adjacency**. It said "INDUCTION: basiliximab first-line" and, two sentences
+later, cited ELITE-Symphony for the CNI comparison. Both true. The model joined them and attributed
+basiliximab induction to Symphony. Two correct statements can compose into a false one.
+
+| Claim | Verdict |
+|---|---|
+| ELITE-Symphony induction was **daclizumab**, not basiliximab | **Confirmed** in the primary record (Ekberg, NEJM 2007;357:2562-75, PMID 18094377). Fixed at source, with the adjacency trap spelled out. Daclizumab is withdrawn, so it is a fact about the trial, not an option today |
+| Trough targets: 8–12→5–8 vs Symphony 3–7 (achieved 6–7), KDIGO 3–15 early, real-world 5–7.9 / 5–6.9, floor <4–6 → dnDSA | **Withheld — numbers.** The entry contains **no ng/mL figure at all**, so the card's ranges were memory. The entry now says so, and states the *floor* qualitatively: too-low exposure associates with de novo DSA and worse graft survival, so "lower is safer" is wrong in both directions. Specific ranges need their sources read |
+| BK screening: monthly to month 9, then q3mo to 2 yr; reduce IS at DNAemia >1000 copies/mL sustained 3 wk, or >10,000 | **Withheld.** AST-IDCOP is not in this corpus. The entry now says no schedule or threshold is given here, so a talk quoting them is quoting memory |
+| MPA reduced first; tac→CsA / tac→mTORi swaps not RCT-supported | **Partially in already** — KDIGO says lower the antiproliferative first. The "not RCT-supported" nuance is recorded qualitatively; do not present a swap sequence as evidence-based |
+| Belatacept does not raise BK-DNAemia vs tacrolimus; emerging as rescue | **Withheld.** No primary source read. Contradicts older teaching, so it needs one |
+
+**To clear:** read AST-IDCOP BK guidance and a current trough-target source, then add numbers *with* their
+provenance. Until then the entry's job is to stop the model inventing them, which is what it now does.
+
+---
+
+## 6. Standing lesson
 
 Physician review of a *generated card* keeps surfacing faults that are the corpus's, not the card's — the
 card repeated what it was told. Two failure modes seen so far:

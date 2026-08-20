@@ -52,9 +52,15 @@ const TOPICS = (0, eval)("(" + html.slice(tStart, i + 1) + ")");
 
 const ctx = { GUIDELINES: G, TOPICS, String, Object, console: { warn(){} } };
 vm.createContext(ctx);
-vm.runInContext(objSrc("TOPIC_CATEGORY_SPECIALTY") + "\n" + fnSrc("getGuidelinesForTopic")
-  + "\nthis.route = getGuidelinesForTopic; this.MAP = TOPIC_CATEGORY_SPECIALTY;", ctx);
-const { route, MAP } = ctx;
+function arrSrc(name){
+  const at = html.indexOf(`var ${name} = [`);
+  if (at < 0) throw new Error("missing " + name);
+  return html.slice(at, html.indexOf("];", at) + 2);
+}
+vm.runInContext(arrSrc("COMPOUND_ROUTES") + "\n" + objSrc("TOPIC_CATEGORY_SPECIALTY") + "\n"
+  + fnSrc("getGuidelinesForTopic")
+  + "\nthis.route = getGuidelinesForTopic; this.MAP = TOPIC_CATEGORY_SPECIALTY; this.COMPOUND = COMPOUND_ROUTES;", ctx);
+const { route, MAP, COMPOUND } = ctx;
 
 // ── EXPECTED mapping, declared HERE and independently ───────────────────────────────────────────────
 // Deliberately not read from the app. Comparing the app to itself would pass with every value wrong;
@@ -207,14 +213,45 @@ ok(ACCEPTED_MID_WORD.size <= 5, `the mid-word exception list stays short (${ACCE
 const rogue = { GUIDELINES: G, String, Object, console: { warn(){} },
   TOPICS: { "Department of Invented Medicine": { topics: { "X": ["Fictional syndrome"] } } } };
 vm.createContext(rogue);
-vm.runInContext(objSrc("TOPIC_CATEGORY_SPECIALTY") + "\n" + fnSrc("getGuidelinesForTopic")
-  + "\nthis.route = getGuidelinesForTopic;", rogue);
+vm.runInContext(arrSrc("COMPOUND_ROUTES") + "\n" + objSrc("TOPIC_CATEGORY_SPECIALTY") + "\n"
+  + fnSrc("getGuidelinesForTopic") + "\nthis.route = getGuidelinesForTopic;", rogue);
 ok(rogue.route("Fictional syndrome") === null,
    "an UNMAPPED category grounds on nothing — no catch-all, because wrong grounding is worse than none");
 ok(route("A topic that exists nowhere at all") === null,
    "…and so does a topic that is in no catalogue and matches no keyword");
 ok(!/matched\.push\("Miscellaneous"\)\s*;?\s*\/\/\s*fallback/i.test(html) && !/\|\|\s*"Miscellaneous"/.test(html),
    "…and nothing in the source quietly defaults an unknown topic into a specialty");
+
+// ── 4b. NARROW COMPOUND ROUTES ──────────────────────────────────────────────────────────────────────
+// "PD peritonitis" routed to nothing, and the obvious fix — adding "peritonitis" to the Nephrology
+// keywords — would have dragged SPONTANEOUS BACTERIAL peritonitis into Nephrology. One common query
+// grounded by breaking another. Full-phrase rules ground both without either stealing the other.
+for (const v of ["PD peritonitis", "PD-associated peritonitis", "pd associated peritonitis", "PD PERITONITIS"]) {
+  const r = route(v);
+  ok(!!r && r.specialties.includes("Nephrology"), `"${v}" reaches Nephrology`);
+}
+{
+  const r = route("Spontaneous bacterial peritonitis");
+  ok(!!r && r.specialties.includes("GI/Hepatology"), "Spontaneous bacterial peritonitis reaches GI/Hepatology…");
+  ok(!!r && !r.specialties.includes("Nephrology"),
+     "…and is NOT dragged into Nephrology, which a bare 'peritonitis' keyword would have done");
+}
+// The bare keyword must stay absent, or the rule above is decoration.
+const nephKw = html.slice(html.indexOf('"Nephrology": ['), html.indexOf("]", html.indexOf('"Nephrology": [')) + 1);
+ok(!/"peritonitis"/.test(nephKw), "'peritonitis' is still NOT a bare Nephrology keyword");
+
+// AMBIGUOUS ABBREVIATIONS GET NO RULE. "sbp" is systolic blood pressure at least as often as it is
+// spontaneous bacterial peritonitis; a rule on it would ground a hypertension talk on hepatology.
+ok(COMPOUND.every(r => !/\\bsbp\\b/.test(String(r.re)) && String(r.re).length > 20),
+   "no compound rule is a bare ambiguous abbreviation");
+{
+  const r = route("SBP goal in hypertension");
+  ok(!r || !r.specialties.includes("GI/Hepatology"),
+     "…so 'SBP goal in hypertension' is not routed to hepatology");
+}
+// Compound rules are ADDITIVE — they must never remove what another pass found.
+ok(/matched\.indexOf\(_cr\.spec\) < 0\) matched\.push\(_cr\.spec\)/.test(html),
+   "a compound match only ever ADDS a specialty, never replaces the keyword or catalogue result");
 
 // ── 5. the allowlist stays explicit ─────────────────────────────────────────────────────────────────
 ok(MAY_BE_UNGROUNDED instanceof Set, "the ungrounded allowlist is a Set of exact names, not a pattern");

@@ -351,6 +351,22 @@ jobs:
       - name: Generated artefacts match their source (no hand-edited build output)
         run: node test_generated_artifacts.mjs
 
+      # Nephrology had NOTHING on peritoneal dialysis - no ISPD guideline, zero mentions of peritonitis,
+      # dialysate or vancomycin - so every figure in a PD talk came from model memory. Verification also
+      # contradicted the review on a DOSE: it gave continuous IP vancomycin as 25-50 mg/L per dwell; ISPD
+      # 2022 says 25 mg/L. A maintenance range twice the guideline figure is a dosing error, not a nuance,
+      # so the entry states 25 mg/L and names 25-50 as not-from-this-guideline.
+      - name: PD peritonitis grounding (ISPD 2022 targets and vancomycin dosing)
+        run: node test_pd_peritonitis_grounding.mjs
+
+      # genPodcast called the model with NO opts - no receipt, no stage. Same defect as checkForUpdates,
+      # but Audio is the only user-triggered call that runs on a cold-loaded SAVED talk where nothing has
+      # minted a receipt, so setting RECEIPTS_REQUIRED would have returned 402 on every saved talk. It also
+      # raced the background citation audit: the script could narrate a reference the audit was about to
+      # drop, leaving the AUDIO more wrong than the talk.
+      - name: Audio integrity (authorised, and not racing the citation audit)
+        run: node test_audio_integrity.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction

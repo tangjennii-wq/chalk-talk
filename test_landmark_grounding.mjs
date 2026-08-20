@@ -82,15 +82,18 @@ for (const v of Object.values(guides.specialties || {})) for (const t of (v.tria
 const res = resolveTrials(named, index);
 ok(res.resolved.length + res.dropped.length === new Set(named.map(normTrialName)).size,
    "every named trial is either resolved or dropped — none falls through");
-// Derived independently, not read off the output: guidelines.json makes 219 trial MENTIONS across
+// COUNTS MOVED 2026-08-19 (+1 each): INCREASE was added to the Pulmonary trials list so the PH-ILD
+// entry requests the abstract it teaches. Resolved went 144 -> 145 and backed 162 -> 163, i.e. the
+// new mention RESOLVES rather than joining the unresolvable tail — which is the point of the change.
+// Derived independently, not read off the output: guidelines.json makes 220 trial MENTIONS across
 // specialties, 162 of which resolve; those collapse to 200 UNIQUE names, of which 144 resolve and 56 do
 // not. resolveTrials() dedupes, so it is the unique figure that applies here. Both are pinned because a
 // silent fall in either means the corpus and the index have drifted apart.
-ok(new Set(named.map(normTrialName)).size === 200, `200 unique trial names across guidelines.json (got ${new Set(named.map(normTrialName)).size})`);
-ok(res.resolved.length === 144, `144 of them resolve to a verified PMID (got ${res.resolved.length})`);
+ok(new Set(named.map(normTrialName)).size === 201, `201 unique trial names across guidelines.json (got ${new Set(named.map(normTrialName)).size})`);
+ok(res.resolved.length === 145, `145 of them resolve to a verified PMID (got ${res.resolved.length})`);
 ok(res.dropped.length === 56, `56 are unsourceable and therefore never named (got ${res.dropped.length})`);
-ok(named.filter(t => !!index[normTrialName(t)]).length === 162,
-   `162 of the 219 mentions are backed by a verified PMID (got ${named.filter(t => !!index[normTrialName(t)]).length})`);
+ok(named.filter(t => !!index[normTrialName(t)]).length === 163,
+   `163 of the 220 mentions are backed by a verified PMID (got ${named.filter(t => !!index[normTrialName(t)]).length})`);
 
 // ── the instruction itself ──────────────────────────────────────────────────────────────────────────
 ok(/Landmark trials to cite when relevant \(each has its abstract below — cite the PMID given, never construct one\)/.test(src),
