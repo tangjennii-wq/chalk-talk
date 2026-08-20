@@ -10151,9 +10151,18 @@ async function applyProofreadFeedback(userMsg, wasAuto){
       } else if(!result.applied || result.applied.length === 0){
         S.msgs.push({r:"a",t:"ℹ️ I read the feedback but didn't find a concrete change to make — it either confirms the talk is accurate or is too general to act on. If there's a specific fix, quote the exact bullet or tell me what it should say."});
       } else {
-        // The merged result is what the reader sees, so it goes through the same gate. A patch that blanks
-        // summary_points or the memory card would otherwise render a partial talk. (Codex 2026-07-26)
-        try { _assertCompleteTalk(revised, S.style, "proofread-merged talk"); }
+        // The merged result is what the reader sees, so it goes through a gate. THE RIGHT GATE IS THE
+        // RELATIVE ONE. This path used _assertCompleteTalk, which demands today's whole schema of a talk
+        // that may have been saved before half of it existed - so a legacy talk could not be corrected at
+        // all, and any merge that dropped the memory card was thrown away whole. What matters on a refine
+        // is that the edit does not make the talk WORSE; _assertRefinePreservesCompleteness measures
+        // exactly that, repairs the memory card from the previous talk on the way through, and never
+        // blocks on the card alone. (Jenni 2026-08-20)
+        var _vmcCarried = [];
+        try {
+          _vmcCarried = _carryVmcForward(S.talk, revised);
+          _assertRefinePreservesCompleteness(S.talk, revised, S.style, "proofread-merged talk");
+        }
         catch(_incomplete){
           S.msgs.push({r:"a",t:"⚠ Applying that would have left the talk incomplete (" + (_incomplete.missing||[]).join(", ") + "), so I kept your original untouched. Splitting the feedback up will not help — reply naming the single correction you most want applied."});
           if(refineTimer){ clearInterval(refineTimer); refineTimer=null; } S._proofreadRunning=false; S.chatBusy=false; render(); return;
@@ -10164,18 +10173,26 @@ async function applyProofreadFeedback(userMsg, wasAuto){
         if(S.dg && S.dg.imgB64) S.visualStale = true;
         else { S.dg = null; S.dgErr = ""; }
         S.podScript = ""; S.talkIsSaved = false;
-        S.vmcStale = !(result.vmcTouched === true);
+        // A carried-forward quadrant is by definition not the refined talk's own summary, so the card is
+        // stale whatever the merge claimed about touching it.
+        S.vmcStale = !(result.vmcTouched === true) || _vmcCarried.length > 0;
         var summary = result.applied.slice(0,8).map(function(x){return "• "+x}).join("\n");
         var more = result.applied.length > 8 ? "\n…and "+(result.applied.length-8)+" more" : "";
         // Honesty note (Jenni 2026-07-15): tell the user when the citation guard rejected refs the
         // model tried to add — the corrections still applied, just uncited. Never silent.
+        // Say it, rather than letting the card quietly disagree with the corrected text. Not a warning -
+        // the corrections landed, which is the whole point of repairing instead of rejecting.
+        var _vmcNote = _vmcCarried.length
+          ? "\n\n\uD83D\uDDBC The memory card came back without " + (_vmcCarried.length === 1 ? "one quadrant" : _vmcCarried.length + " quadrants")
+            + ", so I kept the previous wording there rather than discard the whole edit. Regenerate the card if the corrections changed what it should say."
+          : "";
         var _g = result.refGuard || null;
         var _nDrop = _g ? (_g.droppedPaste + _g.droppedPubmed) : 0;
         var guardNote = _nDrop > 0
           ? "\n\n🛡 " + _nDrop + " suggested citation" + (_nDrop===1?" was":"s were") + " NOT added — no verifiable source (identifier missing from your pasted feedback, or not found on PubMed). Those corrections applied uncited; this app never mints citations from model memory."
           : "";
         var _autoNote = wasAuto ? "🩺 That looked like reviewer feedback rather than an instruction, so I read it as a proofread — every other bullet, section and citation was left alone.\n\n" : "";
-        S.msgs.push({r:"a",t:_autoNote+"✓ Applied "+result.applied.length+" correction"+(result.applied.length===1?"":"s")+" from the feedback. Everything else untouched — tap Undo to revert.\n\n"+summary+more+guardNote});
+        S.msgs.push({r:"a",t:_autoNote+"✓ Applied "+result.applied.length+" correction"+(result.applied.length===1?"":"s")+" from the feedback. Everything else untouched — tap Undo to revert.\n\n"+summary+more+guardNote+_vmcNote});
         // Refine now flows through the SAME background chip audit as generate (Jenni 2026-07-15) —
         // previously the semantic claim-vs-abstract audit only ever re-ran after generate.
         //
@@ -11698,6 +11715,30 @@ function _vmcIncomplete(v){
   if(!v || typeof v !== "object" || Array.isArray(v)) return _VMC_QUADRANTS.slice();
   return _VMC_QUADRANTS.filter(function(q){ return !_meaningful(v[q]); });
 }
+// THE MEMORY CARD IS NOT TEACHING CONTENT, AND IT MUST NEVER BE THE REASON A CORRECTION IS DISCARDED.
+// (Jenni 2026-08-20: "visual should not be a barrier to refining".) She pasted a two-paragraph reviewer
+// note about tolvaptan and EFFUSE-FLUID; the merge came back without a usable visual_memory_card, and the
+// completeness gate threw the WHOLE edit away - both corrections lost to a 2x2 summary grid that is
+// derived from the talk rather than part of it.
+//
+// REPAIR, DO NOT REJECT. On a refine we already hold the previous talk, so a dropped quadrant has an
+// obvious correct value: the one it had a moment ago. Backfilled PER QUADRANT, so a card the model
+// partially rewrote keeps its new quadrants and only the blanks are filled - taking the whole old card
+// would silently revert a quadrant the reviewer had just corrected.
+//
+// Returns the quadrant names carried over, so the caller can mark the card stale and say so.
+function _carryVmcForward(beforeTalk, afterTalk){
+  if(!afterTalk || typeof afterTalk !== "object") return [];
+  var prev = (beforeTalk && beforeTalk.visual_memory_card) || null;
+  if(!prev || typeof prev !== "object" || Array.isArray(prev)) return [];
+  var cur = afterTalk.visual_memory_card;
+  if(!cur || typeof cur !== "object" || Array.isArray(cur)){ cur = {}; afterTalk.visual_memory_card = cur; }
+  var carried = [];
+  _VMC_QUADRANTS.forEach(function(q){
+    if(!_meaningful(cur[q]) && _meaningful(prev[q])){ cur[q] = prev[q]; carried.push(q); }
+  });
+  return carried;
+}
 function _missingTalkFields(talk, style){
   if(!talk || typeof talk !== "object") return ["(no object)"];
   var req = (style === "boards") ? _REQUIRED_BOARDS_FIELDS : _REQUIRED_LECTURE_FIELDS;
@@ -11779,6 +11820,9 @@ function _assertCompleteTalk(talk, style, label){
 // _assertCompleteTalk for them.
 function _assertRefinePreservesCompleteness(beforeTalk, afterTalk, style, label){
   _normalizeTalkInPlace(afterTalk, style);
+  // Repair the card from the previous talk BEFORE judging completeness, so a dropped quadrant is a
+  // non-event rather than a rejected edit.
+  _carryVmcForward(beforeTalk, afterTalk);
   function family(m){
     m = String(m || "");
     if(/^visual_memory_card(?:\.|$)/.test(m)) return "visual_memory_card";
@@ -11789,7 +11833,13 @@ function _assertRefinePreservesCompleteness(beforeTalk, afterTalk, style, label)
   }
   var existing = {};
   _missingTalkFields(beforeTalk, style).forEach(function(m){ existing[family(m)] = true; });
-  var newlyMissing = _missingTalkFields(afterTalk, style).filter(function(m){ return !existing[family(m)]; });
+  // …and if it STILL cannot be filled - the previous talk had no card either, which happens on talks
+  // saved before the four-quadrant schema - the refine proceeds anyway. An unfilled quadrant renders one
+  // empty box; a rejected refine loses every correction in the paste. The second is much worse, and it is
+  // the only failure mode of the two that the user cannot fix by retrying.
+  var newlyMissing = _missingTalkFields(afterTalk, style)
+    .filter(function(m){ return !existing[family(m)]; })
+    .filter(function(m){ return family(m) !== "visual_memory_card"; });
   if(newlyMissing.length){
     var e = new Error((label || "refined talk") + " is incomplete, newly missing " + newlyMissing.join(", "));
     e.code = "incomplete_talk"; e.missing = newlyMissing;
