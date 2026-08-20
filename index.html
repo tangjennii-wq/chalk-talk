@@ -86,7 +86,7 @@ details.howit .howit-note{margin-top:10px;padding-top:9px;border-top:1px solid v
 .tk-titlebar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .tk-titlebar .tk-back,.tk-titlebar .tk-icon{background:none;border:none;color:var(--ink);font-size:18px;padding:6px;border-radius:8px;cursor:pointer;flex-shrink:0;line-height:1;display:flex;align-items:center;justify-content:center}
 .tk-titlebar .tk-back:hover,.tk-titlebar .tk-icon:hover{background:var(--lavender-bg)}
-.tk-titlebar .tk-title{flex:1;min-width:0;font-family:Georgia,"Times New Roman",serif;font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.005em;text-align:center}
+.tk-titlebar .tk-title{flex:1;min-width:0;font-family:Georgia,"Times New Roman",serif;font-size:14.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.005em;text-align:center}
 .tk-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .tk-pill{background:var(--lavender-bg);color:var(--plum-deep);border:1px solid var(--line);border-radius:12px;padding:2px 9px;font-size:11px;font-weight:600;letter-spacing:0.005em;display:inline-flex;align-items:center;gap:4px}
 .tk-pill.green{background:#f0f7f0;color:#2d6a2d;border-color:#c8e0c8}
@@ -154,7 +154,11 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .cap-save-unsaved .hide-mobi
 .tk-capsule .cap-actions .cap-more{width:28px;height:28px;padding:0;border-radius:50%;background:var(--cream);border:1px solid var(--line);color:var(--plum);font-size:18px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;line-height:1;margin-left:4px;box-shadow:var(--shadow-soft);transition:all .12s ease}
 .tk-capsule .cap-actions .cap-more:hover{background:var(--lavender-bg);color:var(--plum-deep);border-color:var(--plum)}
 /* Lesson title block */
-.tk-lessontitle h1{font-family:Georgia,"Times New Roman",serif;font-size:28px;font-weight:700;color:var(--ink);margin:0;line-height:1.1;letter-spacing:-0.015em}
+/* TYPE PASS 2026-08-19. Reference: a wedding site Jenni pointed at — small type, wide tracking,
+     lots of air, nothing shouting. The lecture title was 28px/700 with NEGATIVE tracking, which is
+     display-poster styling on what is really a document heading. 22px/600 with tracking at zero reads
+     as considered rather than loud, and stops the title out-weighing the teaching text under it. */
+  .tk-lessontitle h1{font-family:Georgia,"Times New Roman",serif;font-size:22px;font-weight:600;color:var(--ink);margin:0;line-height:1.2;letter-spacing:-0.004em}
 .tk-lessontitle .ttl-sub{font-size:13px;color:var(--ink-muted);margin:4px 0 0;line-height:1.35}
 .tk-lessontitle{margin:6px 0 12px;padding:0 2px}
 .tk-lessontitle .ttl-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
@@ -195,7 +199,7 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .cap-save-unsaved .hide-mobi
 .guideline-row .gr-body{padding:0 13px 11px;display:flex;flex-wrap:wrap;gap:5px}
 .guideline-row .gr-body span{background:#e0f0e0;border:1px solid #b8d8b8;border-radius:6px;padding:2px 8px;font-size:10.5px;color:#2d6a2d;font-weight:500}
 /* Lesson outline header */
-.outline-head{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 6px;padding:0 4px;font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.09em}
+.outline-head{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 8px;padding:0 4px;font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.16em}
 .outline-head .total{font-size:11px;font-weight:500;color:var(--ink-soft);text-transform:none;letter-spacing:0}
 /* Landing lecture row — horizontal scroller: scroll through your lectures (or tap "See all in library").
    Fixed-width, non-shrinking cards so a peek of the next card signals it's scrollable. (Jenni 2026-07) */
@@ -436,9 +440,13 @@ body.lib-is-reordering .lib-sort-fallback{transition:none !important;pointer-eve
 .hero-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .hero-title {
   font-family: Georgia,"Times New Roman",serif;
-  font-size: 28px; font-weight: 700;
-  letter-spacing: -0.015em; color: var(--plum-deep); margin: 0;
-  line-height: 1;
+  /* Was 28px/700 with negative tracking — the wordmark and the lecture title were the same size, so
+     the page had two competing headlines. The wordmark is identity, not content: it goes smaller and
+     lighter, and gains a little positive tracking, which is what makes a small wordmark read as
+     deliberate rather than shrunken. */
+  font-size: 21px; font-weight: 600;
+  letter-spacing: 0.005em; color: var(--plum-deep); margin: 0;
+  line-height: 1.05;
 }
 .hero-byline { font-size: 12px; color: var(--ink-muted); margin: 0; }
 .hero-byline a { color: var(--plum); text-decoration: none; }
@@ -460,7 +468,7 @@ body.lib-is-reordering .lib-sort-fallback{transition:none !important;pointer-eve
 .hero-meta .meta-count { background: var(--lavender-soft); color: var(--plum); border-radius: 10px; padding: 1px 7px; font-size: 10.5px; font-weight: 700; }
 
 @media (max-width: 430px) {
-  .hero-title { font-size: 26px !important; }
+  .hero-title { font-size: 19px !important; }
   .hero-byline { font-size: 11.5px !important; }
   .hero-meta { font-size: 11.5px !important; }
   .hero-meta > * { padding: 0 8px !important; }

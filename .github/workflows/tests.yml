@@ -367,6 +367,21 @@ jobs:
       - name: Audio integrity (authorised, and not racing the citation audit)
         run: node test_audio_integrity.mjs
 
+      # The entry listed TWO triple regimens for class III/IV lupus nephritis. ACR gives THREE, and the
+      # missing one is low-dose cyclophosphamide PLUS belimumab - so a talk presented Euro-Lupus
+      # cyclophosphamide as a standalone ALTERNATIVE to triple therapy, when it is one OF the three.
+      # An omission producing a wrong FRAME: everything the entry said was true and the shape it implied
+      # was wrong. Same species as the ELITE-Symphony adjacency bug.
+      - name: Lupus nephritis grounding (all three triple regimens, class V, the 2024 year)
+        run: node test_lupus_nephritis_grounding.mjs
+
+      # The wordmark and the lecture title were BOTH 28px/700 Georgia with negative tracking - two
+      # competing headlines, and display-poster styling on what is really a document heading. Sizes are
+      # asserted as a HIERARCHY rather than as magic numbers, so the scale can be retuned freely and this
+      # still catches the two headlines colliding again, or a mobile !important override undoing it.
+      - name: Type scale (hierarchy holds, nothing shouts)
+        run: node test_type_scale.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction
