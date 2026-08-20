@@ -134,8 +134,9 @@ ok(/re-verified 19 Aug 2026 against the consensus full text \(doi 10\.2337\/dci2
 const all = Object.values(G);
 ok(all.reduce((a, s) => a + (s.guidelines || []).length, 0) === 184,
    "184 guideline entries — 181 plus pericardial effusion, ISPD peritonitis and acute interstitial nephritis");
-ok(all.reduce((a, s) => a + (s.trials || []).length, 0) === 220,
-   "220 trial mentions — 219 plus INCREASE, added so the PH-ILD entry requests the abstract it teaches");
+ok(all.reduce((a, s) => a + (s.trials || []).length, 0) === 221,
+   "221 trial mentions — 220 plus SEQUOIA-HCM, added so the HCM entry can cite aficamten's own trial "
+   + "rather than leaving the model to supply one from memory beside EXPLORER-HCM");
 
 console.log(`\n${n} assertions, ` + (failures === 0 ? "✔ CORPUS GUARD OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

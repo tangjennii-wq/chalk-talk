@@ -141,15 +141,23 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .cap-save-unsaved .hide-mobi
    reach for MID-READ. Undo and Save are time-critical - you want them the moment you notice something.
    The kebab holds everything else. Updates is not mid-read work: it fires a search, takes ~a minute and
    returns a panel you have to sit and review, so a scrolled reader tapping it gets interrupted rather
-   than helped. Its ⓘ goes with it - an explainer for a control that is not on screen is just clutter.
-   Both come back the moment you scroll to the top, so nothing is lost, only deferred. */
-body.scrolled-past-capsule .tk-capsule .cap-actions .checkUpdatesBtn,
-body.scrolled-past-capsule .tk-capsule .cap-actions #updatesInfoBtn{display:none !important}
-/* The explainer must not be left open and orphaned if she scrolls while it is showing. */
+   than helped. It comes back the moment you scroll to the top, so nothing is lost, only deferred.
+   The ⓘ does NOT go with it any more (Jenni 2026-08-20). It moved to the corner of "New talk" and now
+   explains the whole bar rather than Updates alone, so it is no longer an explainer for an off-screen
+   control - it is the help affordance for the controls that ARE still on screen. It stays. */
+body.scrolled-past-capsule .tk-capsule .cap-actions .checkUpdatesBtn{display:none !important}
+/* Nothing in cap-actions opens a popover any more; if one is ever added back, it must hide on scroll. */
 body.scrolled-past-capsule .tk-capsule .cap-actions .info-pop{display:none !important}
+/* …but the capsule explainer, anchored to New talk, is not in cap-actions and is deliberately spared. */
 @media (max-width:640px){ .cap-save-unsaved .hide-mobile-text{display:inline !important} }
 .tk-capsule .cap-back{background:none;border:none;color:var(--ink-muted);font-size:16px;padding:2px 4px;cursor:pointer;flex-shrink:0;line-height:1}
 .tk-capsule .cap-meta{flex:1;min-width:0;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.005em}
+/* The variant that carries "New talk" + its ⓘ + the explainer panel. overflow:hidden on the base class is
+   for ellipsised TEXT; here it would clip the panel to a sliver, so this variant turns it off and becomes
+   the positioning context the panel anchors to. align-items:flex-start is what puts the ⓘ at the pill's
+   TOP right rather than centred beside it. (Jenni 2026-08-20) */
+.tk-capsule .cap-meta-info{display:flex;align-items:flex-start;gap:1px;overflow:visible;position:relative;white-space:normal}
+.info-i-corner{margin-left:-2px;margin-top:-3px;padding:3px 4px}
 .tk-capsule .cap-meta b{font-weight:700;color:var(--ink)}
 .tk-capsule .cap-meta .sep{color:var(--ink-soft);margin:0 6px}
 .tk-capsule .cap-actions{display:flex;align-items:center;gap:2px;flex-shrink:0;position:relative}
@@ -329,6 +337,10 @@ body.mobile-drawer-open{overflow:hidden;touch-action:none}
 body.mobile-drawer-open .side-drawer{touch-action:pan-y}
 /* Overflow ⋯ menu */
 .info-pop{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,10,28,0.14);width:320px;max-width:calc(100vw - 32px);z-index:71;padding:14px 16px;text-align:left;font-size:12.5px;line-height:1.55;color:var(--ink);white-space:normal;font-weight:400}
+/* Anchored to the LEFT edge, because its button is now on the left of the capsule. MUST sit after the
+   base rule: both are single-class selectors, so source order decides, and above it the base right:0
+   simply won and the panel still flew to the right-hand side. */
+.info-pop-left{right:auto;left:0}
 .info-pop h4{margin:0 0 8px;font-size:13px;color:var(--plum-deep);font-weight:700}
 .info-pop p{margin:0 0 9px}
 .info-pop p:last-child{margin-bottom:0}
@@ -4240,7 +4252,7 @@ var S = {
   // — UI flags (drawers, modals, overflow menus)
   showLib:false, expCat:null, expSub:null, search:"",
   showSaved:false, savedSearch:"", savedFlash:"", libTab:"lectures", libSpec:null, libProfileOnly:false, libCardMenuId:null, vmcStale:false, _applyProofreadMode:false, proofreadArmed:false,
-  gldOpen:false, editSettings:false, overflowOpen:false, updatesInfoOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude", modelPickerOpen:false, composeOptionsOpen:false, mobileLibOpen:false, mobileLibSpecOpen:false, reconnecting:false,
+  gldOpen:false, editSettings:false, overflowOpen:false, capsuleInfoOpen:false, howitOpen:false, keyModalOpen:false, keyModalInput:"", keyModalErr:"", keyModalProvider:"claude", genProvider:"claude", modelPickerOpen:false, composeOptionsOpen:false, mobileLibOpen:false, mobileLibSpecOpen:false, reconnecting:false,
   talkHistory:[], editingSection:null, editingDraft:null, reorderMode:false,
   loadingFromHash:false,
   // — Auth + cloud
@@ -13858,7 +13870,34 @@ h+='</div>';
     // LEFT: + New talk only.
     // + New talk — now the obvious purple-primary "what next" action. (Jenni 2026-06-08 redesign:
     // was a white-outlined secondary; flipped so Save/Edit/⋮ are quiet and New talk leads.)
-    h+='<div class="cap-meta" style="flex:1;min-width:0"><button id="resetBtn" title="Start a new talk" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;color:#fff;font:inherit;font-weight:700;font-size:12.5px;padding:8px 16px;border-radius:18px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(75,17,111,0.25);transition:all .15s ease"><span style="font-size:14px;font-weight:700">+</span> New talk</button></div>';
+    h+='<div class="cap-meta cap-meta-info" style="flex:1;min-width:0"><button id="resetBtn" title="Start a new talk" style="background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;color:#fff;font:inherit;font-weight:700;font-size:12.5px;padding:8px 16px;border-radius:18px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(75,17,111,0.25);transition:all .15s ease"><span style="font-size:14px;font-weight:700">+</span> New talk</button>';
+    // THE EXPLAINER MOVED HERE, TO THE UPPER-RIGHT CORNER OF "New talk" (Jenni 2026-08-20). It used to sit
+    // beside Updates and explain only Updates. But the questions arriving were never only about Updates -
+    // they were about the whole bar: what does generating cost, what does Save mean when it already says
+    // Saved, what is behind the kebab, can any of it be taken back. An explainer for one control, parked
+    // next to that control, cannot answer those. Anchored to New talk it reads as "how this bar works",
+    // which is what it now is - and it survives scrolling, because New talk does.
+    if(!S.sharedTalk){
+      h+='<button id="capsuleInfoBtn" class="info-i info-i-corner" aria-expanded="'+(S.capsuleInfoOpen?"true":"false")
+        + '" aria-label="How this bar works" title="How this bar works">' + INFO_ICON + '</button>';
+    }
+    // HOW THIS BAR WORKS - the whole capsule, not one button of it.
+    //
+    // THE PARAGRAPHS THAT HAD TO BE WRITTEN. Jenni's own guess was that pressing Updates a second time
+    // undoes it. It does not - it throws the current results away and searches again. If the person who
+    // built it guessed wrong, every user will. The second is cost: "New talk" and Refine look alike and
+    // are not - one spends a credit and starts from nothing, the other is free and edits what is there.
+    if(S.capsuleInfoOpen){
+      h+='<div class="info-pop info-pop-left" id="capsuleInfoPop" role="dialog" aria-label="How this bar works">';
+      h+='<h4>How this bar works</h4>';
+      h+='<p><b>+ New talk</b> clears this screen and takes you back to the topic box to build a different talk from scratch \u2014 generating it <b>spends a credit</b>. It does not edit the talk you are on. To change <i>this</i> talk, type in the <b>Refine</b> box below instead: that is free, and it keeps everything you did not ask it to change. If this talk is unsaved, New talk asks before it clears.</p>';
+      h+='<p><b>\uD83D\uDD0E Updates</b> searches society sites and journals for guidance published <b>since the newest source this talk already cites</b>. Every suggestion is checked against PubMed first \u2014 the PMID has to resolve and the title has to match \u2014 and you tick the ones you want. They are added to <b>References only</b>; the teaching text is never rewritten.</p>';
+      h+='<p><b>Save</b> reads <b>\u2713 Saved</b> when this talk matches what is in your library. The moment you refine it, add references or edit a section it flips to <b>\u2193 Save changes</b> \u2014 including on a talk you had already saved. If it says that and you leave the page, those changes are lost.</p>';
+      h+='<p><b>\u22EE</b> holds everything that is not mid-read work: export as PDF or image, <b>Make public</b> / <b>Make private</b>, copy the link, and delete. Making a talk private also takes it off your profile.</p>';
+      h+='<p><b>\u21A9 Undo</b> reverses the last change \u2014 a refine, an edit, a batch of added references. It is the only thing that reverses them: pressing <b>Updates</b> again does not undo, it discards the current results and runs a fresh search.</p>';
+      h+='</div>';
+    }
+    h+='</div>';
     // RIGHT: Undo · Save · Edit settings · ⋮  (horizontal)
     h+='<div class="cap-actions" style="position:relative">';
     // Undo button — standard inline SVG (curved arrow looping back), matches what every app uses.
@@ -13876,11 +13915,6 @@ h+='</div>';
         + (_ucFast && !S.updateCheck ? ' style="color:#7a5b1a"' : '')
         + '>'+(_ucBusy ? '<span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:-1px"></span>' : SEARCH_ICON)
         + ' <span class="hide-mobile-text">Updates</span></button>';
-      // WHAT DOES THIS BUTTON DO, AND WHAT DOES IT DO TO A TALK I ALREADY SAVED. Both questions arrived
-      // from Jenni on the same day, which is the signal that a 🔎 and a tooltip were not carrying it.
-      // A popover, not a title= tooltip: tooltips do not exist on a phone, and half the beta is on one.
-      h+='<button id="updatesInfoBtn" class="info-i" aria-expanded="'+(S.updatesInfoOpen?"true":"false")
-        + '" aria-label="What does Updates do?" title="What does Updates do?">' + INFO_ICON + '</button>';
       // EDIT (SETTINGS) IS HIDDEN FOR THE BETA. Everything it offered — change the depth, rebuild with a
       // different model, regenerate from the same topic — is a REGENERATION wearing the clothes of a
       // setting, and each one silently costs a credit. Refine does the same jobs conversationally, is free,
@@ -13926,21 +13960,6 @@ h+='</div>';
     }
     if(!S.sharedTalk){
       h+='<button id="overflowBtn" class="cap-more" title="More options" aria-label="More options">⋮</button>';
-    }
-    // Updates explainer — anchored the same way, for the same reason.
-    //
-    // THE THIRD PARAGRAPH IS THE ONE THAT HAD TO BE WRITTEN. Jenni's own guess was that pressing
-    // Updates a second time undoes it. It does not — it throws the current results away and searches
-    // again. If the person who built it guessed wrong, every user will.
-    if(S.updatesInfoOpen){
-      h+='<div class="info-pop" id="updatesInfoPop" role="dialog" aria-label="What Updates does">';
-      h+='<h4>\uD83D\uDD0E What Updates does</h4>';
-      h+='<p>It searches society sites and journals for guidance published <b>since the newest source this talk already cites</b> \u2014 so it looks forward from this talk, not at the whole literature.</p>';
-      h+='<p>Every suggestion is checked against PubMed before you see it: the PMID has to resolve and the title has to match. Anything that fails is shown greyed out with the reason, and cannot be added.</p>';
-      h+='<p>You tick the ones you want. They are added to <b>References only</b> \u2014 the teaching text is never rewritten. Reading the new paper and deciding what it changes stays yours.</p>';
-      h+='<p><b>On a talk you have already saved:</b> adding references makes it unsaved again, and the button flips back to Save. Press it, or the additions are lost when you leave.</p>';
-      h+='<p><b>To reverse it, use \u21A9 Undo</b> \u2014 not this button. Pressing Updates again discards the current results and runs a fresh search.</p>';
-      h+='</div>';
     }
     // Overflow menu — rendered INSIDE cap-actions so it anchors to the ⋮ button instead of the
     // viewport. (Jenni 2026-06-09 fix — menu used to float far from the kebab on wide screens.)
@@ -15224,7 +15243,7 @@ function bindMain(){
   // CLASS, not id: the action-row button and the panel's "Check again" can both be on screen at once,
   // and duplicate ids would leave all but the first one dead. (2026-07-26)
   document.querySelectorAll(".checkUpdatesBtn").forEach(function(b){
-    b.onclick=function(){ if(b.disabled) return; S.updatesInfoOpen=false; S.updateCheck=null; checkForUpdates(); };
+    b.onclick=function(){ if(b.disabled) return; S.capsuleInfoOpen=false; S.updateCheck=null; checkForUpdates(); };
   });
   document.querySelectorAll(".updatePick").forEach(function(cb){
     cb.onchange=function(){
@@ -15266,14 +15285,14 @@ function bindMain(){
   var rb1=document.getElementById("rebuildBtn");if(rb1)rb1.onclick=function(){rebuildLesson()};
   var rb2=document.getElementById("rebuildBtn2");if(rb2)rb2.onclick=function(){rebuildLesson()};
   var brg=document.getElementById("boardRegenBtn");if(brg)brg.onclick=function(){rebuildLesson()};
-  var ofb=document.getElementById("overflowBtn");if(ofb)ofb.onclick=function(e){e.stopPropagation();S.overflowOpen=!S.overflowOpen;S.updatesInfoOpen=false;render()};
-  var uib=document.getElementById("updatesInfoBtn");if(uib)uib.onclick=function(e){e.stopPropagation();S.updatesInfoOpen=!S.updatesInfoOpen;S.overflowOpen=false;render()};
+  var ofb=document.getElementById("overflowBtn");if(ofb)ofb.onclick=function(e){e.stopPropagation();S.overflowOpen=!S.overflowOpen;S.capsuleInfoOpen=false;render()};
+  var uib=document.getElementById("capsuleInfoBtn");if(uib)uib.onclick=function(e){e.stopPropagation();S.capsuleInfoOpen=!S.capsuleInfoOpen;S.overflowOpen=false;render()};
   // ONE document.body.onclick, NOT TWO. It is a property, not a listener list — a second assignment
   // silently replaces the first, so whichever popover bound last would be the only one that closes on
   // an outside click. Both dismissals live in this single handler for that reason.
-  if(S.overflowOpen||S.updatesInfoOpen){document.body.onclick=function(e){
-    if(S.overflowOpen&&!e.target.closest(".overflow-menu")&&!e.target.closest("#overflowBtn")){S.overflowOpen=false;S.updatesInfoOpen=false;render();return}
-    if(S.updatesInfoOpen&&!e.target.closest(".info-pop")&&!e.target.closest("#updatesInfoBtn")){S.updatesInfoOpen=false;S.overflowOpen=false;render()}
+  if(S.overflowOpen||S.capsuleInfoOpen){document.body.onclick=function(e){
+    if(S.overflowOpen&&!e.target.closest(".overflow-menu")&&!e.target.closest("#overflowBtn")){S.overflowOpen=false;S.capsuleInfoOpen=false;render();return}
+    if(S.capsuleInfoOpen&&!e.target.closest(".info-pop")&&!e.target.closest("#capsuleInfoBtn")){S.capsuleInfoOpen=false;S.overflowOpen=false;render()}
   }}else{document.body.onclick=null}
   var nbt=document.getElementById("newTalkBtn");if(nbt)nbt.onclick=function(){S.overflowOpen=false;safeResetAll()};
   var dcb=document.getElementById("drawerCloseBtn");if(dcb)dcb.onclick=function(){S.editSettings=false;render()};

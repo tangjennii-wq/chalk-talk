@@ -439,6 +439,18 @@ jobs:
       - name: GFR / CKD backbone (each drug mapped to its own population and trials)
         run: node test_gfr_grounding.mjs
 
+      # HOCM. The entry was one true sentence - "Disopyramide / verapamil for symptoms; mavacamten
+      # (EXPLORER-HCM)" - and it produced five separate review findings. The slash made disopyramide and
+      # verapamil look interchangeable, hiding that the guideline gives disopyramide only WITH an AV nodal
+      # blocker (it is vagolytic and speeds AV conduction). Naming one myosin inhibitor made a class of two
+      # look like a class of one after aficamten's Dec 2025 approval. And silence on SRT thresholds and on
+      # myectomy-vs-ablation let the deck invent "ablation for higher-risk anatomy", which INVERTS the real
+      # split - anatomy is the myectomy argument; ablation is the surgical-RISK argument.
+      # One review point is asserted as a NEGATIVE: its "5.7% attributable to drug (7-10% with cofactors)"
+      # did not verify. The label reports 7/123 (6%) reversible and apportions no cause.
+      - name: HOCM (myosin inhibitors as a class of two, SRT criteria, the myectomy/ASA inversion)
+        run: node test_hocm_grounding.mjs
+
       # The composer SUGGESTED proofread on a big paste and left the tap to the user - so pasting a review
       # and pressing send routed it to the surgical editor, the exact failure the hint existed to prevent.
       # The condition is the interesting part: length alone is not intent. A long paste CONTAINING an

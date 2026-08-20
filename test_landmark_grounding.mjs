@@ -83,17 +83,29 @@ const res = resolveTrials(named, index);
 ok(res.resolved.length + res.dropped.length === new Set(named.map(normTrialName)).size,
    "every named trial is either resolved or dropped — none falls through");
 // COUNTS MOVED 2026-08-19 (+1 each): INCREASE was added to the Pulmonary trials list so the PH-ILD
-// entry requests the abstract it teaches. Resolved went 144 -> 145 and backed 162 -> 163, i.e. the
-// new mention RESOLVES rather than joining the unresolvable tail — which is the point of the change.
-// Derived independently, not read off the output: guidelines.json makes 220 trial MENTIONS across
-// specialties, 162 of which resolve; those collapse to 200 UNIQUE names, of which 144 resolve and 56 do
-// not. resolveTrials() dedupes, so it is the unique figure that applies here. Both are pinned because a
-// silent fall in either means the corpus and the index have drifted apart.
-ok(new Set(named.map(normTrialName)).size === 201, `201 unique trial names across guidelines.json (got ${new Set(named.map(normTrialName)).size})`);
-ok(res.resolved.length === 145, `145 of them resolve to a verified PMID (got ${res.resolved.length})`);
+// entry requests the abstract it teaches. Resolved went 144 -> 145 and backed 162 -> 163.
+// COUNTS MOVED AGAIN 2026-08-20 (+1 each): SEQUOIA-HCM was added to the Cardiovascular trials list so
+// the HCM entry can cite aficamten's own pivotal trial rather than leaving the model to supply one from
+// memory beside EXPLORER-HCM. Unique 201 -> 202, resolved 145 -> 146, backed 163 -> 164, mentions
+// 220 -> 221, and dropped stays at 56.
+//
+// THE DIRECTION IS THE ASSERTION, not the number. Both times the new mention RESOLVED — it joined the
+// backed set rather than the unresolvable tail. A trial added to guidelines.json WITHOUT a verified PMID
+// raises `mentions` and `dropped` while leaving `resolved` flat, and that is the drift these pins catch:
+// the prompt would then instruct the model to cite a paper nothing can supply.
+//
+// Derived independently, not read off the output: guidelines.json makes 221 trial MENTIONS across
+// specialties; those collapse to 202 UNIQUE names, of which 146 resolve and 56 do not. resolveTrials()
+// dedupes, so it is the unique figure that applies there.
+ok(new Set(named.map(normTrialName)).size === 202, `202 unique trial names across guidelines.json (got ${new Set(named.map(normTrialName)).size})`);
+ok(res.resolved.length === 146, `146 of them resolve to a verified PMID (got ${res.resolved.length})`);
 ok(res.dropped.length === 56, `56 are unsourceable and therefore never named (got ${res.dropped.length})`);
-ok(named.filter(t => !!index[normTrialName(t)]).length === 163,
-   `163 of the 220 mentions are backed by a verified PMID (got ${named.filter(t => !!index[normTrialName(t)]).length})`);
+ok(named.filter(t => !!index[normTrialName(t)]).length === 164,
+   `164 of the 221 mentions are backed by a verified PMID (got ${named.filter(t => !!index[normTrialName(t)]).length})`);
+// The unresolvable tail must not have grown. This is the half that matters: a corpus edit is allowed to
+// add citable trials, never to add uncitable ones.
+ok(named.length - named.filter(t => !!index[normTrialName(t)]).length === 57,
+   "…and the unbacked remainder is unchanged at 57 mentions — this edit added a citable trial, not a name");
 
 // ── the instruction itself ──────────────────────────────────────────────────────────────────────────
 ok(/Landmark trials to cite when relevant \(each has its abstract below — cite the PMID given, never construct one\)/.test(src),
