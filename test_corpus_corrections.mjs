@@ -132,11 +132,14 @@ ok(/re-verified 19 Aug 2026 against the consensus full text \(doi 10\.2337\/dci2
 
 // ── Structural: the edits touched what they claimed to touch and nothing else ───────────────────────
 const all = Object.values(G);
-ok(all.reduce((a, s) => a + (s.guidelines || []).length, 0) === 184,
-   "184 guideline entries — 181 plus pericardial effusion, ISPD peritonitis and acute interstitial nephritis");
-ok(all.reduce((a, s) => a + (s.trials || []).length, 0) === 221,
-   "221 trial mentions — 220 plus SEQUOIA-HCM, added so the HCM entry can cite aficamten's own trial "
-   + "rather than leaving the model to supply one from memory beside EXPLORER-HCM");
+ok(all.reduce((a, s) => a + (s.guidelines || []).length, 0) === 185,
+   "185 guideline entries — 181 plus pericardial effusion, ISPD peritonitis, acute interstitial nephritis "
+   + "and CRRT prescription. CRRT is the one that was CORPUS-SILENT rather than corpus-wrong: a reviewed "
+   + "deck came back accurate on dose, citrate and timing with nothing behind it, which is the model "
+   + "being good, not the grounding working");
+ok(all.reduce((a, s) => a + (s.trials || []).length, 0) === 227,
+   "227 trial mentions — 221 plus the six the new CRRT entry names (RENAL, ATN, RICH, ELAIN, AKIKI-2, "
+   + "IDEAL-ICU); every one resolves to a verified PMID, so the prompt may cite them all");
 
 console.log(`\n${n} assertions, ` + (failures === 0 ? "✔ CORPUS GUARD OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

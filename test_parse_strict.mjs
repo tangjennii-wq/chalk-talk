@@ -166,9 +166,21 @@ for (const [needle, what] of [
   ['_assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "expanded talk")', "expandTalk"],
 ]) ok(html.includes(needle), `${what} validates its full-talk replacement before display`);
 
-// (e) PATCH merges — the merged RESULT is what the reader sees
-ok(/_assertCompleteTalk\(revised, S\.style, "proofread-merged talk"\)/.test(html),
-   "the proofread-merged talk is validated before assignment");
+// (e) PATCH merges — the merged RESULT is what the reader sees, but the bar is the RELATIVE one.
+// This asserted the ABSOLUTE gate (_assertCompleteTalk) until 2026-08-20. That was wrong twice over: it
+// demanded today's whole schema of talks saved before half of it existed, so a legacy talk could not be
+// corrected at all; and it threw away an entire reviewer paste when the merge came back without a memory
+// card. What must be true of a refine is that it does not make the talk WORSE — which is what
+// _assertRefinePreservesCompleteness measures. The validation is still mandatory; only the bar moved.
+ok(/_assertRefinePreservesCompleteness\(S\.talk, revised, S\.style, "proofread-merged talk"\)/.test(html),
+   "the proofread-merged talk is validated against the PREVIOUS talk before assignment");
+ok(!/_assertCompleteTalk\(revised, S\.style, "proofread-merged talk"\)/.test(html),
+   "…and the absolute gate is gone from this path, not left beside it as a second rejection");
+// Repair happens BEFORE the gate, or the gate judges a card it could have fixed.
+const _pm = html.indexOf('_assertRefinePreservesCompleteness(S.talk, revised, S.style, "proofread-merged talk")');
+const _cf = html.lastIndexOf("_carryVmcForward(S.talk, revised)", _pm);
+ok(_cf > -1 && _pm - _cf < 200,
+   "…with the memory card carried forward immediately before it, so a dropped quadrant is repaired not judged");
 ok(/_assertRefinePreservesCompleteness\(S\.talk, merge\.talk, S\.style, "weave-merged talk"\)/.test(html),
    "the weave-merged talk is checked against its pre-edit completeness before assignment");
 // and a rejected merge must keep the original rather than blanking the talk

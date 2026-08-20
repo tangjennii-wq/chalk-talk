@@ -872,6 +872,16 @@
     "pmid_verified": "pubmed_2026-07"
   },
   {
+    "name": "RICH",
+    "full": "Regional Citrate vs Systemic Heparin Anticoagulation During CKRT on Filter Life Span and Mortality",
+    "year": 2020,
+    "specialty": "nephrology",
+    "expected_pmid": "33095849",
+    "pmid_verified": "manual_2026-08-20",
+    "teaching_role": "practice-defining, with an unflattering secondary",
+    "source_batch": "manual_2026-08-20"
+  },
+  {
     "name": "AKIKI",
     "full": "Artificial Kidney Initiation in Kidney Injury",
     "year": 2016,

@@ -18,8 +18,10 @@ import { readFileSync, writeFileSync } from "fs";
 // adds a value here rather than back-dating itself into an older one. manual_2026-08 is the
 // 19 Aug 2026 pass (INCREASE). A row whose stamp is not listed here is SKIPPED, silently — which
 // is why adding the trial without adding its stamp would have looked like it worked and produced
-// an index without it.
-const VERIFIED_OK = ["pubmed_2026-07", "manual_2026-07", "europepmc_2026-07", "manual_2026-08"];
+// an index without it. manual_2026-08-20 is the 20 Aug 2026 pass (RICH), verified by matching the
+// full title on its PubMed record - the same PMID-resolves-AND-title-matches bar the Updates check uses.
+const VERIFIED_OK = ["pubmed_2026-07", "manual_2026-07", "europepmc_2026-07", "manual_2026-08",
+                     "manual_2026-08-20"];
 
 // guidelines.json writes acronyms inconsistently (ROCKET-AF vs ROCKET AF, PARTNER 2 vs PARTNER-2), so
 // both sides are reduced to alphanumerics before matching. Four trials resolve ONLY because of this.

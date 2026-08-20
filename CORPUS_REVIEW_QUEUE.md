@@ -106,6 +106,30 @@ basiliximab induction to Symphony. Two correct statements can compose into a fal
 **To clear:** read AST-IDCOP BK guidance and a current trough-target source, then add numbers *with* their
 provenance. Until then the entry's job is to stop the model inventing them, which is what it now does.
 
+## 7. CRRT (reviewed 20 Aug 2026) — withheld claims
+
+| Claim from the review | Disposition |
+| --- | --- |
+| A 2026 meta-analysis and the ongoing Ketzerei RCT are testing whether **lower effluent (10–15 mL/kg/h)** speeds renal recovery; **very-low-dose <13 mL/kg/h raises 90-day mortality** | **Withheld — unverifiable today.** Both PubMed records (41896891, 40983574) are captcha-blocked from here and no alternative full text was reachable. The review itself calls it "optional footnote, not practice-changing." A mortality threshold is precisely the kind of number that must not enter the corpus on a secondhand summary. To clear: read the meta-analysis abstract and confirm the <13 mL/kg/h figure and its evidence class |
+| Total:ionised calcium cut-off of **2.4** used by "JACC/some centers" | **Partially in.** The 2026 Delphi consensus states **≥2.5**, and that is what the entry teaches, with an explicit note that some centres use 2.4 and that the ratio alone is not the diagnosis. The 2.4 attribution to a specific document was not traced |
+| Including **anti-HLA-C/-DP** in cPRA reclassifies ~¼ of patients upward | **Not in the CRRT entry** — belongs to the transplant entry, and the ~¼ figure needs its source read before it lands anywhere |
+
+**Corrections the review itself needed:**
+
+- It summarised RICH as "longer filter life, less bleeding, no mortality difference." True as far as it
+  goes, and it omits the two findings that change how the trial should be taught: **culture-proven
+  infection was higher with citrate (68.0% vs 55.4%)**, hypophosphataemia likewise, and the trial was
+  **stopped early at interim**, which widens the uncertainty on every patient-centred outcome. Both are
+  now in the entry.
+- It gave "net UF >1.75 mL/kg/h is associated with worse outcomes" as a bare number to add. The evidence
+  is **observational** — a RENAL secondary analysis plus retrospective cohorts. The entry carries the
+  number *with* its evidence class, per the prompt's own rule against flattening support into one voice.
+- It said citrate-in-liver-failure is now first-line per a 2026 Delphi consensus. **Verified and correct**
+  — and the consensus adds something the review omitted: **standard LFTs are poor predictors** of
+  accumulation, while rising lactate and falling lactate clearance are the better signals.
+
+---
+
 ---
 
 ## 6. Standing lesson

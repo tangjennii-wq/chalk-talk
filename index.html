@@ -11833,13 +11833,12 @@ function _assertRefinePreservesCompleteness(beforeTalk, afterTalk, style, label)
   }
   var existing = {};
   _missingTalkFields(beforeTalk, style).forEach(function(m){ existing[family(m)] = true; });
-  // …and if it STILL cannot be filled - the previous talk had no card either, which happens on talks
-  // saved before the four-quadrant schema - the refine proceeds anyway. An unfilled quadrant renders one
-  // empty box; a rejected refine loses every correction in the paste. The second is much worse, and it is
-  // the only failure mode of the two that the user cannot fix by retrying.
-  var newlyMissing = _missingTalkFields(afterTalk, style)
-    .filter(function(m){ return !existing[family(m)]; })
-    .filter(function(m){ return family(m) !== "visual_memory_card"; });
+  // ONE MECHANISM, NOT TWO. This briefly also filtered visual_memory_card out of the blocking list, as
+  // belt-and-braces on top of the repair above. Mutation testing showed that filter could not be killed:
+  // both call sites pass S.talk, so either the previous talk HAS a usable card (and the repair fills the
+  // gap) or it does not (and the gap is already in `existing`, so it was never blocking). An unreachable
+  // exemption is worse than none - it looks like the safety net and is not - so the repair stands alone.
+  var newlyMissing = _missingTalkFields(afterTalk, style).filter(function(m){ return !existing[family(m)]; });
   if(newlyMissing.length){
     var e = new Error((label || "refined talk") + " is incomplete, newly missing " + newlyMissing.join(", "));
     e.code = "incomplete_talk"; e.missing = newlyMissing;

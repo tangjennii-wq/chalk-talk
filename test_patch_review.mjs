@@ -27,6 +27,7 @@ vm.runInContext([
   line(/^var _MIN_MEANINGFUL = .*$/m), line(/^var _MIN_BOARD_PEARLS = .*$/m),
   line(/^function _meaningful\(.*$/m), block(/^function _meaningfulList\(/m),
   line(/^var _VMC_QUADRANTS = .*$/m), block(/^function _vmcIncomplete\(/m),
+  block(/^function _carryVmcForward\(/m),
   line(/^var _REQUIRED_LECTURE_FIELDS = .*$/m), line(/^var _REQUIRED_BOARDS_FIELDS  = .*$/m),
   block(/^function _missingTalkFields\(/m), block(/^function _normalizeTalkInPlace\(/m),
   block(/^function _assertCompleteTalk\(/m),
@@ -146,13 +147,62 @@ ok(({}).polluted === undefined, "no prototype was polluted by the attempted patc
   ok(damageError && /sections\[0\]/.test((damageError.missing || []).join(",")),
      "a legacy edit is still rejected when it creates a new completeness gap");
 
+  // THE MEMORY CARD IS THE ONE EXCEPTION, AND IT IS DELIBERATE (Jenni 2026-08-20: "visual should not be
+  // a barrier to refining"). This block used to assert the opposite - that blanking a quadrant REJECTS
+  // the refine - and that is exactly what threw away a two-correction reviewer paste on a hyponatremia
+  // talk. The card is derived from the talk, not part of it, so the gate now repairs it from the previous
+  // version instead of discarding the edit. Asserted as REPAIR, not as permissiveness: the quadrant must
+  // come back with the old wording, not be left blank.
   const current = talk();
   const brokenCurrent = JSON.parse(JSON.stringify(current));
   brokenCurrent.visual_memory_card.bottom_right = "";
   let currentError = null;
   try { preserveRefine(current, brokenCurrent, "lecture", "current refine"); } catch(e) { currentError = e; }
-  ok(currentError && /visual_memory_card/.test((currentError.missing || []).join(",")),
-     "current-schema talks retain the full completeness bar");
+  ok(!currentError, "a blanked memory-card quadrant no longer rejects a refine…");
+  ok(brokenCurrent.visual_memory_card.bottom_right === current.visual_memory_card.bottom_right,
+     "…it is carried forward from the previous talk, so the card is repaired rather than left empty");
+
+  // PER QUADRANT. Taking the whole old card would silently revert a quadrant the reviewer just corrected,
+  // which is a worse failure than the one being fixed: it looks applied and is not.
+  const partly = JSON.parse(JSON.stringify(current));
+  partly.visual_memory_card.top_left = "Corrected mechanism";
+  partly.visual_memory_card.bottom_right = "";
+  try { preserveRefine(current, partly, "lecture", "partial refine"); } catch(e) { ok(false, "partial card refine threw"); }
+  ok(partly.visual_memory_card.top_left === "Corrected mechanism",
+     "a quadrant the refine DID rewrite is kept — backfill fills blanks only, it does not restore the old card");
+  ok(partly.visual_memory_card.bottom_right === current.visual_memory_card.bottom_right,
+     "…while the blank one beside it is still backfilled");
+
+  // The card is not a licence for everything else. A refine that guts the teaching body still fails.
+  const gutted = JSON.parse(JSON.stringify(current));
+  gutted.visual_memory_card.bottom_right = "";
+  gutted.sections[0].points = [];
+  let guttedError = null;
+  try { preserveRefine(current, gutted, "lecture", "gutted refine"); } catch(e) { guttedError = e; }
+  ok(guttedError && /sections\[0\]/.test((guttedError.missing || []).join(",")),
+     "the card exemption is scoped to the card — a refine that empties a section is still rejected");
+  ok(guttedError && !/visual_memory_card/.test((guttedError.missing || []).join(",")),
+     "…and the rejection names the real damage, not the card, so the message points at the actual problem");
+
+  // THE CARD MISSING ENTIRELY, not just a blank quadrant. A merge that drops the key altogether is the
+  // common shape - the model returns the talk without it - and backfill has to CREATE the object, not
+  // give up because there is nothing to write into.
+  const noKey = JSON.parse(JSON.stringify(current));
+  delete noKey.visual_memory_card;
+  let noKeyError = null;
+  try { preserveRefine(current, noKey, "lecture", "card-dropped refine"); } catch(e) { noKeyError = e; }
+  ok(!noKeyError, "a merge that drops the memory card entirely still refines…");
+  ok(noKey.visual_memory_card && noKey.visual_memory_card.top_left === current.visual_memory_card.top_left
+     && noKey.visual_memory_card.bottom_right === current.visual_memory_card.bottom_right,
+     "…and the whole card is rebuilt from the previous talk, so nothing renders empty");
+
+  // A legacy talk with NO card at all cannot be repaired from anything, and must still refine.
+  const noCard = { title: "Legacy", sections: [{ heading: "T", points: ["a"] }], summary_points: ["s"] };
+  const noCardEdit = JSON.parse(JSON.stringify(noCard));
+  noCardEdit.sections[0].points = ["a corrected"];
+  let noCardError = null;
+  try { preserveRefine(noCard, noCardEdit, "lecture", "legacy no-card refine"); } catch(e) { noCardError = e; }
+  ok(!noCardError, "a talk that never had a memory card can still be refined — nothing to carry, nothing to block");
 }
 
 // ── 7) acceptCritique(): the three shapes, one path ───────────────────────────
@@ -219,6 +269,21 @@ ok(({}).polluted === undefined, "no prototype was polluted by the attempted patc
   }
   ok((html.match(/var CRITIQUE_OUTPUT_CONTRACT = /g) || []).length === 1, "the output contract is written once, not three times");
   ok((html.match(/CRITIQUE_OUTPUT_CONTRACT;/g) || []).length === 3, "…and all three critique prompts use it");
+}
+
+// ── THE CARRIED CARD MUST BE MARKED STALE ──────────────────────────────────────
+// Repairing the card means the reader is looking at a summary of the PREVIOUS talk beside corrected
+// teaching text. That is the right trade, but it is only safe if the app knows the card is out of date -
+// otherwise the reviewer's correction lands in the prose and is silently contradicted by the grid above
+// it. Asserted against the source, since this is a wiring fact rather than a function's behaviour.
+{
+  const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
+  ok(/S\.vmcStale = !\(result\.vmcTouched === true\) \|\| _vmcCarried\.length > 0;/.test(html),
+     "a carried-forward quadrant marks the memory card stale, whatever the merge claimed about touching it");
+  ok(/_vmcNote = _vmcCarried\.length/.test(html) && /kept the previous wording there/.test(html),
+     "…and the summary says so, so a repaired card is disclosed rather than passed off as refined");
+  ok(/\+summary\+more\+guardNote\+_vmcNote\}\)/.test(html),
+     "…with the note actually appended to the message the user reads, not merely computed");
 }
 
 console.log("\n" + (failures === 0 ? "✔ PATCH REVIEW TESTS PASSED" : "✗ " + failures + " FAILURE(S)"));
