@@ -5649,7 +5649,19 @@ function softDeleteSavedTalk(id, name, afterHideFn){
   showUndoToast("Talk deleted", function(){
     delete _softDeletedIds[id]; render();
   }, async function(){
-    if(S.user && window.sb && !String(id).startsWith("t_")){ await cloudDeleteTalk(id); }
+    if(S.user && window.sb && !String(id).startsWith("t_")){
+      // UNPUBLISH BEFORE DELETING (Jenni 2026-08-19). Deleting a talk used to leave it on her public
+      // profile: the row went away but the showcase list is a CACHE, so the talk kept appearing to her,
+      // and a delete that half-fails would leave it published with no library row to unpublish it from.
+      // Clearing the flags first means the worst case is an unpublished-but-undeleted talk, which is the
+      // safe direction. Deleting is an unambiguous "I do not want this", and the surprising outcome is a
+      // deleted talk still readable by coworkers - the week she is sharing that profile with them.
+      try{ await window.sb.from("talks").update({ is_public:false, is_featured:false }).eq("id", id); }
+      catch(_e){ console.warn("unpublish before delete failed:", _e); }
+      await cloudDeleteTalk(id);
+      // The cache has to forget it too, or the twin outlives the row it was built from.
+      S.landingFeatured = (S.landingFeatured || []).filter(function(r){ return !r || r.id !== id; });
+    }
     else { writeSavedTalks(loadSavedTalks().filter(function(e){return e.id!==id})); }
     delete _softDeletedIds[id]; render();
   });
@@ -12767,8 +12779,20 @@ function renderSaved(){
   var saved=getDisplayLibrary();
   var savedCloudIds={};
   for(var sdi=0;sdi<saved.length;sdi++){ if(saved[sdi] && saved[sdi].id) savedCloudIds[saved[sdi].id]=true; }
+  // THIS FILTER IS WHY DELETING A TALK MADE IT REAPPEAR (Jenni 2026-08-19). A published talk exists
+  // twice: as her saved row, and as a showcase row keyed by share_token. The dedupe below suppresses the
+  // showcase twin WHILE the talk is in her library. getDisplayLibrary() drops soft-deleted ids, so the
+  // moment she deleted the talk its id left savedCloudIds, the twin stopped being suppressed, and the
+  // talk came back as a badged card with NO DRAG HANDLE - showcase rows are deliberately not reorderable.
+  // It read as seed content reappearing. It was her own talk, published.
+  //
+  // Excluding soft-deleted ids explicitly closes the undo window; unpublishing on commit (see
+  // softDeleteSavedTalk) closes it permanently by removing the row the twin is built from.
   var showcaseSamples=(S.landingFeatured||[]).filter(function(row){
-    return row && row.share_token && !savedCloudIds[row.id];
+    if(!row || !row.share_token) return false;
+    if(savedCloudIds[row.id]) return false;
+    if(typeof _softDeletedIds !== "undefined" && _softDeletedIds[row.id]) return false;
+    return true;
   });
   // For incognito visitors viewing Jenni's library (no S.user), exclude the static Boards SAMPLES.
   // They're generic onboarding cards, not Jenni's shared work — counting them inflates the library

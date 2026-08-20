@@ -382,6 +382,14 @@ jobs:
       - name: Type scale (hierarchy holds, nothing shouts)
         run: node test_type_scale.mjs
 
+      # "When I delete a talk it shows in the library without the drag and drop option." A published talk
+      # exists TWICE in the library build - her saved row and a showcase row - and a dedupe filter
+      # suppressed the twin only while the talk was in her library. Deleting removed the suppression, so
+      # the talk returned as a badged, non-draggable card and read as seed content. Underneath was the
+      # worse half: deleting never UNPUBLISHED, leaving a deleted talk readable on her public profile.
+      - name: Delete unpublishes (no showcase twin outliving its talk)
+        run: node test_delete_unpublish.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction
