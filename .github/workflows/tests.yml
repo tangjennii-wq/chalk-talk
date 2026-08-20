@@ -325,6 +325,15 @@ jobs:
       - name: Routing coverage (all 768 topics, correct specialty, no catch-all)
         run: node test_routing_coverage.mjs
 
+      # "That would have dropped a reference (7 -> 0)." The model was not deleting them: pruneFakeReferences
+      # was, AFTER the merge. Opening a saved talk leaves S.ragChunks empty, and pasted reviewer feedback
+      # provokes a prose rewrite that drops the [N] markers - so isRetrieved AND isCited both go false and
+      # every reference in the talk is deleted. It only bites the exact workflow Jenni runs: refine a SAVED
+      # talk. Refine paths now protect the ids that existed BEFORE the refine; the pruner still applies in
+      # full to anything the model ADDED, which is where invention actually happens.
+      - name: Refine reference survival (a rewrite must not delete vetted references)
+        run: node test_refine_ref_survival.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction

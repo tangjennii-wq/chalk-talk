@@ -7529,7 +7529,34 @@ function _stripChipIds(talk, ids){
   return walk(talk);
 }
 
-function pruneFakeReferences(talk) {
+// protectedIds (optional Set/object of reference ids): references that must survive regardless.
+//
+// WHY THIS PARAMETER EXISTS. This function deletes any reference not cited by a [N] marker, not in
+// S.ragChunks, not named verbatim in prose, not user-uploaded and not src_verified. That is the right
+// test for a FRESHLY GENERATED talk, where an uncited reference is usually one the model invented.
+//
+// It is the wrong test on a REFINE of a SAVED talk, and there it was destroying real work. Opening a
+// talk from the library leaves S.ragChunks empty, so isRetrieved is false for every reference. If a
+// refine rewrites a section and the model does not carry the [N] markers through — which is exactly
+// what pasted reviewer feedback provokes, because it asks for prose to be rewritten — then isCited
+// goes false too, and EVERY reference in the talk is deleted. Jenni hit 7 references to 0 on an
+// alcoholic hepatitis talk; the completeness guard caught it and refused the whole refine, so the
+// correction could not be applied at all. Splitting the paste into smaller pieces does not help,
+// because each piece provokes the same rewrite.
+//
+// A reference that was already in a saved talk has been through generation-time pruning, the citation
+// audit and live PubMed verification. A prose rewrite dropping its marker is not evidence that it was
+// fabricated. So the refine paths protect the ids that existed BEFORE the refine, and the pruner still
+// applies in full to anything the model ADDED — which is where invention actually happens.
+// (Jenni 2026-08-19)
+// The ids a refine must not lose. Built from the talk BEFORE the model touched it.
+function _existingRefIds(talk){
+  var out = {};
+  ((talk && talk.references) || []).forEach(function(r){ if(r && r.id != null) out[String(r.id)] = true; });
+  return out;
+}
+
+function pruneFakeReferences(talk, protectedIds) {
   if (!talk || !Array.isArray(talk.references) || talk.references.length === 0) return talk;
   // Serialize the BODY ONLY. Including talk.references meant every reference trivially "mentioned"
   // itself, so bodyMentions was always true and a model-invented ref could never be pruned — the
@@ -7561,11 +7588,16 @@ function pruneFakeReferences(talk) {
     // User uploads are trusted by definition — the user explicitly handed us this source
     var isUserUpload = r.type === "user-upload" || r.type === "user_upload" || r.type === "upload";
     // Refine citation guard (Jenni 2026-07-15): src_verified means the identifier was verbatim in the
-    // user's pasted feedback ("paste") and/or resolved on PubMed ("pubmed") — these refs aren't in
+    // pasted feedback from the user ("paste") and/or resolved on PubMed ("pubmed") — these refs are not in
     // S.ragChunks and their PubMed-canonical titles may not appear in body prose, so without this
-    // they'd be pruned here, leaving their [N] chips dangling.
+    // without this they would be pruned here, leaving their [N] chips dangling. (No apostrophes in this
+  // function: the brace-counting extractor several test suites use tracks quote state, and a lone
+  // apostrophe in a comment opens a string that never closes.)
     var isVerifiedSource = !!r.src_verified;
-    return isCited || isRetrieved || bodyMentions || isUserUpload || isVerifiedSource;
+    // Pre-existing on a refine: vetted already, and not up for re-litigation because a rewrite moved
+    // its marker. Never set on the generate path, so a fresh talk is pruned exactly as before.
+    var isProtected = !!(protectedIds && r.id != null && protectedIds[String(r.id)]);
+    return isProtected || isCited || isRetrieved || bodyMentions || isUserUpload || isVerifiedSource;
   });
   // ── NEW: audit inline PMIDs in the body prose. If Claude wrote "PMID 12345678" but that PMID is
   // neither in the retrieved RAG chunks nor in the (now-pruned) references array, strip the PMID
@@ -7605,7 +7637,7 @@ function pruneFakeReferences(talk) {
     if (node && typeof node === "object") {
       var out = {};
       for (var key in node) {
-        // Don't audit inside the references array itself — those PMIDs are already pruned above
+        // Do not audit inside the references array itself — those PMIDs are already pruned above
         if (key === "references") { out[key] = node[key]; continue; }
         out[key] = walk(node[key]);
       }
@@ -9737,6 +9769,7 @@ function isRestructureIntent(msg){
 // bullet, pearl, fact, or citation. The model returns the talk with reorganized sections; JS
 // validates that every original citation [N] and every bullet survives somewhere.
 async function restructureTalk(userMsg){
+  var _protectRefIds = _existingRefIds(S.talk);   // see pruneFakeReferences: a rewrite must not delete vetted refs
   // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
   var _ra = await ensureRefineAuth();
   if(!_ra.ok){ var _e = new Error(_ra.message); _e.code = "refine_unauthorised"; throw _e; }
@@ -9803,7 +9836,7 @@ async function restructureTalk(userMsg){
   // full-talk replacement → same schema gate as a draft (Codex 2026-07-26)
   var restructured = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "restructured talk");
   if(typeof deepCleanCitations === "function") restructured = deepCleanCitations(restructured);
-  if(typeof pruneFakeReferences === "function") restructured = pruneFakeReferences(restructured);
+  if(typeof pruneFakeReferences === "function") restructured = pruneFakeReferences(restructured, _protectRefIds);
   return restructured;
 }
 
@@ -9828,6 +9861,7 @@ function isProofreadFeedback(msg){
 // Model call: apply the feedback, return the FULL corrected talk in the same schema. Returns
 // { talk, applied[], vmcTouched }. Consumes 1 free-tier talk (a refine = 1 talk), guarded.
 async function weaveFeedbackTalk(userMsg){
+  var _protectRefIds = _existingRefIds(S.talk);   // see pruneFakeReferences: a rewrite must not delete vetted refs
   // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
   var _ra = await ensureRefineAuth();
   if(!_ra.ok){ var _e = new Error(_ra.message); _e.code = "refine_unauthorised"; throw _e; }
@@ -9948,7 +9982,7 @@ async function weaveFeedbackTalk(userMsg){
   // Same inline-PMID→chip normalization as generate — real pasted+verified PMIDs become proper chips;
   // inline PMIDs with no verifiable metadata (invented, or unverifiable offline) are dropped as noise.
   revised = _normalizeInlinePmids(revised, _extraMeta);
-  if(typeof pruneFakeReferences === "function") revised = pruneFakeReferences(revised);
+  if(typeof pruneFakeReferences === "function") revised = pruneFakeReferences(revised, _protectRefIds);
   return { talk: revised, applied: Array.isArray(parsed.applied)?parsed.applied:[], vmcTouched: vmcTouched,
            refGuard: { droppedPaste: _refDroppedPaste.length, droppedPubmed: _refDroppedPubmed.length, added: _keptRefs.length } };
 }
@@ -9984,7 +10018,7 @@ async function applyProofreadFeedback(userMsg){
       if(newBullets < origBullets){
         S.msgs.push({r:"a",t:"⚠ Applying that would have dropped content ("+origBullets+" → "+newBullets+" bullets), so I kept your original untouched. If the feedback asked to REMOVE something, say e.g. \"delete the epidemiology section\" and I'll do exactly that."});
       } else if(newRefs < origRefs){
-        S.msgs.push({r:"a",t:"⚠ That would have dropped a reference ("+origRefs+" → "+newRefs+"). Kept your original. Try applying the corrections one at a time."});
+        S.msgs.push({r:"a",t:"⚠ That would have dropped a reference ("+origRefs+" → "+newRefs+"). Kept your original — nothing was changed. This is not about the size of the paste, so splitting it up will not help; reply naming the single correction you most want applied."});
       } else if(newSecs < origSecs){
         S.msgs.push({r:"a",t:"⚠ That would have dropped a section ("+origSecs+" → "+newSecs+"). Kept your original. If a deletion was intended, name the section explicitly."});
       } else if(!result.applied || result.applied.length === 0){
@@ -9994,7 +10028,7 @@ async function applyProofreadFeedback(userMsg){
         // summary_points or the memory card would otherwise render a partial talk. (Codex 2026-07-26)
         try { _assertCompleteTalk(revised, S.style, "proofread-merged talk"); }
         catch(_incomplete){
-          S.msgs.push({r:"a",t:"⚠ Applying that would have left the talk incomplete (" + (_incomplete.missing||[]).join(", ") + "), so I kept your original untouched. Try applying the corrections one at a time."});
+          S.msgs.push({r:"a",t:"⚠ Applying that would have left the talk incomplete (" + (_incomplete.missing||[]).join(", ") + "), so I kept your original untouched. Splitting the feedback up will not help — reply naming the single correction you most want applied."});
           if(refineTimer){ clearInterval(refineTimer); refineTimer=null; } S._proofreadRunning=false; S.chatBusy=false; render(); return;
         }
         S.talk = markRefined(revised);
@@ -10054,6 +10088,7 @@ async function applyProofreadFeedback(userMsg){
 // rewrites bullets/pearls/tips in fewer words. Returns the full updated talk JSON.
 // Uses Sonnet 4.6 with high max_tokens so nothing gets squeezed out. (Jenni 2026-06-11)
 async function compressTalk(userMsg){
+  var _protectRefIds = _existingRefIds(S.talk);   // see pruneFakeReferences: a rewrite must not delete vetted refs
   // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
   var _ra = await ensureRefineAuth();
   if(!_ra.ok){ var _e = new Error(_ra.message); _e.code = "refine_unauthorised"; throw _e; }
@@ -10102,7 +10137,7 @@ async function compressTalk(userMsg){
   var compressed = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "compressed talk");
   // NO CHARGE: authorised at the top of this function, and refinement is free by policy.
   if(typeof deepCleanCitations === "function") compressed = deepCleanCitations(compressed);
-  if(typeof pruneFakeReferences === "function") compressed = pruneFakeReferences(compressed);
+  if(typeof pruneFakeReferences === "function") compressed = pruneFakeReferences(compressed, _protectRefIds);
   return compressed;
 }
 
@@ -10110,6 +10145,7 @@ async function compressTalk(userMsg){
 // bullet/pearl/tip with more depth (mechanism, rationale, examples, doses, evidence). Mirror of
 // compressTalk. Used when the user says "more detailed" / "go deeper" / "expand". (Jenni 2026-06-11)
 async function expandTalk(userMsg){
+  var _protectRefIds = _existingRefIds(S.talk);   // see pruneFakeReferences: a rewrite must not delete vetted refs
   // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
   var _ra = await ensureRefineAuth();
   if(!_ra.ok){ var _e = new Error(_ra.message); _e.code = "refine_unauthorised"; throw _e; }
@@ -10163,7 +10199,7 @@ async function expandTalk(userMsg){
   var expanded = _assertCompleteTalk(JSON.parse(fixJSON(txt)), S.style, "expanded talk");
   // NO CHARGE: authorised at the top of this function, and refinement is free by policy.
   if(typeof deepCleanCitations === "function") expanded = deepCleanCitations(expanded);
-  if(typeof pruneFakeReferences === "function") expanded = pruneFakeReferences(expanded);
+  if(typeof pruneFakeReferences === "function") expanded = pruneFakeReferences(expanded, _protectRefIds);
   return expanded;
 }
 
