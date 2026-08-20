@@ -10050,7 +10050,21 @@ async function applyProofreadFeedback(userMsg){
         S.msgs.push({r:"a",t:"✓ Applied "+result.applied.length+" correction"+(result.applied.length===1?"":"s")+" from the feedback. Everything else untouched — tap Undo to revert.\n\n"+summary+more+guardNote});
         // Refine now flows through the SAME background chip audit as generate (Jenni 2026-07-15) —
         // previously the semantic claim-vs-abstract audit only ever re-ran after generate.
-        if(S.ragChunks && S.ragChunks.length){
+        //
+        // GATED ON REFERENCES, NOT ON S.ragChunks (Jenni 2026-08-19). The old gate meant the audit NEVER
+        // ran after refining a SAVED talk, because opening a talk from the library leaves S.ragChunks
+        // empty. On its own that was a missed re-check. Combined with the reference protection added the
+        // same day it was worse than that: protection stops a rewrite DELETING a reference, and the audit
+        // is what is supposed to catch a reference that is genuinely invalid. Skipping the audit on the
+        // exact path where protection applies would have made preserved references permanently trusted —
+        // never re-verified, never removable. Protection must mean "not deleted for losing its [N]", not
+        // "believed forever".
+        //
+        // Safe to call unconditionally: verifyCitations self-guards and returns the talk untouched when
+        // there are no retrieved abstracts to compare against, while verifyModelPmids and verifyModelDois
+        // check identifiers against LIVE PubMed and need no corpus at all — which is precisely the check
+        // that removes a genuinely fabricated source.
+        if((S.talk.references||[]).length){
           S.citationAuditPending = true;
           var _auditTarget = S.talk;
           (async function(){

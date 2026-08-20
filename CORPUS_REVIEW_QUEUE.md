@@ -72,13 +72,19 @@ decompression syndrome at 1 L · ICAP 16.7% (20/120) vs 37.5% (45/120) · CORP-2
 
 ---
 
-## 4. ILD / PPF — not yet triaged
+## 4. ILD / PPF — triaged and committed, one item withheld
 
-Relayed 2026-08-19: nintedanib **strongly** (not conditionally) recommended for PPF with pirfenidone the
-conditional one; inhaled treprostinil as the Group 3 PH-ILD exception (INCREASE, ~31 m 6MWD); tocilizumab
-and nintedanib alongside MMF in SSc-ILD; the anti-steroid recommendation being SSc-specific rather than
-general to CTD-ILD. Nothing verified, nothing in the corpus. Check the Pulmonary IPF/PPF entry first —
-if it is as thin as the pericardial one was, these are corpus-silent rather than corpus-wrong.
+| Review claim | Verdict |
+|---|---|
+| Nintedanib **strongly** recommended for PPF; pirfenidone the conditional one | **Review was wrong on both halves, and the card was right.** The 2022 ATS/ERS/JRS/ALAT guideline made a **conditional** recommendation for nintedanib and **no formal recommendation** for pirfenidone, only a call for further research. Applying this "correction" would have introduced an error into correct teaching. The corpus now states both strengths and names both wrong directions |
+| Group 3 PH: inhaled treprostinil is the exception | **Confirmed, and the corpus was wrong.** It said "Group 3: do NOT use PAH drugs" as a blanket, which the card faithfully repeated. Corrected at source with INCREASE (31.12 m, 95% CI 16.85–45.39, P<0.001; NEJM 2021;384:325-334, PMID 33440084) and added to the landmark index |
+| SSc-ILD: tocilizumab and nintedanib alongside MMF | **Confirmed, and it was already in the corpus — under Rheumatology, which an ILD topic does not route to.** Restated in the Pulmonary entry rather than widening routing, which is frozen |
+| Anti-steroid recommendation is SSc-specific | **Confirmed in substance.** PANTHER studied IPF, so the boundary is IPF vs CTD-ILD. Recorded as a scope claim |
+| Tocilizumab ~4.2% predicted-FVC difference at 48 weeks | **Withheld.** focuSSced not read directly. The entry names the agent and explicitly refuses the number |
+| "Myositis-ILD, especially anti-MDA5, needs aggressive combination immunosuppression" | **Withheld.** Clinically plausible, no primary source read. Not a claim to put in ground truth on a relay |
+
+**Standing score on relayed reviews: four of four have contained at least one claim that verification
+contradicted.** Two of those would have introduced errors into correct content.
 
 ---
 

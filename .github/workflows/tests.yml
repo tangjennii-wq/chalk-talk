@@ -334,6 +334,23 @@ jobs:
       - name: Refine reference survival (a rewrite must not delete vetted references)
         run: node test_refine_ref_survival.mjs
 
+      # Four review points on an ILD card, split three ways by verification. The review claimed nintedanib
+      # is STRONGLY recommended for PPF and pirfenidone conditionally - the 2022 guideline says nintedanib
+      # is CONDITIONAL and pirfenidone got no recommendation at all. The card was already right; applying
+      # that "correction" would have introduced the error. Separately the corpus WAS wrong: "Group 3: do
+      # NOT use PAH drugs" is a blanket the card faithfully repeated, and inhaled treprostinil has been
+      # FDA-approved for PH-ILD since 2021 on INCREASE.
+      - name: ILD grounding (PPF strengths, the PH-ILD exception, the PANTHER boundary)
+        run: node test_ild_grounding.mjs
+
+      # landmark_pmids.json is BUILT from rag/landmark_trials.json. The builder says "do not hand-edit" in
+      # its own header and I hand-edited it anyway, adding a trial to the OUTPUT while the source knew
+      # nothing about it - the next rebuild would have silently erased it. A comment is not a guard. This
+      # recomputes what the builder would emit and compares: a hand-edit fails, a source edit without a
+      # rebuild fails, a stale artefact fails.
+      - name: Generated artefacts match their source (no hand-edited build output)
+        run: node test_generated_artifacts.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction

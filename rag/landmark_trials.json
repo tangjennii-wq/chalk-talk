@@ -5083,5 +5083,15 @@
     "expected_pmid": "27404185",
     "pmid_verified": "manual_2026-07",
     "source_batch": "specialties_2026-07"
+  },
+  {
+    "name": "INCREASE",
+    "full": "Inhaled Treprostinil in Pulmonary Hypertension Due to Interstitial Lung Disease",
+    "year": 2021,
+    "specialty": "Pulmonary",
+    "expected_pmid": "33440084",
+    "pmid_verified": "manual_2026-08",
+    "teaching_role": "efficacy",
+    "pmid_note": "N Engl J Med 2021;384:325-334. Read in the primary record 19 Aug 2026: 326 randomised 163/163, LS mean difference in 6MWD at week 16 of 31.12 m (95% CI 16.85-45.39, P<0.001)."
   }
 ]

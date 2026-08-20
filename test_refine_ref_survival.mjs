@@ -132,5 +132,37 @@ ok((html.match(/will not help/g) || []).length === 2,
 ok(/reply naming the single correction you most want applied/.test(html),
    "…and both offer something that actually works instead");
 
+// ── PROTECTED IS NOT THE SAME AS TRUSTED ────────────────────────────────────────────────────────────
+// Protection stops a rewrite DELETING a vetted reference for losing its [N] marker. It must not stop the
+// citation audit from later finding that a reference is genuinely invalid and removing it.
+//
+// The post-refine audit was gated on `S.ragChunks.length`, which is EMPTY on exactly the path protection
+// applies to — a saved talk opened from the library. So the audit never ran there, and a preserved
+// reference would have been permanently trusted: never re-verified, never removable. That combination is
+// worse than either bug alone, and it only appears when you look at both at once.
+ok(/if\(\(S\.talk\.references\|\|\[\]\)\.length\)\{/.test(html),
+   "the post-refine citation audit is gated on the talk HAVING references…");
+ok(!/if\(S\.ragChunks && S\.ragChunks\.length\)\{/.test(html),
+   "…not on S.ragChunks, which is empty for every saved talk and would skip the audit entirely");
+
+// The audit must still be the full chain, or "it runs" is meaningless.
+const auditBlock = html.slice(html.indexOf("if((S.talk.references||[]).length){"),
+                              html.indexOf("if((S.talk.references||[]).length){") + 900);
+for (const fn of ["verifyModelPmids", "verifyModelDois", "verifyCitations"])
+  ok(auditBlock.includes(fn), `…and it still runs ${fn} after a refine`);
+ok(/S\.citationAuditPending = true/.test(auditBlock),
+   "…flagging the audit as pending, so the UI says a check is in flight");
+
+// verifyCitations must SELF-GUARD, otherwise calling it without chunks would throw rather than no-op.
+// This is what makes removing the outer gate safe rather than reckless.
+const vc = fnSrc("verifyCitations");
+ok(/if \(!talk \|\| !S\.ragChunks \|\| !S\.ragChunks\.length\)/.test(vc),
+   "verifyCitations self-guards on missing chunks, which is why the outer gate could be removed safely");
+ok(/return talk;/.test(vc.slice(0, 300)), "…returning the talk untouched rather than throwing");
+
+// And protection is per-call, never written into the talk — nothing becomes permanently immune.
+ok(!/_protected\s*[:=]\s*true/.test(html) && !/r\.protected\s*=/.test(html),
+   "protection is never persisted onto a reference — it is a per-refine argument, not a durable flag");
+
 console.log(`\n${n} assertions, ` + (failures === 0 ? "✔ REFINE REF SURVIVAL OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

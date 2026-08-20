@@ -14,7 +14,12 @@
 import { readFileSync, writeFileSync } from "fs";
 
 // Same allowlist the PMID validator gates on: a PMID nobody confirmed is not evidence.
-const VERIFIED_OK = ["pubmed_2026-07", "manual_2026-07", "europepmc_2026-07"];
+// Date-stamped on purpose: a stamp records WHEN a PMID was confirmed, so a new verification pass
+// adds a value here rather than back-dating itself into an older one. manual_2026-08 is the
+// 19 Aug 2026 pass (INCREASE). A row whose stamp is not listed here is SKIPPED, silently — which
+// is why adding the trial without adding its stamp would have looked like it worked and produced
+// an index without it.
+const VERIFIED_OK = ["pubmed_2026-07", "manual_2026-07", "europepmc_2026-07", "manual_2026-08"];
 
 // guidelines.json writes acronyms inconsistently (ROCKET-AF vs ROCKET AF, PARTNER 2 vs PARTNER-2), so
 // both sides are reduced to alphanumerics before matching. Four trials resolve ONLY because of this.
