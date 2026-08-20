@@ -12223,6 +12223,12 @@ var SVG_OPEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stro
 // Reorder: list rows plus an up/down arrow pair — the standard 'change the order of these' glyph.
 // Deliberately NOT a drag handle (⠿): this app's reorder is tap-based ↑/↓ buttons, not drag-and-drop,
 // and a handle icon would promise a gesture that does not work here, least of all on a phone.
+// Search and info, same 14px / currentColor / stroke-2 family. Emoji were doing this job before and
+// rendered differently on every device - 🔎 in particular is a filled colour glyph on some platforms and
+// a thin outline on others, so the toolbar changed character depending on who opened it.
+var SEARCH_ICON = SVG_OPEN + '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+// Drawn a size smaller than its neighbours on purpose: it explains a control rather than being one.
+var INFO_ICON   = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6v.2"/></svg>';
 var REORDER_ICON = SVG_OPEN + '<path d="M9 6h12M9 12h12M9 18h12"/><path d="M3 8l2-2 2 2M3 16l2 2 2-2"/></svg>';
 var DONE_ICON    = SVG_OPEN + '<polyline points="20 6 9 17 4 12"/></svg>';
 // Double chevrons, direction = what the click DOES, not the current state: pointing down means it will
@@ -13767,13 +13773,13 @@ h+='</div>';
       h+='<button class="checkUpdatesBtn"'+(_ucBusy?' disabled':'')
         + ' title="'+(_ucBusy ? "Checking for newer guidelines, approvals and trials…" : "Search society sites and journals for anything published since this talk\'s sources")+'"'
         + (_ucFast && !S.updateCheck ? ' style="color:#7a5b1a"' : '')
-        + '>'+(_ucBusy ? '<span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:-1px"></span>' : (_ucFast ? '⚠️' : '🔎'))
+        + '>'+(_ucBusy ? '<span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:-1px"></span>' : SEARCH_ICON)
         + ' <span class="hide-mobile-text">Updates</span></button>';
       // WHAT DOES THIS BUTTON DO, AND WHAT DOES IT DO TO A TALK I ALREADY SAVED. Both questions arrived
       // from Jenni on the same day, which is the signal that a 🔎 and a tooltip were not carrying it.
       // A popover, not a title= tooltip: tooltips do not exist on a phone, and half the beta is on one.
       h+='<button id="updatesInfoBtn" class="info-i" aria-expanded="'+(S.updatesInfoOpen?"true":"false")
-        + '" aria-label="What does Updates do?" title="What does Updates do?">\u24D8</button>';
+        + '" aria-label="What does Updates do?" title="What does Updates do?">' + INFO_ICON + '</button>';
       // EDIT (SETTINGS) IS HIDDEN FOR THE BETA. Everything it offered — change the depth, rebuild with a
       // different model, regenerate from the same topic — is a REGENERATION wearing the clothes of a
       // setting, and each one silently costs a credit. Refine does the same jobs conversationally, is free,
@@ -13850,12 +13856,19 @@ h+='</div>';
       if(S.user && S.loadedTalkId && !String(S.loadedTalkId).startsWith("t_") && !S.isSampleTalk && !S.sharedTalk){
         var _row = (S.cloudTalks||[]).find(function(x){return x.id===S.loadedTalkId});
         var _isPub = !!(_row && _row.is_public);
+        // A TOGGLE AND A LINK, NOTHING ELSE (Jenni 2026-08-19). This offered "Copy link", "Share" and
+        // "Make private" at once, where Share opened a modal that ALSO contained copy-link and
+        // make-private. Three entry points, two of them leading to the same two actions.
+        //
+        // "Share" is not a thing a talk does - publishing is. So the menu now states the state and
+        // offers its opposite: public talks can be made private and their link copied, private talks
+        // can be made public. Copy link appears only when a link exists, which is what makes the modal
+        // unnecessary rather than merely hidden.
         if(_isPub){
-          h+='<button id="capCopyLinkBtn">🔗 Copy link</button>';
-          h+='<button id="capShareBtn">🔗 Share</button>';
           h+='<button id="capMakePrivateBtn">🔒 Make private</button>';
+          h+='<button id="capCopyLinkBtn">🔗 Copy link</button>';
         } else {
-          h+='<button id="capShareBtn">🔗 Share…</button>';
+          h+='<button id="capMakePublicBtn">⭐ Make public</button>';
         }
       }
       // Legacy base64-encoded private share link — only show for samples or shared talks
@@ -13866,14 +13879,13 @@ h+='</div>';
       }
       h+='<button id="pdfTalkBtn">📄 Export PDF</button>';
       h+='<button id="pngTalkBtn">📸 Save as image</button>';
-      // Print submenu (Jenni 2026-07-03) — send Overview / Slides poster / Visual to the printer.
-      h+='<div style="height:1px;background:var(--line);margin:4px 0"></div>';
-      h+='<button id="printOverviewBtn">🖨 Print overview</button>';
-      if(!isBQ){
-        h+='<button id="printSlidesBtn">🖨 Print slides (as image)</button>';
-        var _hasVisForPrint = (S.dg && S.dg.imgB64) || (S.talk && S.talk.savedVisuals && S.talk.savedVisuals.length);
-        if(_hasVisForPrint) h+='<button id="printVisualBtn">🖨 Print visual</button>';
-      }
+      // PRINT ITEMS REMOVED (Jenni 2026-08-19). Three of them - Print overview, Print slides, Print
+      // visual - sitting under Export PDF and Save as image, which is how you print. Export PDF called
+      // exportTalkPDF and so did Print overview; the same function behind two labels. Printing is
+      // implied by having the file, and the menu was 10 items deep.
+      //
+      // The handlers below are left bound-if-present rather than deleted, so a print entry point can be
+      // restored in one line if anyone actually misses it.
       // Export JSON removed 2026-06-11 (Jenni) — power-user feature, almost no one used it.
       // Library export-all JSON via export-jsonTalkBtnExport in the Account drawer stays for backup.
       // Delete — only when the user owns a persisted copy (saved local/cloud); hidden for unsaved,
@@ -15788,6 +15800,20 @@ function bindMain(){
         render(); setTimeout(function(){S.savedFlash="";render()},3000);
       });
     } else { prompt("Copy this URL:", url); render(); }
+  };
+  // Make public — the other half of the toggle that replaced the Share modal. Deliberately NOT a
+  // confirm: publishing is reversible in one tap from the same menu, and confirming a reversible action
+  // trains people to dismiss dialogs. Making PRIVATE keeps its confirm, because that one breaks links
+  // other people may already be holding.
+  var capMPub=document.getElementById("capMakePublicBtn");if(capMPub)capMPub.onclick=async function(){
+    if(!S.loadedTalkId) return;
+    S.overflowOpen=false; render();
+    var data = await cloudSetTalkPublic(S.loadedTalkId, true);
+    if(!data){ alert("Couldn't update sharing — check connection and try again."); return; }
+    var _row=(S.cloudTalks||[]).find(function(x){return x.id===S.loadedTalkId});
+    var _tok = _row && _row.share_token;
+    S.savedFlash = _tok ? "⭐ Public · Copy link is in the ⋮ menu" : "⭐ Public";
+    render(); setTimeout(function(){S.savedFlash="";render()},3000);
   };
   var capMP=document.getElementById("capMakePrivateBtn");if(capMP)capMP.onclick=async function(){
     if(!S.loadedTalkId) return;

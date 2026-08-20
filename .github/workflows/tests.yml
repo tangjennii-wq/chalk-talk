@@ -390,6 +390,22 @@ jobs:
       - name: Delete unpublishes (no showcase twin outliving its talk)
         run: node test_delete_unpublish.mjs
 
+      # The kebab had ten items and three were the same action twice. "Share" opened a modal containing
+      # copy-link and make-private - the two rows sitting next to it - and "Print overview" called
+      # exportTalkPDF, the SAME function as "Export PDF". A talk is public or private; share is not a
+      # third state, and printing is implied by having the file.
+      - name: Overflow menu (a privacy toggle and a link, nothing duplicated)
+        run: node test_overflow_menu.mjs
+
+      # Five review points, split three ways by Jenni's own verification. VERIFIED: CheckMate 067 at four
+      # years is 59 vs 22 for TREATMENT-RELATED AEs (not "irAE rates" - different denominator), CheckMate
+      # 8HW is 22 vs 14 in MSI-H/dMMR CRC. CONCEPT RIGHT / NUMBERS WITHHELD: there is no universal
+      # grade-to-dose steroid grid, so the grid is gone - but the per-organ doses are NOT written in,
+      # because removing a wrong grid does not license adding unread numbers. DOWNGRADED: the abatacept +
+      # ruxolitinib mortality figure came from a nonrandomised before/after cohort of a whole BUNDLE.
+      - name: irAE grounding (no dose grid, labelled trial figures, bundled myocarditis claim)
+        run: node test_irae_grounding.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction

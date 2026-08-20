@@ -23,6 +23,40 @@ ok(/id="updatesInfoBtn"[^>]*aria-label="What does Updates do\?"/.test(html),
 ok(/id="updatesInfoBtn"[^>]*aria-expanded="'\+\(S\.updatesInfoOpen\?"true":"false"\)/.test(html),
    "…and aria-expanded tracks the panel, so the state is announced rather than only drawn");
 
+// ── DRAWN ICONS, NOT EMOJI (Jenni 2026-08-19) ───────────────────────────────────────────────────────
+// Updates showed ⚠️ when the topic was fast-moving and 🔎 otherwise. Two problems. A hazard triangle
+// reads as "something is wrong with this talk" when it means "this field moves quickly, worth a look" —
+// alarm where the intent was invitation. And swapping the GLYPH to carry state means the button changes
+// shape as well as meaning, so the toolbar looks different depending on the topic.
+//
+// The magnifier is now constant and the fast-moving signal is carried by COLOUR alone, which is the
+// quieter channel and the one that does not change the button's silhouette.
+ok(/: SEARCH_ICON\)/.test(html), "Updates always shows the magnifier…");
+// Scoped to the Updates button markup, not the whole file — the comment above it names the old glyph,
+// and a whole-file match would fail on prose describing the fix. (Fifth time this session.)
+const _ub = html.indexOf('h+=\'<button class="checkUpdatesBtn"');
+const updBtn = html.slice(_ub, html.indexOf("</button>';", _ub) + 11);
+ok(updBtn.length > 100, "sanity: the Updates button markup was located");
+// Asserted STRUCTURALLY. Matching the ⚠ character missed a mutant that wrote the JS escape "\\u26a0"
+// instead of the literal glyph — same defect either way, invisible to a character match. What must be
+// true is that the icon slot has no _ucFast branch at all.
+ok(!/_ucFast \?/.test(updBtn),
+   "…and the icon slot has NO fast-moving branch — the glyph cannot change with state, whatever it is");
+ok(!/\u26a0/.test(updBtn) && !/u26a0/.test(updBtn),
+   "…and no hazard triangle by either spelling, literal or escaped");
+ok(/_ucFast && !S\.updateCheck \? ' style="color:#7a5b1a"'/.test(html),
+   "…while the fast-moving signal survives as colour, so the silhouette stays constant");
+ok(/var SEARCH_ICON = SVG_OPEN/.test(html),
+   "the magnifier is an inline SVG in the shared family, not an emoji that renders per-platform");
+
+// The ⓘ was the circled-i CHARACTER, which is a font glyph and therefore a different weight and size on
+// every platform. Drawn now, and deliberately a size smaller than its neighbours.
+ok(/var INFO_ICON   = '<svg width="13" height="13"/.test(html),
+   "the info mark is drawn at 13px — smaller than the 14px controls, because it explains one rather than being one");
+ok(!/\\u24D8/.test(html), "…and the circled-i character is gone");
+ok(/aria-label="What does Updates do\?" title="What does Updates do\?">' \+ INFO_ICON/.test(html),
+   "…and it keeps its accessible name, which now carries the whole meaning");
+
 // ── it is a popover, not a tooltip ──────────────────────────────────────────────────────────────────
 // Half the beta is on a phone and title= tooltips do not exist there.
 ok(/if\(S\.updatesInfoOpen\)\{/.test(html), "the panel is state-driven, so a tap opens it");
