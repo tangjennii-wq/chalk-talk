@@ -136,6 +136,17 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .hide-mobile-text{display:no
    rebuilt talk showed a bare arrow and read as "there is no save option" — which is exactly what happened
    after the first live rebuild. The one state where the word matters keeps its word. (Jenni 2026-08-07) */
 body.scrolled-past-capsule .tk-capsule .cap-actions .cap-save-unsaved .hide-mobile-text{display:inline !important}
+/* SCROLLED = THE URGENT THREE ONLY: Undo, Save, ⋮. (Jenni 2026-08-19)
+   Once the capsule is floating over the talk it is an interruption, so it should carry only what you
+   reach for MID-READ. Undo and Save are time-critical - you want them the moment you notice something.
+   The kebab holds everything else. Updates is not mid-read work: it fires a search, takes ~a minute and
+   returns a panel you have to sit and review, so a scrolled reader tapping it gets interrupted rather
+   than helped. Its ⓘ goes with it - an explainer for a control that is not on screen is just clutter.
+   Both come back the moment you scroll to the top, so nothing is lost, only deferred. */
+body.scrolled-past-capsule .tk-capsule .cap-actions .checkUpdatesBtn,
+body.scrolled-past-capsule .tk-capsule .cap-actions #updatesInfoBtn{display:none !important}
+/* The explainer must not be left open and orphaned if she scrolls while it is showing. */
+body.scrolled-past-capsule .tk-capsule .cap-actions .info-pop{display:none !important}
 @media (max-width:640px){ .cap-save-unsaved .hide-mobile-text{display:inline !important} }
 .tk-capsule .cap-back{background:none;border:none;color:var(--ink-muted);font-size:16px;padding:2px 4px;cursor:pointer;flex-shrink:0;line-height:1}
 .tk-capsule .cap-meta{flex:1;min-width:0;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.005em}
@@ -4922,9 +4933,15 @@ function renderLibCard(x){
       if(!isSample && x._id && !String(x._id).startsWith("t_")){
         iconBtns += '<button class="libMenuItem libChangeSpecBtn" '+dataAttr+' title="Change specialty (e.g. move out of Other)" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">🏷️</span>Change specialty</button>';
       }
-      // Privacy actions consolidated (Jenni 2026-06-10): Share is now a standalone icon to the LEFT
-      // of the kebab — opening the same 3-tier modal where Copy link / Make private already live.
-      // Removed from kebab to avoid redundancy: Copy link, Make private, Share.
+      // PRIVACY TOGGLE, BACK IN THE KEBAB (Jenni 2026-08-19). It was removed in June as redundant with a
+      // Share modal that has since been deleted, so from the library there was NO way to publish a talk
+      // without opening it first. Same shape as the capsule menu: state the state, offer the opposite.
+      // Cloud-saved talks only - a local t_ talk has no row to publish, and a sample is not hers.
+      if(!isSample && !isShowcase && x._id && !String(x._id).startsWith("t_")){
+        var _libRow = (S.cloudTalks||[]).find(function(r){ return r.id === x._id; });
+        var _libPub = !!(_libRow && _libRow.is_public);
+        iconBtns += '<button class="libMenuItem libTogglePubBtn" '+dataAttr+' data-pub="'+(_libPub?"1":"0")+'" style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left">'+(_libPub?"\uD83D\uDD12 Make private":"\u2B50 Make public")+'</button>';
+      }
       iconBtns += '<button class="libMenuItem libPdfBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line-soft);font-family:inherit"><span style="color:var(--plum);font-size:14px;width:16px;display:inline-flex;justify-content:center">↓</span>Export PDF</button>';
       iconBtns += '<button class="libMenuItem delTalkBtn" '+dataAttr+' style="width:100%;background:none;border:none;display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:13px;color:#c0392b;text-align:left;font-family:inherit"><span style="font-size:14px;width:16px;display:inline-flex;justify-content:center">🗑</span>Delete</button>';
       iconBtns += '</div>';
@@ -4972,7 +4989,14 @@ function renderLibCard(x){
     h += '<button class="libAttribChip" data-id="'+esc(x._id||"")+'" type="button" title="View '+esc(x._sourceCuratorName)+'\'s profile" style="background:#f5edfa;color:#4a1a7a;border:1px solid #d4baea;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;cursor:pointer;font-family:inherit">📥 From: '+esc(x._sourceCuratorName)+'</button>';
   }
   // Visuals badge: prefer exact count (local talks with full savedVisuals data); else just show 🖼 (cloud cards).
-  if(visuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼 '+visuals.length+'</span>';
+  // 📊 for slide posters, 🖼 for generated images — a library of "3 visuals" does not tell you whether
+  // any of them is the slide deck you were looking for. Counted separately for that reason.
+  if(visuals){
+    var _nSlides = visuals.filter(function(v){ return v && (v.kind === "slides" || v.mode === "slides"); }).length;
+    var _nImgs = visuals.length - _nSlides;
+    if(_nImgs > 0) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼 '+_nImgs+'</span>';
+    if(_nSlides > 0) h += '<span title="Saved slide poster" style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">\uD83D\uDCCA '+_nSlides+'</span>';
+  }
   else if(t._hasCloudVisuals) h += '<span style="background:var(--lavender-bg);color:var(--plum);padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">🖼</span>';
   // Both-depths badge — this talk has Concise AND Detailed saved. (Jenni 2026-07)
   if(x._hasBoth) h += '<span title="Saved in both Concise and Detailed" style="background:#eef7ee;color:#2d6a2d;border:1px solid #cbe6cb;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">⊜≣ Both</span>';
@@ -5768,14 +5792,56 @@ async function saveCurrentTalk(){
 // already-saved talk \u2014 so the image lived only in memory and vanished on reload. This writes straight to
 // the backing store (cloud row or the specific localStorage entry) so an already-saved talk actually
 // updates, and only flashes success AFTER persistence. Falls back to save-as-new for unsaved/sample/shared.
+// SLIDES ARE A VISUAL TOO (Jenni 2026-08-19). The Slides view could be exported to a file but never
+// SAVED - only AI-generated images could live in the library. So the one artefact most likely to be
+// reused in teaching, the slide poster, was the one you had to regenerate or dig out of Downloads.
+//
+// This function was written around S.dg. The persistence half - cloud vs local vs save-as-new, with
+// rollback when the write fails - is the part that was hard to get right and is now shared. Slides get
+// the SAME path rather than a parallel one, because a second copy of this logic is a second place for
+// the rollback to be forgotten.
 async function saveCurrentVisualToLibrary(){
   if(!S.talk || !S.dg || !S.dg.imgB64) return;
-  var visual = {
+  return persistVisualToLibrary({
     imgB64: S.dg.imgB64,
     mode: S.dgMode,                 // "ai" (Gemini) or "openai"
     savedAt: new Date().toISOString(),
     label: (S.talk.title || S.topic || "Visual")
-  };
+  }, "Image");
+}
+
+// Rasterise the LIVE Slides view and save it into the same visuals library, tagged kind "slides" so the
+// card can badge it 📊 rather than 🖼. Reuses #slidesCapture and the lazily-loaded html2canvas that
+// exportSlidesImage already uses, so what is saved is exactly what the export produces.
+async function saveSlidesToLibrary(){
+  if(!S.talk) return;
+  var target = document.getElementById("slidesCapture");
+  if(!target){ alert("Open the Slides tab first."); return; }
+  if(!window.html2canvas){ alert("Still loading the image library — try again in a moment."); return; }
+  S.savedFlash = "\uD83D\uDCF8 Capturing slides…"; render();
+  try{
+    var canvas = await window.html2canvas(target, {scale:2, backgroundColor:"#ffffff", useCORS:true, logging:false});
+    // Same JPEG @0.92 as the export path. talk_json carries this, so size matters: PNG here would be
+    // 5-10x larger and localStorage is already the binding constraint on local libraries.
+    var dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    var b64 = String(dataUrl).split(",")[1] || "";
+    if(!b64){ S.savedFlash = "\u26a0 Couldn't capture the slides."; render(); return; }
+    return persistVisualToLibrary({
+      imgB64: b64,
+      mode: "slides",
+      kind: "slides",               // what the badge reads
+      savedAt: new Date().toISOString(),
+      label: (S.talk.title || S.topic || "Slides") + " — slides"
+    }, "Slides");
+  }catch(e){
+    S.savedFlash = "\u26a0 Couldn't capture the slides — " + ((e && e.message) || "try again.");
+    render(); setTimeout(function(){ S.savedFlash=""; render(); }, 3000);
+  }
+}
+
+async function persistVisualToLibrary(visual, noun){
+  if(!S.talk || !visual || !visual.imgB64) return;
+  noun = noun || "Image";
   S.talk.savedVisuals = S.talk.savedVisuals || [];
   S.talk.savedVisuals.push(visual);
   var _flash = function(msg, ms){ S.savedFlash = msg; render(); setTimeout(function(){ if(S.savedFlash===msg){ S.savedFlash=""; render(); } }, ms||2200); };
@@ -5788,7 +5854,7 @@ async function saveCurrentVisualToLibrary(){
     if(isPersistedCloud){
       var ok = await cloudUpdateTalk(S.loadedTalkId);   // serializes talk_json (incl. savedVisuals) + refreshes S.cloudTalks
       if(!ok) _rollback();
-      _flash(ok ? "\u2605 Image saved to library" : "\u26a0 Couldn't save the image \u2014 check connection.", ok?2200:3500);
+      _flash(ok ? ("\u2605 " + noun + " saved to library") : ("\u26a0 Couldn't save the " + noun.toLowerCase() + " \u2014 check connection."), ok?2200:3500);
       return;
     }
     if(isPersistedLocal){
@@ -5801,7 +5867,7 @@ async function saveCurrentVisualToLibrary(){
       }
       var wrote = found && writeSavedTalks(arr);
       if(!wrote) _rollback();
-      _flash(wrote ? "\u2605 Image saved to library" : "\u26a0 Couldn't save the image locally.", wrote?2200:3500);
+      _flash(wrote ? ("\u2605 " + noun + " saved to library") : ("\u26a0 Couldn't save the " + noun.toLowerCase() + " locally."), wrote?2200:3500);
       return;
     }
     // Unsaved / sample / shared talk \u2192 route through the normal save (creates a new library row that
@@ -5813,7 +5879,7 @@ async function saveCurrentVisualToLibrary(){
     }
   }catch(e){
     _rollback();
-    _flash("\u26a0 Couldn't save the image \u2014 " + (typeof humanizeError==="function"?humanizeError(e):(e&&e.message||"try again.")), 3500);
+    _flash("\u26a0 Couldn't save the " + noun.toLowerCase() + " \u2014 " + (typeof humanizeError==="function"?humanizeError(e):(e&&e.message||"try again.")), 3500);
   }
 }
 async function deleteSavedTalk(id){
@@ -10038,7 +10104,7 @@ async function weaveFeedbackTalk(userMsg){
 
 // Orchestrator: history snapshot, model call, safety guard (keep original if content dropped),
 // messaging, Undo, and staleness flags — mirrors the restructure block's conventions exactly.
-async function applyProofreadFeedback(userMsg){
+async function applyProofreadFeedback(userMsg, wasAuto){
   // Authorise BEFORE the model call: a refusal must cost nothing and change nothing. (2026-08-06)
   var _ra = await ensureRefineAuth();
   if(!_ra.ok){
@@ -10096,7 +10162,8 @@ async function applyProofreadFeedback(userMsg){
         var guardNote = _nDrop > 0
           ? "\n\n🛡 " + _nDrop + " suggested citation" + (_nDrop===1?" was":"s were") + " NOT added — no verifiable source (identifier missing from your pasted feedback, or not found on PubMed). Those corrections applied uncited; this app never mints citations from model memory."
           : "";
-        S.msgs.push({r:"a",t:"✓ Applied "+result.applied.length+" correction"+(result.applied.length===1?"":"s")+" from the feedback. Everything else untouched — tap Undo to revert.\n\n"+summary+more+guardNote});
+        var _autoNote = wasAuto ? "🩺 That looked like reviewer feedback rather than an instruction, so I read it as a proofread — every other bullet, section and citation was left alone.\n\n" : "";
+        S.msgs.push({r:"a",t:_autoNote+"✓ Applied "+result.applied.length+" correction"+(result.applied.length===1?"":"s")+" from the feedback. Everything else untouched — tap Undo to revert.\n\n"+summary+more+guardNote});
         // Refine now flows through the SAME background chip audit as generate (Jenni 2026-07-15) —
         // previously the semantic claim-vs-abstract audit only ever re-ran after generate.
         //
@@ -10726,10 +10793,27 @@ async function sendChat(){
   // APPLY-PROOFREAD path (Jenni 2026-07-03) \u2014 the user pasted OpenEvidence-style reviewer feedback
   // (or tapped "Apply proofread"). Runs FIRST so a big feedback paste can't be swallowed by the
   // surgical/restructure/compress routers (which is exactly what used to make it a silent no-op).
-  var _applyProofread = (S._applyProofreadMode === true) || isProofreadFeedback(msg);
+  // AUTO-ARM ON A LONG PASTE WITH NO INSTRUCTION IN IT (Jenni 2026-08-19). The composer used to SUGGEST
+  // proofread on a big paste and leave the tap to the user; pasting a review and pressing send without
+  // noticing the hint routed it to the surgical editor, which is tuned for short commands.
+  //
+  // The condition is deliberately narrower than the hint's. Length alone is not intent: a long paste
+  // that CONTAINS an instruction ("add these bullets", "shorten section 3", "split this") is a command
+  // and must keep its own path. Only a long paste with NO explicit verb is treated as a document
+  // someone wrote ABOUT the talk - which is what reviewer feedback is.
+  var _autoProofread = _isLargePaste
+    && !_isAdditiveSignal
+    && !isSurgicalEditIntent(msg)
+    && !isCompressionIntent(msg)
+    && !isExpansionIntent(msg)
+    && !isRestructureIntent(msg);
+  var _applyProofread = (S._applyProofreadMode === true) || isProofreadFeedback(msg) || _autoProofread;
+  // Only NOTE it when the app chose for her. An explicit toggle or a recognised feedback paste needs no
+  // announcement; a silent change of behaviour does.
+  var _proofreadWasAuto = _autoProofread && (S._applyProofreadMode !== true) && !isProofreadFeedback(msg);
   S._applyProofreadMode = false; // one-shot flag
   if(_applyProofread){
-    await applyProofreadFeedback(msg);
+    await applyProofreadFeedback(msg, _proofreadWasAuto);
     return;
   }
   // Restructure-intent path (Jenni 2026-06-11) \u2014 splits / merges / reorders / renames sections
@@ -13165,6 +13249,23 @@ function bindSaved(){
       setTimeout(function(){S.savedFlash="";render()},3000);
     }
   }});
+  // Library privacy toggle. Mirrors the capsule menu exactly, INCLUDING the asymmetric confirm:
+  // publishing is reversible from the same menu, so it does not interrupt; making private breaks links
+  // other people may hold, so it does. Unfeatures as well, or a private talk lingers on the profile.
+  document.querySelectorAll(".libTogglePubBtn").forEach(function(b){ b.onclick=async function(){
+    var id=b.dataset.id; if(!id) return;
+    var makePublic = b.dataset.pub !== "1";
+    S.libCardMenuId=null;
+    if(!makePublic && !confirm("Make this talk private?\n\nIt'll be removed from your profile (if featured) and the share link will stop working.")) { render(); return; }
+    render();
+    var _row=(S.cloudTalks||[]).find(function(r){return r.id===id});
+    var _featOk = true;
+    if(!makePublic && _row && _row.is_featured) _featOk = (await cloudSetTalkFeatured(id, false)) !== null;
+    var data = await cloudSetTalkPublic(id, makePublic);
+    if(!data || !_featOk){ alert("Couldn't update sharing — check connection and try again."); return; }
+    S.savedFlash = makePublic ? "\u2B50 Public" : "\uD83D\uDD12 Made private \u00b7 existing links no longer work";
+    render(); setTimeout(function(){S.savedFlash="";render()},3000);
+  }});
   document.querySelectorAll(".delTalkBtn").forEach(function(b){b.onclick=function(){
     S.libCardMenuId=null;
     var slug=b.dataset.slug;
@@ -14353,7 +14454,14 @@ h+='</div>';
     // ---------------- SLIDES TAB (poster / visual abstract redesign — Jenni 2026-06-04) ----------------
     if(S.tab==="slides"&&!isBQ){
       // Save-as-image button row (positioned above the slides so it doesn't end up in the screenshot)
-      h+='<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button id="saveSlidesImgBtn" title="Save these slides as a PNG image" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px">📸 Save as image</button></div>';
+      // TWO DESTINATIONS, AND THE LIBRARY ONE COMES FIRST. "Save as image" downloads a file; the slide
+      // poster then lives in Downloads and has to be found again. Saving it to the library keeps it with
+      // the talk it came from, which is where anyone looking for it will look. Download stays for the
+      // times you need the file itself. (Jenni 2026-08-19)
+      h+='<div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px">';
+      h+='<button id="saveSlidesLibBtn" title="Keep these slides in this talk\u2019s visuals" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px">\uD83D\uDCCA Save to library</button>';
+      h+='<button id="saveSlidesImgBtn" title="Download these slides as an image file" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px">📸 Save as image</button>';
+      h+='</div>';
       // Slides content — wrapped in #slidesCapture so html2canvas can target just this region
       h+='<div id="slidesCapture" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(75,17,111,0.08);border:1px solid var(--line)">';
 
@@ -14644,8 +14752,10 @@ h+='</div>';
       h+='    <textarea class="revise-input" id="reviseIn" placeholder="Add detail, paste an MKSAP question, or drop a PDF — your existing content stays, only new content is added.&#10;&#10;Type “update” on its own to rebuild this talk with the latest guidance and citation checking.&#10;&#10;Pasting a big chunk of reviewer feedback (e.g. from OpenEvidence)? Hit “Apply proofread” below to fold its corrections into the talk while keeping everything else.">'+esc(S.reviseIn||"")+'</textarea>';
       // Big-paste nudge (Jenni 2026-07-03): if the box holds a large paste and proofread isn't armed,
       // suggest Apply proofread. Toggled live in the reviseIn oninput handler (no full re-render).
+      // The hint now states what will happen automatically. It used to ask for a tap, and a paste sent
+      // without that tap went to the wrong router — the failure this hint existed to prevent.
       var _showPr = (String(S.reviseIn||"").trim().length > 600) && !S.proofreadArmed;
-      h+='    <div id="proofreadSuggest" style="display:'+(_showPr?'block':'none')+';font-size:11px;color:#8a6d1a;background:#fff7e0;border:1px solid #f0d59a;border-radius:8px;padding:6px 10px;margin-top:6px;line-height:1.45">📋 That’s a big paste — if it’s reviewer feedback, tap <b>🩺 Apply proofread</b> to fold in its corrections (rewrites the changed sections, can take ~20–40s). Otherwise Send just adds it as new content.</div>';
+      h+='    <div id="proofreadSuggest" style="display:'+(_showPr?'block':'none')+';font-size:11px;color:#8a6d1a;background:#fff7e0;border:1px solid #f0d59a;border-radius:8px;padding:6px 10px;margin-top:6px;line-height:1.45">🩺 That’s a big paste. If there’s no instruction in it, Send will read it as <b>reviewer feedback</b> and fold in its corrections — rewriting only the changed sections, keeping every other bullet and citation (~20–40s). If you meant it as new content, say what to do with it (“add this to section 2”).</div>';
       // Show currently-attached refs so the user can confirm what's going up and remove if needed.
       // (Jenni 2026-06-10 — refine is iterative + first-class, users should see their attached refs.)
       if(S.files && S.files.length){
@@ -15771,6 +15881,7 @@ function bindMain(){
   var prS=document.getElementById("printSlidesBtn");if(prS)prS.onclick=function(){S.overflowOpen=false;render();setTimeout(printSlides,60)};
   var prV=document.getElementById("printVisualBtn");if(prV)prV.onclick=function(){S.overflowOpen=false;render();setTimeout(printVisual,60)};
   var sib=document.getElementById("saveSlidesImgBtn");if(sib)sib.onclick=exportSlidesImage;
+  var slb=document.getElementById("saveSlidesLibBtn");if(slb)slb.onclick=function(){ saveSlidesToLibrary(); };
   // Overview's bottom CTA → switch to Slides tab + jump to top (Jenni 2026-06-08)
   var o2s=document.getElementById("overviewToSlidesBtn");if(o2s)o2s.onclick=function(){S.tab="slides";window.scrollTo(0,0);render()};
   var _rsb=document.getElementById("retrySourcesBtn");if(_rsb)_rsb.onclick=function(){retrySources();};

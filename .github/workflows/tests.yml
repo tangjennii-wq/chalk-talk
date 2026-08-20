@@ -406,6 +406,47 @@ jobs:
       - name: irAE grounding (no dose grid, labelled trial figures, bundled myocarditis claim)
         run: node test_irae_grounding.mjs
 
+      # Nephrology held NOTHING on acute interstitial nephritis - zero occurrences of "interstitial
+      # nephritis", "eosinophil", "proton pump", "IFTA" or "checkpoint". Every number in an AIN card came
+      # from memory. The review supplied plenty of numbers and NONE was read against a primary source, so
+      # this entry is mostly RESTRICTIONS: the one safe conceptual correction (steroid benefit is
+      # CONTESTED, not merely observational-but-favourable) plus each withheld figure named so it cannot
+      # be quietly resupplied. The load-bearing assertions here are NEGATIVE - a percentage in this entry
+      # means something went wrong.
+      - name: AIN grounding (contested steroids, and every figure withheld on purpose)
+        run: node test_ain_grounding.mjs
+
+      # The ACS entry was 304 characters and said "DAPT individualized" - nothing on duration,
+      # de-escalation or P2Y12 monotherapy, and zero occurrences of "monotherapy" anywhere in
+      # Cardiovascular. AND THE CORPUS HOLDS ONLY ONE SOCIETY: there is no ESC document for ACS here at
+      # all, so a card citing an ESC prasugrel preference was speaking for a guideline the app never gave
+      # it. Guard rails only - the negatives are what matter, especially "no trial outcome is asserted".
+      - name: DAPT grounding (one society, no interchangeable monotherapy, no trial outcomes)
+        run: node test_dapt_grounding.mjs
+
+      # The Slides view could be EXPORTED but never SAVED, so the artefact most likely to be reused in
+      # teaching was the one you had to dig out of Downloads. The risk in adding it was DUPLICATION:
+      # saveCurrentVisualToLibrary already carried cloud-vs-local-vs-save-as-new plus a rollback that
+      # pulls the visual back out of memory when the write fails (without which a reload loses it - a
+      # bug that shipped once). Slides use the SAME path; this asserts there is only one.
+      - name: Save slides to library (one persistence path, badged separately)
+        run: node test_save_slides.mjs
+
+      # "RASi + SGLT2i + finerenone backbone for proteinuric CKD (DAPA-CKD, EMPA-KIDNEY, FIDELIO/FIGARO)."
+      # Every word true. Three drugs and three trial groups in one breath with NO mapping between them,
+      # and zero occurrences of "non-diabetic" anywhere in Nephrology - so a card credited finerenone with
+      # the non-diabetic evidence belonging to the SGLT2i trials. Third ADJACENCY failure of the day.
+      - name: GFR / CKD backbone (each drug mapped to its own population and trials)
+        run: node test_gfr_grounding.mjs
+
+      # The composer SUGGESTED proofread on a big paste and left the tap to the user - so pasting a review
+      # and pressing send routed it to the surgical editor, the exact failure the hint existed to prevent.
+      # The condition is the interesting part: length alone is not intent. A long paste CONTAINING an
+      # instruction is still a command and keeps its own path; only a long paste with no explicit verb is
+      # read as a document written ABOUT the talk. Get that wrong and every long additive request is hijacked.
+      - name: Auto-proofread (long paste, no instruction, and the app says it chose)
+        run: node test_auto_proofread.mjs
+
       # Seven of the physician-confirmed findings were DKA or HHS, and none was a corrupted entry - there
       # was NO hyperglycemic-crises entry at all, so the model recited the 2009 figures from memory. That is
       # where "potassium below 3.3" came from: a real threshold, retired in 2024, wrong in the direction

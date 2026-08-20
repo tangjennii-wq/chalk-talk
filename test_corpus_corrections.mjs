@@ -132,8 +132,8 @@ ok(/re-verified 19 Aug 2026 against the consensus full text \(doi 10\.2337\/dci2
 
 // ── Structural: the edits touched what they claimed to touch and nothing else ───────────────────────
 const all = Object.values(G);
-ok(all.reduce((a, s) => a + (s.guidelines || []).length, 0) === 183,
-   "183 guideline entries — 181 plus the pericardial effusion entry and the ISPD peritonitis entry");
+ok(all.reduce((a, s) => a + (s.guidelines || []).length, 0) === 184,
+   "184 guideline entries — 181 plus pericardial effusion, ISPD peritonitis and acute interstitial nephritis");
 ok(all.reduce((a, s) => a + (s.trials || []).length, 0) === 220,
    "220 trial mentions — 219 plus INCREASE, added so the PH-ILD entry requests the abstract it teaches");
 

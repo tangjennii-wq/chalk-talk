@@ -67,5 +67,28 @@ ok(/cloudSetTalkFeatured\(S\.loadedTalkId, false\)/.test(mkPriv),
 ok(/if\(!data\)\{ alert\("Couldn't update sharing/.test(mkPub),
    "a failed publish tells the user rather than silently doing nothing");
 
+// ── THE SAME TOGGLE IN THE LIBRARY KEBAB ────────────────────────────────────────────────────────────
+// It was removed from the library card in June as "redundant with Share" — and Share has since been
+// deleted, so from the library there was NO way to publish a talk without opening it first. Restored
+// with the same shape, and the same asymmetric confirm.
+ok(/class="libMenuItem libTogglePubBtn"/.test(html), "the library kebab has a publish toggle…");
+ok(/\uD83D\uDD12 Make private":"\\u2B50 Make public|Make private":"\\u2B50 Make public/.test(html)
+   || /Make private.*Make public/.test(html.slice(html.indexOf("libTogglePubBtn"), html.indexOf("libTogglePubBtn") + 700)),
+   "…offering the opposite of the talk's current state");
+ok(/data-pub="'\+\(_libPub\?"1":"0"\)\+'"/.test(html),
+   "…carrying the current state on the button, so the handler cannot guess wrong");
+ok(/if\(!isSample && !isShowcase && x\._id && !String\(x\._id\)\.startsWith\("t_"\)\)/.test(html),
+   "…only for cloud-saved talks — a local t_ talk has no row and a sample is not hers to publish");
+
+const libTog = html.slice(html.indexOf('.libTogglePubBtn").forEach'), html.length);
+const libBody = libTog.slice(0, libTog.indexOf("document.querySelectorAll(\".delTalkBtn\")"));
+ok(/var makePublic = b\.dataset\.pub !== "1"/.test(libBody), "the handler reads the state off the button…");
+ok(/if\(!makePublic && !confirm\(/.test(libBody),
+   "…confirms ONLY when going private, matching the capsule menu's asymmetry");
+ok(/cloudSetTalkFeatured\(id, false\)/.test(libBody),
+   "…unfeatures when going private, so it cannot linger on the profile");
+ok(/cloudSetTalkPublic\(id, makePublic\)/.test(libBody), "…and writes the flag in the direction chosen");
+ok(/Couldn't update sharing/.test(libBody), "…telling the user when the write fails");
+
 console.log(`\n${n} assertions, ` + (failures === 0 ? "✔ OVERFLOW MENU OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

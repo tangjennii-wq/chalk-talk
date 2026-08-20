@@ -57,6 +57,33 @@ ok(!/\\u24D8/.test(html), "…and the circled-i character is gone");
 ok(/aria-label="What does Updates do\?" title="What does Updates do\?">' \+ INFO_ICON/.test(html),
    "…and it keeps its accessible name, which now carries the whole meaning");
 
+// ── SCROLLED, THE CAPSULE CARRIES ONLY THE URGENT THREE ────────────────────────────────────────────
+// Undo, Save changes, ⋮. Once the capsule floats over the talk it is an interruption, so it should hold
+// only what you reach for MID-READ. Updates is not that: it fires a search, takes about a minute and
+// returns a panel to review. Its ⓘ goes with it — an explainer for an off-screen control is clutter.
+const scrolled = html.slice(html.indexOf("SCROLLED = THE URGENT THREE ONLY"),
+                            html.indexOf("SCROLLED = THE URGENT THREE ONLY") + 1400);
+ok(/body\.scrolled-past-capsule[^{]*\.checkUpdatesBtn/.test(scrolled), "scrolled hides the Updates button…");
+ok(/body\.scrolled-past-capsule[^{]*#updatesInfoBtn/.test(scrolled), "…and its ⓘ with it");
+ok(/body\.scrolled-past-capsule[^{]*\.info-pop\{display:none/.test(scrolled),
+   "…and the open explainer, so it cannot be left floating with no button attached to it");
+
+// Scoped to the CAPSULE, not global — Updates must still exist at the top of the page.
+ok(/\.tk-capsule \.cap-actions \.checkUpdatesBtn/.test(scrolled),
+   "…scoped to .tk-capsule .cap-actions, so this is a scrolled-state rule and not a delete");
+
+// The three that must SURVIVE scrolling. Hiding Save would be the dangerous version of this change.
+ok(!/scrolled-past-capsule[^{]*#undoEditBtn\{display:none/.test(html), "Undo survives scrolling");
+ok(!/scrolled-past-capsule[^{]*#overflowBtn\{display:none/.test(html), "…the ⋮ survives");
+// The display:none has to be matched ACROSS the brace — `[^{]*` cannot reach it, so the first version
+// of this assertion passed while a rule hiding Save sat in the file.
+ok(!/scrolled-past-capsule[^\n]*\.cap-save[^\n]*display:\s*none/.test(html),
+   "…and Save is never hidden while scrolled — that would be the dangerous version of this change");
+// Scoped to the SCROLLED rule. An unscoped match hit the @media (max-width:640px) copy of the same
+// declaration, so deleting the scrolled one left the assertion green.
+ok(/body\.scrolled-past-capsule[^\n]*\.cap-save-unsaved \.hide-mobile-text\{display:inline !important\}/.test(html),
+   "…and an UNSAVED talk still keeps the word 'Save' while scrolled — the one label that must not collapse");
+
 // ── it is a popover, not a tooltip ──────────────────────────────────────────────────────────────────
 // Half the beta is on a phone and title= tooltips do not exist there.
 ok(/if\(S\.updatesInfoOpen\)\{/.test(html), "the panel is state-driven, so a tap opens it");
