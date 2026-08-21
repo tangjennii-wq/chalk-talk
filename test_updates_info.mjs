@@ -111,45 +111,74 @@ ok(html.indexOf(".info-pop-left{") > html.indexOf(".info-pop{position:absolute")
 ok(/\.info-pop-left\{right:auto;left:0\}/.test(html),
    "…and it clears right as well as setting left, or the panel is pinned to both edges and stretches");
 
-// ── THE PANEL COVERS ALL FIVE THINGS SHE NAMED ─────────────────────────────────────────────────────
+// ── ONE BOX, HALF THE WORDS, AND IT CANNOT BE CUT OFF ──────────────────────────────────────────────
+// The first version ran five full paragraphs in a 320px column. On a laptop that overflowed the viewport
+// and clipped mid-sentence, so the paragraph most worth reading — Undo — was the one you could not see.
+// (Jenni 2026-08-20: "too long - make it wider 50% less text so it shouldn't get cutoff, all in one
+// visual box".) Three separate properties have to hold, and each is asserted, because fixing only the
+// width leaves it clipped on a short window and fixing only the length leaves it clipped on a shorter one.
+ok(/\.info-pop\{[^}]*width:440px/.test(html),
+   "the panel is 440px wide — the 320px column was what made five paragraphs run so long");
+ok(/\.info-pop\{[^}]*max-height:calc\(100vh - 140px\)/.test(html),
+   "…capped to the viewport height, so a short window cannot clip it");
+ok(/\.info-pop\{[^}]*overflow-y:auto/.test(html),
+   "…and it scrolls itself at that cap — a cap without a scroll would hide the overflow instead of clipping it");
+ok(/\.info-pop\{[^}]*max-width:calc\(100vw - 32px\)/.test(html),
+   "…while still fitting a phone, which the wider column could otherwise break");
+
 const _ps = html.indexOf("if(S.capsuleInfoOpen){");
 const pop = html.slice(_ps, html.indexOf("h+='</div>';", _ps) + 12);
-ok(pop.length > 800, "sanity: the panel body was located");
+ok(pop.length > 500, "sanity: the panel body was located");
+// ONE BOX. Splitting it into sections or a second popover is the obvious way to "shorten" it and would
+// miss the point — she asked for less text in one container, not the same text in two.
+ok((pop.match(/class="info-pop/g) || []).length === 1, "…rendered as ONE box, not split into several");
+ok((pop.match(/<h4>/g) || []).length === 1, "…under a single heading");
+// The word budget, measured rather than eyeballed. The original was ~270 words; half of that is the ask.
+const words = pop.match(/h\+='(.*?)';/g).join(" ").replace(/<[^>]+>/g, " ")
+  .replace(/h\+='|';/g, " ").replace(/\\u[0-9A-Fa-f]{4}/g, " ").split(/\s+/).filter(Boolean).length;
+ok(words < 160, `the panel is ${words} words — down from ~270, which is the "50% less text" ask`);
+ok(words > 90, `…and not gutted to a label list (${words} words) — the two misconceptions still need sentences`);
+
+// ── WHAT SURVIVED THE CUT: ALL FIVE CONTROLS, AND BOTH MISCONCEPTIONS ──────────────────────────────
+// Shortening is where meaning gets lost, so each control must still be named and each of the two
+// misconceptions must still be contradicted in words.
 
 // 1. NEW TALK — the cost misconception. New talk and Refine look alike and are not.
 ok(/New talk/.test(pop) && /spends a credit/.test(pop),
-   "it says New talk costs a credit — the distinction from Refine that nothing else on screen makes");
-ok(/does not edit the talk you are on/.test(pop) && /Refine/.test(pop),
-   "…and points at Refine as the free way to change THIS talk, which is the actual question behind it");
-ok(/unsaved, New talk asks before it clears/.test(pop),
-   "…and says the unsaved talk is protected by a confirm, so the button is not frightening");
+   "New talk still carries its cost — the distinction from Refine that nothing else on screen makes");
+ok(/starts a different talk from scratch/.test(pop),
+   "…and that it starts a NEW talk rather than editing this one");
+ok(/use <b>Refine<\/b> below/.test(pop) && /free/.test(pop),
+   "…pointing at Refine as the free way to change THIS talk, which is the question behind it");
 
-// 2. UPDATES — unchanged in substance, folded in.
-ok(/newest source this talk already cites/.test(pop),
-   "it says WHAT Updates searches — forward from this talk's own newest source");
-ok(/PubMed/.test(pop) && /title has to match/.test(pop),
-   "…that suggestions are PubMed-verified by PMID AND title, which is what the code actually does");
+// 2. UPDATES
+ok(/newest source/.test(pop), "Updates still says WHAT it searches — forward from this talk's newest source");
+ok(/PubMed-verified/.test(pop), "…that suggestions are PubMed-verified…");
 ok(/References only/.test(pop) && /teaching text is never rewritten/.test(pop),
-   "…and that it only adds references, never rewriting the talk — the load-bearing reassurance");
+   "…and that it adds references only — the load-bearing reassurance, kept in full");
 
-// 3. SAVE — "including for saved", her words, from the first version of this panel.
-ok(/Saved/.test(pop) && /Save changes/.test(pop),
-   "it explains BOTH save states, since the bar shows one word or the other and they mean opposite things");
-ok(/those changes are lost/.test(pop),
-   "…and says plainly what leaving with unsaved changes costs");
+// 3. SAVE — "including for saved", her words from the first version of this panel.
+ok(/Saved<\/b> means it matches your library/.test(pop),
+   "Save explains the ✓ state…");
+ok(/Save changes/.test(pop), "…and the state it flips to, since the bar shows one word or the other");
+ok(/those changes are lost/.test(pop), "…and what leaving without pressing it costs");
 
-// 4. THE KEBAB — what is behind it, so it is not a mystery dot.
-ok(/PDF/.test(pop) && /image/.test(pop), "the ⋮ paragraph names the exports…");
-ok(/Make public/.test(pop) && /Make private/.test(pop), "…the publish toggle…");
-ok(/copy the link/.test(pop) && /delete/.test(pop), "…copy link and delete");
-ok(/private also takes it off your profile/.test(pop),
+// 4. THE KEBAB — still named, now as a line rather than a paragraph.
+ok(/menu/.test(pop) && /PDF or image/.test(pop), "the ⋮ line names the exports…");
+ok(/public or private/.test(pop) && /copy link/.test(pop) && /delete/.test(pop),
+   "…the publish toggle, copy link and delete");
+ok(/removes it from your profile/.test(pop),
    "…and the consequence of going private, which is the one that surprises people");
+// THE GLYPH. \u22EE alone rendered as nothing in her screenshot, so the line opened with a bare colon.
+ok(/\\u22EE menu/.test(pop),
+   "…and the ⋮ is followed by the word 'menu', so a font that cannot draw it does not leave a stray colon");
 
 // 5. UNDO — and THE CORRECTION. She guessed Updates-again undoes. It re-runs the search.
-ok(/Undo/.test(pop) && /reverses the last change/.test(pop), "it names Undo as the way to reverse things");
-ok(/only thing that reverses them/.test(pop) && /does not undo/.test(pop),
-   "…and explicitly says pressing Updates again is NOT undo — the misconception it exists to kill");
-ok(/discards the current results and runs a fresh search/.test(pop),
+ok(/Undo<\/b> is the only way to reverse a change/.test(pop),
+   "Undo is named as the ONLY way to reverse — the phrasing that kills the misconception");
+ok(/does not undo/.test(pop),
+   "…and pressing Updates again is explicitly not undo");
+ok(/discards the results and searches afresh/.test(pop),
    "…saying what the second press actually does instead");
 
 // ── EVERY CLAIM IS TRUE OF THE CODE ────────────────────────────────────────────────────────────────

@@ -75,6 +75,31 @@ ok(/S\.sharedTalk\)\{ for\(/.test(hyd),
 ok(/\(_cands\[_hi\]\.mode\|\|"ai"\)===S\.dgMode/.test(hyd),
    "…while the owner branch still matches the selected provider, so switching provider is not undone");
 
+// ── ONBOARDING SAMPLES RETIRE THEMSELVES ───────────────────────────────────────────────────────────
+// "why cant drag and drop all?" — because two of those cards were not hers. Static SAMPLES have no row
+// (_id null), so there is nothing to persist a sort_order against and the handle is omitted. Correct, and
+// beside the point: with 62 lectures and 15 boards saved, onboarding cards had stopped onboarding anyone
+// and were just rows that behaved differently from every row around them. Explaining that is worse than
+// removing it — so above a small threshold the library is entirely the user's own work.
+const lib = html.slice(html.indexOf("var saved=getDisplayLibrary();"),
+                       html.indexOf("var saved=getDisplayLibrary();") + 4000);
+ok(/var SAMPLE_RETIRE_AT = 3;/.test(lib),
+   "the retirement threshold is a NAMED constant, not a number buried in a condition");
+ok(/var _ownTalkCount = saved\.length;/.test(lib),
+   "…counted from the user's own saved talks, which is the thing that makes samples redundant");
+ok(/S\.user && _ownTalkCount < SAMPLE_RETIRE_AT/.test(lib),
+   "…and samples are included ONLY below the threshold");
+// Both halves matter. Dropping the S.user check would show samples to logged-out visitors again — the
+// exact clutter a previous fix removed from the public library view.
+ok(/var samples = \(S\.user && /.test(lib),
+   "…with the signed-in check kept, so a logged-out visitor's view of the public library is unchanged");
+// A NEW user must still get them. A threshold of 0 would silently delete the onboarding path.
+ok(/SAMPLE_RETIRE_AT = 3;/.test(lib) && !/SAMPLE_RETIRE_AT = 0/.test(lib),
+   "…and the threshold is above zero, so a brand-new library still gets the full onboarding set");
+// The retirement must not touch the user's own rows.
+ok(/for\(var di=0;di<saved\.length;di\+\+\)/.test(lib),
+   "…while saved talks are added unconditionally — this hides samples, never the user's work");
+
 // ── THE FIXED-POSITION MARKER ──────────────────────────────────────────────────────────────────────
 const card = html.slice(html.indexOf("var _reorderable = !isSample"), html.indexOf("var _reorderable = !isSample") + 3000);
 ok(/var _reorderable = !isSample && !isShowcase && x\._id && !String\(x\._id\)\.startsWith\("t_"\)/.test(card),

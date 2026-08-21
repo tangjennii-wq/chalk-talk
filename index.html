@@ -336,7 +336,7 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .info-pop{display:none !impo
 body.mobile-drawer-open{overflow:hidden;touch-action:none}
 body.mobile-drawer-open .side-drawer{touch-action:pan-y}
 /* Overflow ⋯ menu */
-.info-pop{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,10,28,0.14);width:320px;max-width:calc(100vw - 32px);z-index:71;padding:14px 16px;text-align:left;font-size:12.5px;line-height:1.55;color:var(--ink);white-space:normal;font-weight:400}
+.info-pop{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(20,10,28,0.14);width:440px;max-width:calc(100vw - 32px);max-height:calc(100vh - 140px);overflow-y:auto;z-index:71;padding:14px 16px;text-align:left;font-size:12.5px;line-height:1.55;color:var(--ink);white-space:normal;font-weight:400}
 /* Anchored to the LEFT edge, because its button is now on the left of the capsule. MUST sit after the
    base rule: both are single-class selectors, so source order decides, and above it the base right:0
    simply won and the panel still flew to the right-hand side. */
@@ -13008,7 +13008,17 @@ function renderSaved(){
   // They're generic onboarding cards, not Jenni's shared work — counting them inflates the library
   // total and clutters her public-facing collection. Logged-in users still see them as onboarding.
   // (Jenni 2026-06-10)
-  var samples = S.user
+  //
+  // AND THEY RETIRE THEMSELVES ONCE THE LIBRARY IS REAL (Jenni 2026-08-20: "why cant drag and drop all?").
+  // The answer was that those cards are not hers - static SAMPLES have no row (_id null), so there is
+  // nothing to persist a sort_order against and the drag handle is omitted. Correct, and beside the point:
+  // with 62 lectures and 15 boards saved, onboarding cards have stopped onboarding anyone and are just
+  // rows that behave differently from every row around them. Explaining that is worse than removing it.
+  // Above the threshold the library is entirely the user's own work: every card draggable, dated, and
+  // linkable. A new user still gets the full set.
+  var SAMPLE_RETIRE_AT = 3;
+  var _ownTalkCount = saved.length;
+  var samples = (S.user && _ownTalkCount < SAMPLE_RETIRE_AT)
     ? ((typeof SAMPLES!=="undefined"&&SAMPLES)?SAMPLES:[]).filter(function(s){
         var st=s && (s.talk_concise || s.talk || s.talk_detailed || {});
         return !!st.question;
@@ -13991,18 +14001,23 @@ h+='</div>';
     }
     // HOW THIS BAR WORKS - the whole capsule, not one button of it.
     //
-    // THE PARAGRAPHS THAT HAD TO BE WRITTEN. Jenni's own guess was that pressing Updates a second time
-    // undoes it. It does not - it throws the current results away and searches again. If the person who
-    // built it guessed wrong, every user will. The second is cost: "New talk" and Refine look alike and
-    // are not - one spends a credit and starts from nothing, the other is free and edits what is there.
+    // SHORT ENOUGH TO READ STANDING UP (Jenni 2026-08-20: "too long - make it wider 50% less text so it
+    // shouldn't get cutoff, all in one visual box"). The first version ran five full paragraphs in a
+    // 320px column, which on a laptop overflowed the viewport and cut mid-sentence - so the paragraph
+    // most worth reading, Undo, was the one you could not see. Wider column, roughly half the words, and
+    // a max-height with its own scroll so it can never be clipped by the page again.
+    //
+    // What survived the cut is the two MISCONCEPTIONS, because they are the reason the panel exists:
+    // that New talk edits this talk (it starts a new one, and it costs), and that pressing Updates twice
+    // undoes it (it re-runs the search; only Undo undoes). Everything else is a one-line label.
     if(S.capsuleInfoOpen){
       h+='<div class="info-pop info-pop-left" id="capsuleInfoPop" role="dialog" aria-label="How this bar works">';
       h+='<h4>How this bar works</h4>';
-      h+='<p><b>+ New talk</b> clears this screen and takes you back to the topic box to build a different talk from scratch \u2014 generating it <b>spends a credit</b>. It does not edit the talk you are on. To change <i>this</i> talk, type in the <b>Refine</b> box below instead: that is free, and it keeps everything you did not ask it to change. If this talk is unsaved, New talk asks before it clears.</p>';
-      h+='<p><b>\uD83D\uDD0E Updates</b> searches society sites and journals for guidance published <b>since the newest source this talk already cites</b>. Every suggestion is checked against PubMed first \u2014 the PMID has to resolve and the title has to match \u2014 and you tick the ones you want. They are added to <b>References only</b>; the teaching text is never rewritten.</p>';
-      h+='<p><b>Save</b> reads <b>\u2713 Saved</b> when this talk matches what is in your library. The moment you refine it, add references or edit a section it flips to <b>\u2193 Save changes</b> \u2014 including on a talk you had already saved. If it says that and you leave the page, those changes are lost.</p>';
-      h+='<p><b>\u22EE</b> holds everything that is not mid-read work: export as PDF or image, <b>Make public</b> / <b>Make private</b>, copy the link, and delete. Making a talk private also takes it off your profile.</p>';
-      h+='<p><b>\u21A9 Undo</b> reverses the last change \u2014 a refine, an edit, a batch of added references. It is the only thing that reverses them: pressing <b>Updates</b> again does not undo, it discards the current results and runs a fresh search.</p>';
+      h+='<p><b>+ New talk</b> starts a different talk from scratch and <b>spends a credit</b>. To change <i>this</i> one, use <b>Refine</b> below \u2014 free, and it keeps what you did not ask it to change.</p>';
+      h+='<p><b>\uD83D\uDD0E Updates</b> finds guidance published since this talk\u2019s newest source. Every hit is PubMed-verified and added to <b>References only</b> \u2014 the teaching text is never rewritten.</p>';
+      h+='<p><b>Save</b> \u2014 <b>\u2713 Saved</b> means it matches your library. Any edit flips it to <b>\u2193 Save changes</b>; leave the page without pressing it and those changes are lost.</p>';
+      h+='<p><b>\u22EE menu</b> \u2014 export PDF or image, make public or private, copy link, delete. Going private also removes it from your profile.</p>';
+      h+='<p><b>\u21A9 Undo</b> is the only way to reverse a change. Pressing <b>Updates</b> again does not undo \u2014 it discards the results and searches afresh.</p>';
       h+='</div>';
     }
     h+='</div>';
