@@ -432,6 +432,15 @@ jobs:
       - name: Save slides to library (one persistence path, badged separately)
         run: node test_save_slides.mjs
 
+      # Opening from the library. Two reports, same mistake: the library said one thing and the talk view
+      # said another. A Visuals-tab open jumped to the Visual tab, but that is the GENERATED IMAGE tab and
+      # it hydrates only entries matching the current image provider - so a saved slide poster (mode
+      # "slides") matched nothing and the tab read "No visual attached" for a talk just listed as having
+      # one. And sample cards showed no drag handle: correct (no cloud row to order against) but
+      # unexplained, and the missing handle shifted those titles left so a correct state looked broken.
+      - name: Library open (land on the artefact you came for; say why a card cannot move)
+        run: node test_library_open.mjs
+
       # "RASi + SGLT2i + finerenone backbone for proteinuric CKD (DAPA-CKD, EMPA-KIDNEY, FIDELIO/FIGARO)."
       # Every word true. Three drugs and three trial groups in one breath with NO mapping between them,
       # and zero occurrences of "non-diabetic" anywhere in Nephrology - so a card credited finerenone with
@@ -450,6 +459,26 @@ jobs:
       # did not verify. The label reports 7/123 (6%) reversible and apportions no cause.
       - name: HOCM (myosin inhibitors as a class of two, SRT criteria, the myectomy/ASA inversion)
         run: node test_hocm_grounding.mjs
+
+      # CRRT. Not a corpus-WRONG case - a corpus-SILENT one. guidelines.json contained nothing on CRRT,
+      # citrate or continuous renal replacement in any specialty, and a reviewed deck still came back
+      # "accurate, guideline-concordant, board-ready". That is the model being good, not the grounding
+      # working, and nothing about it was reproducible. The entry pins the numbers: 20-25 mL/kg/h
+      # delivered, RENAL and ATN both flat, net UF >1.75 (observational, and labelled so), RICH in full
+      # including the infection signal it is usually quoted without, the 2026 Delphi reframe of citrate in
+      # liver failure, and STARRT-AKI's 90-day dependence RR of 1.74.
+      - name: CRRT (dose ceiling, citrate reframe, and the numbers the deck had to invent)
+        run: node test_crrt_grounding.mjs
+
+      # Kidney transplant, second pass. The first fixed an ADJACENCY trap (ELITE-Symphony's induction was
+      # daclizumab, not basiliximab). This one is STALE + SILENT: KDIGO 2009's induction recommendation was
+      # stated as current practice when it predates universal tac/MMF/steroid maintenance; nothing said
+      # which KDIGO document covers candidacy (2020) versus immunosuppression (2009), so a talk mixed them;
+      # nothing on DGF's surrogate validity, so a deck called it the "dominant modifiable driver"; and
+      # nothing separated desensitization from HLA-incompatible transplant from kidney paired donation.
+      # Three of the review's numbers are asserted ABSENT - they could not be traced to primary sources.
+      - name: Kidney transplant (induction era, which KDIGO, DGF, cPRA, desensitization)
+        run: node test_transplant_grounding.mjs
 
       # The composer SUGGESTED proofread on a big paste and left the tap to the user - so pasting a review
       # and pressing send routed it to the surgical editor, the exact failure the hint existed to prevent.

@@ -71,8 +71,14 @@ const stamps = new Set(source.map(t => t.pmid_verified));
 const unlisted = [...stamps].filter(s => !VERIFIED_OK.includes(s));
 ok(unlisted.length === 0,
    `every stamp in the source is on the allowlist${unlisted.length ? " — SILENTLY SKIPPED: " + unlisted.join(", ") : ""}`);
-ok([...stamps].every(s => /_\d{4}-\d{2}$/.test(s)),
-   "every stamp carries a YYYY-MM verification date rather than a bare boolean");
+// DAY-LEVEL PRECISION IS ALLOWED, and became necessary on 2026-08-20: a second manual pass landed in the
+// same MONTH as manual_2026-08, and reusing that stamp would have back-dated today's verification into
+// last week's - exactly the borrowing the rule above exists to prevent. The requirement is a DATE, not a
+// particular granularity, so the day suffix is optional and a bare boolean still fails.
+ok([...stamps].every(s => /_\d{4}-\d{2}(-\d{2})?$/.test(s)),
+   "every stamp carries a YYYY-MM(-DD) verification date rather than a bare boolean");
+ok([...stamps].some(s => /_\d{4}-\d{2}-\d{2}$/.test(s)),
+   "…and at least one is day-stamped, which is what a same-month second pass requires");
 
 // INCREASE specifically: the row this test exists because of.
 ok(!!expected.INCREASE && expected.INCREASE.pmid === "33440084",

@@ -4968,6 +4968,20 @@ function renderLibCard(x){
   var h = '<div class="libCard" data-reorderable="'+(_reorderable?'1':'0')+'" data-libid="'+esc(x._id||"")+'" data-libspec="'+esc(_cardSpec)+'" style="background:#fff;border:1px solid var(--line);border-left:3px solid '+(isBQ?"#e67e22":"var(--plum)")+';border-radius:9px;padding:6px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">';
   if(_reorderable){
     h += '<span class="libDragHandle" data-libid="'+esc(x._id)+'" data-libspec="'+esc(_cardSpec)+'" title="Drag to reorder within '+esc(_cardSpec)+'" aria-label="Drag to reorder" style="cursor:grab;color:var(--ink-soft);font-size:15px;line-height:1;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none;padding:2px 4px;margin:-2px 0">⠿</span>';
+  } else {
+    // A MISSING HANDLE IS NOT AN EXPLANATION (Jenni 2026-08-20: "drag and drop in boards not applied to
+    // all ?s"). Samples, showcase pull-ins and device-only saves have no cloud row to persist sort_order
+    // against, so they genuinely cannot be reordered - but omitting the handle entirely did two bad
+    // things: it left the reason invisible, and it pulled those titles 23px left of every other card, so
+    // a correct state looked like a rendering fault. This is the SECOND time this exact shape has been
+    // reported (a soft-deleted talk showed handle-less in the library and read as broken).
+    //
+    // The column is kept, the glyph is dimmed to a third, and the tooltip says which of the three
+    // reasons applies. Behaviour is unchanged: it is not a drag target and Sortable never sees it.
+    var _whyFixed = (isSample || isShowcase)
+      ? "Sample talks keep a fixed order — save your own copy to place it where you like"
+      : "Saved on this device only — sign in and save to the cloud library to reorder it";
+    h += '<span class="libDragFixed" title="'+esc(_whyFixed)+'" aria-hidden="true" style="color:var(--ink-soft);opacity:0.28;font-size:15px;line-height:1;flex-shrink:0;user-select:none;cursor:default;padding:2px 4px;margin:-2px 0">⠿</span>';
   }
 
   // Optional small thumbnail (only on Visuals tab — elsewhere the badge in the meta row indicates an image)
@@ -5825,19 +5839,47 @@ async function saveCurrentVisualToLibrary(){
 // Rasterise the LIVE Slides view and save it into the same visuals library, tagged kind "slides" so the
 // card can badge it 📊 rather than 🖼. Reuses #slidesCapture and the lazily-loaded html2canvas that
 // exportSlidesImage already uses, so what is saved is exactly what the export produces.
+// TWO BUGS LIVED IN THE FIRST VERSION OF THIS, AND THEY COMPOSED INTO "the button does nothing"
+// (Jenni 2026-08-20).
+//
+// (1) IT ANNOUNCED ITSELF THROUGH S.savedFlash, WHICH THE SLIDES TAB DOES NOT RENDER. That flash is drawn
+//     in the provenance footer at the foot of the OVERVIEW tab and nowhere else - so from Slides, the
+//     "capturing" message, the success message and the failure message were all invisible. A save that
+//     worked and a save that failed looked identical: nothing. _toast() already existed for exactly this
+//     class of bug in the library view; it appends to the body and does not care which tab is open.
+// (2) SETTING THE FLASH CALLED render(), WHICH REPLACED #slidesCapture - and the capture then ran against
+//     the DETACHED node fetched a moment earlier. Even when html2canvas was ready and the talk was
+//     saveable, it photographed an element no longer in the document. The node is now fetched AFTER any
+//     re-render and nothing re-renders between fetching it and capturing it.
+//
+// html2canvas is CDN-loaded async, so it is WAITED for rather than alerted about - the same bounded wait
+// exportSlidesImage has always used. Clicking before the library lands is a timing accident, not a
+// mistake the user should be told off for.
+function _whenHtml2Canvas(run, onTimeout){
+  if(window.html2canvas) return run();
+  var deadline = Date.now() + 8000;
+  (function wait(){
+    if(window.html2canvas) return run();
+    if(Date.now() > deadline) return onTimeout();
+    setTimeout(wait, 150);
+  })();
+}
 async function saveSlidesToLibrary(){
   if(!S.talk) return;
-  var target = document.getElementById("slidesCapture");
-  if(!target){ alert("Open the Slides tab first."); return; }
-  if(!window.html2canvas){ alert("Still loading the image library — try again in a moment."); return; }
-  S.savedFlash = "\uD83D\uDCF8 Capturing slides…"; render();
+  if(!document.getElementById("slidesCapture")){ _toast("Open the Slides tab first."); return; }
+  _toast("\uD83D\uDCF8 Capturing slides…", 8000);
+  await new Promise(function(res){ _whenHtml2Canvas(res, function(){ res("timeout"); }); });
+  if(!window.html2canvas){ _toast("\u26a0 Image library did not load \u2014 refresh and try again.", 3500); return; }
   try{
+    // Re-fetched here, deliberately: see (2) above.
+    var target = document.getElementById("slidesCapture");
+    if(!target){ _toast("Open the Slides tab first."); return; }
     var canvas = await window.html2canvas(target, {scale:2, backgroundColor:"#ffffff", useCORS:true, logging:false});
     // Same JPEG @0.92 as the export path. talk_json carries this, so size matters: PNG here would be
     // 5-10x larger and localStorage is already the binding constraint on local libraries.
     var dataUrl = canvas.toDataURL("image/jpeg", 0.92);
     var b64 = String(dataUrl).split(",")[1] || "";
-    if(!b64){ S.savedFlash = "\u26a0 Couldn't capture the slides."; render(); return; }
+    if(!b64){ _toast("\u26a0 Couldn't capture the slides.", 3000); return; }
     return persistVisualToLibrary({
       imgB64: b64,
       mode: "slides",
@@ -5846,8 +5888,7 @@ async function saveSlidesToLibrary(){
       label: (S.talk.title || S.topic || "Slides") + " — slides"
     }, "Slides");
   }catch(e){
-    S.savedFlash = "\u26a0 Couldn't capture the slides — " + ((e && e.message) || "try again.");
-    render(); setTimeout(function(){ S.savedFlash=""; render(); }, 3000);
+    _toast("\u26a0 Couldn't capture the slides \u2014 " + ((e && e.message) || "try again."), 3500);
   }
 }
 
@@ -5856,7 +5897,10 @@ async function persistVisualToLibrary(visual, noun){
   noun = noun || "Image";
   S.talk.savedVisuals = S.talk.savedVisuals || [];
   S.talk.savedVisuals.push(visual);
-  var _flash = function(msg, ms){ S.savedFlash = msg; render(); setTimeout(function(){ if(S.savedFlash===msg){ S.savedFlash=""; render(); } }, ms||2200); };
+  // A TOAST, NOT S.savedFlash. Every caller of this reaches it from the Slides or Visual tab, and neither
+  // renders savedFlash - it is drawn only in the Overview provenance footer. So the confirmation for the
+  // one action you take from those tabs was the one confirmation you could not see. (Jenni 2026-08-20)
+  var _flash = function(msg, ms){ _toast(msg, ms || 2200); };
   // Roll the just-pushed visual back OUT of memory when persistence fails \u2014 otherwise the in-memory
   // array falsely reads as "saved" (the \u2713 Saved check + hydration), but a reload loses it. (Codex bug #2)
   var _rollback = function(){ var i=S.talk.savedVisuals.indexOf(visual); if(i>=0) S.talk.savedVisuals.splice(i,1); };
@@ -5995,6 +6039,9 @@ async function _loadSavedTalkUnchecked(id){
   // Track which saved-talk this is so Save can prompt "update existing vs save as new" when user refines.
   S.loadedTalkId = entry.id || null;
   S.talkIsSaved = true;
+  // _clearTalkScoped picked "visual" for a Visuals-tab open before this talk existed to inspect. Now it
+  // does, so the choice can be made on what the talk actually holds.
+  if(S.libTab === "visuals") S.tab = _artefactTabFor(S.talk);
   render();window.scrollTo(0,0);
 }
 function exportTalkJSON(id){
@@ -12152,6 +12199,18 @@ async function switchProviderAndRetryReview(prov){
 // Everything talk-scoped now lives here, so a newly added field is cleared by all four by default.
 // Pass {keepIdentity:true} from the LOAD paths: they assign the loaded talk's own topic/style/depth/
 // loadedTalkId/talkIsSaved right after, so this must not stomp those.
+// WHICH ARTEFACT DID THEY COME FOR. Opening from the library's Visuals tab already landed on the Visual
+// tab rather than Overview - but "visual" means the GENERATED IMAGE tab, and a saved slide poster is not
+// one. Its entry carries kind/mode "slides", the image tab hydrates only entries whose mode matches the
+// current image provider ("ai"/"openai"), so a talk whose only saved artefact was slides opened on a tab
+// reading "No visual attached to this talk". The list said there was one; the tab said there wasn't.
+// (Jenni 2026-08-20: "go straight to visual whether its slides or image".)
+function _isSlidesVisual(v){ return !!v && (v.kind === "slides" || v.mode === "slides"); }
+function _artefactTabFor(talk){
+  var vis = (talk && talk.savedVisuals) || [];
+  for(var i = vis.length - 1; i >= 0; i--){ if(vis[i] && vis[i].imgB64) return _isSlidesVisual(vis[i]) ? "slides" : "visual"; }
+  return "visual";   // cloud cards carry only a has_visuals boolean, so the image tab is the safer default
+}
 function _clearTalkScoped(opts){
   var keepIdentity = !!(opts && opts.keepIdentity);
   if(!keepIdentity){
@@ -14694,8 +14753,12 @@ h+='</div>';
         // the user could never generate with the new provider. A shared viewer (no toggle) just gets the
         // latest saved image regardless. (Jenni 2026-07-13)
         var _cands = S.talk.savedVisuals, _lv = null;
-        if(S.sharedTalk){ _lv = _cands[_cands.length-1]; }
-        else { for(var _hi=_cands.length-1; _hi>=0; _hi--){ if(_cands[_hi] && _cands[_hi].imgB64 && (_cands[_hi].mode||"ai")===S.dgMode){ _lv=_cands[_hi]; break; } } }
+        // A SLIDE POSTER IS NOT A VISUAL AID. The owner branch already excludes it by accident - "slides"
+        // never equals an image provider - but the shared branch took the LAST saved artefact whatever it
+        // was, so a viewer could be shown a screenshot of the Slides tab captioned "Generated with
+        // Nano Banana Pro". Excluded explicitly on both sides now. (Jenni 2026-08-20)
+        if(S.sharedTalk){ for(var _si=_cands.length-1; _si>=0; _si--){ if(_cands[_si] && _cands[_si].imgB64 && !_isSlidesVisual(_cands[_si])){ _lv=_cands[_si]; break; } } }
+        else { for(var _hi=_cands.length-1; _hi>=0; _hi--){ if(_cands[_hi] && _cands[_hi].imgB64 && !_isSlidesVisual(_cands[_hi]) && (_cands[_hi].mode||"ai")===S.dgMode){ _lv=_cands[_hi]; break; } } }
         if(_lv && _lv.imgB64) S.dg = { imgB64: _lv.imgB64, mode: _lv.mode || "ai" };
       }
       h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-soft)">';

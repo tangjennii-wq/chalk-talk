@@ -52,10 +52,36 @@ ok(/getElementById\("slidesCapture"\)/.test(fnSrc("exportSlidesImage")),
    "…the same element the export uses, so what is saved is what you would have downloaded");
 ok(/toDataURL\("image\/jpeg", 0\.92\)/.test(saveSlides),
    "…at JPEG 0.92, matching the export — PNG would be 5-10x larger inside talk_json");
-ok(/if\(!window\.html2canvas\)/.test(saveSlides),
-   "…and it checks html2canvas has finished loading rather than throwing on a cold click");
-ok(/if\(!target\)\{ alert\("Open the Slides tab first\."\)/.test(saveSlides),
+// ── THE BUTTON DID NOTHING, AND IT WAS TWO BUGS COMPOSED (Jenni 2026-08-20) ────────────────────────
+// (1) Every message it produced went through S.savedFlash, which is rendered ONLY in the Overview tab's
+//     provenance footer. From the Slides tab - the one place this button exists - success and failure
+//     looked identical: nothing at all.
+// (2) Setting that flash called render(), which replaced #slidesCapture, and the capture then ran on the
+//     DETACHED node fetched before the render. So even a well-timed click photographed an orphan.
+// Both are asserted, because either one alone reproduces "no action".
+// COMMENT-STRIPPED. The first version of these two assertions matched the explanatory comment ABOVE the
+// function, which names savedFlash to explain why it is gone — so the assertion would have gone green
+// with the bug still in the code. Same mistake, in the same session, for the seventh time: match code.
+const codeOnly = (src) => src.split("\n").map(l => l.replace(/\/\/.*$/, "")).join("\n");
+ok(!/S\.savedFlash/.test(codeOnly(saveSlides)),
+   "the slides save never routes a message through S.savedFlash — the Slides tab does not render it");
+ok(/_toast\(/.test(saveSlides),
+   "…it uses the view-independent toast instead, which is visible from whichever tab you are on");
+const _capIdx = saveSlides.indexOf("html2canvas(target");
+const _getIdx = saveSlides.lastIndexOf('getElementById("slidesCapture")', _capIdx);
+ok(_getIdx > -1 && !/render\(\)/.test(saveSlides.slice(_getIdx, _capIdx)),
+   "…and nothing re-renders between fetching #slidesCapture and capturing it, so the node is still live");
+// A cold click is a timing accident, not user error: wait for the CDN script rather than scolding.
+ok(/_whenHtml2Canvas\(/.test(saveSlides),
+   "…and a cold click WAITS for html2canvas rather than bouncing off an alert");
+ok(/if\(!window\.html2canvas\)\{ _toast/.test(saveSlides),
+   "…with a real message if the wait times out, so a dead CDN is not silent either");
+ok(/_toast\("Open the Slides tab first\."\)/.test(saveSlides),
    "…and says what to do if the Slides tab is not open");
+// The shared persistence helper announces from Slides and Visual, and neither renders savedFlash.
+const _persistSrc = fnSrc("persistVisualToLibrary");
+ok(!/S\.savedFlash/.test(codeOnly(_persistSrc)),
+   "the shared persistence helper also toasts rather than using savedFlash — its callers all live outside Overview");
 ok(/if\(!b64\)\{/.test(saveSlides), "…and handles an empty capture instead of saving a blank visual");
 
 // ── the entry is TAGGED, or the badge has nothing to read ───────────────────────────────────────────

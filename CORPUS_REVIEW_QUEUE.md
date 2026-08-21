@@ -106,6 +106,22 @@ basiliximab induction to Symphony. Two correct statements can compose into a fal
 **To clear:** read AST-IDCOP BK guidance and a current trough-target source, then add numbers *with* their
 provenance. Until then the entry's job is to stop the model inventing them, which is what it now does.
 
+## 8. Kidney transplant, second pass (reviewed 20 Aug 2026) — withheld numbers
+
+| Claim from the review | Disposition |
+| --- | --- |
+| IL2RA adds **~1–4% absolute** rejection reduction in standard-risk recipients; rATG lowers relative rejection risk **~50%** vs IL2RA in high-risk | **Withheld — numbers.** The direction is well supported and is now in the entry (small incremental benefit in standard risk against modern tac/MMF/steroid maintenance; further reduction with depletional induction in high risk). The two percentages were not traced to primary sources — the Brennan rATG-vs-basiliximab NEJM paper is 403 from here. To clear: read Brennan 2006 and a current meta-analysis, then add the figures with their populations attached |
+| Including **anti-HLA-C and anti-HLA-DP** in the cPRA calculation reclassifies **~¼ of patients** upward | **Withheld — the fraction.** That cPRA is centre-dependent, and that which antigens count as unacceptable varies, is sourced and is in the entry. The ~¼ figure is not. To clear: find the allocation-policy analysis it comes from |
+| Desensitization RCTs have not shown improved long-term allograft survival | **In, reworded.** There are essentially no RCTs here; the evidence is matched-cohort and it **conflicts by health system** — a UK analysis found no advantage over waiting for a compatible organ, US analyses found benefit. The entry says that, plus the ineffectiveness of protocols above a T-cell CDC crossmatch titre of 1:32, and separates desensitization / HLA-incompatible transplant / kidney paired donation, which the review correctly flagged as conflated |
+
+**A note on how this one was caught:** the first draft of the entry wrote the withheld claims out and
+marked them unverified. `test_corpus_corrections.mjs` rejected it — an entry may not assert a clinical
+claim behind a caveat, because the model reads the whole string and the caveat is the part that gets
+dropped. The claims were removed from the entry and recorded here instead. That guard has now paid for
+itself twice.
+
+---
+
 ## 7. CRRT (reviewed 20 Aug 2026) — withheld claims
 
 | Claim from the review | Disposition |
