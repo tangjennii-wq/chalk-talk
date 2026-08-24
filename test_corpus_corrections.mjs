@@ -73,7 +73,18 @@ for (const s of ["Cardiovascular", "Pulmonary"]) {
      `${s}: unverified reperfusion categories are NOT in the corpus`);
   ok(!/DOES NOT RECOMMEND CDT/.test(pe), `${s}: unverified CDT recommendation is NOT in the corpus`);
   ok(!/30-40 percent/.test(pe), `${s}: unverified recurrence figures are NOT in the corpus`);
-  ok(!/2\.5 mg twice daily|10 mg daily/.test(pe), `${s}: unverified extended-phase dosing is NOT in the corpus`);
+  // NARROWED 2026-08-21, at launch freeze. This guard existed because the whole PE review was withheld
+  // pending a read of the 2026 AHA/ACC text. But the extended-phase doses are not a claim FROM that text
+  // — they are FDA labelling, and they were checked directly against the ELIQUIS and XARELTO labels. The
+  // check also corrected the review: BOTH labels say at least SIX months of full-dose treatment, not the
+  // "3-6 months" the review gave. Leaving a verified dosing correction out because an unrelated document
+  // was unread is the wrong kind of caution — a reader who starts a patient on 2.5 mg BID is the harm
+  // this guard was supposed to prevent. What stays forbidden is the reduced dose stated WITHOUT its
+  // prerequisite, which is the actual error shape.
+  ok(/at least 6 months/i.test(pe) || !/2\.5 mg twice daily|10 mg daily/.test(pe),
+     `${s}: a reduced DOAC dose never appears without its "after at least 6 months" prerequisite`);
+  ok(!/3-6\s*months of full-dose/.test(pe),
+     `${s}: and the review's incorrect 3-6 month threshold is not in the corpus`);
   ok(!/500 mL/.test(pe), `${s}: unverified RV fluid volume is NOT in the corpus`);
   ok(!/REVIEW CORRECTIONS/.test(pe), `${s}: no appended review block`);
 }
@@ -132,11 +143,11 @@ ok(/re-verified 19 Aug 2026 against the consensus full text \(doi 10\.2337\/dci2
 
 // ── Structural: the edits touched what they claimed to touch and nothing else ───────────────────────
 const all = Object.values(G);
-ok(all.reduce((a, s) => a + (s.guidelines || []).length, 0) === 185,
-   "185 guideline entries — 181 plus pericardial effusion, ISPD peritonitis, acute interstitial nephritis "
-   + "and CRRT prescription. CRRT is the one that was CORPUS-SILENT rather than corpus-wrong: a reviewed "
-   + "deck came back accurate on dose, citrate and timing with nothing behind it, which is the model "
-   + "being good, not the grounding working");
+ok(all.reduce((a, s) => a + (s.guidelines || []).length, 0) === 186,
+   "186 guideline entries — 181 plus pericardial effusion, ISPD peritonitis, acute interstitial nephritis, "
+   + "CRRT prescription and membranous nephropathy. Both of the last two were CORPUS-SILENT rather than "
+   + "corpus-wrong: reviewed decks came back accurate with nothing behind them, which is the model being "
+   + "good, not the grounding working");
 ok(all.reduce((a, s) => a + (s.trials || []).length, 0) === 227,
    "227 trial mentions — 221 plus the six the new CRRT entry names (RENAL, ATN, RICH, ELAIN, AKIKI-2, "
    + "IDEAL-ICU); every one resolves to a verified PMID, so the prompt may cite them all");

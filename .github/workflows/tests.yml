@@ -480,6 +480,30 @@ jobs:
       - name: Kidney transplant (induction era, which KDIGO, DGF, cPRA, desensitization)
         run: node test_transplant_grounding.mjs
 
+      # Membranous nephropathy. The corpus mentioned MN exactly once - in a list of KDIGO chapters "STILL
+      # 2021" - so it recorded that MN had not been updated and said nothing about MN. Cards were written
+      # from memory. The load-bearing assertion is the ADJACENCY GUARD: MENTOR compared rituximab with
+      # CYCLOSPORINE, while STARMEN and RI-CYCLO (the cyclophosphamide comparisons) favoured or matched
+      # cyclophosphamide. Unmapped, those compose into "rituximab beats cyclophosphamide", which no trial
+      # here shows - the same shape as the finerenone and daclizumab traps.
+      - name: Membranous nephropathy (risk strata, and every trial mapped to its own comparator)
+        run: node test_membranous_grounding.mjs
+
+      # PE, held partly out of scope at launch freeze. The entry announced the 2026 A-E categories and then
+      # taught management on the RETIRED massive/submassive axis, which reads as current and is not. The
+      # 2026 full text is still unread, so reperfusion logic is REMOVED and declared removed rather than
+      # guessed at. Two things were fixed instead of withheld: the reduced DOAC doses (checked against the
+      # ELIQUIS and XARELTO labels - both say at least SIX months, correcting the review's "3-6"), and the
+      # unsourced five-year recurrence figure, which is gone without being quoted.
+      - name: PE safety (retired reperfusion axis removed; DOAC prerequisites attached)
+        run: node test_pe_safety.mjs
+
+      # BUILD_ID in index.html and build.txt drive the "Refresh for the latest version" pill. Bump one and
+      # not the other and the pill either never fires or never stops. Both sat at 2026-08-18-01 across
+      # several commits, so nobody was told to refresh - which is how a page loaded before a fix got tested.
+      - name: Build stamp (BUILD_ID and build.txt agree)
+        run: node test_build_id.mjs
+
       # The composer SUGGESTED proofread on a big paste and left the tap to the user - so pasting a review
       # and pressing send routed it to the surgical editor, the exact failure the hint existed to prevent.
       # The condition is the interesting part: length alone is not intent. A long paste CONTAINING an
