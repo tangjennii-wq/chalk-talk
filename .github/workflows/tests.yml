@@ -515,6 +515,14 @@ jobs:
       - name: HES (routes at all; dose bound to drug; NATRON bound to its genotype)
         run: node test_hes_grounding.mjs
 
+      # The author is not an audience member. Reaching your own published talk through its share link puts
+      # the app in read-only shared mode, so the Visual tab was a dead end - no toggle, no Generate, just
+      # "No visual attached to this talk". Correct for a visitor, useless for the person who wrote it. The
+      # fix is a DOOR, not an unlock: one tap back to the library row where every control already works.
+      # Unlocking generation in shared view would spend an image credit in a view with no Save button.
+      - name: Author in shared view (a door back to the copy, not an unlock)
+        run: node test_author_shared_view.mjs
+
       # The composer SUGGESTED proofread on a big paste and left the tap to the user - so pasting a review
       # and pressing send routed it to the surgical editor, the exact failure the hint existed to prevent.
       # The condition is the interesting part: length alone is not intent. A long paste CONTAINING an

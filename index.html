@@ -5007,7 +5007,7 @@ function renderLibCard(x){
   h += '<div style="display:flex;gap:6px;font-size:10.5px;color:var(--ink-muted);align-items:center;flex-wrap:wrap">';
   h += '<span style="background:'+(isBQ?"#fdf0ee":"var(--lavender-bg)")+';color:'+(isBQ?"#8a3a2a":"var(--plum)")+';padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px;letter-spacing:0.02em">'+(isBQ?"📋 Boards":"🎓 Lecture")+'</span>';
   if(isSample) h += '<span style="background:#fff4e0;color:#7a5b1a;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px">✨</span>';
-  if(isShowcase) h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Featured teaching sample from Jenni">✨ Sample</span>';
+  if(isShowcase) h += '<span style="background:#fff3d6;color:#7a5b1a;border:1px solid #f0d8a0;padding:1px 7px;border-radius:8px;font-weight:600;font-size:10px" title="Published lecture by Jennifer Tang, MD">✨ by jenni</span>';
   // Privacy badge — only meaningful when the viewer OWNS the talk (saved branch + logged in).
   // For showcase pull-ins or incognito browsing, "Public" reads as the viewer's profile, which
   // is misleading. (Jenni 2026-06-10) Unified: any public share now shows ⭐ On profile — Link tier
@@ -12213,6 +12213,30 @@ async function switchProviderAndRetryReview(prov){
 // current image provider ("ai"/"openai"), so a talk whose only saved artefact was slides opened on a tab
 // reading "No visual attached to this talk". The list said there was one; the tab said there wasn't.
 // (Jenni 2026-08-20: "go straight to visual whether its slides or image".)
+// THE AUTHOR IS NOT AN AUDIENCE MEMBER (Jenni 2026-08-21: "i want to be able to generate from an
+// established talk"). Reaching your own published talk through its share link puts the app in shared mode,
+// which is read-only by design - so the Visual tab rendered "No visual attached to this talk" with no
+// Generate button, no provider toggle and nothing to do. Correct for a visitor, useless for the person
+// who wrote it.
+//
+// The app already knows: sharedAuthorUserId matches, and sharedOriginalTalkId points at the real row. So
+// rather than unlock generation inside a view that has no Save button - which would spend an image credit
+// with nowhere to put the result - the author gets one tap back to their own copy, where every control
+// already works. Nothing about the save or credit path changes.
+function _isOwnSharedTalk(){
+  return !!(S.sharedTalk && S.user && S.sharedAuthorUserId && S.user.id === S.sharedAuthorUserId
+            && S.sharedOriginalTalkId);
+}
+async function _openOwnCopyFromShared(){
+  var id = S.sharedOriginalTalkId;
+  if(!id) return;
+  var wantTab = S.tab;                       // land back on the tab they were looking at
+  // AWAITED, and the tab is set AFTER. loadSavedTalk is async and runs _clearTalkScoped, which assigns
+  // S.tab itself - setting the tab before it resolves means the load overwrites the choice and you land
+  // on Overview having asked for Visual.
+  await loadSavedTalk(id);
+  S.tab = wantTab; render(); window.scrollTo(0, 0);
+}
 function _isSlidesVisual(v){ return !!v && (v.kind === "slides" || v.mode === "slides"); }
 function _artefactTabFor(talk){
   var vis = (talk && talk.savedVisuals) || [];
@@ -13629,21 +13653,23 @@ h+='</div>';
     var landingTotal = recentForLanding.length + sampleForLanding.length + bundledForLanding.length;
 
     if(landingTotal > 0){
-      // Context-aware header: bright-gold "Try a sample" for new users (no recent),
-      // mixed when both, "Your lectures" when the user has filled the row themselves.
+      // Context-aware header. "Sample" is gone: these cards are Jenni's own published lectures, and
+      // calling them samples made authored teaching read as filler the app shipped to look busy.
+      // Authorship is the thing that earns a new visitor's trust, so the header says whose they are.
+      // Lowercase throughout, deliberately - it is the house voice, not a mistake. (Jenni 2026-08-21)
       var _hasRecent = recentForLanding.length > 0;
       var _hasSamples = sampleForLanding.length > 0 || bundledForLanding.length > 0;
       var _headerHtml, _seeAllHtml;
       if(!_hasRecent && _hasSamples){
         // New-user energy: bright gold ✨
-        _headerHtml = '<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> Try a sample</span>';
-        _seeAllHtml = '<button id="landingShowcaseLinkBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all samples →</button>';
+        _headerHtml = '<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:#e8a91f;margin-right:3px">✨</span> lectures by jenni tang, md</span>';
+        _seeAllHtml = '<button id="landingShowcaseLinkBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">see all lectures →</button>';
       } else if(_hasRecent && _hasSamples){
-        _headerHtml = '<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>Lectures + samples</span>';
-        _seeAllHtml = '<button id="landingShowcaseLinkBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all samples →</button>';
+        _headerHtml = '<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>your lectures + jenni’s</span>';
+        _seeAllHtml = '<button id="landingShowcaseLinkBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">see all lectures →</button>';
       } else {
-        _headerHtml = '<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>Your lectures</span>';
-        _seeAllHtml = '<button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">See all in library →</button>';
+        _headerHtml = '<span style="font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-0.005em"><span style="color:var(--plum);margin-right:4px">📖</span>your lectures</span>';
+        _seeAllHtml = '<button id="landingMoreBtn" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:2px 4px">see all in library →</button>';
       }
       h+='<div class="landing-recent" style="margin-bottom:18px;animation:fadeIn .5s ease-out">';
       h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding:0 2px">'+_headerHtml+_seeAllHtml+'</div>';
@@ -13677,7 +13703,7 @@ h+='</div>';
         h+='<span style="font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:-0.005em;flex:1;min-width:0">'+esc(ftTitle)+'</span></div>';
         h+='<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin-top:auto">';
         if(ftSpec) h+='<span style="background:#f0f7f0;color:#2d6a2d;border:1px solid #c8e0c8;padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;letter-spacing:0.01em;line-height:1.55">'+esc(ftSpec)+'</span>';
-        h+='<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid var(--lavender-soft);padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;line-height:1.55">Sample</span>';
+        h+='<span style="background:var(--lavender-bg);color:var(--plum);border:1px solid var(--lavender-soft);padding:0 5px;border-radius:5px;font-weight:600;font-size:8.5px;line-height:1.55">by jenni</span>';
         h+='</div></div>';
       }
       // Bundled-sample fallback cards (open the built-in sample by slug). (fix #3)
@@ -14825,6 +14851,10 @@ h+='</div>';
         h+='</div>';
       }
       else if(!S.sharedTalk){h+='<button id="dgBtn" '+(S.dgBusy?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:13px;color:#fff;font-size:13.5px;font-weight:600;cursor:pointer">'+(S.dgBusy?"Generating…":"✨ Generate Visual")+'</button>'}
+      else if(_isOwnSharedTalk()){
+        h+='<div style="text-align:center;padding:14px 16px;color:var(--ink-muted);font-size:12.5px;line-height:1.5">No visual attached to this talk.<br><span style="font-size:11.5px">You are viewing your own talk through its public link, which is read-only.</span></div>';
+        h+='<button id="openOwnCopyBtn" style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:12px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">\u2728 Open in your library to add a visual</button>';
+      }
       else{h+='<div style="text-align:center;padding:16px;color:var(--ink-muted);font-size:12.5px">No visual attached to this talk.</div>'}
       h+='</div>';
     }
@@ -16037,6 +16067,7 @@ function bindMain(){
   var sib=document.getElementById("saveSlidesImgBtn");if(sib)sib.onclick=exportSlidesImage;
   var slb=document.getElementById("saveSlidesLibBtn");if(slb)slb.onclick=function(){ saveSlidesToLibrary(); };
   // Overview's bottom CTA → switch to Slides tab + jump to top (Jenni 2026-06-08)
+  var _ooc=document.getElementById("openOwnCopyBtn");if(_ooc)_ooc.onclick=function(){ _openOwnCopyFromShared(); };
   var o2s=document.getElementById("overviewToSlidesBtn");if(o2s)o2s.onclick=function(){S.tab="slides";window.scrollTo(0,0);render()};
   var _rsb=document.getElementById("retrySourcesBtn");if(_rsb)_rsb.onclick=function(){retrySources();};
   // Shared-talk info chip — expands/collapses the "Shared by … · Make your own →" details
