@@ -1,15 +1,15 @@
 // PE — REPERFUSION HELD OUT OF SCOPE — run: node test_pe_safety.mjs
 //
-// LAUNCH-FREEZE DECISION, 2026-08-21. The review queue's verdict on this entry was not "incomplete", it
+// RESOLVED 2026-08-21, after a first pass that only CONTAINED the problem. The review queue's verdict was not "incomplete", it
 // was "actively misleading": the entry announced the 2026 AHA/ACC A-E categories and then taught
 // management on the RETIRED massive/submassive axis — lysis for shock or arrest, watchful monitoring for
 // intermediate-high. New taxonomy beside old management logic is worse than either alone, because it
 // reads as current. With coworkers about to generate talks, that is a launch blocker.
 //
-// The 2026 full text has still not been read. So rather than guess at the new reperfusion criteria or
-// leave the old ones standing, the entry now REMOVES the reperfusion logic and says so, and instructs the
-// talk to point at the guideline rather than fill the gap. An uncited gap is recoverable; a confident
-// wrong threshold is not.
+// The first fix removed the reperfusion logic and declared the gap. This one fills it: the categories are
+// defined and reperfusion is anchored to them (E1 Class 2a, D1-D2 Class 2b, A-C1 Class 3), verified
+// against two independent summaries that agree. ONE item stays open — where C2/C3 sit, on which the two
+// sources disagree — and it is bounded in the entry rather than averaged into a number.
 //
 // Two things WERE fixed rather than withheld, because they are not claims from the unread document:
 //   · the reduced DOAC doses, checked against the ELIQUIS and XARELTO labels — which corrected the
@@ -43,21 +43,65 @@ ok(!/alteplase 100mg over 2h/.test(k),
 ok(!/catheter-directed thrombolysis evolving/.test(k),
    "…and the 'evolving' hand-wave that stood in for the CDT evidence");
 
-// ── AND THE GAP IS DECLARED, SO THE MODEL DOES NOT FILL IT ─────────────────────────────────────────
-ok(/REPERFUSION IS OUT OF SCOPE FOR THIS ENTRY, DELIBERATELY/.test(k),
-   "the omission is stated as deliberate — silence alone would just be re-supplied from memory");
-ok(/DO NOT state which clinical category qualifies for systemic thrombolysis/.test(k),
-   "…with an explicit instruction not to name a qualifying category…");
-ok(/DO NOT give a categorical threshold for who gets lysed/.test(k), "…nor a threshold…");
-ok(/DO NOT present catheter-directed therapy as established for the haemodynamically stable patient/.test(k),
-   "…nor to promote CDT in the stable patient, which is the over-treatment direction");
-ok(/direct the reader to the\s+guideline/.test(k),
-   "…and it says what to do instead, so the talk has a landing place rather than a hole");
-ok(/An uncited gap is recoverable; a confident wrong threshold is not/.test(k),
-   "…with the reasoning recorded, so this is not 'tidied' back into a management paragraph");
-// The reason the old text was dangerous, kept so nobody restores it thinking it was merely dated.
-ok(/Teaching a new taxonomy beside old management logic is worse\s+than teaching neither/.test(k),
-   "…and the specific failure — new taxonomy, old management — is named");
+// ── THE CATEGORIES NOW CARRY THEIR DEFINITIONS ────────────────────────────────────────────────────
+// Naming A-E without defining them was half the original problem: the talk announced a taxonomy it could
+// not apply, so it fell back on the vocabulary it did know.
+ok(/A = asymptomatic, incidentally detected PE/.test(k), "A is defined…");
+ok(/PESI <=85, sPESI 0, Bova <=4/.test(k), "…B by its actual severity-score cut-offs…");
+ok(/PESI >85, sPESI >=1, Bova >4/.test(k), "…C by the other side of them…");
+ok(/D1 transient hypotension or syncope/.test(k) && /D2 normotensive shock/.test(k),
+   "…and D by its two subcategories");
+ok(/hypoperfusion WITHOUT a low blood\s+pressure/.test(k),
+   "…with normotensive shock spelled out, since that is the phrase people mis-hear as 'not shocked'");
+ok(/E1 cardiogenic shock/.test(k) && /E2 refractory shock or cardiac arrest/.test(k), "…and E by its two");
+
+// ── REPERFUSION ANCHORS TO THE CATEGORIES ─────────────────────────────────────────────────────────
+// This is the correction. The old entry gated reperfusion on shock or arrest, which is the massive/
+// submassive axis wearing new labels; the guideline moved the anchor up to D.
+ok(/E1 carries a Class 2a recommendation for reperfusion/.test(k), "E1 carries its class…");
+ok(/D1-D2 carry Class 2b/.test(k), "…D1-D2 theirs…");
+ok(/Low-risk disease \(A through C1\) is Class 3, NOT recommended/.test(k), "…and low-risk its Class 3");
+ok(/normotensive shock and transient hypotension are inside the reperfusion conversation/.test(k),
+   "…and the clinical consequence is stated: D is in the conversation");
+ok(/the old\s+massive\/submassive framing excluded by definition: it waited for sustained hypotension or arrest/.test(k),
+   "…against what the old framing did, so the change is legible rather than a swapped label");
+ok(/systemic thrombolysis, catheter-directed\s+thrombolysis, mechanical thrombectomy or surgical embolectomy/.test(k),
+   "…and the modalities the recommendation covers are listed, not left as 'reperfusion'");
+ok(/mechanical thrombectomy may be preferred over systemic lysis in\s+D1-E1/.test(k)
+   && /superiority is unproven/.test(k),
+   "…with the bleeding-risk nuance AND the honesty that superiority is unproven");
+
+// ── THE ONE THING STILL UNSETTLED IS BOUNDED, NOT GUESSED ─────────────────────────────────────────
+// Two summaries disagree on where C2/C3 sit. That is a real disagreement, so the entry marks the band
+// rather than picking a side — and it specifically refuses the review's C2-3 claim, which is the one
+// item of the six that could not be confirmed.
+ok(/THE C BAND IS THE PART THIS ENTRY DOES NOT SETTLE/.test(k),
+   "the unsettled band is named explicitly rather than silently averaged");
+ok(/one places C3 alongside D at Class 2b, another puts only A-C1 in the\s+not-recommended band/.test(k),
+   "…with both readings given, so the disagreement is visible");
+ok(/for C2-C3 say the\s+decision is individualised and points to the guideline rather than naming a class/.test(k),
+   "…and the instruction is to individualise rather than invent a class");
+ok(/Do not state that\s+catheter-directed therapy is recommended against in stable C2-3/.test(k),
+   "…and the review's unconfirmed C2-3 claim is refused by name");
+
+// ── CDT: HAEMODYNAMIC EFFECT ESTABLISHED, MORTALITY EFFECT NOT ────────────────────────────────────
+ok(/ULTIMA remains the completed randomised evidence/.test(k), "ULTIMA is named as the randomised evidence…");
+ok(/faster\s+RV\/LV ratio improvement at 24 hours and NO mortality difference/.test(k),
+   "…with both halves of its result, since the second is the one that gets dropped");
+ok(/PE-TRACT is ongoing\s+and has not reported/.test(k), "…and PE-TRACT is marked as not yet reporting");
+ok(/hypothesis-generating, not a comparison anyone has randomised/.test(k),
+   "…and the observational data is labelled for what it is");
+ok(/option whose haemodynamic effect is established and whose mortality effect is not/.test(k),
+   "…landing on a phrasing a talk can actually use");
+
+// ── RV FAILURE: THE PHYSIOLOGY, WITHOUT THE UNVERIFIED NUMBER ─────────────────────────────────────
+ok(/large fluid boluses\s+worsen it/.test(k) && /bowing the septum leftwards/.test(k),
+   "the volume trap is explained by mechanism, not asserted as a rule");
+ok(/Start noradrenaline early to keep coronary perfusion to the RV/.test(k), "…with the pressor rationale…");
+ok(!/500 mL/.test(k),
+   "…and the review's 500 mL figure is ABSENT, since it was not traced to the guideline");
+ok(/a small cautious challenge\s+is reasonable only when the RV is clearly not congested/.test(k),
+   "…while the qualitative version of that point survives");
 
 // ── WHAT REMAINS IN SCOPE IS STILL THERE ───────────────────────────────────────────────────────────
 // Holding reperfusion out must not gut the entry; taxonomy, diagnosis and anticoagulation are verified.
@@ -99,9 +143,12 @@ ok(/keeps accruing for years and is what drives the indefinite-anticoagulation\s
 
 // ── THE QUEUE STILL RECORDS THE UNREAD DOCUMENT ────────────────────────────────────────────────────
 const queue = readFileSync(new URL("./CORPUS_REVIEW_QUEUE.md", import.meta.url), "utf8");
-ok(/Acute PE — 2026 AHA\/ACC/.test(queue), "the PE section is still in the review queue…");
-ok(/2026 AHA\/ACC full text has\s*\n?not been consulted/.test(queue.replace(/\*\*/g, "")),
-   "…and still records that the primary document has not been read, which is why this is temporary");
+ok(/Acute PE — 2026 AHA\/ACC \(RESOLVED 21 Aug 2026, one item still open\)/.test(queue),
+   "the queue records PE as resolved-with-one-open rather than withheld in full…");
+ok(/STILL OPEN — the one unresolved item/.test(queue),
+   "…and records the C-band as the single item still open, rather than marking PE done");
+ok(/read the recommendation table in the \*Circulation\* full text/.test(queue),
+   "…with the specific thing to read to clear it");
 
 console.log(`\n${n} assertions, ` + (failures === 0 ? "✔ PE SAFETY OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

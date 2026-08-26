@@ -92,10 +92,20 @@ ok(find("Cardiovascular", /Pulmonary Embolism/i).keys === find("Pulmonary", /Pul
    "the two PE copies are byte-identical — one guideline filed twice, so a fix can never miss one");
 
 const queue = readFileSync(new URL("./CORPUS_REVIEW_QUEUE.md", import.meta.url), "utf8");
-ok(/WITHHELD IN FULL/.test(queue) && /2026 AHA\/ACC/.test(queue),
-   "…and the withheld PE claims are recorded in CORPUS_REVIEW_QUEUE.md rather than lost");
-ok(/must be REPLACED, not annotated/.test(queue),
-   "…with the instruction that clearing them means editing the old management text IN PLACE");
+// These two assertions pinned the WITHHELD state — "WITHHELD IN FULL" and the instruction to replace the
+// old management text rather than annotate it. Both were discharged on 2026-08-21: the categories were
+// verified, reperfusion was anchored to them, and the old text was replaced in place exactly as the queue
+// demanded. Pinning the withholding after it has been cleared would fail the moment the work got done,
+// which is the wrong incentive. What is worth pinning now is that the queue still tracks the ONE item
+// that remains open, so PE cannot be quietly marked finished.
+ok(/2026 AHA\/ACC/.test(queue) && /RESOLVED 21 Aug 2026, one item still open/.test(queue),
+   "…and PE is recorded as resolved-with-one-open, not withheld and not silently closed");
+ok(/STILL OPEN/.test(queue) && /Circulation/.test(queue),
+   "…naming the C-band item and the document that clears it");
+// The replaced-not-annotated rule earned its place and still applies to the next entry, so it stays in
+// the file's standing-lessons section rather than being deleted with the PE table.
+ok(/Corrections go at the sentence carrying the error/.test(queue),
+   "…and the replace-in-place lesson survives as a standing rule rather than a PE-specific note");
 
 // ── DKA: only what was checked against the consensus full text ──────────────────────────────────────
 // 1. Fluids — corrected AT SOURCE. The negative is the assertion that matters.

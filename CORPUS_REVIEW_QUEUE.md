@@ -10,27 +10,20 @@ primary source, and lives here until then.
 
 ---
 
-## 1. Acute PE — 2026 AHA/ACC (WITHHELD IN FULL)
+## 1. Acute PE — 2026 AHA/ACC (RESOLVED 21 Aug 2026, one item still open)
 
-Source: OpenEvidence review of a Chalk Talk card, relayed 2026-08-19. **The 2026 AHA/ACC full text has
-not been consulted.** The corpus entry is unchanged from its previous state; none of the below is in it.
+The entry now teaches the A–E categories **and** anchors reperfusion to them. Verified against two
+independent summaries of the guideline (Endovascular Today's guideline review and its news summary),
+which agree on the anchors; the *Circulation* and *JACC* full texts remain 403 from here.
 
-Two of these are corrections to the EXISTING entry, so the existing entry is also suspect — it names the
-A–E categories and then teaches management on the retired shock/arrest axis. Do not regenerate PE from
-the current corpus expecting a correct card, and do not treat the current entry as validated either.
-
-| # | Claim to verify | Why it matters |
+| # | Claim | Status |
 |---|---|---|
-| 1 | Reperfusion anchors to **E1** (reasonable) and **D1–2** (may be considered) — incipient cardiopulmonary failure, normotensive shock — not only overt shock/arrest | Changes who gets lysed. Highest-stakes item here |
-| 2 | Guideline **explicitly does not recommend CDT for stable C2–3** (no deterioration benefit, more bleeding than anticoagulation alone) | A non-recommendation, so the risk of getting it wrong is over-treatment |
-| 3 | ULTIMA = only completed RCT; faster RV/LV at 24 h, no mortality difference; PE-TRACT ongoing; observational meta-analyses suggest lower mortality/less bleeding vs systemic lysis | Currently the entry says only "evolving" |
-| 4 | Recurrence ≈10% at 1 year, ≈30–40% at 10 years unprovoked (NEJM review: 36% at 10 y). NOT "30% at 5 years" | Denominator error, quoted in a card |
-| 5 | Reduced-dose apixaban 2.5 mg BID / rivaroxaban 10 mg daily is **extended phase only, after 3–6 months full dose** | Without the clause it reads as a starting dose — a dosing error |
-| 6 | RV failure: avoid large boluses, norepinephrine early, but a cautious ≤500 mL challenge may be reasonable in a non-congested RV | Currently absent; card supplied it from memory |
-
-**To clear:** read the 2026 AHA/ACC PE guideline directly (and ESC 2019 for the taxonomy split), confirm
-each row, then edit the entry **in place** at the sentences that carry the old logic — the shock/arrest
-and "intermediate-high: monitor" management text must be REPLACED, not annotated.
+| 1 | Reperfusion anchors to **E1** (2a) and **D1–2** (2b), not to overt shock/arrest alone | **Verified and in.** Low-risk A–C1 is Class 3, not recommended. The point the review was making holds: normotensive shock and transient hypotension are inside the conversation, which massive/submassive excluded by definition |
+| 2 | Guideline **explicitly does not recommend CDT for stable C2–3** | **STILL OPEN — the one unresolved item.** Sources conflict on the C band: one places C3 with D at 2b, another puts only A–C1 in the not-recommended band. The entry teaches A–C1 as not-recommended, D/E as above, and tells the model to individualise C2–C3 and point to the guideline rather than name a class. **To clear:** read the recommendation table in the *Circulation* full text |
+| 3 | ULTIMA = only completed RCT; faster RV/LV at 24 h, no mortality difference; PE-TRACT ongoing; observational data suggest lower mortality/less bleeding | **In.** Framed as haemodynamic effect established, mortality effect not, with the observational data named as hypothesis-generating |
+| 4 | Recurrence ≈10% at 1 y, ≈30–40% at 10 y unprovoked | **Still withheld — numbers.** The entry carries no recurrence percentages and says so. The wrong five-year figure is gone and is not quoted even to disown it |
+| 5 | Reduced-dose apixaban/rivaroxaban is extended phase only | **In, and the review was corrected.** Both FDA labels say **at least 6 months**, not 3–6. Full treatment doses now sit in the same sentence |
+| 6 | RV failure: avoid large boluses, norepinephrine early, cautious ≤500 mL challenge if non-congested | **In as physiology, without the number.** Septal bowing and preload sensitivity explain why volume is not the reflex; the 500 mL figure was not traced to the guideline |
 
 ---
 
