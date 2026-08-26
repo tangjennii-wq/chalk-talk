@@ -242,8 +242,16 @@ ok(!/"peritonitis"/.test(nephKw), "'peritonitis' is still NOT a bare Nephrology 
 
 // AMBIGUOUS ABBREVIATIONS GET NO RULE. "sbp" is systolic blood pressure at least as often as it is
 // spontaneous bacterial peritonitis; a rule on it would ground a hypertension talk on hepatology.
-ok(COMPOUND.every(r => !/\\bsbp\\b/.test(String(r.re)) && String(r.re).length > 20),
-   "no compound rule is a bare ambiguous abbreviation");
+// The original form of this used total regex LENGTH (>20 chars) as the proxy for "not an abbreviation".
+// That proxy failed on the first rule that was neither long nor ambiguous: /\bhypereosinophil/ is 17
+// characters and could not be mistaken for anything. Length was never the property worth protecting —
+// what makes "sbp" dangerous is that it is a SHORT TOKEN with two common expansions, so the rule now
+// tests for a real word: every compound pattern must contain an alphabetic run of at least 8 characters.
+// "sbp" (3) fails it; "peritonitis" (11), "eosinophilia" (12) and "hypereosinophil" (15) pass.
+const longestWord = (re) => (String(re).match(/[a-z]+/gi) || [])
+  .reduce((a, w) => Math.max(a, w.length), 0);
+ok(COMPOUND.every(r => !/\\bsbp\\b/.test(String(r.re)) && longestWord(r.re) >= 8),
+   "every compound rule keys on a real word, not a short ambiguous abbreviation");
 {
   const r = route("SBP goal in hypertension");
   ok(!r || !r.specialties.includes("GI/Hepatology"),

@@ -143,11 +143,11 @@ ok(/re-verified 19 Aug 2026 against the consensus full text \(doi 10\.2337\/dci2
 
 // ── Structural: the edits touched what they claimed to touch and nothing else ───────────────────────
 const all = Object.values(G);
-ok(all.reduce((a, s) => a + (s.guidelines || []).length, 0) === 186,
-   "186 guideline entries — 181 plus pericardial effusion, ISPD peritonitis, acute interstitial nephritis, "
-   + "CRRT prescription and membranous nephropathy. Both of the last two were CORPUS-SILENT rather than "
-   + "corpus-wrong: reviewed decks came back accurate with nothing behind them, which is the model being "
-   + "good, not the grounding working");
+ok(all.reduce((a, s) => a + (s.guidelines || []).length, 0) === 187,
+   "187 guideline entries — 181 plus pericardial effusion, ISPD peritonitis, acute interstitial nephritis, "
+   + "CRRT prescription, membranous nephropathy and hypereosinophilic syndrome. The last three were "
+   + "CORPUS-SILENT rather than corpus-wrong: reviewed decks came back accurate with nothing behind them, "
+   + "which is the model being good, not the grounding working");
 ok(all.reduce((a, s) => a + (s.trials || []).length, 0) === 227,
    "227 trial mentions — 221 plus the six the new CRRT entry names (RENAL, ATN, RICH, ELAIN, AKIKI-2, "
    + "IDEAL-ICU); every one resolves to a verified PMID, so the prompt may cite them all");

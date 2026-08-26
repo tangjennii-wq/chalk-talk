@@ -106,6 +106,25 @@ basiliximab induction to Symphony. Two correct statements can compose into a fal
 **To clear:** read AST-IDCOP BK guidance and a current trough-target source, then add numbers *with* their
 provenance. Until then the entry's job is to stop the model inventing them, which is what it now does.
 
+## 9. Hypereosinophilic syndrome (reviewed 21 Aug 2026) — withheld numbers
+
+| Claim from the review | Disposition |
+| --- | --- |
+| Real-world remission **57–76%**, with **~86%** discontinuing glucocorticoids by 12 months on mepolizumab | **Withheld — numbers.** Real-world cohort figures with no source read here. The entry says it carries no remission or steroid-sparing percentages, so a quoted one is recognisable as memory. To clear: identify the cohort study and add the figures with its population attached |
+
+**Where the review was out of date, and it was its headline point:** it said benralizumab's "regulatory
+status for HES is still evolving" and that the evidence is now "RCT-level, not just supportive." Both
+were true when written. **Benralizumab was FDA-approved for HES on 14 May 2026** (30 mg SC q4w, age ≥12,
+no identifiable non-haematologic secondary cause) — so the entry teaches it as an approved option, not a
+promising trial. NATRON itself is verified in full (Nature Medicine, 31 Mar 2026,
+doi 10.1038/s41591-026-04315-8; HR 0.35, 95% CI 0.18–0.69, P=0.0024).
+
+**What the review omitted that mattered more than what it added:** NATRON enrolled **FIP1L1::PDGFRA-negative**
+patients. Without that, the trial result sits beside the imatinib paragraph and teaches a biologic for the
+one patient who should get imatinib.
+
+---
+
 ## 8. Kidney transplant, second pass (reviewed 20 Aug 2026) — withheld numbers
 
 | Claim from the review | Disposition |

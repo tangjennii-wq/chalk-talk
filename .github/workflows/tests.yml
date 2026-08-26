@@ -504,6 +504,17 @@ jobs:
       - name: Build stamp (BUILD_ID and build.txt agree)
         run: node test_build_id.mjs
 
+      # Hypereosinophilic syndrome. Corpus-silent AND unroutable: "eosinophil" appeared nowhere in
+      # Heme/Onc and no keyword matched, so HES talks were written with no guideline context at all. Both
+      # halves fixed - narrow compound routes for hypereosinophil-/eosinophilia only, so eosinophilic
+      # oesophagitis keeps its ACG entry and eosinophilic asthma keeps Pulmonary. Two adjacency traps are
+      # pinned: mepolizumab 300 mg vs benralizumab 30 mg (both SC q4w, a ten-fold error if crossed), and
+      # NATRON's FIP1L1::PDGFRA-NEGATIVE population, without which the trial result teaches a biologic for
+      # the patient who should get imatinib. The review's own headline was stale: benralizumab was
+      # FDA-approved for HES on 14 May 2026, not "evolving".
+      - name: HES (routes at all; dose bound to drug; NATRON bound to its genotype)
+        run: node test_hes_grounding.mjs
+
       # The composer SUGGESTED proofread on a big paste and left the tap to the user - so pasting a review
       # and pressing send routed it to the surgical editor, the exact failure the hint existed to prevent.
       # The condition is the interesting part: length alone is not intent. A long paste CONTAINING an

@@ -1638,7 +1638,15 @@ async function loadGuidelines(){
 // no grounding. If a phrase is ambiguous, it does not get a rule. (Jenni 2026-08-19)
 var COMPOUND_ROUTES = [
   { re: /\bpd[- ]?(?:associated\s+)?peritonitis\b/, spec: "Nephrology" },
-  { re: /\bspontaneous\s+bacterial\s+peritonitis\b/, spec: "GI/Hepatology" }
+  { re: /\bspontaneous\s+bacterial\s+peritonitis\b/, spec: "GI/Hepatology" },
+  // HES is a myeloid/lymphoid clonal question - FIP1L1::PDGFRA, imatinib, aberrant T-cell clones - so it
+  // routes to Heme/Onc, where its entry lives. Added NARROWLY on purpose (Jenni 2026-08-21). The obvious
+  // move, putting "eosinophil" in the Heme/Onc keyword list, would drag eosinophilic OESOPHAGITIS away
+  // from its own ACG entry in GI/Hepatology and eosinophilic asthma away from Pulmonary. Neither regex
+  // below can match "eosinophilic": \beosinophilia\b is word-bounded, and hypereosinophil- only matches
+  // hypereosinophilia/hypereosinophilic. EGPA and EoE are untouched.
+  { re: /\bhypereosinophil/, spec: "Heme/Onc" },
+  { re: /\beosinophilia\b/, spec: "Heme/Onc" }
 ];
 
 // TOPICS category (the display name shown in the picker) -> guidelines.json specialty key.
