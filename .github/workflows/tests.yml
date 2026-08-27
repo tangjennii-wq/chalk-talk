@@ -523,6 +523,17 @@ jobs:
       - name: Author in shared view (a door back to the copy, not an unlock)
         run: node test_author_shared_view.mjs
 
+      # Pericarditis. The symptom was "only one reference"; the cause was a CORPUS-STARVED entry - 221
+      # characters, one sentence about myopericarditis - and a Cardiovascular trial list naming no
+      # pericarditis trial at all. ICAP and CORP had verified PMIDs sitting in the index the whole time and
+      # were simply never listed as citable, so a talk that refuses to invent citations could only produce
+      # one. Distinct from corpus-wrong, corpus-silent and unroutable: the entry existed, routed fine, and
+      # had nothing in it. Two adjacency traps pinned, both about EPISODE NUMBER: colchicine 3 months
+      # (first) vs 6-12 (recurrence), and ICAP's first-episode figures vs RHAPSODY's colchicine-resistant
+      # withdrawal population, whose 74% placebo recurrence is a fact about enrolment.
+      - name: Pericarditis (starved entry refilled; trials bound to episode number)
+        run: node test_pericarditis_grounding.mjs
+
       # The composer SUGGESTED proofread on a big paste and left the tap to the user - so pasting a review
       # and pressing send routed it to the surgical editor, the exact failure the hint existed to prevent.
       # The condition is the interesting part: length alone is not intent. A long paste CONTAINING an

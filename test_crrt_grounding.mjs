@@ -132,8 +132,66 @@ ok(/10\.4% with the accelerated strategy vs\s+6\.0% with standard \(RR 1\.74, 95
    "STARRT-AKI's dependence harm is present with both rates and the RR — the concrete cost of starting early");
 ok(/90-day mortality was identical \(43\.9% vs 43\.7%\)/.test(k),
    "…beside the flat mortality, so the contrast is visible rather than asserted");
-ok(/'no mortality benefit' understates what accelerated initiation costs/.test(k),
+ok(/'No mortality benefit' understates what accelerated\s+initiation costs/.test(k),
    "…and the entry says why the usual phrasing is not enough");
+
+// ── URGENT INDICATIONS, WHICH NO TIMING TRIAL RANDOMISED ───────────────────────────────────────────
+// Added 2026-08-21. The timing section read as though "when to start dialysis" were one question. It is
+// two, and the trials only answer the second: every one of them EXCLUDED the patient with an urgent
+// indication. A resident who takes "deferral avoids dialysis in 40%" to the bedside of a patient with a
+// pH of 7.05 has misread all of them, and the entry did not say so.
+ok(/AEIOU/.test(k) && /Acidosis, Electrolytes \(refractory hyperkalaemia\), Intoxications/.test(k),
+   "the urgent-indication list is present…");
+ok(/Uraemic complications \(pericarditis, encephalopathy, bleeding\)/.test(k),
+   "…including what uraemic actually means here, rather than a bare U");
+ok(/each qualified by REFRACTORY\s+TO MEDICAL THERAPY/.test(k),
+   "…every one qualified as refractory, which is the word that keeps it from being a lab-value trigger");
+ok(/applies only to the patient who has NO urgent indication/.test(k),
+   "…and the timing trials are explicitly scoped to patients without one");
+ok(/pH of 7\.05 is a misreading of all of them/.test(k),
+   "…with the bedside misreading named, since that is how the trials get misapplied");
+ok(/lithium, toxic alcohols \(ethylene glycol, methanol\), metformin, salicylate/.test(k),
+   "and the dialysable toxins are listed as an indication independent of AKI");
+
+// ── THE FLOOR UNDER WATCHFUL WAITING ───────────────────────────────────────────────────────────────
+// The entry taught deferral without a floor, which reads as "later is always safer". AKIKI-2 is where
+// that stops being true — and the arms are easy to invert, which the review that prompted this did.
+ok(/BUT THERE IS A FLOOR TO WATCHFUL WAITING/.test(k), "deferral is bounded, not open-ended…");
+ok(/DELAYED arm started RRT once BUN exceeded 112 mg\/dL or oliguria\/anuria had persisted beyond 72\s+hours/.test(k),
+   "…with the delayed arm's actual trigger…");
+ok(/MORE-DELAYED arm waited further, until BUN reached 140 mg\/dL/.test(k), "…and the more-delayed arm's…");
+ok(/median 10 vs 12,\s+p=0\.93/.test(k), "…the null primary outcome, so waiting longer bought nothing…");
+ok(/60-day mortality was 55% vs 44%, unadjusted p=0\.071 but adjusted HR 1\.65 \(95% CI\s+1\.09-2\.50, p=0\.018\)/.test(k),
+   "…and the mortality signal with BOTH the unadjusted and adjusted results, since only one is significant");
+// THE CORRECTION TO THE REVIEW. It gave "beyond BUN >140 or oliguria >72 h" as the harm threshold, which
+// mixes the two arms: 140 is what the more-delayed arm waited FOR.
+ok(/the harm accrues beyond BUN 112 \/ oliguria 72 h,\s+which is the DELAYED arm's trigger/.test(k),
+   "…and the entry names WHICH number is the floor");
+ok(/BUN 140 is what the more-delayed arm waited FOR, not a safe\s+threshold/.test(k),
+   "…correcting the inversion in place, where it would otherwise be repeated");
+
+// ── ELAIN: WHY 'EARLY IS DEAD' IS TOO STRONG ───────────────────────────────────────────────────────
+ok(/ELAIN was\s+single-centre and predominantly surgical/.test(k),
+   "ELAIN carries its design and population BEFORE its result, which is what makes it interpretable");
+ok(/39\.3% vs 54\.7%/.test(k), "…with the mortality figures…");
+ok(/POPULATION-DEPENDENT rather than as a contradiction to be explained away/.test(k),
+   "…and it is framed as population-dependence, not as an outlier to dismiss");
+
+// ── PROGNOSIS: THE SHAPE, WITHOUT THE UNVERIFIED NUMBERS ───────────────────────────────────────────
+ok(/THIS ENTRY CARRIES NO EPIDEMIOLOGICAL PERCENTAGES/.test(k), "the epidemiology figures are declared absent…");
+// SCOPED, not a bare "25%". The first version of this matched the FILTRATION FRACTION ceiling ("<20-25%")
+// three paragraphs earlier and failed on a number that has nothing to do with prognosis. Ninth time this
+// session that a loose pattern hit the wrong text; the fix is to match the claim, not the digits.
+ok(!/1\.49/.test(k) && !/28-fold/.test(k),
+   "…neither the review's hazard ratio nor its 28-fold multiple appears");
+ok(!/progress to CKD/i.test(k) && !/AKI-to-CKD conversion (?:rate )?(?:is |of )?~?\d/i.test(k),
+   "…and no AKI-to-CKD conversion percentage is stated");
+ok(/no AKI-to-CKD conversion\s+rate, no hazard ratio for mild or brief AKI, no multiple for post-dialysis CKD risk/.test(k),
+   "…with all three named as absent, so the gap is explicit rather than an oversight");
+ok(/survivors carry excess\s+risk of CKD and death even when creatinine returns to normal/.test(k),
+   "…while the teachable shape survives: AKI is not a transient insult");
+ok(/AT ABOUT 3 MONTHS is\s+the prognostic checkpoint/.test(k),
+   "…and the 3-month checkpoint, which is the actionable part of that section");
 
 // ── ANTIMICROBIALS: LOADING vs MAINTENANCE ─────────────────────────────────────────────────────────
 ok(/FULL loading dose/.test(k) && /volume of distribution, which CRRT does not change/.test(k),

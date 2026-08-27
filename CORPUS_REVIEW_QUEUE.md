@@ -99,6 +99,29 @@ basiliximab induction to Symphony. Two correct statements can compose into a fal
 **To clear:** read AST-IDCOP BK guidance and a current trough-target source, then add numbers *with* their
 provenance. Until then the entry's job is to stop the model inventing them, which is what it now does.
 
+## 10. AKI-D prognosis + pericarditis (reviewed 21 Aug 2026) — withheld numbers
+
+| Claim | Disposition |
+| --- | --- |
+| **~25%** of AKI survivors progress to CKD; stage 1 or <3-day AKI still carries HR **~1.49** | **Withheld — numbers.** The shape is in the CRRT entry (AKI is not a transient insult; excess CKD and death risk persists even when creatinine normalises). The figures were not traced. **To clear:** identify the cohort behind each |
+| Dialysis-requiring ARF → **28-fold** risk of stage 4/5 CKD, >2× mortality (Kaiser cohort) | **Withheld — the multiple.** Lo et al, *Kidney Int* 2009 is the likely source; it is 403 from here. The entry says it carries no multiple |
+| AIRTRIP **18% vs 90%** recurrence (anakinra) | **Withheld — numbers.** AIRTRIP is named in the pericarditis entry without figures; only RHAPSODY's are given, verified against the ACC summary of the NEJM trial |
+| Ivabradine / Corlanor **discontinued in the US 1 Jan 2026** | **Withheld and out of scope.** A drug-availability claim, not traced, and marginal to a pericarditis card |
+
+**Where the review needed correcting:** it gave the AKIKI-2 harm threshold as "deferral beyond **BUN >140
+mg/dL or oliguria >72 h**". That mixes the two arms. The **delayed** arm's trigger was BUN >112 or
+oliguria >72 h; **BUN 140 is what the more-delayed arm waited *for***. So the floor sits at 112/72, and
+the entry says which number is which — quoted the review's way, it reads as licence to wait to 140.
+Verified: RRT-free days median 10 vs 12 (p=0.93), 60-day mortality 55% vs 44%, unadjusted p=0.071,
+adjusted HR 1.65 (95% CI 1.09–2.50, p=0.018).
+
+**What the reviews got right and is now in:** AEIOU with every item qualified *refractory to medical
+therapy*; dialysable toxins; ELAIN framed as population-dependent rather than an outlier; the 3-month
+recovery checkpoint; colchicine 3 months vs 6–12; anti-IL-1 ahead of steroids; rilonacept approved vs
+anakinra off-label.
+
+---
+
 ## 9. Hypereosinophilic syndrome (reviewed 21 Aug 2026) — withheld numbers
 
 | Claim from the review | Disposition |

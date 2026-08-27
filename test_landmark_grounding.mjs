@@ -88,6 +88,11 @@ ok(res.resolved.length + res.dropped.length === new Set(named.map(normTrialName)
 // the HCM entry can cite aficamten's own pivotal trial rather than leaving the model to supply one from
 // memory beside EXPLORER-HCM. Unique 201 -> 202, resolved 145 -> 146, backed 163 -> 164, mentions
 // 220 -> 221, and dropped stays at 56.
+// AND AGAIN 2026-08-21 (+3 each): the pericarditis stub was replaced with a real entry, which names ICAP,
+// CORP and RHAPSODY. ICAP and CORP already had verified PMIDs and were simply never listed as citable;
+// RHAPSODY was added under a manual_2026-08-21 stamp. Unique 208 -> 211, resolved 152 -> 155, backed
+// 170 -> 173, mentions 227 -> 230, dropped STILL 56. That an entry can be starved of citable trials while
+// the PMIDs sit in the index is the failure this pass found: the card came back with ONE reference.
 // AND AGAIN, SAME DAY (+6 each): the CRRT entry was created from nothing, and named RENAL, ATN, RICH,
 // ELAIN, AKIKI-2 and IDEAL-ICU. All six already had verified PMIDs except RICH, which was added to
 // rag/landmark_trials.json under a new manual_2026-08-20 stamp. Unique 202 -> 208, resolved 146 -> 152,
@@ -101,11 +106,11 @@ ok(res.resolved.length + res.dropped.length === new Set(named.map(normTrialName)
 // Derived independently, not read off the output: guidelines.json makes 227 trial MENTIONS across
 // specialties; those collapse to 208 UNIQUE names, of which 152 resolve and 56 do not. resolveTrials()
 // dedupes, so it is the unique figure that applies there.
-ok(new Set(named.map(normTrialName)).size === 208, `208 unique trial names across guidelines.json (got ${new Set(named.map(normTrialName)).size})`);
-ok(res.resolved.length === 152, `152 of them resolve to a verified PMID (got ${res.resolved.length})`);
+ok(new Set(named.map(normTrialName)).size === 211, `211 unique trial names across guidelines.json (got ${new Set(named.map(normTrialName)).size})`);
+ok(res.resolved.length === 155, `155 of them resolve to a verified PMID (got ${res.resolved.length})`);
 ok(res.dropped.length === 56, `56 are unsourceable and therefore never named (got ${res.dropped.length})`);
-ok(named.filter(t => !!index[normTrialName(t)]).length === 170,
-   `170 of the 227 mentions are backed by a verified PMID (got ${named.filter(t => !!index[normTrialName(t)]).length})`);
+ok(named.filter(t => !!index[normTrialName(t)]).length === 173,
+   `173 of the 230 mentions are backed by a verified PMID (got ${named.filter(t => !!index[normTrialName(t)]).length})`);
 // The unresolvable tail must not have grown. This is the half that matters: a corpus edit is allowed to
 // add citable trials, never to add uncitable ones.
 ok(named.length - named.filter(t => !!index[normTrialName(t)]).length === 57,

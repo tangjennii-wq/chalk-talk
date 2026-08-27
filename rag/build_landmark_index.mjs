@@ -21,7 +21,7 @@ import { readFileSync, writeFileSync } from "fs";
 // an index without it. manual_2026-08-20 is the 20 Aug 2026 pass (RICH), verified by matching the
 // full title on its PubMed record - the same PMID-resolves-AND-title-matches bar the Updates check uses.
 const VERIFIED_OK = ["pubmed_2026-07", "manual_2026-07", "europepmc_2026-07", "manual_2026-08",
-                     "manual_2026-08-20"];
+                     "manual_2026-08-20", "manual_2026-08-21"];
 
 // guidelines.json writes acronyms inconsistently (ROCKET-AF vs ROCKET AF, PARTNER 2 vs PARTNER-2), so
 // both sides are reduced to alphanumerics before matching. Four trials resolve ONLY because of this.

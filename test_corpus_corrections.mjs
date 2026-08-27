@@ -158,9 +158,10 @@ ok(all.reduce((a, s) => a + (s.guidelines || []).length, 0) === 187,
    + "CRRT prescription, membranous nephropathy and hypereosinophilic syndrome. The last three were "
    + "CORPUS-SILENT rather than corpus-wrong: reviewed decks came back accurate with nothing behind them, "
    + "which is the model being good, not the grounding working");
-ok(all.reduce((a, s) => a + (s.trials || []).length, 0) === 227,
-   "227 trial mentions — 221 plus the six the new CRRT entry names (RENAL, ATN, RICH, ELAIN, AKIKI-2, "
-   + "IDEAL-ICU); every one resolves to a verified PMID, so the prompt may cite them all");
+ok(all.reduce((a, s) => a + (s.trials || []).length, 0) === 230,
+   "230 trial mentions — 227 plus ICAP, CORP and RHAPSODY, which the rebuilt pericarditis entry names. "
+   + "ICAP and CORP already had verified PMIDs and were simply never listed as citable, which is how a "
+   + "generated card came back with ONE reference");
 
 console.log(`\n${n} assertions, ` + (failures === 0 ? "✔ CORPUS GUARD OK" : "✗ " + failures + " FAILURE(S)"));
 process.exit(failures === 0 ? 0 : 1);

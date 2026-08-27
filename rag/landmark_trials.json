@@ -3709,6 +3709,16 @@
     "source_batch": "specialties_2026-07"
   },
   {
+    "name": "RHAPSODY",
+    "full": "Phase 3 Trial of Interleukin-1 Trap Rilonacept in Recurrent Pericarditis",
+    "year": 2021,
+    "specialty": "Cardiovascular",
+    "expected_pmid": "33200890",
+    "pmid_verified": "manual_2026-08-21",
+    "teaching_role": "practice-defining in recurrent disease",
+    "source_batch": "manual_2026-08-21"
+  },
+  {
     "name": "CORP",
     "full": "Colchicine for recurrent pericarditis (CORP): a randomized trial",
     "year": 2011,
