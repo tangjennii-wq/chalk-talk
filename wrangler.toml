@@ -3,7 +3,7 @@ main = "worker_entry.js"   # exports both the fetch handler and the Workflow cla
 compatibility_date = "2025-01-01"
 
 [vars]
-ALLOWED_ORIGINS = "https://tangjennii.github.io,https://tangjennii-wq.github.io,http://localhost:8000,http://127.0.0.1:8000"
+ALLOWED_ORIGINS = "https://tangjennii.github.io,https://tangjennii-wq.github.io,http://localhost:8000,http://127.0.0.1:8000,https://www.chalktalkmed.com,https://chalktalkmed.com"
 DAILY_LIMIT_PER_IP = "10"
 FREE_TALKS = "10"
 FREE_IMAGES = "5"
