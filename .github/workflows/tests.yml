@@ -59,6 +59,8 @@ jobs:
 
       - name: Guideline source (JSON single-source-of-truth) suite
         run: node test_guidelines_source.mjs
+      - name: Guideline PRIMARY routing (topic → governing guideline first, supersedes sentence present)
+        run: node test_guideline_primary_routing.mjs
 
       - name: PubMed trust-but-verify suite
         run: node test_pubmed_verify.mjs

@@ -7,7 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <title>Chalk Talk &mdash; 10-minute teaching generator</title>
-<meta name="description" content="Type an internal medicine topic, get a structured 10-minute chalk talk grounded in society guidelines and PubMed. Free for educators.">
+<meta name="description" content="Type an internal medicine topic, get a structured 10-minute chalk talk grounded in society guidelines and PubMed, checked by a separate AI review pass. Free for educators.">
 <meta name="author" content="Jennifer Tang, MD">
 <meta name="keywords" content="medical education, chalk talk, internal medicine, ABIM, KDIGO, AHA/ACC, residency teaching, AI medical education">
 <meta name="theme-color" content="#330662">
@@ -17,13 +17,13 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Chalk Talk">
 <meta property="og:title" content="Chalk Talk &mdash; 10-minute teaching generator">
-<meta property="og:description" content="Type an internal medicine topic, get a structured 10-minute chalk talk grounded in society guidelines and PubMed. Free for educators.">
+<meta property="og:description" content="Type an internal medicine topic, get a structured 10-minute chalk talk grounded in society guidelines and PubMed, checked by a separate AI review pass. Free for educators.">
 <meta property="og:url" content="https://www.chalktalkmed.com/">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Chalk Talk &mdash; 10-minute teaching generator">
-<meta name="twitter:description" content="Type an internal medicine topic, get a structured 10-minute chalk talk grounded in society guidelines and PubMed. Free for educators.">
+<meta name="twitter:description" content="Type an internal medicine topic, get a structured 10-minute chalk talk grounded in society guidelines and PubMed, checked by a separate AI review pass. Free for educators.">
 
 <!-- Favicon -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23330662'/><text x='32' y='44' text-anchor='middle' fill='white' font-family='Georgia,serif' font-weight='700' font-size='38'>C</text></svg>">
@@ -1679,6 +1679,48 @@ function getGuidelinesForTopic(topic) {
   // main generate() path is already gated on guidelinesReady(); this guards the rarer resume path. (Jenni 2026-07)
   if (!topic || !GUIDELINES) return null;
   var t = topic.toLowerCase();
+  // Scorer and its tables live INSIDE this function on purpose: several test suites extract
+  // getGuidelinesForTopic by name and run it in isolation, so it must carry everything it needs.
+  // Topic-relevance score for one guideline entry: how many topic tokens (plus clinical aliases) appear in
+  // its name or summary, name hits counting double. Zero means "merely the same specialty".
+  var _GL_TOPIC_ALIASES = {
+    statin: ["dyslipid", "cholesterol", "ldl", "lipid"], cholesterol: ["dyslipid", "lipid", "ldl"], lipid: ["dyslipid", "cholesterol"],
+    ldl: ["dyslipid", "cholesterol"], hyperlipid: ["dyslipid", "cholesterol"], pcsk9: ["dyslipid", "cholesterol"],
+    htn: ["hypertension", "blood pressure"], hypertension: ["blood pressure"], afib: ["atrial fibrillation"], af: ["atrial fibrillation"],
+    hfref: ["heart failure"], hfpef: ["heart failure"], chf: ["heart failure"], mi: ["acs", "myocardial"], stemi: ["acs"], nstemi: ["acs"],
+    copd: ["gold"], asthma: ["gina"], pe: ["pulmonary embolism"], vte: ["venous thromboembolism", "pulmonary embolism"], dvt: ["venous thromboembolism"],
+    ckd: ["chronic kidney"], aki: ["acute kidney"], dka: ["hyperglycemic crises", "ketoacidosis"], hhs: ["hyperglycemic crises"],
+    diabetes: ["standards of care", "diabetes"], gout: ["gout"], sle: ["lupus"], ra: ["rheumatoid"], uti: ["urinary"], cap: ["pneumonia"],
+    cirrhosis: ["ascites", "hepatorenal"], sbp: ["ascites"], gerd: ["gerd"], ibd: ["crohn", "colitis"], stroke: ["stroke"], tia: ["stroke"],
+    ascvd: ["dyslipid", "cholesterol"], hyperlipidemia: ["dyslipid", "cholesterol"], dyslipidemia: ["cholesterol", "ldl"], lipids: ["dyslipid", "cholesterol"],
+    lp: ["lipoprotein", "dyslipid"], lipoprotein: ["dyslipid"], injury: ["aki"], pneumonia: ["cap ", "hap/vap", "pneumonia"], community: ["cap "], hospital: ["hap/vap"], ventilator: ["hap/vap"], nosocomial: ["hap/vap"], aldosteronism: ["aldosteron"]
+  };
+  var _GL_TOPIC_STOP = ["the","and","for","with","of","in","to","vs","an","a","on","or","management","managing","manage","treatment","treating","therapy","approach",
+    "update","updated","guideline","guidelines","disease","acute","chronic","syndrome","evaluation","diagnosis","workup","overview","basics","review","inpatient",
+    "outpatient","patient","patients","adult","adults","clinical","practice","care","primary","secondary","initial","general","medicine","internal","talk","chalk"];
+  function _guidelineTopicScore(topicLower, gl) {
+    var name = String(gl.name || "").toLowerCase(), keys = String(gl.keys || "").toLowerCase();
+    // Generic clinical words match half the roster by name ("Management", "Update", "Acute") and say nothing
+    // about WHICH guideline governs, so they are ignored along with stopwords.
+    var toks = topicLower.split(/[^a-z0-9]+/).filter(function(w){ return w.length >= 2 && _GL_TOPIC_STOP.indexOf(w) < 0; });
+    // ONE score per topic word, the best of its forms — the word itself, its clinical aliases, and a crude
+    // stem — never the sum, which double-counted "prevention" + "preve" against the same name. Alias hits
+    // weigh more than literal ones because the alias map is where clinical intent lives (statin → the
+    // dyslipidemia guideline, not any entry that happens to mention statins).
+    var score = 0;
+    toks.forEach(function(w){
+      var best = 0;
+      var hit = function(term, nameW, keysW){ if (name.indexOf(term) >= 0) best = Math.max(best, nameW); else if (keys.indexOf(term) >= 0) best = Math.max(best, keysW); };
+      hit(w, 2, 1);
+      (_GL_TOPIC_ALIASES[w] || []).forEach(function(x){ hit(x, 3, 1.5); });
+      if (w.length > 6) hit(w.slice(0, 6), 2, 1);   // "statins"→"statin", "hyperkalemia"→"hyperk" (NOT "hyper", which hits hypertension)
+      score += best;
+    });
+    // Exact ties go to a full guideline edition (one that records what it supersedes) over a calculator,
+    // position statement or screening recommendation that merely shares the words.
+    if (gl.supersedes) score += 0.1;
+    return score;
+  }
   var matched = [];
   // map topic keywords to specialties
   var kwMap = {
@@ -1805,10 +1847,15 @@ function getGuidelinesForTopic(topic) {
     result.conferences = result.conferences.concat(g.conferences || []);
   }
   _all.sort(function(a, b){ return b.score - a.score; });   // stable in modern engines: ties keep JSON order
+  // EDITIONS ARE AUTHORITATIVE. This preamble travels with the context object so every consumer of
+  // glRef.context (draft, critique spec, resume) carries it, not only the one call site in generate().
+  result.context += "\nEach entry below is the CURRENT edition as verified by Chalk Talk. Where your training recalls an older edition of the same guideline"
+    + " (for example the 2018 cholesterol or 2017 hypertension guidelines), the entry below SUPERSEDES it: use its thresholds, risk tools, targets and"
+    + " drug sequencing, cite it by name AND year, and do not describe the older edition as current. If you know of a change the summary omits, say so explicitly as a caveat rather than silently reverting.\n";
   var _primary = (_all.length && _all[0].score >= 2 && (_all.length === 1 || _all[0].score > _all[1].score)) ? _all[0] : null;   // a name hit, or a clear lead — never a coin-flip
   if (_primary) {
     result.primary = _primary.gl.name + " (" + _primary.gl.year + ")";
-    result.context += "\n\n[PRIMARY GUIDELINE FOR THIS TOPIC — " + _primary.society + "]\n";
+    result.context += "\n\n[PRIMARY GUIDELINE FOR THIS TOPIC — " + _primary.society + " Guidelines]\n";
     result.context += "• " + _primary.gl.name + " (" + _primary.gl.year + ", " + _primary.gl.access + "): " + _primary.gl.keys + "\n";
     result.context += "  ↳ This is the CURRENT edition. It supersedes "
       + (_primary.gl.supersedes ? "the " + _primary.gl.supersedes : "any earlier edition you may recall")
@@ -1819,7 +1866,7 @@ function getGuidelinesForTopic(topic) {
   for (var ai = 0; ai < _all.length; ai++) {
     if (_all[ai] === _primary) continue;
     var e = _all[ai];
-    if (e.society !== _lastSociety) { result.context += "\n[" + e.society + " Guidelines" + (_primary ? " — supporting" : "") + "]\n"; _lastSociety = e.society; }
+    if (e.society !== _lastSociety) { result.context += "\n[" + (_primary ? "Supporting — " : "") + e.society + " Guidelines]\n"; _lastSociety = e.society; }
     result.context += "• " + e.gl.name + " (" + e.gl.year + ", " + e.gl.access + "): " + e.gl.keys
       + (e.gl.supersedes ? " [supersedes the " + e.gl.supersedes + "]" : "") + "\n";
     result.sources.push(e.gl.name + " (" + e.gl.year + ")");
@@ -1827,46 +1874,7 @@ function getGuidelinesForTopic(topic) {
   return result;
 }
 
-// Topic-relevance score for one guideline entry: how many topic tokens (plus clinical aliases) appear in
-// its name or summary, name hits counting double. Zero means "merely the same specialty".
-var _GL_TOPIC_ALIASES = {
-  statin: ["dyslipid", "cholesterol", "ldl", "lipid"], cholesterol: ["dyslipid", "lipid", "ldl"], lipid: ["dyslipid", "cholesterol"],
-  ldl: ["dyslipid", "cholesterol"], hyperlipid: ["dyslipid", "cholesterol"], pcsk9: ["dyslipid", "cholesterol"],
-  htn: ["hypertension", "blood pressure"], hypertension: ["blood pressure"], afib: ["atrial fibrillation"], af: ["atrial fibrillation"],
-  hfref: ["heart failure"], hfpef: ["heart failure"], chf: ["heart failure"], mi: ["acs", "myocardial"], stemi: ["acs"], nstemi: ["acs"],
-  copd: ["gold"], asthma: ["gina"], pe: ["pulmonary embolism"], vte: ["venous thromboembolism", "pulmonary embolism"], dvt: ["venous thromboembolism"],
-  ckd: ["chronic kidney"], aki: ["acute kidney"], dka: ["hyperglycemic crises", "ketoacidosis"], hhs: ["hyperglycemic crises"],
-  diabetes: ["standards of care", "diabetes"], gout: ["gout"], sle: ["lupus"], ra: ["rheumatoid"], uti: ["urinary"], cap: ["pneumonia"],
-  cirrhosis: ["ascites", "hepatorenal"], sbp: ["ascites"], gerd: ["gerd"], ibd: ["crohn", "colitis"], stroke: ["stroke"], tia: ["stroke"],
-  ascvd: ["dyslipid", "cholesterol"], hyperlipidemia: ["dyslipid", "cholesterol"], dyslipidemia: ["cholesterol", "ldl"], lipids: ["dyslipid", "cholesterol"],
-  lp: ["lipoprotein", "dyslipid"], lipoprotein: ["dyslipid"], injury: ["aki"], pneumonia: ["cap ", "hap/vap", "pneumonia"], community: ["cap "], hospital: ["hap/vap"], ventilator: ["hap/vap"], nosocomial: ["hap/vap"], aldosteronism: ["aldosteron"]
-};
-var _GL_TOPIC_STOP = ["the","and","for","with","of","in","to","vs","an","a","on","or","management","managing","manage","treatment","treating","therapy","approach",
-  "update","updated","guideline","guidelines","disease","acute","chronic","syndrome","evaluation","diagnosis","workup","overview","basics","review","inpatient",
-  "outpatient","patient","patients","adult","adults","clinical","practice","care","primary","secondary","initial","general","medicine","internal","talk","chalk"];
-function _guidelineTopicScore(topicLower, gl) {
-  var name = String(gl.name || "").toLowerCase(), keys = String(gl.keys || "").toLowerCase();
-  // Generic clinical words match half the roster by name ("Management", "Update", "Acute") and say nothing
-  // about WHICH guideline governs, so they are ignored along with stopwords.
-  var toks = topicLower.split(/[^a-z0-9]+/).filter(function(w){ return w.length >= 2 && _GL_TOPIC_STOP.indexOf(w) < 0; });
-  // ONE score per topic word, the best of its forms — the word itself, its clinical aliases, and a crude
-  // stem — never the sum, which double-counted "prevention" + "preve" against the same name. Alias hits
-  // weigh more than literal ones because the alias map is where clinical intent lives (statin → the
-  // dyslipidemia guideline, not any entry that happens to mention statins).
-  var score = 0;
-  toks.forEach(function(w){
-    var best = 0;
-    var hit = function(term, nameW, keysW){ if (name.indexOf(term) >= 0) best = Math.max(best, nameW); else if (keys.indexOf(term) >= 0) best = Math.max(best, keysW); };
-    hit(w, 2, 1);
-    (_GL_TOPIC_ALIASES[w] || []).forEach(function(x){ hit(x, 3, 1.5); });
-    if (w.length > 6) hit(w.slice(0, 6), 2, 1);   // "statins"→"statin", "hyperkalemia"→"hyperk" (NOT "hyper", which hits hypertension)
-    score += best;
-  });
-  // Exact ties go to a full guideline edition (one that records what it supersedes) over a calculator,
-  // position statement or screening recommendation that merely shares the words.
-  if (gl.supersedes) score += 0.1;
-  return score;
-}
+
 
 var LECTURE_PROMPT = 'You are a senior Internal Medicine educator (general IM across all subspecialties: cardiology, pulmonary, GI/hepatology, endocrine, ID, heme/onc, rheum, neuro, nephrology, critical care, allergy, derm, psych, geriatrics, palliative). Identify the relevant specialty from the topic and teach from that field. Default to general IM reasoning unless a specialty is explicitly stated; do NOT default to nephrology.\n\nINTERNAL REASONING PROCESS (think through this BEFORE writing the JSON, do not include in output):\n1. What is the precise mechanism at the cellular/molecular level?\n2. What is the organ-level physiology that follows from that mechanism?\n3. What is the pathophysiology — how does the disease disrupt normal physiology?\n4. What clinical findings logically follow from the pathophysiology?\n5. What is the workup strategy and why does each test answer a specific question?\n6. What is the current first-line treatment per the relevant society guideline, AND what is the mechanism by which it works?\n7. What landmark trials established this approach?\n8. Verify each step is internally consistent — does the treatment section logically follow from the mechanism section? Are there any contradictions?\n\nOnly after completing this reasoning, write the chalk talk. The physiology section MUST be deep and mechanistic, not superficial. Every clinical recommendation MUST trace back to a mechanistic rationale.\n\nMEDICAL SHORTHAND (USE WHEREVER STANDARD): Write for an internal medicine resident audience that expects standard abbreviations. Spell out the full term ONCE on first use with the abbreviation in parentheses, then use the abbreviation throughout. Examples — pulmonary function tests (PFTs), thyroid stimulating hormone (TSH), arterial blood gas (ABG), complete blood count (CBC), basic metabolic panel (BMP), comprehensive metabolic panel (CMP), hemoglobin A1c (HbA1c), estimated GFR (eGFR), blood urea nitrogen (BUN), creatinine (Cr), troponin (trop), brain natriuretic peptide (BNP), chest X-ray (CXR), electrocardiogram (ECG/EKG), computed tomography (CT), magnetic resonance imaging (MRI), ultrasound (US), echocardiogram (echo). Common conditions — myocardial infarction (MI), heart failure (HF), atrial fibrillation (AFib), pulmonary embolism (PE), deep vein thrombosis (DVT), chronic obstructive pulmonary disease (COPD), chronic kidney disease (CKD), acute kidney injury (AKI), type 2 diabetes mellitus (T2DM), hypertension (HTN), hyperlipidemia (HLD), gastroesophageal reflux disease (GERD), inflammatory bowel disease (IBD), ulcerative colitis (UC), Crohn disease (CD), rheumatoid arthritis (RA), systemic lupus erythematosus (SLE), obstructive sleep apnea (OSA). Drug classes — ACE inhibitor (ACEi), angiotensin receptor blocker (ARB), beta blocker (BB), calcium channel blocker (CCB), proton pump inhibitor (PPI), non-steroidal anti-inflammatory drug (NSAID), selective serotonin reuptake inhibitor (SSRI). Hormones already-abbreviated — TSH, T3, T4, ACTH, FSH, LH, PTH, ADH, GH, IGF-1 (do not spell out unless first introduction needs it). Use the abbreviation directly when it is already universally understood (PFTs, EKG, CT, MRI, BMP) without re-spelling each time. Do NOT over-abbreviate prose so it becomes unreadable — keep flow natural for a resident reading.\n\nDRUG NAMES (MANDATORY): Use only canonical INN generic spellings. Verify each drug name before writing it. High-risk drugs commonly mangled by language models — confirm spelling: Factor Xa inhibitors (rivaroxaban, apixaban, edoxaban; thrombin inhibitor dabigatran), P2Y12 inhibitors (clopidogrel, ticagrelor, prasugrel, cangrelor), SGLT2 inhibitors (empagliflozin, dapagliflozin, canagliflozin, ertugliflozin), GLP-1 agonists (semaglutide, liraglutide, dulaglutide, tirzepatide, exenatide), ACEi (lisinopril, enalapril, ramipril), ARBs (losartan, valsartan, telmisartan, irbesartan), beta blockers (metoprolol, carvedilol, bisoprolol), statins (atorvastatin, rosuvastatin), antibiotics (vancomycin, piperacillin-tazobactam, ceftriaxone, meropenem, levofloxacin, clindamycin), antifungals (fluconazole, voriconazole, isavuconazole, micafungin), biologics (rituximab, infliximab, adalimumab, vedolizumab, ustekinumab, dupilumab, dupixent → spelled dupilumab generically), oncology TKIs (imatinib, ibrutinib, erlotinib, dasatinib, nilotinib), checkpoint inhibitors (pembrolizumab, nivolumab, ipilimumab, atezolizumab). If you are uncertain of the exact generic spelling, use the brand name (e.g. Xarelto, Eliquis, Plavix, Jardiance, Ozempic, Mounjaro, Humira) rather than guess. NEVER fabricate a drug name. Example of forbidden output: "rivarelbaxaban" (not a word — the correct generic is rivaroxaban or brand name Xarelto).\n\n10-min chalk talk. Physiology FIRST and DEEP. CRITICAL: When GUIDELINE REFERENCE CONTEXT is provided below, you MUST anchor your treatment recommendations and board tips to those specific guideline recommendations and cite the specific guideline name and year (e.g., "per KDIGO 2024" or "per 2022 AHA/ACC/HFSA"). Also cite the landmark trials listed. If the user has uploaded reference documents, use those as PRIMARY sources. If web search is available and the topic involves recent treatment standards, search for the most current guideline recommendations before writing.\n\nInclude treatment per the guideline society appropriate to the topic (AHA/ACC cardio, ATS/ERS pulm, ACG/AASLD GI/liver, ADA endo, IDSA ID, ASH heme, ASCO/NCCN onc, ACR rheum, AAN neuro, KDIGO nephro, SCCM ICU, AAAAI allergy, AAD derm, APA psych, AGS geriatrics, ACOG/NAMS women\'s health, USPSTF prevention, AAHPM palliative). 3-4 sections.\n\nOUTCOMES SECTION (when clinically relevant): If the topic has meaningful prognosis / morbidity / mortality data — e.g. infective endocarditis, sepsis, PE, GI bleed, HF, ARDS, many malignancies, transplant — ADD a FINAL section titled "Outcomes & Prognosis" (or similar) covering the key numbers: mortality/survival rates, major complication rates, and what drives prognosis (risk factors, scores). Cite them like any other claim. SKIP this section when outcomes aren\'t a meaningful teaching point (routine or benign conditions where prognosis is not the lesson).\n\n\nCITATIONS (ACCURACY OVER COVERAGE): Output a \"references\" array of {id,source,year,society,url,type}. Attach an inline marker like [1] or [1,2] at the END of a bullet, teaching_pearl, board_tip, or summary_point ONLY when a source in your references array GENUINELY SUPPORTS that specific claim. A claim no listed source substantiates must carry NO marker — an uncited teaching bullet is fully acceptable and strongly preferable to a mis-attributed one. NEVER invent a source to satisfy a citation, and NEVER stretch a source to cover a claim it does not actually make. Well-established physiology and standard teaching not tied to a specific listed source should simply carry no marker. Reuse IDs across sections when the same source supports multiple claims. Draw citable sources from the GUIDELINE REFERENCE CONTEXT and RETRIEVED SOURCES below; cite landmark trials by name with their PMID/DOI URL. NEVER fabricate URLs — omit the url field if unknown. A talk where only the well-supported claims are cited is a SUCCESS; a talk where every bullet carries a marker but some are mis-attributed is a FAILURE.\n\nEVIDENCE STATUS (STATE IT, DO NOT FLATTEN IT): Support is not all of one kind, and collapsing these into a single confident voice is the most common way teaching material misleads. When you make a management claim, make its evidentiary status explicit in the prose:\n- GUIDELINE-RECOMMENDED: a society guideline recommends it. If the guideline gives a STRENGTH (strong vs conditional) or a CERTAINTY of evidence (high, moderate, low, very low), SAY SO - for example: conditional recommendation, low certainty. NEVER present a conditional, low-certainty recommendation in the same voice as a strong one.\n- FDA-APPROVED BUT NOT YET IN THE GUIDELINE: the drug or device is approved and the trial evidence is published, but the relevant society guideline predates it and has not been revised. Say this explicitly - for example: finerenone is FDA-approved for HFmrEF and HFpEF (July 2025) but the 2022 AHA/ACC/HFSA heart failure guideline predates it. This lag is common and clinically important, and residents get it wrong in BOTH directions: treating an approval as guideline-endorsed, or dismissing an approved therapy as unsupported because no guideline mentions it.\n- TRIAL EVIDENCE ONLY: a landmark trial supports it but no guideline or regulatory approval has followed. Name the trial and say the guidelines have not incorporated it yet.\n- ESTABLISHED TEACHING: standard physiology or long-settled practice that needs no citation.\nDo NOT upgrade an FDA approval into a guideline recommendation, and do NOT dismiss an approved therapy as unsupported merely because the guideline predates it.\n\nVMC QUADRANTS (visual_memory_card): top_left = MECHANISM (cellular/molecular driver, 1 line); top_right = FINDINGS (key clinical/lab features, 1 line); bottom_left = WORKUP (the diagnostic move that locks it in, 1 line); bottom_right = TREATMENT (the first-line intervention with mechanism, 1 line). center = leave empty (deprecated). Each <=8 words. These exact 4 categories - do not deviate. ALL FOUR QUADRANTS ARE REQUIRED — never leave any blank.\nSUMMARY_POINTS (REQUIRED): 4-6 high-yield take-home statements that a resident should remember after this 10-min talk. Each 1-2 sentences. Cover mechanism, key finding, first-line treatment, and the most common pitfall. NEVER return an empty summary_points array.\nFIELD ORDER (matters for reliability): emit the top-level fields in the order shown. The large nested structures come LAST deliberately — every short top-level field is already written and closed before the long one begins, so a mistake deep inside it cannot orphan the rest of the talk. Close every bracket you open, and emit exactly ONE top-level object.\nONLY JSON:\n{"title":"","subtitle":"","guideline_sources":[""],"summary_points":[""],"visual_memory_card":{"top_left":"","top_right":"","bottom_left":"","bottom_right":"","center":""},"references":[{"id":1,"source":"","year":2024,"society":"","url":"","type":"guideline"}],"sections":[{"heading":"","minutes":"2-3 min","points":[""],"mechanism":"","teaching_pearl":"","board_tip":""}]}\n\nMECHANISM FIELD (NEW, optional but encouraged): For sections where the bullets discuss drugs, pathways, or treatment choices, populate sec.mechanism with a 1-2 sentence "why this works" explanation rooted in pathophysiology — the cellular/molecular reason the bullets are true. This renders as a "Why this works" expander under the section. Skip mechanism for sections that are purely epidemiology/screening/criteria.';
 
@@ -8453,7 +8461,7 @@ async function callAPI(sys, content, maxTok, opts) {
   while (true) {
     var fetchOpts = {method:"POST", headers:headers, body:JSON.stringify(body)};
     if (opts.signal) fetchOpts.signal = opts.signal;
-    else if (window._refineAbort && S.refineSubmitting && !S.loading) fetchOpts.signal = window._refineAbort.signal;   // Cancel in the refine composer
+    else if (globalThis._refineAbort && S.refineSubmitting && !S.loading) fetchOpts.signal = globalThis._refineAbort.signal;   // Cancel in the refine composer
     try {
       r = await fetch(endpoint, fetchOpts);
     } catch (abortErr) {
@@ -8974,11 +8982,7 @@ async function generate(){
     S._trialIndexReady = _lmReady;
     var guidelineContext = "";
     if (glRef) {
-      guidelineContext = "\n\n═══ GUIDELINE REFERENCE CONTEXT (use this to anchor your recommendations) ═══"
-        + "\nEach entry below is the CURRENT edition as verified by Chalk Talk. Where your training recalls an older edition of the same guideline"
-        + " (for example the 2018 cholesterol or 2017 hypertension guidelines), the entry below SUPERSEDES it: use its thresholds, risk tools, targets and"
-        + " drug sequencing, cite it by name AND year, and do not describe the older edition as current. If you know of a change the summary omits, say so explicitly as a caveat rather than silently reverting."
-        + glRef.context;
+      guidelineContext = "\n\n═══ GUIDELINE REFERENCE CONTEXT (use this to anchor your recommendations) ═══" + glRef.context;
       // TRIAL EVIDENCE, not trial names. The previous line named every resolvable trial and supplied a
       // PMID; the model still had to produce the figures from memory, which is how PEITHO's arms came
       // back reversed. gatherTrialEvidence() fetches the abstracts and names ONLY the trials whose
@@ -10910,14 +10914,14 @@ async function submitRefineFromComposer(){
   // signal while a refine is in flight, so Cancel in the busy view cuts the live request instead of
   // letting it finish and bill. The flag decides how the outcome is reported below.
   S._refineCancelled=false;
-  try{ window._refineAbort = (typeof AbortController !== "undefined") ? new AbortController() : null; }catch(_){ window._refineAbort=null; }
+  try{ globalThis._refineAbort = (typeof AbortController !== "undefined") ? new AbortController() : null; }catch(_){ globalThis._refineAbort=null; }
   render();
   try{
     await sendChat();
     if(S._refineCancelled){
       S.refineNotice={kind:"info",text:"Cancelled — your talk is unchanged."};
       if(!String(S.reviseIn||"").trim()) S.reviseIn=submitted;
-      showRefineToast("Cancelled — your talk is unchanged.", "info");
+      if (typeof showRefineToast === "function") showRefineToast("Cancelled — your talk is unchanged.", "info");
     } else {
       var outcome=_refineOutcomeFromMessages("Refinement finished.");
       var kind=_refineOutcomeKind(outcome);
@@ -10926,7 +10930,7 @@ async function submitRefineFromComposer(){
       if(/\u2026\s*$|\.\.\.\s*$/.test(outcome)){ kind="error"; outcome="That didn’t finish — nothing was changed. Your text is back in the box; try again."; }
       S.refineNotice={kind:kind,text:outcome};
       if(kind === "error" && !String(S.reviseIn||"").trim()) S.reviseIn=submitted;
-      showRefineToast(kind === "success" ? outcome : (kind === "error" ? outcome : "Done — " + outcome), kind);
+      if (typeof showRefineToast === "function") showRefineToast(kind === "success" ? outcome : (kind === "error" ? outcome : "Done — " + outcome), kind);
     }
   }catch(e){
     if(S._refineCancelled){
@@ -10934,11 +10938,11 @@ async function submitRefineFromComposer(){
     } else {
       S.refineNotice={kind:"error",text:"Refine failed — "+humanizeError(e)+" Your original is intact."};
     }
-    showRefineToast(S.refineNotice.text, S.refineNotice.kind);
+    if (typeof showRefineToast === "function") showRefineToast(S.refineNotice.text, S.refineNotice.kind);
     if(!String(S.reviseIn||"").trim()) S.reviseIn=submitted;
   }finally{
     S.refineSubmitting=false;
-    window._refineAbort=null;
+    globalThis._refineAbort=null;
     render();
   }
 }
@@ -15587,7 +15591,7 @@ function bindMain(){
   var ccb=document.getElementById("composerCloseBtn");if(ccb)ccb.onclick=function(){S._composerOpen=false;S.proofreadArmed=false;render()};
   var rcb=document.getElementById("refineCancelBtn");if(rcb)rcb.onclick=function(){
     S._refineCancelled=true;
-    try{ if(window._refineAbort) window._refineAbort.abort(); }catch(_){}
+    try{ if(globalThis._refineAbort) globalThis._refineAbort.abort(); }catch(_){}
     rcb.disabled=true; rcb.textContent="Cancelling…";
   };
   var prt=document.getElementById("proofreadToggle");if(prt)prt.onchange=function(){S.proofreadArmed=prt.checked;render()};

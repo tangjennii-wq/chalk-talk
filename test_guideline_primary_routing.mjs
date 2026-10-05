@@ -18,9 +18,7 @@ function grab(name) {
   let d = 0, j = src.indexOf("{", i);
   for (let k = j; k < src.length; k++) { if (src[k] === "{") d++; else if (src[k] === "}") { d--; if (d === 0) return src.slice(i, k + 1); } }
 }
-const code = grab("function getGuidelinesForTopic") + "\n"
-  + src.slice(src.indexOf("var _GL_TOPIC_ALIASES"), src.indexOf("function _guidelineTopicScore"))
-  + grab("function _guidelineTopicScore");
+const code = grab("function getGuidelinesForTopic");   // self-contained: scorer + alias tables live inside it
 const GUIDELINES = JSON.parse(readFileSync(new URL("./guidelines.json", import.meta.url), "utf8")).specialties;
 // The matcher consults the TOPICS picker and its category→specialty map when present; the keyword path
 // alone must carry these cases, so both are stubbed empty here.
@@ -49,7 +47,8 @@ const st = getGuidelinesForTopic("statin");
 ok(/\[PRIMARY GUIDELINE FOR THIS TOPIC/.test(st.context), "context opens with the PRIMARY header");
 ok(/supersedes the 2018 AHA\/ACC cholesterol guideline/.test(st.context), "PRIMARY names the superseded 2018 edition from the supersedes field");
 ok(/never present the earlier edition as current/.test(st.context), "PRIMARY carries the override instruction");
-ok(st.context.indexOf("[PRIMARY") < st.context.indexOf("supporting]"), "PRIMARY precedes the supporting block");
+ok(st.context.indexOf("[PRIMARY") < st.context.indexOf("[Supporting — "), "PRIMARY precedes the supporting block");
+ok(/Each entry below is the CURRENT edition/.test(st.context), "context carries the editions-are-authoritative preamble");
 
 // The dyslipidemia entry itself carries the 2026 practice-changers the model regresses on.
 const dys = GUIDELINES.Cardiovascular.guidelines.find(g => g.name === "2026 ACC/AHA Dyslipidemia");
