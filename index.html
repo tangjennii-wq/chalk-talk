@@ -1683,7 +1683,7 @@ function getGuidelinesForTopic(topic) {
   // map topic keywords to specialties
   var kwMap = {
     "Nephrology": ["kidney","renal","nephro","ckd","aki","gfr","dialysis","transplant","glomerul","nephrotic","nephritic","proteinuria","creatinine","urine","sodium","hyponatremia","hypernatremia","potassium","hyperkalemia","acid-base","rta","metabolic acidosis","metabolic alkalosis","diuretic","furst","siadh","beer potomania","rhabdomyolysis","tumor lysis","hepatorenal","crrt","ihd","peritoneal","fistula","raas","sglt2","finerenone","aldosteronism"],
-    "Cardiovascular": ["heart","cardiac","cardio","hf ","hfref","hfpef","acs","stemi","nstemi","atrial fib","af ","afib","valve","valvular","endocarditis","syncope","hypertension","htn","blood pressure","dyslipidemia","cholesterol","statin","anticoagul","warfarin","doac","chads","pericard","tamponade","myocarditis","pericardial effusion"],
+    "Cardiovascular": ["heart","cardiac","cardio","hf ","hfref","hfpef","acs","stemi","nstemi","atrial fib","af ","afib","valve","valvular","endocarditis","syncope","hypertension","htn","blood pressure","dyslipidemia","cholesterol","statin","ldl","lipid","hyperlipid","lp(a)","lipoprotein","pcsk9","ezetimibe","ascvd","anticoagul","warfarin","doac","chads","pericard","tamponade","myocarditis","pericardial effusion"],
     "Pulmonary": ["copd","asthma","lung","pulmonary","pneumonia","cap ","hap ","vap","ards","pleural","pe ","pulmonary embolism","ild","ipf","pulmonary hypertension","oxygen","ventilat","intubat","bronch"],
     "GI/Hepatology": ["liver","hepat","cirrhosis","varices","ascites","nafld","masld","nash","mash","gi bleed","ibd","crohn","colitis","c diff","cdiff","pancreat","gi ","gastro","esophag","celiac","barrett"],
     "Endocrinology": ["diabet","dka","hhs","ketoacidosis","hyperosmolar","hyperglycemic","insulin","a1c","thyroid","hypothyroid","hyperthyroid","adrenal","cortisol","addison","cushing","pheochrom","calcium","hypercalcemia","pth","osteoporosis","pituitary","prolactin"],
@@ -1837,23 +1837,34 @@ var _GL_TOPIC_ALIASES = {
   copd: ["gold"], asthma: ["gina"], pe: ["pulmonary embolism"], vte: ["venous thromboembolism", "pulmonary embolism"], dvt: ["venous thromboembolism"],
   ckd: ["chronic kidney"], aki: ["acute kidney"], dka: ["hyperglycemic crises", "ketoacidosis"], hhs: ["hyperglycemic crises"],
   diabetes: ["standards of care", "diabetes"], gout: ["gout"], sle: ["lupus"], ra: ["rheumatoid"], uti: ["urinary"], cap: ["pneumonia"],
-  cirrhosis: ["ascites", "hepatorenal"], sbp: ["ascites"], gerd: ["gerd"], ibd: ["crohn", "colitis"], stroke: ["stroke"], tia: ["stroke"]
+  cirrhosis: ["ascites", "hepatorenal"], sbp: ["ascites"], gerd: ["gerd"], ibd: ["crohn", "colitis"], stroke: ["stroke"], tia: ["stroke"],
+  ascvd: ["dyslipid", "cholesterol"], hyperlipidemia: ["dyslipid", "cholesterol"], dyslipidemia: ["cholesterol", "ldl"], lipids: ["dyslipid", "cholesterol"],
+  lp: ["lipoprotein", "dyslipid"], lipoprotein: ["dyslipid"], injury: ["aki"], pneumonia: ["cap ", "hap/vap", "pneumonia"], community: ["cap "], hospital: ["hap/vap"], ventilator: ["hap/vap"], nosocomial: ["hap/vap"], aldosteronism: ["aldosteron"]
 };
+var _GL_TOPIC_STOP = ["the","and","for","with","of","in","to","vs","an","a","on","or","management","managing","manage","treatment","treating","therapy","approach",
+  "update","updated","guideline","guidelines","disease","acute","chronic","syndrome","evaluation","diagnosis","workup","overview","basics","review","inpatient",
+  "outpatient","patient","patients","adult","adults","clinical","practice","care","primary","secondary","initial","general","medicine","internal","talk","chalk"];
 function _guidelineTopicScore(topicLower, gl) {
   var name = String(gl.name || "").toLowerCase(), keys = String(gl.keys || "").toLowerCase();
-  var toks = topicLower.split(/[^a-z0-9]+/).filter(function(w){ return w.length >= 2 && ["the","and","for","with","of","in","to","vs","an","a"].indexOf(w) < 0; });
-  var terms = {};
-  toks.forEach(function(w){
-    terms[w] = true;
-    var al = _GL_TOPIC_ALIASES[w]; if (al) al.forEach(function(x){ terms[x] = true; });
-    if (w.length > 5) terms[w.slice(0, 5)] = true;   // crude stem: "statins"→"stati", "hyponatremia"→"hypon"
-  });
+  // Generic clinical words match half the roster by name ("Management", "Update", "Acute") and say nothing
+  // about WHICH guideline governs, so they are ignored along with stopwords.
+  var toks = topicLower.split(/[^a-z0-9]+/).filter(function(w){ return w.length >= 2 && _GL_TOPIC_STOP.indexOf(w) < 0; });
+  // ONE score per topic word, the best of its forms — the word itself, its clinical aliases, and a crude
+  // stem — never the sum, which double-counted "prevention" + "preve" against the same name. Alias hits
+  // weigh more than literal ones because the alias map is where clinical intent lives (statin → the
+  // dyslipidemia guideline, not any entry that happens to mention statins).
   var score = 0;
-  for (var term in terms) {
-    if (term.length < 2) continue;
-    if (name.indexOf(term) >= 0) score += 2;
-    else if (keys.indexOf(term) >= 0) score += 1;
-  }
+  toks.forEach(function(w){
+    var best = 0;
+    var hit = function(term, nameW, keysW){ if (name.indexOf(term) >= 0) best = Math.max(best, nameW); else if (keys.indexOf(term) >= 0) best = Math.max(best, keysW); };
+    hit(w, 2, 1);
+    (_GL_TOPIC_ALIASES[w] || []).forEach(function(x){ hit(x, 3, 1.5); });
+    if (w.length > 6) hit(w.slice(0, 6), 2, 1);   // "statins"→"statin", "hyperkalemia"→"hyperk" (NOT "hyper", which hits hypertension)
+    score += best;
+  });
+  // Exact ties go to a full guideline edition (one that records what it supersedes) over a calculator,
+  // position statement or screening recommendation that merely shares the words.
+  if (gl.supersedes) score += 0.1;
   return score;
 }
 
