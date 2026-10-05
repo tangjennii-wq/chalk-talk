@@ -989,6 +989,10 @@ async function ensureRefineAuth(){
 
   var c = loadGenCredentials();
   if(c && c.receipt && (!c.expiresAt || Date.parse(c.expiresAt) > Date.now() + 5000)){
+    // LOAD IT INTO MEMORY, don't just report it. After a reload S.genReceipt is null while this cached
+    // credential is still live, so every call went out with NO X-CT-Receipt header and the Worker refused
+    // it (402 receipt_required: "Start it from the app so a talk is reserved first"). (2026-10-04)
+    setGenCredentials(c.jobId, c.receipt, { expiresAt: c.expiresAt || null });
     return { ok:true, reused:true };
   }
   // S.loadedTalkId is where this app keeps the id of a talk opened from the library. S.talk carries the
