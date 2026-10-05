@@ -1,13 +1,14 @@
 {
   "schema_version": 1,
-  "generated": "2026-07-24",
-  "note": "Single source of truth for guideline data. Edit here; run rag/extract_guidelines.mjs && rag/build_manifest.mjs && rag/audit_manifest.mjs to refresh derivatives.",
+  "generated": "2026-10-04",
+  "note": "Single source of truth for guideline data. Edit here; run rag/extract_guidelines.mjs && rag/build_manifest.mjs && rag/audit_manifest.mjs to refresh derivatives. `supersedes` (optional) names the older edition a model is likely to regress to; the app tells the writer the current entry replaces it.",
   "specialties": {
     "Nephrology": {
       "society": "KDIGO (Kidney Disease: Improving Global Outcomes)",
       "guidelines": [
         {
           "name": "KDIGO 2024 CKD Evaluation & Management",
+          "supersedes": "KDIGO 2012 CKD guideline",
           "year": 2024,
           "access": "Open (CC BY-NC-ND)",
           "url": "https://kdigo.org/guidelines/ckd-evaluation-and-management/",
@@ -78,6 +79,7 @@
         },
         {
           "name": "2025 AHA/ACC Hypertension Guideline",
+          "supersedes": "2017 ACC/AHA hypertension guideline",
           "year": 2025,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40811516/",
@@ -143,6 +145,7 @@
       "guidelines": [
         {
           "name": "2025 AHA/ACC Hypertension Guideline",
+          "supersedes": "2017 ACC/AHA hypertension guideline",
           "year": 2025,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40811516/",
@@ -150,6 +153,7 @@
         },
         {
           "name": "2023 ACC/AHA/ACCP/HRS Atrial Fibrillation",
+          "supersedes": "2014 AHA/ACC/HRS AF guideline and its 2019 focused update",
           "year": 2023,
           "access": "Open",
           "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193",
@@ -157,6 +161,7 @@
         },
         {
           "name": "2022 AHA/ACC/HFSA Heart Failure (+ finerenone 2025)",
+          "supersedes": "2013 ACCF/AHA HF guideline and 2017 focused update",
           "year": 2022,
           "access": "Open",
           "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001063",
@@ -164,6 +169,7 @@
         },
         {
           "name": "2025 ACC/AHA ACS",
+          "supersedes": "2013 STEMI and 2014 NSTE-ACS guidelines",
           "year": 2025,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40014670/",
@@ -171,6 +177,7 @@
         },
         {
           "name": "2020 ACC/AHA Valvular Heart Disease (+ EARLY TAVR 2025)",
+          "supersedes": "2014 AHA/ACC VHD guideline and 2017 focused update",
           "year": 2020,
           "access": "Open",
           "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000000923",
@@ -192,10 +199,11 @@
         },
         {
           "name": "2026 ACC/AHA Dyslipidemia",
+          "supersedes": "2018 AHA/ACC cholesterol guideline",
           "year": 2026,
           "access": "Open",
           "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001423",
-          "keys": "LDL is causal for atherosclerosis: lower is better in high-risk. High-intensity statin first; ezetimibe (15-20% LDL); PCSK9i (FOURIER, ODYSSEY: 40-60% LDL); bempedoic acid (CLEAR Outcomes) for statin-intolerant. LDL <55 for very high-risk ASCVD. Lp(a) measured once."
+          "keys": "SUPERSEDES the 2018 AHA/ACC cholesterol guideline. RISK: PREVENT equations (ages 30-79; 10- and 30-year risk) replace the Pooled Cohort Equations. Lp(a) measured ONCE in all adults: >=125 nmol/L (50 mg/dL) ~1.4x risk; >=250 nmol/L (100 mg/dL) >=2x; repeat only for menopause transition, kidney/liver/thyroid disease, pregnancy, certain drugs. CAC guides both initiation and intensification (men >=40, women >=45); CAC >=300 is an ASCVD risk-equivalent. ApoB recommended to refine risk and to confirm adequacy once LDL-C/non-HDL-C goals are met (especially TG >200, diabetes). FH: 1 in 250 (LDLR > APOB, PCSK9 GOF); severe hypercholesterolemia = LDL-C >=190 mg/dL and/or apoB >=140 (LDL alone misses ~half of variant carriers); cascade screening of first-degree relatives; universal lipid screen once at age 9-11, then every 5 years from 19. TREATMENT: LDL is causal, lower is better. High-intensity statin, then EARLY/UPFRONT combination in phenotype-specific pathways rather than a rigid statin->ezetimibe->PCSK9 ladder; front-load intensification after ACS. Ezetimibe (15-20% LDL); PCSK9 mAbs (FOURIER, ODYSSEY: 40-60%); inclisiran (siRNA, HeFH/ASCVD; outcomes trial ongoing); bempedoic acid (CLEAR Outcomes: fewer MI/revascularisation in statin-intolerant; FDA CV indication). LDL <55 for very-high-risk ASCVD. Lp(a)-lowering agents (pelacarsen, olpasiran) remain trial-only. HoFH: apheresis, evinacumab."
         },
         {
           "name": "2017 ACC/AHA/HRS Syncope",
@@ -206,6 +214,7 @@
         },
         {
           "name": "2022 ACC/AHA Aortic Disease",
+          "supersedes": "2010 thoracic aortic disease guideline",
           "year": 2022,
           "access": "Open",
           "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001106",
@@ -213,6 +222,7 @@
         },
         {
           "name": "2024 AHA/ACC HCM",
+          "supersedes": "2020 AHA/ACC HCM guideline",
           "year": 2024,
           "access": "Open",
           "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001250",
@@ -220,6 +230,7 @@
         },
         {
           "name": "2023 AHA/ACC Chronic Coronary Disease",
+          "supersedes": "2012 stable ischemic heart disease guideline and 2014 update",
           "year": 2023,
           "access": "Open",
           "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001168",
@@ -234,6 +245,7 @@
         },
         {
           "name": "2024 ACC/AHA Multisociety Lower Extremity PAD",
+          "supersedes": "2016 AHA/ACC PAD guideline",
           "year": 2024,
           "access": "Open",
           "url": "https://www.ahajournals.org/doi/10.1161/CIR.0000000000001251",
@@ -300,6 +312,7 @@
       "guidelines": [
         {
           "name": "GOLD 2025 COPD Strategy",
+          "supersedes": "GOLD 2024 report",
           "year": 2025,
           "access": "Open",
           "url": "https://goldcopd.org/2025-gold-report/",
@@ -307,6 +320,7 @@
         },
         {
           "name": "GINA 2025 Asthma",
+          "supersedes": "GINA 2024 report",
           "year": 2025,
           "access": "Open",
           "url": "https://ginasthma.org/2025-gina-strategy-report/",
@@ -342,6 +356,7 @@
         },
         {
           "name": "ATS 2025 CAP (IDSA did not endorse)",
+          "supersedes": "2019 ATS/IDSA CAP guideline",
           "year": 2025,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40679934/",
@@ -440,6 +455,7 @@
         },
         {
           "name": "ACG H. pylori Treatment 2024",
+          "supersedes": "ACG 2017 H. pylori guideline",
           "year": 2024,
           "access": "Open",
           "url": "https://journals.lww.com/ajg/fulltext/2024/09000/acg_clinical_guideline__treatment_of_helicobacter.13.aspx",
@@ -482,6 +498,7 @@
         },
         {
           "name": "ACG Acute Pancreatitis 2024",
+          "supersedes": "ACG 2013 acute pancreatitis guideline",
           "year": 2024,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/38857482/",
@@ -510,6 +527,7 @@
         },
         {
           "name": "AASLD/IDSA Chronic Hepatitis B 2025",
+          "supersedes": "AASLD 2018 hepatitis B guidance",
           "year": 2025,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/41186418/",
@@ -553,6 +571,7 @@
       "guidelines": [
         {
           "name": "ADA Standards of Care 2025",
+          "supersedes": "ADA Standards of Care 2024",
           "year": 2025,
           "access": "Open",
           "url": "https://professional.diabetes.org/standards-of-care",
@@ -574,6 +593,7 @@
         },
         {
           "name": "Endocrine Society Primary Aldosteronism 2025",
+          "supersedes": "2016 Endocrine Society primary aldosteronism guideline",
           "year": 2025,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40658480/",
@@ -616,6 +636,7 @@
         },
         {
           "name": "ADA/EASD/AACE/JBDS 2024 Hyperglycemic Crises in Adults (DKA and HHS)",
+          "supersedes": "2009 ADA hyperglycemic crises consensus statement",
           "year": 2024,
           "access": "Open",
           "url": "https://doi.org/10.2337/dci24-0032",
@@ -645,6 +666,7 @@
       "guidelines": [
         {
           "name": "Surviving Sepsis Campaign 2026",
+          "supersedes": "2021 Surviving Sepsis Campaign guideline",
           "year": 2026,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/41869847/",
@@ -659,6 +681,7 @@
         },
         {
           "name": "ATS 2025 CAP (IDSA did not endorse)",
+          "supersedes": "2019 ATS/IDSA CAP guideline",
           "year": 2025,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/40679934/",
@@ -701,6 +724,7 @@
         },
         {
           "name": "IDSA 2025 Complicated UTI (+ 2010 uncomplicated)",
+          "supersedes": "2010 IDSA complicated UTI/pyelonephritis guidance",
           "year": 2025,
           "access": "Open",
           "url": "https://www.idsociety.org/practice-guideline/complicated-urinary-tract-infections/",
@@ -1118,6 +1142,7 @@
       "guidelines": [
         {
           "name": "2026 AHA/ASA Early Management of Acute Ischemic Stroke",
+          "supersedes": "2019 AHA/ASA acute ischemic stroke guideline",
           "year": 2026,
           "access": "Open",
           "url": "https://pubmed.ncbi.nlm.nih.gov/41582814/",
@@ -1271,6 +1296,7 @@
         },
         {
           "name": "GINA 2026 Strategy Report",
+          "supersedes": "GINA 2025 report",
           "year": 2026,
           "access": "Open",
           "url": "https://ginasthma.org/2026-gina-strategy-report/",
@@ -1329,6 +1355,7 @@
         },
         {
           "name": "AAD Acne 2024",
+          "supersedes": "2016 AAD acne guideline",
           "year": 2024,
           "access": "Open",
           "url": "https://www.jaad.org/article/S0190-9622(23)03389-3/fulltext",
