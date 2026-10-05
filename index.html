@@ -8386,6 +8386,7 @@ async function callAPI(sys, content, maxTok, opts) {
   while (true) {
     var fetchOpts = {method:"POST", headers:headers, body:JSON.stringify(body)};
     if (opts.signal) fetchOpts.signal = opts.signal;
+    else if (window._refineAbort && S.refineSubmitting && !S.loading) fetchOpts.signal = window._refineAbort.signal;   // Cancel in the refine composer
     try {
       r = await fetch(endpoint, fetchOpts);
     } catch (abortErr) {
@@ -10191,7 +10192,7 @@ async function applyProofreadFeedback(userMsg, wasAuto){
     var origBullets = 0, origRefs = (S.talk.references||[]).length, origSecs = (S.talk.sections||[]).length;
     (S.talk.sections||[]).forEach(function(s){ origBullets += (s.points||[]).length; });
     var result = await weaveFeedbackTalk(userMsg);
-    if(result && result.quotaBlocked){ if(refineTimer){ clearInterval(refineTimer); refineTimer=null; } S._proofreadRunning=false; S.chatBusy=false; render(); return; }   // bug fix: was leaking the 1s timer + stuck _proofreadRunning on this early return
+    if(result && result.quotaBlocked){ if(refineTimer){ clearInterval(refineTimer); refineTimer=null; } S._proofreadRunning=false; S.chatBusy=false; S.msgs.push({r:"a",t:"Couldn’t apply the feedback — the generation service refused the request. Your original is intact; try again."}); render(); return; }   // bug fix: was leaking the 1s timer + stuck _proofreadRunning on this early return
     var revised = result && result.talk;
     if(revised && revised.title){
       var newBullets = 0, newRefs = (revised.references||[]).length, newSecs = (revised.sections||[]).length;
@@ -10807,6 +10808,26 @@ function _refineOutcomeKind(text){
   if(/failed|couldn.?t|unchanged|nothing landed|no changes|dropped|incomplete|try again|not found|unavailable/i.test(text)) return "error";
   return "info";
 }
+// DONE SIGNAL (Jenni 2026-10-04). The outcome notice lives inside the composer, and the composer
+// auto-closes on success, so a finished refine was invisible — "hard to tell when it's done". A fixed
+// toast at the bottom of the screen says so wherever the user is looking. Direct DOM, never render(),
+// same as the global error toast, so it cannot re-enter a render in progress.
+function showRefineToast(text, kind){
+  try{
+    var prev = document.getElementById("refineDoneToast"); if(prev) prev.remove();
+    var t = document.createElement("div");
+    t.id = "refineDoneToast";
+    t.setAttribute("role","status"); t.setAttribute("aria-live","polite");
+    var pal = kind === "success" ? "background:#eef7ee;color:#2d6a2d;border-color:#bfdcbf"
+            : kind === "error"   ? "background:#fdf0ee;color:#8a3a2a;border-color:#e6b8ab"
+            :                      "background:var(--lavender-bg);color:var(--plum-deep);border-color:var(--lavender-soft)";
+    t.style.cssText = "position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:2001;max-width:min(92vw,520px);border:1px solid;border-radius:12px;padding:11px 16px;font-size:13px;font-weight:600;font-family:inherit;line-height:1.4;box-shadow:0 8px 28px rgba(36,18,47,.18);cursor:pointer;" + pal;
+    t.textContent = text;
+    t.onclick = function(){ try{ t.remove(); }catch(_){} };
+    document.body.appendChild(t);
+    setTimeout(function(){ try{ t.remove(); }catch(_){} }, kind === "error" ? 10000 : 7000);
+  }catch(_){}
+}
 async function submitRefineFromComposer(){
   var submitted=String(S.reviseIn||"").trim();
   if(!submitted || S.refineSubmitting || S.chatBusy || S.loading) return;
@@ -10814,18 +10835,39 @@ async function submitRefineFromComposer(){
   S.refineNotice={kind:"info",text:"Starting your refinement…"};
   S.chatIn=submitted;
   S.reviseIn="";
+  // CANCELLABLE (Jenni 2026-10-04). One AbortController per submit; callAPI picks it up as the default
+  // signal while a refine is in flight, so Cancel in the busy view cuts the live request instead of
+  // letting it finish and bill. The flag decides how the outcome is reported below.
+  S._refineCancelled=false;
+  try{ window._refineAbort = (typeof AbortController !== "undefined") ? new AbortController() : null; }catch(_){ window._refineAbort=null; }
   render();
   try{
     await sendChat();
-    var outcome=_refineOutcomeFromMessages("Refinement finished.");
-    var kind=_refineOutcomeKind(outcome);
-    S.refineNotice={kind:kind,text:outcome};
-    if(kind === "error" && !String(S.reviseIn||"").trim()) S.reviseIn=submitted;
+    if(S._refineCancelled){
+      S.refineNotice={kind:"info",text:"Cancelled — your talk is unchanged."};
+      if(!String(S.reviseIn||"").trim()) S.reviseIn=submitted;
+      showRefineToast("Cancelled — your talk is unchanged.", "info");
+    } else {
+      var outcome=_refineOutcomeFromMessages("Refinement finished.");
+      var kind=_refineOutcomeKind(outcome);
+      // A trailing ellipsis is a PROGRESS line ("Reading the feedback…"), not an outcome. If it is the
+      // last thing said, the operation exited without reporting — treat that as a failure, not success.
+      if(/\u2026\s*$|\.\.\.\s*$/.test(outcome)){ kind="error"; outcome="That didn’t finish — nothing was changed. Your text is back in the box; try again."; }
+      S.refineNotice={kind:kind,text:outcome};
+      if(kind === "error" && !String(S.reviseIn||"").trim()) S.reviseIn=submitted;
+      showRefineToast(kind === "success" ? outcome : (kind === "error" ? outcome : "Done — " + outcome), kind);
+    }
   }catch(e){
-    S.refineNotice={kind:"error",text:"Refine failed — "+humanizeError(e)+" Your original is intact."};
+    if(S._refineCancelled){
+      S.refineNotice={kind:"info",text:"Cancelled — your talk is unchanged."};
+    } else {
+      S.refineNotice={kind:"error",text:"Refine failed — "+humanizeError(e)+" Your original is intact."};
+    }
+    showRefineToast(S.refineNotice.text, S.refineNotice.kind);
     if(!String(S.reviseIn||"").trim()) S.reviseIn=submitted;
   }finally{
     S.refineSubmitting=false;
+    window._refineAbort=null;
     render();
   }
 }
@@ -14924,7 +14966,15 @@ h+='</div>';
       if(S.loading){ _busyTitle='Regenerating lesson… '+(S.loadSec||0)+'s'; _busySub='Building from scratch with your direction'; }
       else if(S._proofreadRunning){ _busyTitle='Applying your proofread… '+(S.refineSec||0)+'s'; _busySub='Rewriting the full talk with your corrections — usually ~20–40s. Everything not flagged is preserved.'; }
       else { _busyTitle='Weaving in your update…'; _busySub='Preserving existing content'; }
-      h+='    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px;color:var(--plum);font-weight:500"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span><span style="font-size:13px;line-height:1.5">'+_busyTitle+'</span><span style="font-size:11px;color:var(--ink-muted);max-width:220px;line-height:1.45">'+_busySub+'</span></div>';
+      // Live status (Jenni 2026-10-04): surface the latest progress line ("Reading the feedback and
+      // applying each correction…") so the wait reads as work happening, and offer Cancel, which aborts
+      // the request and puts the submitted text back in the box. Generation (S.loading) keeps its own
+      // cancel in the hero, so the button is for refines only.
+      var _busyLive = (S.refineSubmitting && !S.loading) ? _refineOutcomeFromMessages("") : "";
+      if(_busyLive && !/\u2026\s*$|\.\.\.\s*$/.test(_busyLive)) _busyLive = "";   // only in-progress lines, never a stale outcome
+      h+='    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:20px;color:var(--plum);font-weight:500"><span class="spinner" style="width:28px;height:28px;border-width:3px"></span><span style="font-size:13px;line-height:1.5">'+_busyTitle+'</span><span style="font-size:11px;color:var(--ink-muted);max-width:240px;line-height:1.45">'+esc(_busyLive||_busySub)+'</span>';
+      if(S.refineSubmitting && !S.loading) h+='<button id="refineCancelBtn" type="button" style="margin-top:6px;background:none;border:1px solid var(--line);border-radius:10px;padding:7px 14px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;color:var(--ink)">Cancel</button>';
+      h+='</div>';
     } else {
       if(S.refineNotice && S.refineNotice.text){
         h+='    <div class="refine-notice '+(S.refineNotice.kind==="error"?'error':(S.refineNotice.kind==="success"?'success':''))+'" role="status" aria-live="polite">'+esc(S.refineNotice.text)+'</div>';
@@ -15464,6 +15514,11 @@ function bindMain(){
   // Floating bubble open/close
   var cob=document.getElementById("composerOpenBtn");if(cob)cob.onclick=function(){S._composerOpen=true;render();setTimeout(function(){var r=document.getElementById("reviseIn");if(r)r.focus()},50)};
   var ccb=document.getElementById("composerCloseBtn");if(ccb)ccb.onclick=function(){S._composerOpen=false;S.proofreadArmed=false;render()};
+  var rcb=document.getElementById("refineCancelBtn");if(rcb)rcb.onclick=function(){
+    S._refineCancelled=true;
+    try{ if(window._refineAbort) window._refineAbort.abort(); }catch(_){}
+    rcb.disabled=true; rcb.textContent="Cancelling…";
+  };
   var prt=document.getElementById("proofreadToggle");if(prt)prt.onchange=function(){S.proofreadArmed=prt.checked;render()};
   var crb=document.getElementById("composerRefBtn");if(crb)crb.onclick=function(){var fi=document.getElementById("composerFileInput")||document.getElementById("fileInput");if(fi)fi.click()};
   var cfi=document.getElementById("composerFileInput");if(cfi)cfi.onchange=function(e){ addUploadedFiles(e.target.files); try{ e.target.value=""; }catch(_){} };
