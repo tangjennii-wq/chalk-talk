@@ -311,6 +311,15 @@ body.scrolled-past-capsule .tk-capsule .cap-actions .info-pop{display:none !impo
 .app.has-talk{padding-bottom:24px}
 /* Edit-settings drawer (bottom sheet) */
 .drawer-backdrop{position:fixed;inset:0;background:rgba(20,10,28,0.45);z-index:90;backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .25s ease}
+/* Mobile (2026-10-06): a full-screen backdrop-filter over a long talk is one of the few things that
+   makes iOS Safari drop frames during a drawer transition — the "glitch and pause" on opening the
+   library. The dim alone reads fine on a phone; the blur is a desktop nicety. Same media query also
+   lifts the smallest controls to a 40px tap target without touching desktop layout. */
+@media (max-width:640px){
+  .drawer-backdrop{backdrop-filter:none;-webkit-backdrop-filter:none}
+  #browseBtn,#signInBtn,#overflowBtn,#editTitleBtn,#capsuleInfoBtn,#copyQBtn,#resetBtn,#saveTalkBtnTop,#modelPickerToggle{min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+  #overflowBtn,#editTitleBtn,#capsuleInfoBtn,#copyQBtn{min-width:40px}
+}
 .drawer-backdrop.open{opacity:1;pointer-events:auto}
 /* --kb is the measured keyboard overlap (see trackKeyboardInset). The composer got this on
    2026-08-07; these three bottom sheets did not, and each contains a text field — the sign-in
@@ -4328,7 +4337,7 @@ var S = {
   // — RAG retrieval
   glRef:null, ragOpen:false, ragChunks:[],
   // — Diagram / visual aid
-  dg:null, dgBusy:false, dgErr:"", dgMode:"ai", _dgModeUserSet:false, lightbox:false,
+  dg:null, dgBusy:false, dgErr:"", podErr:"", dgMode:"ai", _dgModeUserSet:false, lightbox:false,
   // — Podcast (audio narration)
   podScript:"", podBusy:false, podPlaying:false, podRate:1, podShow:false, podWaitingOnAudit:false,
   // — UI flags (drawers, modals, overflow menus)
@@ -11257,7 +11266,11 @@ async function genPodcast(){
     else if(S.talk.question){c="Title: "+S.talk.title+"\nQ: "+S.talk.question.stem+"\nAnswer: "+S.talk.question.correct_letter+". "+S.talk.question.explanation+"\nPearls: "+(S.talk.board_pearls||[]).join(". ")}
     var txt=await callAPI("Convert to a 1-2 min conversational podcast for internal medicine doctors. Warm, plain text only.",c,1500,{ meterKind:"aux", stage:"aux" });
     S.podScript=txt.trim();
-  }catch(e){S.podScript="Error: "+e.message}
+  }catch(e){
+    // The error used to be stored AS the script, so the panel flipped to "Ready to play · 0:07" and
+    // read the exception aloud. Keep it an error, keep the Generate button, say what to do.
+    S.podScript=""; S.podErr=humanizeError(e)+(S.user?"":" Sign in to use the free tier, or add your own key.");
+  }
   S.podBusy=false;render();
 }
 
@@ -12651,13 +12664,21 @@ function mobileLibraryView(entries, spec, specOf){
 // to the opener after the DOM rebuild so keyboard and switch-control users do not land at document start.
 function closeMobileLibraryDrawer(){
   if(!S.mobileLibOpen) return false;
-  S.mobileLibOpen = false;
-  S.mobileLibSpecOpen = false;   // a disclosure, not a preference: it does not survive the drawer closing
-  render();
+  if(S._mobileLibClosing) return true;
+  // Slide OUT first, rebuild after. Flipping state and re-rendering immediately removed the drawer in
+  // one frame; the CSS transition only ever ran in one direction.
+  var d=document.getElementById("mobileLibDrawer"), b=document.getElementById("mobileLibBackdrop");
+  if(d) d.classList.remove("open"); if(b) b.classList.remove("open");
+  S._mobileLibClosing = true;
   setTimeout(function(){
-    var opener = document.getElementById("myLibBtn");
-    if(opener && opener.focus) opener.focus();
-  }, 0);
+    S._mobileLibClosing = false;
+    S._mobileLibShown = false;
+    S.mobileLibOpen = false;
+    S.mobileLibSpecOpen = false;   // a disclosure, not a preference: it does not survive the drawer closing
+    render();
+    var _touchOnly = (typeof window !== "undefined" && window.matchMedia) ? window.matchMedia("(hover: none)").matches : false;
+    if(!_touchOnly){ var opener = document.getElementById("myLibBtn"); if(opener && opener.focus){ try{ opener.focus({preventScroll:true}); }catch(_){ } } }
+  }, d ? 290 : 0);
   return true;
 }
 
@@ -12674,7 +12695,17 @@ function render(){
     try{ selStart = active.selectionStart; selEnd = active.selectionEnd; }catch(_){}
   }
   var scrollY = window.scrollY;
+  // Scroll position INSIDE overlays, not just the window. The drawer bodies are rebuilt from innerHTML
+  // on every render, so a background tick reset the library list to the top while the user was
+  // scrolling it (confirmed in the 2026-10-06 mobile QA pass).
+  var _innerScroll = [];
+  try{
+    document.querySelectorAll("#mobileLibDrawer .drawer-body, #editDrawer .drawer-body, .composer-panel .revise-input").forEach(function(el){
+      if(el.scrollTop > 0){ var host = el.closest("[id]"); _innerScroll.push({ sel: (host ? "#"+host.id+" " : "") + "." + String(el.className).split(" ")[0], top: el.scrollTop }); }
+    });
+  }catch(_){}
   _renderInner();
+  _innerScroll.forEach(function(s){ try{ var el=document.querySelector(s.sel); if(el) el.scrollTop = s.top; }catch(_){} });
   if(focusId){
     var el = document.getElementById(focusId);
     if(el && el !== document.activeElement){
@@ -14979,6 +15010,7 @@ h+='</div>';
     if(S.tab==="audio"){
       h+='<div style="background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow-soft);margin-bottom:10px">';
       h+='<div style="display:flex;align-items:center;gap:11px;margin-bottom:14px"><span style="background:var(--lavender-soft);color:var(--plum);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px">🎧</span><div><div style="font-size:14px;font-weight:700;color:var(--ink)">Audio Podcast</div><div style="font-size:11.5px;color:var(--ink-muted)">'+(S.podScript?"Listen while walking or driving":"Generate narrated version")+'</div></div></div>';
+      if(!S.podScript && S.podErr){h+='<div role="alert" style="font-size:12px;color:#8b2f22;background:#fff4f1;border:1px solid #efc6bc;border-radius:10px;padding:8px 10px;margin-bottom:10px;line-height:1.45">'+esc(S.podErr)+'</div>';}
       if(!S.podScript){h+='<button id="podGenBtn" '+(S.podBusy?"disabled":"")+' style="width:100%;background:linear-gradient(135deg,var(--plum-rich),var(--plum-deep));border:none;border-radius:10px;padding:13px;color:#fff;font-size:14px;font-weight:600;cursor:pointer">'+(S.podBusy?"Writing…":"✨ Generate Podcast")+'</button>'}
       else{var wc=S.podScript.split(/\s+/).length;var mn=Math.floor(wc/150);var sc=Math.round((wc/150-mn)*60);var dur=mn+":"+(sc<10?"0"+sc:sc);h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:8px;background:var(--paper);border-radius:12px"><button id="podPlayBtn" style="background:'+(S.podPlaying?"#c0392b":"var(--plum-deep)")+';border:none;border-radius:50%;width:48px;height:48px;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">'+(S.podPlaying?"⏸":"▶")+'</button><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:var(--ink)">'+(S.podPlaying?"Playing…":"Ready to play")+'</div><div style="font-size:11.5px;color:var(--ink-muted)">'+dur+' min · Uses your device speaker</div></div></div>';h+='<div style="display:flex;gap:5px;margin-bottom:10px"><span style="font-size:11px;color:var(--ink-muted);align-self:center;margin-right:5px">Speed</span>';[0.75,1,1.25,1.5].forEach(function(r){h+='<button class="rateBtn" data-r="'+r+'" style="flex:1;background:'+(S.podRate===r?"var(--plum-deep)":"var(--cream)")+';color:'+(S.podRate===r?"#fff":"var(--ink-muted)")+';border:1px solid '+(S.podRate===r?"var(--plum-deep)":"var(--line)")+';border-radius:8px;padding:6px 4px;font-size:11px;font-weight:600;cursor:pointer">'+r+'x</button>'});h+='</div><button id="podToggle" style="background:none;border:none;color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0">'+(S.podShow?"▾ Hide script":"▸ Show script")+'</button>';if(S.podShow)h+='<div style="background:var(--paper);border-radius:8px;padding:11px 13px;font-size:12px;color:var(--ink);line-height:1.65;max-height:280px;overflow-y:auto;white-space:pre-wrap;margin-top:6px">'+esc(S.podScript)+'</div>'}
       h+='</div>';
@@ -15096,7 +15128,7 @@ h+='</div>';
 
     // === Edit settings drawer (bottom sheet) ===
     h+='<div class="drawer-backdrop'+(S.editSettings?" open":"")+'" id="drawerBackdrop"></div>';
-    h+='<div class="drawer'+(S.editSettings?" open":"")+'" id="editDrawer">';
+    h+='<div class="drawer'+(S.editSettings?" open":"")+'" id="editDrawer"'+(S.editSettings?'':' inert aria-hidden="true"')+'>';
     h+='<div class="drawer-handle"></div>';
     h+='<div class="drawer-head"><div class="drawer-title">Edit settings</div><button class="drawer-close" id="drawerCloseBtn">×</button></div>';
     h+='<div class="drawer-body">';
@@ -15254,8 +15286,12 @@ h+='</div>';
       }
     }
     var _libHasOwn = _libView.total > 0;
-    h+='<div class="drawer-backdrop open" id="mobileLibBackdrop" aria-hidden="true"></div>';
-    h+='<div class="side-drawer open" id="mobileLibDrawer" role="dialog" aria-modal="true" aria-labelledby="mobileLibTitle" tabindex="-1">';
+    // Born CLOSED, opened on the next frame (see bindMain) so the slide-in transition runs. Rendered
+    // with `open` already set there is no start frame to animate from, so the drawer popped into
+    // place — which on a phone read as a stutter. Re-renders while it is open keep it open.
+    var _libAnim = S._mobileLibShown ? " open" : "";
+    h+='<div class="drawer-backdrop'+_libAnim+'" id="mobileLibBackdrop" aria-hidden="true"></div>';
+    h+='<div class="side-drawer'+_libAnim+'" id="mobileLibDrawer" role="dialog" aria-modal="true" aria-labelledby="mobileLibTitle" tabindex="-1">';
     h+='<div class="drawer-head"><div class="drawer-title" id="mobileLibTitle">📖 '+(_libHasOwn?"Your lectures":"Sample lectures")+'</div><button class="drawer-close" id="mobileLibClose" aria-label="Close library">×</button></div>';
     h+='<div class="drawer-body">';
     if(_libHasOwn){
@@ -15772,7 +15808,7 @@ function bindMain(){
   // state keys also pruned. Re-add if the feedback UI is rebuilt.
 
   // ─── Podcast (audio narration) ─────────────────────────────────────────
-  var pg=document.getElementById("podGenBtn");if(pg)pg.onclick=genPodcast;
+  var pg=document.getElementById("podGenBtn");if(pg)pg.onclick=function(){ S.podErr=""; genPodcast(); };
   // NotebookLM bridge (Jenni 2026-06-11) — Copy the full talk text in a NotebookLM-friendly format,
   // then user taps the Open button to jump to NotebookLM in a new tab.
   var nbCopy=document.getElementById("notebookCopyBtn");
@@ -15830,8 +15866,20 @@ function bindMain(){
   var _mlbc=document.getElementById("mobileLibClose");if(_mlbc){
     _mlbc.onclick=closeMobileLibraryDrawer;
     var _mld=document.getElementById("mobileLibDrawer");
-    if(S.mobileLibOpen && _mld && !_mld.contains(document.activeElement)){
-      setTimeout(function(){ var closeBtn=document.getElementById("mobileLibClose"); if(closeBtn) closeBtn.focus(); },0);
+    if(S.mobileLibOpen && !S._mobileLibShown){
+      // First paint after opening: let the browser lay out the closed drawer, then slide it in.
+      S._mobileLibShown = true;
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        var d=document.getElementById("mobileLibDrawer"), b=document.getElementById("mobileLibBackdrop");
+        if(d) d.classList.add("open"); if(b) b.classList.add("open");
+      }); });
+    }
+    // Move focus to the close button for KEYBOARD and screen-reader users only. On a touch device a
+    // programmatic focus() inside a fixed, transitioning panel makes iOS scroll the panel into view
+    // mid-animation — another source of the jolt.
+    var _touchOnly = (typeof window !== "undefined" && window.matchMedia) ? window.matchMedia("(hover: none)").matches : false;
+    if(S.mobileLibOpen && _mld && !_touchOnly && !_mld.contains(document.activeElement)){
+      setTimeout(function(){ var closeBtn=document.getElementById("mobileLibClose"); if(closeBtn) closeBtn.focus({preventScroll:true}); },0);
     }
   }
   var _mlsa=document.getElementById("mobileLibSeeAll");if(_mlsa)_mlsa.onclick=function(){S.mobileLibOpen=false;S.mobileLibSpecOpen=false;S.showSaved=true;S.savedSearch="";render();refreshLibraryShowcaseSamples();};
@@ -16187,7 +16235,7 @@ function bindMain(){
   var stbBot=document.getElementById("saveTalkBtnBottom");if(stbBot)stbBot.onclick=saveCurrentTalk;
   // === EXPORT PDF inline button (June 2026 per Jenni) — paired with Save at bottom ===
   var ptbBot=document.getElementById("pdfTalkBtnBottom");if(ptbBot)ptbBot.onclick=exportTalkPDF;
-  var ptb=document.getElementById("pdfTalkBtn");if(ptb)ptb.onclick=exportTalkPDF;
+  var ptb=document.getElementById("pdfTalkBtn");if(ptb)ptb.onclick=function(){S.overflowOpen=false;render();setTimeout(exportTalkPDF,50)};
   var pngb=document.getElementById("pngTalkBtn");if(pngb)pngb.onclick=function(){S.overflowOpen=false;render();setTimeout(exportTalkImage,50)};
   // Print submenu (Jenni 2026-07-03)
   var prO=document.getElementById("printOverviewBtn");if(prO)prO.onclick=function(){S.overflowOpen=false;render();setTimeout(exportTalkPDF,50)};
@@ -16203,7 +16251,7 @@ function bindMain(){
   var sit=document.getElementById("sharedInfoToggle");if(sit)sit.onclick=function(){S.shareInfoOpen=!S.shareInfoOpen;render()};
   var jtb=document.getElementById("jsonTalkBtn");if(jtb)jtb.onclick=function(){exportTalkJSON(null)};
   var dtb=document.getElementById("deleteTalkBtn");if(dtb)dtb.onclick=function(){S.overflowOpen=false;deleteCurrentTalk()};
-  var shr=document.getElementById("shareTalkBtn");if(shr)shr.onclick=function(){shareTalk()};
+  var shr=document.getElementById("shareTalkBtn");if(shr)shr.onclick=function(){ if(S.overflowOpen){ S.overflowOpen=false; render(); } shareTalk(); };
   // ── Capsule overflow privacy handlers (Phase 1+2 redesign — Jenni 2026-06-08) ─────────
   // Old publishTalkBtn / unpublishTalkBtn / copyShareUrlBtn collapsed into:
   //   capShareBtn → opens the unified share modal
